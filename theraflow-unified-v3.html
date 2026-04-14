@@ -9464,6 +9464,7 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
   } catch(e) {
     renderBriefingFallback();
     const status = e.message || '';
+    console.error('[Briefing] Erro:', status, e);
     let icon = '⚠', msg = 'Erro ao conectar com a IA. Tente novamente.';
     if (status.includes('401') || status.includes('403')) {
       icon = '🔑'; msg = 'Chave de API inválida ou não configurada no servidor.';
@@ -9471,7 +9472,14 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
       icon = '⏳'; msg = 'Limite de uso da IA atingido. Aguarde alguns minutos e tente novamente.';
     } else if (status.includes('502') || status.includes('503')) {
       icon = '🌐'; msg = 'Serviço de IA temporariamente indisponível. Tente novamente em instantes.';
+    } else if (status.includes('500')) {
+      icon = '🔑'; msg = 'Erro interno no servidor. Verifique se GEMINI_API_KEY está configurada no Vercel.';
+    } else if (status.toLowerCase().includes('fetch') || status.toLowerCase().includes('network')) {
+      icon = '🌐'; msg = 'Erro de rede ao chamar /api/briefing. Verifique o deploy.';
+    } else if (status.includes('vazia')) {
+      icon = '⚠'; msg = 'IA retornou resposta vazia. Tente novamente.';
     }
+    msg += ' <span style="opacity:.5;font-size:11px">[' + status.substring(0,60) + ']</span>';
     _showBriefingError(icon, msg);
   }
 }
