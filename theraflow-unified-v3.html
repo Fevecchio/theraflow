@@ -9455,7 +9455,11 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ systemPrompt: system, userPrompt: user, patientData: bp })
     });
-    if (!res.ok) throw new Error('API status ' + res.status);
+    if (!res.ok) {
+      let errDetail = 'API status ' + res.status;
+      try { const eb = await res.json(); errDetail = eb.error || errDetail; } catch(_){}
+      throw new Error(errDetail);
+    }
     const data = await res.json();
     const text = data.content || '';
     if (!text || text.length < 80) throw new Error('Resposta vazia');
