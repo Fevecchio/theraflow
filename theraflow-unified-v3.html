@@ -4408,6 +4408,7 @@ async function _supaLoadUserData(userId) {
         sessions: p.sessions_count,
         valorSessao: p.valor_sessao,
         progress: p.progress,
+        portalPassword: (p.metadata && p.metadata.portalPassword) || null,
       }));
       localStorage.setItem('tf_patients', JSON.stringify(restored));
     }
@@ -4478,6 +4479,7 @@ async function _supaSync_patients() {
         mood: p.mood || null,
         fin: p.fin || null,
         forma_pagamento: p.forma_pagamento || null,
+        portalPassword: p.portalPassword || null,
       },
     }));
     await supa.from('patients').upsert(rows, { onConflict: 'id' });
@@ -6398,8 +6400,40 @@ function salvarPacientes() {
       showToast('⚠ Erro ao salvar dados. Verifique o armazenamento do navegador.');
     }
   }
-  // Sync silencioso para Supabase (não bloqueia UI)
-  _supaSync_patients().catch(() => {});
+  // Se paciente está logado no portal, sync via sessão do paciente
+  if (_loggedPatientData) {
+    _supaPatientSync().catch(() => {});
+  } else {
+    // Sync silencioso do terapeuta para Supabase
+    _supaSync_patients().catch(() => {});
+  }
+}
+
+/* Sync de dados do paciente de volta para o Supabase (sessão do paciente) */
+async function _supaPatientSync() {
+  const p = patients[0];
+  if (!p || !p.id) return;
+  try {
+    await supaPatient.from('patients').update({
+      metadata: {
+        moodHistory: p.moodHistory || [],
+        prontuarioNotes: p.prontuarioNotes || [],
+        exercises: p.exercises || [],
+        materials: p.materials || [],
+        diary: p.diary || [],
+        metas: p.metas || [],
+        appointments: p.appointments || [],
+        sessionLink: p.sessionLink || null,
+        _moodLastDate: p._moodLastDate || null,
+        mood: p.mood || null,
+        fin: p.fin || null,
+        forma_pagamento: p.forma_pagamento || null,
+        portalPassword: p.portalPassword || null,
+      }
+    }).eq('id', p.id);
+  } catch(e) {
+    console.warn('[supaPatient] sync falhou:', e.message);
+  }
 }
 
 function carregarPacientes() {
@@ -13255,6 +13289,10 @@ function loginPaciente() {
 
     _loggedPatientIdx = 0;
     _loggedPatientData = p;
+
+    // Popula patients[] com os dados do paciente para que as funções do portal funcionem
+    patients.splice(0, patients.length, p);
+    currentPortalPatientIdx = 0;
 
     document.getElementById('tf-patient-login-layer').classList.remove('open');
     document.getElementById('tf-patient-app-layer').classList.add('open');
