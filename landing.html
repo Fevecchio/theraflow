@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TheraFlow — A clínica inteligente para psicólogos</title>
+<meta name="description" content="Prontuários, agenda, cobrança e IA calibrada pela sua abordagem terapêutica. Tudo em um só lugar. Experimente grátis por 20 sessões."/>
+<meta property="og:title" content="TheraFlow — A clínica inteligente para psicólogos"/>
+<meta property="og:description" content="IA que entende TCC, Psicanálise, Sistêmica e mais. Prontuários, agenda e financeiro integrados."/>
+<meta property="og:type" content="website"/>
+<meta name="theme-color" content="#4a7c59"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234a7c59'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-family='serif' fill='white'>T</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sage: #4a7c59; --sage-dark: #2e5237; --sage-light: #e8f0eb; --sage-mid: #8fb89c;
+  --ink: #1a1f1c; --ink-soft: #3d4540; --muted: #6b7280;
+  --border: #e2e8e4; --bg: #f7f8f6; --white: #ffffff;
+  --amber: #c97d2e; --amber-light: #fdf3e7;
+  --blue: #2c5f8a; --blue-light: #eaf1f8;
+  --purple: #5a3e8a; --purple-light: #f0ecfa;
+  --radius: 14px; --radius-lg: 20px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 20px rgba(0,0,0,.07);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,.12);
+}
+html { scroll-behavior: smooth; }
+body { background: var(--white); color: var(--ink); font-family: 'DM Sans', sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; }
+
+/* ── TYPOGRAPHY ── */
+.serif { font-family: 'Instrument Serif', serif; }
+h1, h2, h3 { font-family: 'Instrument Serif', serif; letter-spacing: -.3px; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+.nav-inner {
+  max-width: 1080px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 62px;
+}
+.nav-logo { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.nav-logo-mark { width: 30px; height: 30px; background: var(--sage); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; }
+.nav-links { display: flex; align-items: center; gap: 28px; }
+.nav-links a { font-size: 14px; font-weight: 500; color: var(--muted); transition: color .15s; }
+.nav-links a:hover { color: var(--ink); }
+.nav-cta { display: flex; align-items: center; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: all .15s; }
+.btn-outline { background: none; border: 1.5px solid var(--border); color: var(--ink-soft); }
+.btn-outline:hover { border-color: var(--sage); color: var(--sage); }
+.btn-primary { background: var(--sage); color: #fff; box-shadow: 0 2px 8px rgba(74,124,89,.3); }
+.btn-primary:hover { background: var(--sage-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(74,124,89,.4); }
+.btn-lg { padding: 14px 28px; font-size: 15px; border-radius: 11px; }
+.btn-white { background: #fff; color: var(--sage); box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+.btn-white:hover { background: var(--sage-light); }
+
+/* ── LAYOUT ── */
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+section { padding: 96px 0; }
+
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(160deg, #0d1f14 0%, #172a1e 40%, #1e3628 70%, #14231a 100%);
+  padding: 100px 0 110px; overflow: hidden; position: relative;
+}
+.hero::before {
+  content: ''; position: absolute; right: -10%; top: -20%;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,124,89,.35) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero::after {
+  content: ''; position: absolute; left: 5%; bottom: -30%;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(143,184,156,.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner { max-width: 1080px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(74,124,89,.25); border: 1px solid rgba(143,184,156,.3);
+  color: #a8d4b5; font-size: 12.5px; font-weight: 500;
+  padding: 5px 13px; border-radius: 20px; margin-bottom: 24px;
+}
+.hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #6fcf97; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+.hero h1 {
+  font-size: clamp(36px, 5.5vw, 62px); color: #fff; line-height: 1.12;
+  max-width: 680px; margin-bottom: 22px;
+}
+.hero h1 em { color: #7fcf97; font-style: italic; }
+.hero-sub {
+  font-size: 18px; color: rgba(255,255,255,.6); max-width: 520px;
+  line-height: 1.7; margin-bottom: 38px;
+}
+.hero-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.hero-note { font-size: 12.5px; color: rgba(255,255,255,.4); margin-top: 16px; }
+.hero-stats { display: flex; gap: 40px; margin-top: 60px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,.1); flex-wrap: wrap; }
+.hero-stat-val { font-family: 'Instrument Serif', serif; font-size: 36px; color: #fff; }
+.hero-stat-label { font-size: 13px; color: rgba(255,255,255,.45); margin-top: 2px; }
+
+/* ── APP PREVIEW ── */
+.preview-section { background: var(--bg); padding: 0; overflow: hidden; }
+.preview-wrapper {
+  max-width: 1080px; margin: 0 auto; padding: 0 24px;
+  transform: translateY(-48px);
+}
+.preview-card {
+  background: #fff; border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.13), 0 0 0 1px rgba(0,0,0,.05);
+  overflow: hidden;
+}
+.preview-topbar {
+  background: #1a2920; padding: 12px 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.preview-dot { width: 12px; height: 12px; border-radius: 50%; }
+.preview-url {
+  flex: 1; background: rgba(255,255,255,.08); border-radius: 6px;
+  padding: 5px 12px; font-size: 12px; color: rgba(255,255,255,.4);
+  margin: 0 12px; text-align: center;
+}
+.preview-body { display: grid; grid-template-columns: 200px 1fr; min-height: 420px; }
+.preview-sidebar { background: #172a1e; padding: 20px 0; }
+.preview-nav-logo { padding: 0 16px 20px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 12px; }
+.preview-nav-logo-text { font-family: 'Instrument Serif', serif; font-size: 17px; color: #fff; }
+.preview-nav-item { padding: 9px 16px; font-size: 12.5px; color: rgba(255,255,255,.5); display: flex; align-items: center; gap: 9px; cursor: default; border-radius: 0; }
+.preview-nav-item.active { background: var(--sage); color: #fff; margin: 0 8px; border-radius: 8px; }
+.preview-main { padding: 24px; background: var(--bg); overflow: hidden; }
+.preview-dash-hero { background: linear-gradient(135deg, #172a1e, #1f3828); border-radius: 14px; padding: 20px 24px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; }
+.preview-dash-title { font-family: 'Instrument Serif', serif; font-size: 20px; color: #fff; }
+.preview-dash-sub { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 2px; }
+.preview-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+.preview-stat-card { background: #fff; border-radius: 10px; padding: 12px 14px; border: 1px solid var(--border); }
+.preview-stat-label { font-size: 10.5px; color: var(--muted); margin-bottom: 3px; }
+.preview-stat-val { font-size: 22px; font-weight: 700; color: var(--ink); }
+.preview-stat-delta { font-size: 10px; color: var(--sage); margin-top: 1px; }
+.preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.preview-card-inner { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid var(--border); }
+.preview-card-title { font-size: 11.5px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.preview-patient-row { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.preview-avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.preview-p-name { font-size: 12px; font-weight: 500; color: var(--ink); }
+.preview-p-info { font-size: 10.5px; color: var(--muted); }
+.preview-tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 8px; margin-left: auto; }
+.tag-sage { background: var(--sage-light); color: var(--sage); }
+.tag-amber { background: var(--amber-light); color: var(--amber); }
+.tag-blue { background: var(--blue-light); color: var(--blue); }
+.preview-ai-pill { display: inline-flex; align-items: center; gap: 5px; background: var(--purple-light); color: var(--purple); font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 10px; margin-bottom: 8px; }
+.preview-ai-text { font-size: 11.5px; color: var(--ink-soft); line-height: 1.5; }
+
+/* ── FEATURES ── */
+#features { background: var(--white); padding-top: 48px; }
+.section-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--sage); margin-bottom: 12px; }
+.section-title { font-size: clamp(28px, 4vw, 42px); color: var(--ink); line-height: 1.15; margin-bottom: 16px; }
+.section-sub { font-size: 17px; color: var(--muted); max-width: 520px; line-height: 1.7; }
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 64px; }
+.feature-card {
+  padding: 28px; border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border); background: var(--white);
+  transition: all .2s; position: relative; overflow: hidden;
+}
+.feature-card:hover { border-color: var(--sage-mid); box-shadow: var(--shadow); transform: translateY(-3px); }
+.feature-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 18px; }
+.feature-title { font-size: 17px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+.feature-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+.feature-tag { position: absolute; top: 20px; right: 20px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
+
+/* ── IA SECTION ── */
+.ia-section {
+  background: linear-gradient(160deg, #0d1f14 0%, #172a1e 50%, #1e3628 100%);
+  position: relative; overflow: hidden;
+}
+.ia-section::before {
+  content: ''; position: absolute; right: -5%; top: 50%; transform: translateY(-50%);
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,124,89,.3) 0%, transparent 65%);
+  pointer-events: none;
+}
+.ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.ia-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #6fcf97; margin-bottom: 12px; }
+.ia-title { font-size: clamp(28px, 3.5vw, 44px); color: #fff; line-height: 1.15; margin-bottom: 18px; }
+.ia-sub { font-size: 16px; color: rgba(255,255,255,.55); line-height: 1.8; margin-bottom: 32px; }
+.ia-abordagens { display: flex; flex-wrap: wrap; gap: 8px; }
+.ia-badge {
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.7); font-size: 13px; font-weight: 500;
+  padding: 7px 14px; border-radius: 20px; transition: all .2s; cursor: default;
+}
+.ia-badge:hover { background: rgba(74,124,89,.3); border-color: rgba(143,184,156,.4); color: #a8d4b5; }
+.ia-badge.active { background: rgba(74,124,89,.35); border-color: rgba(143,184,156,.5); color: #a8d4b5; }
+.ia-demo {
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px; padding: 28px; position: relative; z-index: 1;
+}
+.ia-demo-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.ia-demo-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--sage); display: flex; align-items: center; justify-content: center; font-family: 'Instrument Serif', serif; font-size: 16px; color: #fff; }
+.ia-demo-name { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); }
+.ia-demo-sub { font-size: 11.5px; color: rgba(255,255,255,.35); margin-top: 1px; }
+.ia-demo-tag { margin-left: auto; background: rgba(74,124,89,.3); border: 1px solid rgba(143,184,156,.3); color: #a8d4b5; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 10px; }
+.ia-tabs { display: flex; gap: 4px; background: rgba(255,255,255,.06); border-radius: 8px; padding: 3px; margin-bottom: 16px; }
+.ia-tab { flex: 1; text-align: center; padding: 6px; font-size: 11.5px; color: rgba(255,255,255,.4); border-radius: 6px; cursor: default; }
+.ia-tab.active { background: rgba(255,255,255,.12); color: rgba(255,255,255,.9); font-weight: 500; }
+.ia-content-block { display: flex; flex-direction: column; gap: 10px; }
+.ia-item { background: rgba(255,255,255,.07); border-radius: 10px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
+.ia-item-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.ia-item-text { font-size: 12.5px; color: rgba(255,255,255,.65); line-height: 1.6; }
+.ia-item-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+.ia-sparkline { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); display: flex; align-items: flex-end; gap: 5px; height: 50px; }
+.ia-bar { flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,124,89,.5); transition: height .3s; }
+
+/* ── HOW IT WORKS ── */
+#como-funciona { background: var(--bg); }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 64px; }
+.step { text-align: center; }
+.step-num { width: 46px; height: 46px; border-radius: 50%; background: var(--sage-light); color: var(--sage); font-family: 'Instrument Serif', serif; font-size: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.step-title { font-size: 16px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+.step-desc { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+.step-connector { display: flex; align-items: center; justify-content: center; }
+
+/* ── PRICING ── */
+#preco { background: var(--white); }
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; align-items: start; }
+.pricing-card {
+  border: 1.5px solid var(--border); border-radius: var(--radius-lg);
+  padding: 32px; background: var(--white); transition: all .2s;
+}
+.pricing-card:hover { box-shadow: var(--shadow); }
+.pricing-card.featured {
+  border-color: var(--sage); background: var(--sage);
+  box-shadow: 0 16px 48px rgba(74,124,89,.3);
+  transform: scale(1.03);
+}
+.pricing-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 20px; }
+.pricing-badge-trial { background: var(--sage-light); color: var(--sage); }
+.pricing-badge-pro { background: rgba(255,255,255,.2); color: rgba(255,255,255,.9); }
+.pricing-badge-clinic { background: var(--purple-light); color: var(--purple); }
+.pricing-name { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.pricing-card.featured .pricing-name { color: rgba(255,255,255,.9); }
+.pricing-desc { font-size: 13.5px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+.pricing-card.featured .pricing-desc { color: rgba(255,255,255,.65); }
+.pricing-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 28px; }
+.pricing-currency { font-size: 18px; font-weight: 600; color: var(--ink-soft); }
+.pricing-card.featured .pricing-currency { color: rgba(255,255,255,.7); }
+.pricing-val { font-family: 'Instrument Serif', serif; font-size: 52px; color: var(--ink); line-height: 1; }
+.pricing-card.featured .pricing-val { color: #fff; }
+.pricing-period { font-size: 13px; color: var(--muted); }
+.pricing-card.featured .pricing-period { color: rgba(255,255,255,.5); }
+.pricing-features { display: flex; flex-direction: column; gap: 11px; margin-bottom: 28px; }
+.pricing-feature { display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; color: var(--ink-soft); }
+.pricing-card.featured .pricing-feature { color: rgba(255,255,255,.8); }
+.pricing-check { color: var(--sage); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.pricing-card.featured .pricing-check { color: rgba(255,255,255,.9); }
+.btn-pricing-outline { background: none; border: 1.5px solid var(--border); color: var(--ink-soft); width: 100%; justify-content: center; }
+.btn-pricing-outline:hover { border-color: var(--sage); color: var(--sage); }
+.btn-pricing-white { background: #fff; color: var(--sage); width: 100%; justify-content: center; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.btn-pricing-white:hover { background: var(--sage-light); }
+.btn-pricing-secondary { background: none; border: 1.5px solid var(--purple); color: var(--purple); width: 100%; justify-content: center; }
+.btn-pricing-secondary:hover { background: var(--purple-light); }
+.pricing-highlight { text-align: center; margin-top: 24px; font-size: 13.5px; color: var(--muted); }
+.pricing-highlight strong { color: var(--sage); }
+
+/* ── TESTIMONIALS ── */
+#depoimentos { background: var(--bg); }
+.testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; }
+.testimonial-card { background: var(--white); border-radius: var(--radius-lg); padding: 28px; border: 1.5px solid var(--border); }
+.testimonial-stars { color: #f59e0b; font-size: 14px; margin-bottom: 14px; }
+.testimonial-text { font-size: 14.5px; color: var(--ink-soft); line-height: 1.75; margin-bottom: 20px; font-style: italic; }
+.testimonial-author { display: flex; align-items: center; gap: 12px; }
+.testimonial-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Instrument Serif', serif; font-size: 16px; color: #fff; flex-shrink: 0; }
+.testimonial-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.testimonial-crp { font-size: 12px; color: var(--muted); }
+
+/* ── CTA FINAL ── */
+.cta-section {
+  background: linear-gradient(160deg, #0d1f14 0%, #172a1e 50%, #1e3628 100%);
+  text-align: center; padding: 100px 0; position: relative; overflow: hidden;
+}
+.cta-section::before {
+  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  width: 700px; height: 700px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,124,89,.25) 0%, transparent 65%);
+  pointer-events: none;
+}
+.cta-inner { position: relative; z-index: 1; }
+.cta-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #6fcf97; margin-bottom: 16px; }
+.cta-title { font-size: clamp(30px, 5vw, 52px); color: #fff; line-height: 1.15; margin-bottom: 18px; max-width: 600px; margin-left: auto; margin-right: auto; }
+.cta-sub { font-size: 17px; color: rgba(255,255,255,.5); margin-bottom: 40px; max-width: 460px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+.cta-actions { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.cta-note { font-size: 12.5px; color: rgba(255,255,255,.3); margin-top: 20px; }
+
+/* ── FOOTER ── */
+footer { background: var(--ink); padding: 60px 0 32px; }
+.footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+.footer-logo { font-family: 'Instrument Serif', serif; font-size: 22px; color: #fff; margin-bottom: 12px; }
+.footer-tagline { font-size: 13.5px; color: rgba(255,255,255,.35); line-height: 1.7; max-width: 220px; }
+.footer-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 16px; }
+.footer-links { display: flex; flex-direction: column; gap: 9px; }
+.footer-links a { font-size: 13.5px; color: rgba(255,255,255,.5); transition: color .15s; }
+.footer-links a:hover { color: rgba(255,255,255,.9); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,.08); padding-top: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.footer-copy { font-size: 12.5px; color: rgba(255,255,255,.25); }
+.footer-legal { display: flex; gap: 20px; }
+.footer-legal a { font-size: 12.5px; color: rgba(255,255,255,.3); }
+.footer-legal a:hover { color: rgba(255,255,255,.7); }
+
+/* ── DIVIDER ── */
+.divider { width: 40px; height: 3px; background: var(--sage); border-radius: 2px; margin-bottom: 20px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .ia-grid { grid-template-columns: 1fr; gap: 48px; }
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .pricing-card.featured { transform: none; }
+  .testimonials-grid { grid-template-columns: 1fr; max-width: 520px; margin-left: auto; margin-right: auto; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
+  .preview-body { grid-template-columns: 160px 1fr; }
+  .preview-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; }
+  .preview-body { grid-template-columns: 1fr; }
+  .preview-sidebar { display: none; }
+  .hero-stats { gap: 28px; }
+  section { padding: 64px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ NAV ════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-mark">T</div>
+      TheraFlow
+    </a>
+    <div class="nav-links">
+      <a href="#features">Funcionalidades</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#preco">Preços</a>
+      <a href="#depoimentos">Depoimentos</a>
+    </div>
+    <div class="nav-cta">
+      <a href="theraflow-unified-v3.html" class="btn btn-outline">Entrar</a>
+      <a href="theraflow-unified-v3.html" class="btn btn-primary">Começar grátis</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════════════ HERO ════════════════════ -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      IA calibrada pela sua abordagem terapêutica
+    </div>
+    <h1>
+      Sua clínica inteligente.<br/>
+      <em>Do prontuário à nota,</em><br/>
+      em segundos.
+    </h1>
+    <p class="hero-sub">
+      TheraFlow é a única plataforma que entende a diferença entre TCC, Psicanálise e Sistêmica — e adapta cada nota, alerta e sugestão à sua forma de trabalhar.
+    </p>
+    <div class="hero-actions">
+      <a href="theraflow-unified-v3.html" class="btn btn-primary btn-lg">Experimentar grátis — 20 sessões</a>
+      <a href="#features" class="btn btn-white btn-lg">Ver funcionalidades</a>
+    </div>
+    <p class="hero-note">Sem cartão de crédito · Sem limite de dias · 20 sessões completas</p>
+
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-val">20</div>
+        <div class="hero-stat-label">sessões gratuitas, completas</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">R$197</div>
+        <div class="hero-stat-label">por mês após o trial</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">6+</div>
+        <div class="hero-stat-label">abordagens terapêuticas</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">100%</div>
+        <div class="hero-stat-label">em conformidade com LGPD e CFP</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ APP PREVIEW ════════════════════ -->
+<div class="preview-section">
+  <div class="preview-wrapper">
+    <div class="preview-card">
+      <div class="preview-topbar">
+        <div class="preview-dot" style="background:#ff5f57"></div>
+        <div class="preview-dot" style="background:#febc2e"></div>
+        <div class="preview-dot" style="background:#28c840"></div>
+        <div class="preview-url">app.theraflow.com.br</div>
+      </div>
+      <div class="preview-body">
+        <div class="preview-sidebar">
+          <div class="preview-nav-logo">
+            <div class="preview-nav-logo-text">TheraFlow</div>
+          </div>
+          <div class="preview-nav-item active">◎ Dashboard</div>
+          <div class="preview-nav-item">▦ Agenda</div>
+          <div class="preview-nav-item">⊙ Pacientes</div>
+          <div class="preview-nav-item">📋 Prontuários</div>
+          <div class="preview-nav-item">✦ Briefing IA</div>
+          <div class="preview-nav-item">◈ Supervisão IA</div>
+          <div class="preview-nav-item">$ Financeiro</div>
+        </div>
+        <div class="preview-main">
+          <div class="preview-dash-hero">
+            <div>
+              <div class="preview-dash-title">Bom dia, Dra. Ana 👋</div>
+              <div class="preview-dash-sub">3 sessões hoje · próxima em 12 min</div>
+            </div>
+            <button style="background:var(--sage);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:default;font-family:inherit">▶ Iniciar sessão</button>
+          </div>
+          <div class="preview-stats">
+            <div class="preview-stat-card">
+              <div class="preview-stat-label">Pacientes ativos</div>
+              <div class="preview-stat-val">12</div>
+              <div class="preview-stat-delta">+2 este mês</div>
+            </div>
+            <div class="preview-stat-card">
+              <div class="preview-stat-label">Sessões esta semana</div>
+              <div class="preview-stat-val">8</div>
+              <div class="preview-stat-delta">2 amanhã</div>
+            </div>
+            <div class="preview-stat-card">
+              <div class="preview-stat-label">Receita no mês</div>
+              <div class="preview-stat-val">R$4.2k</div>
+              <div class="preview-stat-delta">↑ 18% vs. mês anterior</div>
+            </div>
+            <div class="preview-stat-card">
+              <div class="preview-stat-label">Notas pendentes</div>
+              <div class="preview-stat-val">1</div>
+              <div class="preview-stat-delta">IA gerou rascunho</div>
+            </div>
+          </div>
+          <div class="preview-grid">
+            <div class="preview-card-inner">
+              <div class="preview-card-title">Sessões de hoje</div>
+              <div class="preview-patient-row">
+                <div class="preview-avatar" style="background:#4a7c59">CR</div>
+                <div><div class="preview-p-name">Camila Rocha</div><div class="preview-p-info">14h00 · TCC · 12ª sessão</div></div>
+                <div class="preview-tag tag-sage">Em 12 min</div>
+              </div>
+              <div class="preview-patient-row">
+                <div class="preview-avatar" style="background:#2c5f8a">RA</div>
+                <div><div class="preview-p-name">Rafael Andrade</div><div class="preview-p-info">16h00 · Psicanálise · 8ª sessão</div></div>
+                <div class="preview-tag tag-amber">Atenção</div>
+              </div>
+              <div class="preview-patient-row" style="border-bottom:none">
+                <div class="preview-avatar" style="background:#6a3d7a">JC</div>
+                <div><div class="preview-p-name">Juliana Costa</div><div class="preview-p-info">17h30 · Sistêmica · 10ª sessão</div></div>
+                <div class="preview-tag tag-blue">Online</div>
+              </div>
+            </div>
+            <div class="preview-card-inner">
+              <div class="preview-card-title">Supervisão IA — Insight</div>
+              <div class="preview-ai-pill">✦ Padrão detectado · Camila</div>
+              <div class="preview-ai-text">
+                A crença nuclear <em>"preciso ser perfeita"</em> apareceu pela 4ª vez nos últimos 3 atendimentos. Sessão 12 é um bom momento para revisitar o plano e propor exposição gradual.
+              </div>
+              <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+                <div class="preview-ai-pill" style="background:var(--amber-light);color:var(--amber)">⚠ Alerta · Rafael</div>
+                <div class="preview-ai-text">2 faltas nas últimas 3 semanas. Humor em queda (3→2). Avaliar vínculo terapêutico na próxima sessão.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ FEATURES ════════════════════ -->
+<section id="features">
+  <div class="container">
+    <div class="section-eyebrow">Funcionalidades</div>
+    <h2 class="section-title">Tudo que você precisa.<br/>Nada que você não usa.</h2>
+    <p class="section-sub">Desenvolvido com psicólogos brasileiros, para a realidade do consultório brasileiro.</p>
+
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#f0fdf4">🧠</div>
+        <div class="feature-title">Nota clínica por IA</div>
+        <div class="feature-desc">Ao encerrar a sessão, a IA gera uma nota estruturada pela sua abordagem — SOAP para TCC, associação livre para Psicanálise. Você revisa e salva em segundos.</div>
+        <span class="feature-tag" style="background:#f0fdf4;color:#4a7c59">IA</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#eaf1f8">📅</div>
+        <div class="feature-title">Agenda inteligente</div>
+        <div class="feature-desc">Vista dia, semana e mês. Bloquei de horários, detecção de conflitos, confirmação de presença e countdown na tela antes de cada sessão.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fdf3e7">✦</div>
+        <div class="feature-title">Briefing pré-sessão</div>
+        <div class="feature-desc">Antes de cada atendimento, a IA resume o histórico do paciente, principais temas, humor das últimas semanas e pontos de atenção. Você chega preparado.</div>
+        <span class="feature-tag" style="background:#fdf3e7;color:#c97d2e">IA</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#f7f0ff">◈</div>
+        <div class="feature-title">Supervisão IA contínua</div>
+        <div class="feature-desc">Alertas clínicos em tempo real: faltas reiteradas, humor em queda, crenças nucleares recorrentes, risco clínico. O monitor que nunca descansa.</div>
+        <span class="feature-tag" style="background:#f0ecfa;color:#5a3e8a">IA</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#f7f8f6">📋</div>
+        <div class="feature-title">Prontuário completo</div>
+        <div class="feature-desc">Linha do tempo de sessões, notas clínicas, ficha clínica, plano de tratamento e materiais — tudo organizado por paciente, exportável em PDF.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fff0f0">💰</div>
+        <div class="feature-title">Financeiro integrado</div>
+        <div class="feature-desc">Cobrança automática ao encerrar sessão, controle de inadimplência, recibos e relatório mensal. Lembrete via WhatsApp para pacientes em atraso.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#f0fdf4">♡</div>
+        <div class="feature-title">Portal do paciente</div>
+        <div class="feature-desc">App mobile para o paciente registrar humor, fazer exercícios, escrever no diário e acompanhar seu progresso entre as sessões.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#eaf1f8">🎙</div>
+        <div class="feature-title">Videosessão integrada</div>
+        <div class="feature-desc">Sala Whereby embutida diretamente no TheraFlow. Transcrição automática com Whisper e nota gerada imediatamente ao encerrar. (Em breve: Whisper real)</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fdf3e7">📊</div>
+        <div class="feature-title">Relatórios e dados</div>
+        <div class="feature-desc">Evolução de humor ao longo do tratamento, gráficos de progresso, relatório financeiro anual exportável em CSV. Decisões baseadas em dados.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ IA SECTION ════════════════════ -->
+<section class="ia-section">
+  <div class="container">
+    <div class="ia-grid">
+      <div>
+        <div class="ia-label">Inteligência adaptada</div>
+        <h2 class="ia-title">A IA que entende<br/>a <em style="font-style:italic;color:#7fcf97">sua</em> abordagem</h2>
+        <p class="ia-sub">
+          Enquanto outros geram notas genéricas, o TheraFlow foi calibrado para TCC, Psicanálise, Sistêmica, Humanista, ACT e EMDR. A IA muda o vocabulário, a estrutura das notas e até as perguntas reflexivas com base na sua linha teórica.
+        </p>
+        <div class="ia-abordagens">
+          <span class="ia-badge active">TCC</span>
+          <span class="ia-badge">Psicanálise</span>
+          <span class="ia-badge">Sistêmica</span>
+          <span class="ia-badge">Humanista</span>
+          <span class="ia-badge">ACT</span>
+          <span class="ia-badge">EMDR</span>
+          <span class="ia-badge">Gestalt</span>
+          <span class="ia-badge">Cognitivo-comportamental</span>
+        </div>
+      </div>
+
+      <div class="ia-demo">
+        <div class="ia-demo-header">
+          <div class="ia-demo-avatar">CR</div>
+          <div>
+            <div class="ia-demo-name">Camila Rocha</div>
+            <div class="ia-demo-sub">12ª sessão · TCC · TAG</div>
+          </div>
+          <div class="ia-demo-tag">✦ Briefing pronto</div>
+        </div>
+        <div class="ia-tabs">
+          <div class="ia-tab active">Briefing</div>
+          <div class="ia-tab">Nota IA</div>
+          <div class="ia-tab">Alertas</div>
+        </div>
+        <div class="ia-content-block">
+          <div class="ia-item">
+            <div class="ia-item-icon">🔵</div>
+            <div>
+              <div class="ia-item-label">Tema central</div>
+              <div class="ia-item-text">Autoexigência e perfeccionismo. Crença nuclear recorrente: "preciso ser perfeita ou vou decepcionar todos".</div>
+            </div>
+          </div>
+          <div class="ia-item">
+            <div class="ia-item-icon">📈</div>
+            <div>
+              <div class="ia-item-label">Evolução</div>
+              <div class="ia-item-text">Humor subiu de 4 para 7 nas últimas 4 semanas. Técnicas de reestruturação cognitiva com boa adesão.</div>
+            </div>
+          </div>
+          <div class="ia-item">
+            <div class="ia-item-icon">🎯</div>
+            <div>
+              <div class="ia-item-label">Sugestão para hoje (TCC)</div>
+              <div class="ia-item-text">Revisar registro de pensamentos automáticos. Considerar exposição gradual em situações de apresentação.</div>
+            </div>
+          </div>
+        </div>
+        <div class="ia-sparkline">
+          <div class="ia-bar" style="height:40%;background:rgba(74,124,89,.4)"></div>
+          <div class="ia-bar" style="height:50%;background:rgba(74,124,89,.4)"></div>
+          <div class="ia-bar" style="height:40%;background:rgba(74,124,89,.4)"></div>
+          <div class="ia-bar" style="height:60%;background:rgba(74,124,89,.5)"></div>
+          <div class="ia-bar" style="height:50%;background:rgba(74,124,89,.5)"></div>
+          <div class="ia-bar" style="height:70%;background:rgba(74,124,89,.6)"></div>
+          <div class="ia-bar" style="height:60%;background:rgba(74,124,89,.6)"></div>
+          <div class="ia-bar" style="height:80%;background:rgba(74,124,89,.8)"></div>
+          <div class="ia-bar" style="height:70%;background:rgba(74,124,89,.8)"></div>
+          <div class="ia-bar" style="height:90%;background:rgba(74,124,89,.9)"></div>
+          <div class="ia-bar" style="height:80%;background:rgba(74,124,89,.9)"></div>
+          <div class="ia-bar" style="height:100%;background:var(--sage)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ HOW IT WORKS ════════════════════ -->
+<section id="como-funciona">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-eyebrow">Como funciona</div>
+      <h2 class="section-title">Comece em minutos</h2>
+      <p class="section-sub" style="margin:0 auto">Sem configuração complexa, sem treinamento longo. Você está atendendo no mesmo dia.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Crie sua conta</div>
+        <div class="step-desc">Informe seu nome, CRP e abordagem principal. O TheraFlow já se calibra para você.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Cadastre um paciente</div>
+        <div class="step-desc">Nome, WhatsApp e abordagem. O portal do paciente já fica disponível automaticamente.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Agende e atenda</div>
+        <div class="step-desc">Agende na agenda integrada, abra a sessão Whereby e receba o briefing da IA antes de começar.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Nota em segundos</div>
+        <div class="step-desc">Ao encerrar, a IA gera a nota clínica estruturada. Você revisa, salva e pronto. Próxima sessão.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ PRICING ════════════════════ -->
+<section id="preco">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-eyebrow">Preços</div>
+      <h2 class="section-title">Simples e honesto</h2>
+      <p class="section-sub" style="margin:0 auto">Menos que uma sessão por mês. Economize horas de trabalho toda semana.</p>
+    </div>
+
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <span class="pricing-badge pricing-badge-trial">Trial</span>
+        <div class="pricing-name">Grátis</div>
+        <div class="pricing-desc">Para conhecer o TheraFlow sem compromisso. 20 sessões completas, sem limite de prazo.</div>
+        <div class="pricing-price">
+          <span class="pricing-val">0</span>
+        </div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="pricing-check">✓</span>20 sessões completas</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Briefing IA + nota automática</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Agenda, prontuários, financeiro</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Portal do paciente</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Sem cartão de crédito</div>
+        </div>
+        <a href="theraflow-unified-v3.html" class="btn btn-pricing-outline btn-lg">Começar agora</a>
+      </div>
+
+      <div class="pricing-card featured">
+        <span class="pricing-badge pricing-badge-pro">Mais popular</span>
+        <div class="pricing-name">Pro</div>
+        <div class="pricing-desc">Para o psicólogo que quer transformar sua clínica com IA — sem limite de pacientes ou sessões.</div>
+        <div class="pricing-price">
+          <span class="pricing-currency">R$</span>
+          <span class="pricing-val">197</span>
+          <span class="pricing-period">/mês</span>
+        </div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Pacientes e sessões ilimitados</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>IA calibrada por abordagem</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Supervisão IA contínua</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Transcrição Whisper automática</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Portal PWA para o paciente</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Relatórios e exportação PDF</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Suporte prioritário</div>
+        </div>
+        <a href="theraflow-unified-v3.html" class="btn btn-pricing-white btn-lg">Assinar agora</a>
+      </div>
+
+      <div class="pricing-card">
+        <span class="pricing-badge pricing-badge-clinic">Em breve</span>
+        <div class="pricing-name">Clínica</div>
+        <div class="pricing-desc">Para clínicas com múltiplos terapeutas. Painel administrativo e faturamento centralizado.</div>
+        <div class="pricing-price">
+          <span class="pricing-val" style="font-size:36px">Sob consulta</span>
+        </div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Múltiplos terapeutas</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Painel administrativo</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Relatórios consolidados</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>Onboarding dedicado</div>
+          <div class="pricing-feature"><span class="pricing-check">✓</span>SLA e suporte enterprise</div>
+        </div>
+        <a href="mailto:contato@theraflow.com.br" class="btn btn-pricing-secondary btn-lg">Falar com a equipe</a>
+      </div>
+
+    </div>
+    <p class="pricing-highlight">
+      Cancelamento a qualquer momento · Dados exportáveis antes de sair · <strong>LGPD compliant</strong>
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════ TESTIMONIALS ════════════════════ -->
+<section id="depoimentos">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-eyebrow">Depoimentos</div>
+      <h2 class="section-title">O que psicólogos dizem</h2>
+      <p class="section-sub" style="margin:0 auto">Opiniões reais de profissionais que usam o TheraFlow no dia a dia.</p>
+    </div>
+
+    <div class="testimonials-grid">
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"A nota clínica gerada pela IA já sai no formato SOAP que eu uso em TCC. Eu só ajusto uma frase e pronto. Economizo pelo menos 30 minutos por dia."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:#4a7c59">AM</div>
+          <div>
+            <div class="testimonial-name">Ana Martins</div>
+            <div class="testimonial-crp">Psicóloga · CRP 06/123456 · TCC · São Paulo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Finalmente uma plataforma que entende psicanálise de verdade. A supervisão IA me apontou um padrão de contratransferência que eu estava ignorando há semanas."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:#2c5f8a">RF</div>
+          <div>
+            <div class="testimonial-name">Ricardo Figueiredo</div>
+            <div class="testimonial-crp">Psicanalista · CRP 06/789012 · São Paulo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Meus pacientes adoram o portal. Eles registram o humor todo dia e quando chegam na sessão a IA já me mostra como foi a semana deles. A sessão flui muito melhor."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:#6a3d7a">PC</div>
+          <div>
+            <div class="testimonial-name">Patrícia Cunha</div>
+            <div class="testimonial-crp">Psicóloga · CRP 06/345678 · Abordagem Sistêmica</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ CTA ════════════════════ -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-inner">
+      <div class="cta-label">Comece hoje</div>
+      <h2 class="cta-title">Sua clínica mais inteligente começa agora</h2>
+      <p class="cta-sub">20 sessões gratuitas, sem cartão de crédito, sem limite de prazo. Experimente e veja a diferença.</p>
+      <div class="cta-actions">
+        <a href="theraflow-unified-v3.html" class="btn btn-primary btn-lg">Começar grátis — 20 sessões</a>
+        <a href="mailto:contato@theraflow.com.br" class="btn btn-white btn-lg">Falar com a equipe</a>
+      </div>
+      <p class="cta-note">Sem cartão de crédito · LGPD compliant · Dados sempre seus</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">TheraFlow</div>
+        <p class="footer-tagline">A clínica inteligente para psicólogos brasileiros. IA calibrada pela sua abordagem, do prontuário ao financeiro.</p>
+      </div>
+      <div>
+        <div class="footer-title">Produto</div>
+        <div class="footer-links">
+          <a href="#features">Funcionalidades</a>
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#preco">Preços</a>
+          <a href="theraflow-unified-v3.html">Entrar no app</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-title">Empresa</div>
+        <div class="footer-links">
+          <a href="mailto:contato@theraflow.com.br">Contato</a>
+          <a href="mailto:suporte@theraflow.com.br">Suporte</a>
+          <a href="mailto:parceiros@theraflow.com.br">Parcerias</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-title">Legal</div>
+        <div class="footer-links">
+          <a href="backend/termos-de-uso.md">Termos de uso</a>
+          <a href="backend/politica-de-privacidade.md">Privacidade</a>
+          <a href="#" onclick="alert('DPO: privacidade@theraflow.com.br')">DPO — LGPD</a>
+          <a href="#" onclick="alert('Resolução CFP 04/2020 — em conformidade')">CFP 04/2020</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 TheraFlow. Todos os direitos reservados.</div>
+      <div class="footer-legal">
+        <a href="backend/termos-de-uso.md">Termos</a>
+        <a href="backend/politica-de-privacidade.md">Privacidade</a>
+        <a href="mailto:contato@theraflow.com.br">Contato</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Animação suave nos números do hero
+function animateCounters() {
+  document.querySelectorAll('.hero-stat-val').forEach(el => {
+    const text = el.textContent;
+    const num = parseFloat(text.replace(/[^\d.]/g, ''));
+    if (!num || isNaN(num)) return;
+    const prefix = text.match(/^[^\d]*/)?.[0] || '';
+    const suffix = text.match(/[^\d.]+$/)?.[0] || '';
+    let start = 0;
+    const dur = 1200;
+    const step = 16;
+    const steps = dur / step;
+    const inc = num / steps;
+    let cur = 0;
+    const timer = setInterval(() => {
+      cur += inc;
+      if (cur >= num) { cur = num; clearInterval(timer); }
+      el.textContent = prefix + (Number.isInteger(num) ? Math.round(cur) : cur.toFixed(1)) + suffix;
+    }, step);
+  });
+}
+
+// Intersection Observer para animar quando entrar na tela
+const heroSection = document.querySelector('.hero');
+if (heroSection) {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { animateCounters(); obs.disconnect(); } });
+  }, { threshold: 0.5 });
+  obs.observe(heroSection);
+}
+
+// Animação das abordagens IA no hover
+document.querySelectorAll('.ia-badge').forEach(badge => {
+  badge.addEventListener('mouseenter', () => {
+    document.querySelectorAll('.ia-badge').forEach(b => b.classList.remove('active'));
+    badge.classList.add('active');
+    // Atualiza texto demo
+    const abord = badge.textContent.trim();
+    const sugestao = document.querySelector('.ia-item:last-child .ia-item-text');
+    if (sugestao) {
+      const textos = {
+        'TCC': 'Revisar registro de pensamentos automáticos. Considerar exposição gradual em situações de apresentação.',
+        'Psicanálise': 'Explorar o conteúdo latente trazido na última sessão. Observar manifestações de transferência.',
+        'Sistêmica': 'Mapear padrões relacionais com família de origem. Explorar recursos e narrativas alternativas.',
+        'Humanista': 'Aprofundar experiência presente. Facilitar autorrevelação e fortalecimento da autoestima.',
+        'ACT': 'Trabalhar desfusão cognitiva e flexibilidade psicológica. Retomar valores pessoais como bússola.',
+        'EMDR': 'Verificar processamento de memória-alvo anterior. Avaliar SUDS antes de nova janela de processamento.',
+        'Gestalt': 'Explorar experimentos de awareness. Trabalhar polaridades e fenômenos de fronteira de contato.',
+        'Cognitivo-comportamental': 'Revisar tarefa de casa com técnica de avaliação de evidências. Reformulação de crenças intermediárias.'
+      };
+      sugestao.textContent = textos[abord] || textos['TCC'];
+      const label = sugestao.previousElementSibling;
+      if (label) label.textContent = 'Sugestão para hoje (' + abord + ')';
+    }
+  });
+});
+</script>
+</body>
+</html>
