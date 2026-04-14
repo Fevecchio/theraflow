@@ -5,10 +5,6 @@
   "outputDirectory": ".",
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/backend/api/$1.js"
-    },
-    {
       "src": "/app",
       "dest": "/theraflow-unified-v3.html"
     },
