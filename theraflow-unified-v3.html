@@ -4486,6 +4486,11 @@ function goNext() {
 }
 
 function goBack() {
+  // Se as telas foram substituídas por goToPlatform(), recarrega o onboarding na tela 2
+  if (!document.getElementById('screen-' + currentScreen)) {
+    location.reload();
+    return;
+  }
   document.getElementById('screen-' + currentScreen).classList.remove('active');
   currentScreen--;
   document.getElementById('screen-' + currentScreen).classList.add('active');
