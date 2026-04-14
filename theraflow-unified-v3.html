@@ -1702,6 +1702,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 .task-inline-input[type=date] { font-size: 13px; }
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -4358,6 +4359,68 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 <!-- ═══════════ SCRIPTS ═══════════ -->
 <script>
 
+/* ── SUPABASE CLIENT ── */
+const _SUPA_URL = 'https://hkryvbyoviejdjlzfehm.supabase.co';
+const _SUPA_KEY = 'sb_publishable_ovqMsOm88TvulTD4eYTp0w_gCXoFDSl';
+const supa = supabase.createClient(_SUPA_URL, _SUPA_KEY);
+
+/* Carrega dados do Supabase e popula localStorage */
+async function _supaLoadUserData(userId) {
+  try {
+    const [{ data: profile }, { data: pats }, { data: chgs }, { data: tsks }] = await Promise.all([
+      supa.from('users').select('*').eq('id', userId).single(),
+      supa.from('patients').select('*').eq('user_id', userId),
+      supa.from('charges').select('*').eq('user_id', userId),
+      supa.from('tasks').select('*').eq('user_id', userId),
+    ]);
+    if (profile) {
+      const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+      localStorage.setItem('tf_account', JSON.stringify({
+        ...acc,
+        nome: profile.nome,
+        crp: profile.crp || '',
+        email: profile.email,
+        abordagem: profile.abordagem || '',
+        sessoes_usadas: profile.sessoes_usadas || 0,
+        plano: profile.plano || 'trial',
+        supa_id: userId,
+      }));
+    }
+    if (pats && pats.length > 0) localStorage.setItem('tf_patients', JSON.stringify(pats));
+    if (chgs && chgs.length > 0) localStorage.setItem('tf_charges', JSON.stringify(chgs));
+    if (tsks && tsks.length > 0) localStorage.setItem('tf_tasks', JSON.stringify(tsks));
+  } catch(e) {
+    console.warn('[Supa] Erro ao carregar dados:', e.message);
+  }
+}
+
+/* Sync silencioso de pacientes para o Supabase */
+async function _supaSync_patients() {
+  try {
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) return;
+    const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+    if (!pats.length) return;
+    const rows = pats.map(p => ({
+      id: p.id || undefined,
+      user_id: user.id,
+      name: p.name || '',
+      email: p.email || null,
+      phone: p.whatsapp || p.phone || null,
+      age: p.age ? parseInt(p.age) : null,
+      cidade: p.cidade || null,
+      abordagem: p.abordagem || null,
+      cid: p.cid || null,
+      notes: p.notes || null,
+      status: p.status || 'Ativa',
+      sessions_count: p.sessions || 0,
+      valor_sessao: p.valorSessao ? parseFloat(p.valorSessao) : null,
+    }));
+    await supa.from('patients').upsert(rows, { onConflict: 'id' });
+  } catch(e) {
+    console.warn('[Supa] Sync patients falhou:', e.message);
+  }
+}
 
 /* ── ONBOARDING JS ── */
 /* ONBOARDING JS */
@@ -5648,53 +5711,60 @@ function loginSubmit() {
   const email = document.getElementById('login-email').value.trim();
   const senha = document.getElementById('login-senha').value;
   const btn = document.getElementById('btn-login-submit');
+  const errEl = document.getElementById('login-error');
 
   if (!email || !senha) {
-    document.getElementById('login-error').textContent = '⚠ Preencha email e senha.';
-    document.getElementById('login-error').style.display = 'block';
+    errEl.textContent = '⚠ Preencha email e senha.';
+    errEl.style.display = 'block';
     return;
   }
 
-  // Loading state
   btn.textContent = 'Entrando…';
   btn.disabled = true;
+  errEl.style.display = 'none';
 
-  setTimeout(() => {
+  supa.auth.signInWithPassword({ email, password: senha }).then(async ({ data, error }) => {
     btn.textContent = 'Entrar na minha conta →';
     btn.disabled = false;
 
-    // Tenta autenticar com conta salva no localStorage
-    let account = null;
-    try { account = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
-
-    if (account) {
-      // Conta cadastrada: valida email + senha
-      if (account.email.toLowerCase() !== email.toLowerCase() || !tfVerificaSenha(senha, account.senha)) {
-        document.getElementById('login-error').style.display = 'block';
+    if (error) {
+      // Fallback: tenta login local (modo offline/demo)
+      let account = null;
+      try { account = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
+      if (account && account.email?.toLowerCase() === email.toLowerCase() && tfVerificaSenha(senha, account.senha)) {
+        _proceedToApp(account);
         return;
       }
-      // Credenciais corretas: carrega dados da conta
-      tfUserData.nome        = account.nome;
-      tfUserData.crp         = account.crp;
-      tfUserData.email       = account.email;
-      tfUserData.abordagem   = account.abordagem;
-      tfUserData.secundarias = account.secundarias || [];
-      tfUserData.abordagemKey = account.abordagemKey || ABORDAGEM_KEY_MAP[account.abordagem] || 'tcc';
-    } else {
-      // Modo demo: qualquer email+senha entra, nome derivado do email
-      tfUserData.nome = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      tfUserData.crp = '';
+      errEl.textContent = '⚠ Email ou senha incorretos.';
+      errEl.style.display = 'block';
+      return;
     }
 
-    checkTermsAndProceed(function() {
-      document.getElementById('tf-onboarding-layer').style.display = 'none';
-      document.getElementById('tf-app-layer').style.display = 'flex';
-      carregarPacientes();
-      aplicarDadosNoApp();
-      checkFirstPatientBanner();
-      atualizarTrialUI();
-    });
-  }, 900);
+    // Login Supabase OK — carregar dados do banco
+    await _supaLoadUserData(data.user.id);
+    let account = null;
+    try { account = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
+    _proceedToApp(account);
+  });
+}
+
+function _proceedToApp(account) {
+  if (account) {
+    tfUserData.nome        = account.nome;
+    tfUserData.crp         = account.crp || '';
+    tfUserData.email       = account.email;
+    tfUserData.abordagem   = account.abordagem || '';
+    tfUserData.secundarias = account.secundarias || [];
+    tfUserData.abordagemKey = account.abordagemKey || ABORDAGEM_KEY_MAP?.[account.abordagem] || 'tcc';
+  }
+  checkTermsAndProceed(function() {
+    document.getElementById('tf-onboarding-layer').style.display = 'none';
+    document.getElementById('tf-app-layer').style.display = 'flex';
+    carregarPacientes();
+    aplicarDadosNoApp();
+    checkFirstPatientBanner();
+    atualizarTrialUI();
+  });
 }
 
 function showForgotPassword() {
@@ -5714,6 +5784,8 @@ function hideForgotPassword() {
 function sendForgotPassword() {
   const email = document.getElementById('forgot-email').value.trim();
   if (!email) { document.getElementById('forgot-email').focus(); return; }
+  // Envia email real de recuperação via Supabase
+  supa.auth.resetPasswordForEmail(email).catch(() => {});
   document.getElementById('forgot-form-area').style.display = 'none';
   document.getElementById('forgot-success').style.display = 'block';
   // Auto-redirect para login após 4 segundos com contador
@@ -6159,6 +6231,8 @@ function salvarPacientes() {
       showToast('⚠ Erro ao salvar dados. Verifique o armazenamento do navegador.');
     }
   }
+  // Sync silencioso para Supabase (não bloqueia UI)
+  _supaSync_patients().catch(() => {});
 }
 
 function carregarPacientes() {
@@ -12288,6 +12362,27 @@ function abrirApp() {
     }));
   } catch(e) {}
 
+  // Cadastro real no Supabase Auth (silencioso — não bloqueia o app)
+  if (savedData.email && savedData.senha) {
+    supa.auth.signUp({
+      email: savedData.email,
+      password: savedData.senha,
+      options: { data: { nome: tfUserData.nome, crp: tfUserData.crp, abordagem: tfUserData.abordagem } }
+    }).then(({ data, error }) => {
+      if (error && !error.message.includes('already registered')) {
+        console.warn('[Supa] signup:', error.message);
+      }
+      // Atualiza perfil no banco se criou com sucesso
+      if (data?.user) {
+        supa.from('users').update({
+          nome: tfUserData.nome,
+          crp: tfUserData.crp || null,
+          abordagem: tfUserData.abordagem || null,
+        }).eq('id', data.user.id).then(() => {});
+      }
+    }).catch(() => {});
+  }
+
   // Verifica aceite dos termos (uma vez por versão)
   if (!termsAlreadyAccepted()) {
     showTermsModal(function() { _lancarApp(); });
@@ -12365,6 +12460,7 @@ function compartilharEmail() {
 }
 
 function sairDaConta() {
+  supa.auth.signOut().catch(() => {});
   document.getElementById('tf-app-layer').style.display        = 'none';
   document.getElementById('tf-onboarding-layer').style.display = 'flex';
 
