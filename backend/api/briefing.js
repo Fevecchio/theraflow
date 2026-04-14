@@ -56,9 +56,9 @@ export default async function handler(req) {
     return jsonError('userPrompt is required', 400, origin);
   }
 
-  const GEMINI_KEY = process.env.GEMINI_API_KEY;
+  const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.gemini_key;
   if (!GEMINI_KEY) {
-    console.error('[briefing] GEMINI_API_KEY não configurada');
+    console.error('[briefing] GEMINI_API_KEY / gemini_key não configurada');
     return jsonError('Service misconfigured', 500, origin);
   }
 
