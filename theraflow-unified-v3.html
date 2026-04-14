@@ -4364,6 +4364,11 @@ const _SUPA_URL = 'https://hkryvbyoviejdjlzfehm.supabase.co';
 const _SUPA_KEY = 'sb_publishable_ovqMsOm88TvulTD4eYTp0w_gCXoFDSl';
 const supa = supabase.createClient(_SUPA_URL, _SUPA_KEY);
 
+/* Cliente separado para o portal do paciente — sessão isolada da do terapeuta */
+const supaPatient = supabase.createClient(_SUPA_URL, _SUPA_KEY, {
+  auth: { storageKey: 'tf_patient_session' }
+});
+
 /* Carrega dados do Supabase e popula localStorage */
 async function _supaLoadUserData(userId) {
   try {
@@ -5972,6 +5977,7 @@ function criarPaciente() {
   const colorGrad = `linear-gradient(135deg,${pair[0]},${pair[1]})`;
   patients.push({
     initials, color, colorGrad,
+    id: crypto.randomUUID(),
     name: d.nome, email: d.email, whatsapp: d.whatsapp,
     nascimento: d.nascimento, age: d.age, cidade: d.cidade,
     abordagem: d.abordagem, cid: d.cid,
@@ -6113,11 +6119,63 @@ function redefinirSenhaPaciente(i) {
   showToast('Senha atualizada: ' + p.portalPassword);
 }
 
-function compartilharAcessoPortal(i) {
+async function compartilharAcessoPortal(i) {
   var p = patients[i];
   if (!p) return;
+
+  // Garante UUID no paciente (necessário para Supabase)
+  if (!p.id) {
+    p.id = crypto.randomUUID();
+    salvarPacientes();
+  }
+
+  // Gera senha forte se não tiver
+  if (!p.portalPassword) {
+    p.portalPassword = 'TF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    salvarPacientes();
+  }
+
   var nome = p.name.split(' ')[0];
-  var senha = p.portalPassword || nome.toLowerCase();
+  var senha = p.portalPassword;
+
+  // Obtém ID do terapeuta logado
+  var acc = null;
+  try { acc = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
+  var therapistId = acc && acc.supa_id;
+
+  // Tenta criar conta no Supabase (não bloqueia se falhar)
+  if (therapistId && p.email) {
+    // Sync antes para garantir que o paciente existe no banco
+    await _supaSync_patients().catch(() => {});
+    try {
+      var r = await fetch('/api/invite-patient', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: p.email,
+          password: senha,
+          patientId: p.id,
+          therapistId: therapistId,
+          patientName: p.name,
+        }),
+      });
+      var result = await r.json();
+      if (r.ok) {
+        showToast('Acesso criado para ' + nome + '!');
+      } else if (r.status === 409) {
+        showToast('⚠ ' + result.error);
+      } else {
+        console.warn('[invite-patient]', result.error || result.warning);
+      }
+    } catch(e) {
+      console.warn('[invite-patient] fetch error:', e.message);
+    }
+  }
+
+  _enviarWhatsAppAcesso(p, nome, senha);
+}
+
+function _enviarWhatsAppAcesso(p, nome, senha) {
   var terapeuta = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
   var msg = 'Olá, ' + nome + '! 🌿\n\n'
     + 'Criei seu acesso ao portal TheraFlow — um espaço só seu para registrar seu humor, fazer exercícios e acompanhar sua jornada terapêutica entre nossas sessões.\n\n'
@@ -13094,6 +13152,7 @@ function initTarefas() {
    ÁREA DO PACIENTE
 ══════════════════════════════════════════ */
 var _loggedPatientIdx = null;
+var _loggedPatientData = null;
 
 function irParaLoginPaciente() {
   document.getElementById('tf-onboarding-layer').style.display = 'none';
@@ -13110,39 +13169,103 @@ function loginPaciente() {
   var email = (document.getElementById('pac-login-email').value || '').trim().toLowerCase();
   var senha = (document.getElementById('pac-login-senha').value || '').trim();
   var errEl = document.getElementById('pac-login-error');
+  var btn = document.getElementById('pac-login-btn');
   errEl.style.display = 'none';
 
-  // Carrega pacientes do localStorage
-  var pacs = [];
-  try { pacs = JSON.parse(localStorage.getItem('tf_patients') || '[]'); } catch(e) {}
-
-  var idx = pacs.findIndex(function(p) {
-    var pEmail = (p.email || '').trim().toLowerCase();
-    var pSenha = p.portalPassword || p.name.split(' ')[0].toLowerCase();
-    return pEmail === email && pSenha === senha;
-  });
-
-  if (idx === -1) {
+  if (!email || !senha) {
+    errEl.textContent = '⚠ Preencha email e senha.';
     errEl.style.display = '';
-    document.getElementById('pac-login-senha').value = '';
     return;
   }
 
-  _loggedPatientIdx = idx;
-  // Garante que o array patients está sincronizado
-  if (typeof patients !== 'undefined' && patients.length === 0) {
-    try { patients.splice(0, 0, ...pacs); } catch(e) {}
-  } else if (typeof patients === 'undefined') {
-    // fallback: usa pacs diretamente
-  }
+  if (btn) { btn.textContent = 'Entrando…'; btn.disabled = true; }
 
-  document.getElementById('tf-patient-login-layer').classList.remove('open');
-  document.getElementById('tf-patient-app-layer').classList.add('open');
-  renderPatientApp(idx, pacs);
+  supaPatient.auth.signInWithPassword({ email, password: senha }).then(async function({ data, error }) {
+    if (btn) { btn.textContent = 'Acessar meu portal →'; btn.disabled = false; }
+
+    if (error) {
+      // Fallback: login local (funciona sem internet ou sem conta Supabase)
+      var pacs = [];
+      try { pacs = JSON.parse(localStorage.getItem('tf_patients') || '[]'); } catch(e2) {}
+      var idx = pacs.findIndex(function(p) {
+        var pEmail = (p.email || '').trim().toLowerCase();
+        var pSenha = p.portalPassword || p.name.split(' ')[0].toLowerCase();
+        return pEmail === email && pSenha === senha;
+      });
+      if (idx !== -1) {
+        _loggedPatientIdx = idx;
+        _loggedPatientData = pacs[idx];
+        document.getElementById('tf-patient-login-layer').classList.remove('open');
+        document.getElementById('tf-patient-app-layer').classList.add('open');
+        renderPatientApp(idx, pacs);
+        return;
+      }
+      errEl.textContent = '⚠ Email ou senha incorretos. Verifique com seu terapeuta.';
+      errEl.style.display = '';
+      document.getElementById('pac-login-senha').value = '';
+      return;
+    }
+
+    // Login Supabase OK — carrega dados do paciente
+    var userId = data.user.id;
+
+    // Busca vínculo patient_users
+    var linkResult = await supaPatient.from('patient_users')
+      .select('patient_id')
+      .eq('auth_user_id', userId)
+      .single();
+
+    if (!linkResult.data) {
+      errEl.textContent = '⚠ Acesso não configurado. Peça ao seu terapeuta para enviar o convite novamente.';
+      errEl.style.display = '';
+      await supaPatient.auth.signOut().catch(() => {});
+      return;
+    }
+
+    // Carrega dados do paciente
+    var patResult = await supaPatient.from('patients')
+      .select('*')
+      .eq('id', linkResult.data.patient_id)
+      .single();
+
+    if (!patResult.data) {
+      errEl.textContent = '⚠ Dados não encontrados. Tente novamente.';
+      errEl.style.display = '';
+      await supaPatient.auth.signOut().catch(() => {});
+      return;
+    }
+
+    // Mescla campos DB com metadata para ter estrutura completa
+    var raw = patResult.data;
+    var p = Object.assign({}, (raw.metadata || {}), {
+      id: raw.id,
+      name: raw.name,
+      email: raw.email,
+      whatsapp: raw.phone,
+      age: raw.age,
+      cidade: raw.cidade,
+      abordagem: raw.abordagem,
+      cid: raw.cid,
+      notes: raw.notes,
+      status: raw.status,
+      sessions: raw.sessions_count,
+      valorSessao: raw.valor_sessao,
+      progress: raw.progress,
+    });
+
+    _loggedPatientIdx = 0;
+    _loggedPatientData = p;
+
+    document.getElementById('tf-patient-login-layer').classList.remove('open');
+    document.getElementById('tf-patient-app-layer').classList.add('open');
+    renderPatientApp(0, [p]);
+  });
 }
 
 function sairPaciente() {
+  supaPatient.auth.signOut().catch(() => {});
   _loggedPatientIdx = null;
+  _loggedPatientData = null;
   document.getElementById('tf-patient-app-layer').classList.remove('open');
   document.getElementById('tf-onboarding-layer').style.display = 'flex';
   // Vai para tela de login do terapeuta
@@ -13460,7 +13583,7 @@ function pacSalvarDiario(tipo, idx) {
         <div id="pac-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:16px">
           ⚠ Email ou senha incorretos. Verifique com seu terapeuta.
         </div>
-        <button onclick="loginPaciente()" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background='#3a6b4a'" onmouseout="this.style.background='var(--sage)'">
+        <button id="pac-login-btn" onclick="loginPaciente()" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background='#3a6b4a'" onmouseout="this.style.background='var(--sage)'">
           Acessar meu portal →
         </button>
         <div style="text-align:center;margin-top:20px">
