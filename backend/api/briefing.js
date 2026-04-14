@@ -25,6 +25,13 @@ const ALLOWED_ORIGINS = [
   'null',
 ];
 
+function isAllowedOrigin(origin) {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // permite qualquer subdomínio *.vercel.app (previews e deploys do projeto)
+  if (origin && origin.endsWith('.vercel.app')) return true;
+  return false;
+}
+
 export default async function handler(req) {
   const origin = req.headers.get('origin') || '';
 
@@ -100,7 +107,7 @@ export default async function handler(req) {
 }
 
 function corsHeaders(origin) {
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
