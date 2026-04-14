@@ -4386,15 +4386,58 @@ async function _supaLoadUserData(userId) {
         supa_id: userId,
       }));
     }
-    if (pats && pats.length > 0) localStorage.setItem('tf_patients', JSON.stringify(pats));
-    if (chgs && chgs.length > 0) localStorage.setItem('tf_charges', JSON.stringify(chgs));
-    if (tsks && tsks.length > 0) localStorage.setItem('tf_tasks', JSON.stringify(tsks));
+    if (pats && pats.length > 0) {
+      // Restaura dados completos mesclando campos DB com metadata
+      const restored = pats.map(p => ({
+        ...(p.metadata || {}),
+        id: p.id,
+        name: p.name,
+        email: p.email,
+        whatsapp: p.phone,
+        age: p.age,
+        cidade: p.cidade,
+        abordagem: p.abordagem,
+        cid: p.cid,
+        notes: p.notes,
+        status: p.status,
+        sessions: p.sessions_count,
+        valorSessao: p.valor_sessao,
+        progress: p.progress,
+      }));
+      localStorage.setItem('tf_patients', JSON.stringify(restored));
+    }
+    if (chgs && chgs.length > 0) {
+      const restoredChgs = chgs.map(c => ({
+        ...(c.metadata || {}),
+        id: c.local_id || c.id,
+        patient: c.patient_id,
+        valor: c.valor,
+        metodo: c.metodo,
+        status: c.status,
+        descricao: c.descricao,
+        data: c.due_date,
+        pago_em: c.paid_date,
+      }));
+      localStorage.setItem('tf_charges', JSON.stringify(restoredChgs));
+    }
+    if (tsks && tsks.length > 0) {
+      const restoredTasks = tsks.map(t => ({
+        id: t.local_id || t.id,
+        titulo: t.titulo,
+        status: t.status,
+        prioridade: t.prioridade,
+        dueDate: t.due_date,
+        patientId: t.patient_id,
+      }));
+      localStorage.setItem('tf_tasks', JSON.stringify(restoredTasks));
+    }
+    // Carregar appointments do metadata do primeiro paciente não é viável — ficam no localStorage
   } catch(e) {
     console.warn('[Supa] Erro ao carregar dados:', e.message);
   }
 }
 
-/* Sync silencioso de pacientes para o Supabase */
+/* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos) */
 async function _supaSync_patients() {
   try {
     const { data: { user } } = await supa.auth.getUser();
@@ -4415,10 +4458,76 @@ async function _supaSync_patients() {
       status: p.status || 'Ativa',
       sessions_count: p.sessions || 0,
       valor_sessao: p.valorSessao ? parseFloat(p.valorSessao) : null,
+      progress: p.progress || 0,
+      // Dados ricos preservados em metadata
+      metadata: {
+        moodHistory: p.moodHistory || [],
+        prontuarioNotes: p.prontuarioNotes || [],
+        exercises: p.exercises || [],
+        materials: p.materials || [],
+        diary: p.diary || [],
+        metas: p.metas || [],
+        appointments: p.appointments || [],
+        sessionLink: p.sessionLink || null,
+        _moodLastDate: p._moodLastDate || null,
+        mood: p.mood || null,
+        fin: p.fin || null,
+        forma_pagamento: p.forma_pagamento || null,
+      },
     }));
     await supa.from('patients').upsert(rows, { onConflict: 'id' });
   } catch(e) {
     console.warn('[Supa] Sync patients falhou:', e.message);
+  }
+}
+
+/* Sync de cobranças */
+async function _supaSync_charges() {
+  try {
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) return;
+    const chgs = JSON.parse(localStorage.getItem('tf_charges') || '[]');
+    if (!chgs.length) return;
+    // Busca mapeamento de nome→id dos pacientes
+    const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+    const rows = chgs.map(c => ({
+      local_id: String(c.id || ''),
+      user_id: user.id,
+      patient_id: (() => {
+        const p = pats.find(x => x.name === c.patient || x.id === c.patient);
+        return p?.id || null;
+      })(),
+      valor: parseFloat(c.valor) || 0,
+      metodo: c.metodo || 'PIX',
+      status: c.status || 'pendente',
+      descricao: c.descricao || null,
+      due_date: c.data || null,
+      paid_date: c.pago_em || null,
+    })).filter(r => r.patient_id);
+    if (rows.length) await supa.from('charges').upsert(rows, { onConflict: 'local_id' });
+  } catch(e) {
+    console.warn('[Supa] Sync charges falhou:', e.message);
+  }
+}
+
+/* Sync de tarefas */
+async function _supaSync_tasks() {
+  try {
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) return;
+    const tsks = JSON.parse(localStorage.getItem('tf_tasks') || '[]');
+    if (!tsks.length) return;
+    const rows = tsks.map(t => ({
+      local_id: String(t.id || ''),
+      user_id: user.id,
+      titulo: t.titulo || '',
+      status: t.status || 'aberta',
+      prioridade: t.prioridade || 'media',
+      due_date: t.dueDate || null,
+    }));
+    await supa.from('tasks').upsert(rows, { onConflict: 'local_id' });
+  } catch(e) {
+    console.warn('[Supa] Sync tasks falhou:', e.message);
   }
 }
 
@@ -9737,6 +9846,7 @@ function carregarCharges() {
 
 function salvarCharges() {
   try { localStorage.setItem('tf_charges', JSON.stringify(charges)); } catch(e) {}
+  _supaSync_charges().catch(() => {});
 }
 
 let charges = carregarCharges();
@@ -12690,6 +12800,7 @@ function carregarTarefas() {
 function salvarTarefas() {
   localStorage.setItem('tf_tasks', JSON.stringify(tasks));
   atualizarBadgeTarefas();
+  _supaSync_tasks().catch(() => {});
 }
 
 function atualizarBadgeTarefas() {
