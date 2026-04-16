@@ -4416,7 +4416,8 @@ async function _supaLoadUserData(userId) {
       const restoredChgs = chgs.map(c => ({
         ...(c.metadata || {}),
         id: c.local_id || c.id,
-        patient: c.patient_id,
+        // Mapeia patient_id (UUID) de volta para o nome do paciente
+        patient: (pats && pats.find(p => p.id === c.patient_id)?.name) || c.patient_id,
         valor: c.valor,
         metodo: c.metodo,
         status: c.status,
@@ -4709,7 +4710,7 @@ function validateScreen1() {
 
   const crp = document.getElementById('crp');
   const errCrp = document.getElementById('err-crp');
-  const crpOk = /^\d{2}\/\d+$/.test(crp.value.trim());
+  const crpOk = /^\d{2}\/\d{4,6}$/.test(crp.value.trim());
   if (!crpOk) {
     crp.classList.add('error');
     errCrp.textContent = crp.value.trim() ? 'Formato inválido — use XX/XXXXXX (ex: 06/123456).' : 'Informe seu CRP.';
@@ -4725,7 +4726,7 @@ function validateScreen1() {
 
   const senha = document.getElementById('senha');
   const errSenha = document.getElementById('err-senha');
-  if (!senha || senha.value.length < 6) {
+  if (!senha || senha.value.length < 8) {
     if (senha) senha.classList.add('error');
     if (errSenha) errSenha.style.display = 'block';
     ok = false;
@@ -4958,6 +4959,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 80);
     }
   } catch(e) {}
+
+  // Click fora do modal fecha
+  document.querySelectorAll('.modal-overlay').forEach(function(m) {
+    m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
+  });
 });
 
 /* ── APP JS ── */
@@ -6323,11 +6329,7 @@ function closeModal(id) {
     if (modal) modal.style.animation = '';
   }, 220);
 }
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.modal-overlay').forEach(function(m) {
-    m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
-  });
-});
+// Click fora do modal já está no DOMContentLoaded principal acima
 
 // ── TABS ──
 function switchTab(el, tabId) {
@@ -6457,7 +6459,7 @@ function carregarPacientes() {
         return;
       }
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[TF] Erro ao carregar pacientes do localStorage:', e.message); }
   // Primeira vez: usa demo mas não salva no localStorage
   // O banner de "primeiro paciente" só some quando tf_patients existir (i.e., usuário criou um real)
   // Deep clone para não corromper o array DEMO_PATIENTS original
@@ -7656,7 +7658,7 @@ function incrementarSessaoTrial() {
     if (acc.sessoes_usadas >= 20) {
       setTimeout(() => showModal('modal-trial-esgotado'), 600);
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[TF] Erro ao incrementar sessão trial:', e.message); }
 }
 
 function atualizarTrialUI(count) {
@@ -11847,7 +11849,7 @@ function initPerfil() {
     }
     var fValor = document.getElementById('perfil-valor-sessao');
     if (fValor && acc.valor_sessao) fValor.value = acc.valor_sessao;
-  } catch(e) {}
+  } catch(e) { console.warn('[TF] Erro ao carregar perfil:', e.message); }
   initHorariosGrid();
   renderBloqueiosList();
 }
@@ -11952,7 +11954,7 @@ function saveProfile() {
     else delete acc.claude_api_key;
     localStorage.setItem('tf_account', JSON.stringify(acc));
     showApiKeyStatus(!!apiKeyVal);
-  } catch(e) {}
+  } catch(e) { console.warn('[TF] Erro ao salvar perfil:', e.message); }
 
   // ── Reaplica em todo o app ──
   aplicarDadosNoApp();
@@ -12573,7 +12575,7 @@ function abrirApp() {
       abordagemKey: tfUserData.abordagemKey,
       senha:       savedData.senha ? tfHashSenha(savedData.senha) : ''
     }));
-  } catch(e) {}
+  } catch(e) { console.warn('[TF] Erro ao salvar conta no localStorage:', e.message); }
 
   // Cadastro real no Supabase Auth (silencioso — não bloqueia o app)
   if (savedData.email && savedData.senha) {
