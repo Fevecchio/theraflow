@@ -14263,6 +14263,9 @@ function renderPatientApp(idx, pacs) {
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:20px">💡</span><div style="font-size:15px;font-weight:600;color:var(--purple)">Dica da semana</div></div>'
       + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">'+escHTML(dica)+'</div>'
     + '</div>';
+
+  // Popula listas de diário com entradas já salvas
+  setTimeout(function(){ _renderDiarioExistente(p); }, 0);
 }
 
 function renderPatientDiario(p, idx) {
@@ -14330,16 +14333,59 @@ function pacMoodSliderInput(val) {
 }
 
 function pacSalvarMood(idx) {
-  var val   = document.getElementById('pac-mood-slider')?.value || 5;
-  var nota  = document.getElementById('pac-mood-note')?.value || '';
-  var pacs  = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  if (pacs[idx]) { pacs[idx].mood = parseInt(val); pacs[idx].moodTrend = 'stable'; }
+  var val  = parseInt(document.getElementById('pac-mood-slider')?.value || 5);
+  var nota = (document.getElementById('pac-mood-note')?.value || '').trim();
+  var hoje = new Date();
+  var dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
+
+  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+  var p = pacs[idx];
+  if (p) {
+    // Fix 1: salva nota de humor
+    if (!p.moodNotes) p.moodNotes = [];
+    p.moodNotes.push({ date: dataStr, val: val, nota: nota });
+    // Mantém apenas últimas 30 entradas
+    if (p.moodNotes.length > 30) p.moodNotes = p.moodNotes.slice(-30);
+
+    // Fix 2: atualiza moodHistory (que alimenta o sparkline)
+    if (!p.moodHistory) p.moodHistory = [];
+    p.moodHistory.push(val);
+    if (p.moodHistory.length > 12) p.moodHistory = p.moodHistory.slice(-12);
+
+    p.mood = val;
+    p.moodTrend = p.moodHistory.length >= 2
+      ? (p.moodHistory[p.moodHistory.length-1] > p.moodHistory[p.moodHistory.length-2] ? 'up'
+        : p.moodHistory[p.moodHistory.length-1] < p.moodHistory[p.moodHistory.length-2] ? 'down' : 'stable')
+      : 'stable';
+    p._moodLastDate = dataStr;
+  }
   localStorage.setItem('tf_patients', JSON.stringify(pacs));
-  // Atualiza também o array em memória se disponível
-  if (typeof patients !== 'undefined' && patients[idx]) { patients[idx].mood = parseInt(val); }
+
+  // Fix 4: mantém _loggedPatientData sincronizado antes do sync Supabase
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData && p) {
+    Object.assign(_loggedPatientData, {
+      mood: p.mood, moodTrend: p.moodTrend,
+      moodHistory: p.moodHistory, moodNotes: p.moodNotes,
+      _moodLastDate: p._moodLastDate,
+    });
+  }
+  if (typeof patients !== 'undefined' && patients[idx] && p) {
+    Object.assign(patients[idx], {
+      mood: p.mood, moodTrend: p.moodTrend,
+      moodHistory: p.moodHistory, moodNotes: p.moodNotes,
+    });
+  }
+
+  // Limpa o campo de nota após salvar
+  var noteEl = document.getElementById('pac-mood-note');
+  if (noteEl) noteEl.value = '';
+
   document.getElementById('pac-mood-saved').style.display = '';
   setTimeout(function(){ document.getElementById('pac-mood-saved').style.display='none'; }, 3000);
   try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
+
+  // Sync silencioso para Supabase
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
 }
 
 function pacToggleEx(pidx, exId, patientName) {
@@ -14363,45 +14409,85 @@ function pacToggleMeta(pidx, metaId, cb, patientName) {
 }
 
 function pacSalvarDiario(tipo, idx) {
-  var texto = '';
+  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+  var p = pacs[idx];
+  if (!p) return;
+  if (!p.diary) p.diary = [];
+
+  var hoje = new Date();
+  var dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var dataStr = dias[hoje.getDay()]+', '+String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
+  var horaStr = String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0');
+
+  var entrada = null;
+
   if (tipo === 'livre') {
-    texto = (document.getElementById('pac-diary-livre-text')?.value || '').trim();
+    var texto = (document.getElementById('pac-diary-livre-text')?.value || '').trim();
     if (!texto) return;
-    var list = document.getElementById('pac-diary-livre-list');
-    if (list) {
-      var card = document.createElement('div');
-      card.style.cssText = 'background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--sage)';
-      var hoje = new Date();
-      var dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-      var dt = dias[hoje.getDay()]+', '+String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+' · '+String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0');
-      card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">'+dt+'</div><div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(texto)+'</div>';
-      list.insertBefore(card, list.firstChild);
-      document.getElementById('pac-diary-livre-text').value = '';
-    }
+    entrada = { tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: Date.now() };
+    document.getElementById('pac-diary-livre-text').value = '';
   } else {
-    // Campos do diário especializado
     var campos = [];
     [1,2,3,4].forEach(function(n){
       var el = document.getElementById('esp-campo-'+n);
       if (el && el.value.trim()) campos.push(el.value.trim());
     });
     if (campos.length === 0) return;
-    var list2 = document.getElementById('pac-diary-esp-list');
-    if (list2) {
-      var card2 = document.createElement('div');
-      card2.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid var(--sage)';
-      var hoje2 = new Date();
-      var dias2 = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-      var dt2 = dias2[hoje2.getDay()]+', '+String(hoje2.getDate()).padStart(2,'0')+'/'+String(hoje2.getMonth()+1).padStart(2,'0');
-      card2.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">'+dt2+'</div>'+campos.map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">'+escHTML(c)+'</div>'; }).join('');
-      list2.insertBefore(card2, list2.firstChild);
-      [1,2,3,4].forEach(function(n){ var el = document.getElementById('esp-campo-'+n); if(el) el.value=''; });
-    }
+    entrada = { tipo: 'esp', campos: campos, date: dataStr, hora: horaStr, ts: Date.now() };
+    [1,2,3,4].forEach(function(n){ var el = document.getElementById('esp-campo-'+n); if(el) el.value=''; });
   }
+
+  p.diary.unshift(entrada);
+  if (p.diary.length > 50) p.diary = p.diary.slice(0, 50);
+
+  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+
+  // Mantém memória em sincronia
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) {
+    _loggedPatientData.diary = p.diary;
+  }
+  if (typeof patients !== 'undefined' && patients[idx]) {
+    patients[idx].diary = p.diary;
+  }
+
+  // Insere card no topo da lista sem re-render completo
+  _renderDiarioCard(entrada, tipo === 'livre' ? 'pac-diary-livre-list' : 'pac-diary-esp-list', true);
+
   // Feedback visual
   var btn = event?.target;
   if (btn) { var orig = btn.textContent; btn.textContent = '✓ Salvo!'; btn.style.background='var(--sage)'; setTimeout(function(){ btn.textContent=orig; btn.style.background=''; }, 2000); }
+
   try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+}
+
+function _renderDiarioCard(entrada, listId, prepend) {
+  var list = document.getElementById(listId);
+  if (!list) return;
+  var card = document.createElement('div');
+  if (entrada.tipo === 'livre') {
+    card.style.cssText = 'background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--sage)';
+    card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">'+escHTML(entrada.date)+' · '+escHTML(entrada.hora)+'</div>'
+      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.texto)+'</div>';
+  } else {
+    card.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid var(--sage)';
+    card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">'+escHTML(entrada.date)+'</div>'
+      + (entrada.campos||[]).map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">'+escHTML(c)+'</div>'; }).join('');
+  }
+  if (prepend) list.insertBefore(card, list.firstChild);
+  else list.appendChild(card);
+}
+
+function _renderDiarioExistente(p) {
+  var diary = p.diary || [];
+  var livre = document.getElementById('pac-diary-livre-list');
+  var esp   = document.getElementById('pac-diary-esp-list');
+  if (livre) livre.innerHTML = '';
+  if (esp)   esp.innerHTML   = '';
+  diary.forEach(function(e) {
+    if (e.tipo === 'livre' && livre) _renderDiarioCard(e, 'pac-diary-livre-list', false);
+    else if (e.tipo === 'esp' && esp) _renderDiarioCard(e, 'pac-diary-esp-list', false);
+  });
 }
 
 </script>
