@@ -498,6 +498,10 @@ tr:last-child td { border-bottom: none; }
 .ctrl-btn-light { background: rgba(255,255,255,.12); color: #fff; }
 .ctrl-btn-light:hover { background: rgba(255,255,255,.22); }
 .ctrl-btn-red { background: #c0392b; color: #fff; }
+#page-agenda.agenda-compacto .appt-slot { min-height: 32px !important; }
+#page-agenda.agenda-compacto .appt-block { padding: 4px 8px !important; font-size: 11px !important; gap: 3px !important; margin-bottom: 2px !important; }
+#page-agenda.agenda-compacto .time-slot { padding: 4px 8px !important; font-size: 10px !important; padding-top: 5px !important; }
+#page-agenda.agenda-compacto .slot-add { min-height: 28px !important; font-size: 11px !important; }
 .session-live-badge { position: absolute; top: 16px; left: 16px; background: #c0392b; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: .5px; display: flex; align-items: center; gap: 6px; }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: blink 1.2s infinite; }
 .session-timer { position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,.5); color: #fff; font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
@@ -2341,6 +2345,9 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
       <button class="btn btn-secondary btn-sm" onclick="agendaNav(-1)">← Anterior</button>
       <button class="btn btn-secondary btn-sm" onclick="agendaNav(0)">Hoje</button>
       <button class="btn btn-secondary btn-sm" onclick="agendaNav(1)">Próximo →</button>
+
+      <!-- Modo compacto -->
+      <button id="btn-agenda-compacto" class="btn btn-secondary btn-sm" onclick="toggleAgendaCompacto()" title="Alternar modo compacto">⊡ Compacto</button>
 
       <!-- Exportar .ics -->
       <button class="btn btn-secondary btn-sm" onclick="exportarAgendaICS()" title="Exportar agenda para Google Calendar / Apple Calendar">📅 Exportar .ics</button>
@@ -6957,6 +6964,7 @@ function selectPatient(i, el) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('prontuarios')">≡ Ver prontuário</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('financeiro')">◈ Ver financeiro</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarExtratoPaciente(${i})">📄 Extrato PDF</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center;background:#e8faf0;border-color:rgba(37,211,102,.3);color:#075E54" onclick="enviarWhatsappLembrete(${i})">
         📲 WhatsApp lembrete
       </button>
@@ -8701,6 +8709,25 @@ function renderWeekView() {
   container.innerHTML = '<div class="card" style="overflow-x:auto">'+gridHtml+'</div>';
 }
 
+var agendaCompacto = localStorage.getItem('tf_agenda_compact') === '1';
+
+function toggleAgendaCompacto() {
+  agendaCompacto = !agendaCompacto;
+  try { localStorage.setItem('tf_agenda_compact', agendaCompacto ? '1' : '0'); } catch(e){}
+  _aplicarModoCompactoAgenda();
+  if (agendaCurrentView === 'dia') renderDayView();
+  else if (agendaCurrentView === 'semana') renderWeekView();
+  else renderMonthView();
+}
+
+function _aplicarModoCompactoAgenda() {
+  var pg = document.getElementById('page-agenda');
+  if (!pg) return;
+  pg.classList.toggle('agenda-compacto', agendaCompacto);
+  var btn = document.getElementById('btn-agenda-compacto');
+  if (btn) btn.textContent = agendaCompacto ? '⊞ Normal' : '⊡ Compacto';
+}
+
 function exportarAgendaICS() {
   if (!appointments || !appointments.length) { showToast('Nenhuma sessão para exportar.'); return; }
   var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
@@ -8751,6 +8778,8 @@ function exportarAgendaICS() {
 function initAgenda() {
   carregarAppointments();
   agendaCurrentDate = new Date();
+  agendaCompacto = localStorage.getItem('tf_agenda_compact') === '1';
+  _aplicarModoCompactoAgenda();
   agendaSetView(agendaCurrentView || 'dia');
 }
 
@@ -9348,6 +9377,86 @@ function exportarListaPacientesCSV() {
 }
 
 // ── PRONTUÁRIOS ──────────────────────────────────────────────────────────────
+function exportarExtratoPaciente(idx) {
+  var p = patients[idx];
+  if (!p) { showToast('Selecione um paciente primeiro.'); return; }
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+  var nomeT = acc.nome || '—';
+  var crpT  = acc.crp  || '';
+  var hoje  = new Date().toLocaleDateString('pt-BR');
+
+  var cobPac = charges.filter(function(c){ return !c.deleted && c.patient === p.name; })
+    .sort(function(a,b){ return (a.date||'') < (b.date||'') ? -1 : 1; });
+
+  if (!cobPac.length) { showToast('Nenhuma cobrança registrada para ' + p.name.split(' ')[0] + '.'); return; }
+
+  // Agrupa por mês
+  var grupos = {};
+  var ordemMeses = [];
+  cobPac.forEach(function(c) {
+    var key = typeof _chargeMonthKey === 'function' ? _chargeMonthKey(c) : (c.date||'').substring(0,7);
+    if (!grupos[key]) { grupos[key] = []; ordemMeses.push(key); }
+    grupos[key].push(c);
+  });
+  // Remove duplicados mantendo ordem
+  ordemMeses = ordemMeses.filter(function(v,i,a){ return a.indexOf(v)===i; });
+
+  var totalPago = 0, totalPendente = 0, totalAtraso = 0;
+  cobPac.forEach(function(c){
+    var v = parseFloat(c.value)||0;
+    if (c.status==='paid') totalPago+=v;
+    else if (c.status==='overdue') totalAtraso+=v;
+    else totalPendente+=v;
+  });
+  var totalGeral = totalPago+totalPendente+totalAtraso;
+
+  function statusLabel(s){ return s==='paid'?'Pago':s==='overdue'?'Em atraso':'Pendente'; }
+  function statusColor(s){ return s==='paid'?'#2e7d4f':s==='overdue'?'#c0392b':'#c97d2e'; }
+  function dataBR(d){ return typeof d==='string'&&d.includes('-')?d.split('-').reverse().join('/'):d||'—'; }
+  function mesLabel(key){
+    if (!key) return '—';
+    var meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    var parts = key.split('-');
+    return (meses[parseInt(parts[1]||1)-1]||'') + ' ' + (parts[0]||'');
+  }
+
+  var tabelasHtml = ordemMeses.map(function(mes) {
+    var itens = grupos[mes];
+    var subTotal = itens.reduce(function(s,c){ return s+(parseFloat(c.value)||0); }, 0);
+    var rows = itens.map(function(c){
+      return '<tr><td>'+dataBR(c.date)+'</td><td>'+(c.desc||c.session||'—')+'</td><td>'+(c.method||'PIX')+'</td>'
+        +'<td style="color:'+statusColor(c.status)+'">'+statusLabel(c.status)+'</td>'
+        +'<td style="text-align:right;font-weight:500">R$'+parseFloat(c.value).toFixed(2)+'</td></tr>';
+    }).join('');
+    return '<h2>'+mesLabel(mes)+'</h2>'
+      +'<table><tr><th>Data</th><th>Descrição</th><th>Método</th><th>Status</th><th style="text-align:right">Valor</th></tr>'
+      +rows
+      +'<tr style="background:#f4f8f4;font-weight:700"><td colspan="4">Subtotal</td><td style="text-align:right">R$'+subTotal.toFixed(2)+'</td></tr>'
+      +'</table>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>'
+    +'<title>Extrato — '+p.name+'</title>'
+    +'<style>body{font-family:Arial,sans-serif;margin:40px;color:#1a2a1e;line-height:1.6}h1{font-size:20px;margin:0 0 4px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#5a8a6a;margin:24px 0 6px;border-bottom:1.5px solid #c8ddc8;padding-bottom:3px}.meta{font-size:12px;color:#666;margin-bottom:28px}.resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}.resumo-item{background:#f4f8f4;border-radius:6px;padding:10px;text-align:center}.resumo-val{font-size:18px;font-weight:700}.resumo-label{font-size:10px;color:#888;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}th{background:#f4f8f4;padding:7px 9px;text-align:left}td{padding:6px 9px;border-bottom:1px solid #e8f0eb}.footer{margin-top:36px;font-size:10px;color:#aaa;border-top:1px solid #ddd;padding-top:10px}@media print{body{margin:20px}}</style></head><body>'
+    +'<h1>Extrato Financeiro — '+escHTML(p.name)+'</h1>'
+    +'<div class="meta">Terapeuta: '+escHTML(nomeT)+(crpT?' · CRP '+escHTML(crpT):'')+'  &nbsp;·&nbsp;  Gerado em '+hoje+'</div>'
+    +'<div class="resumo">'
+      +'<div class="resumo-item"><div class="resumo-val" style="color:#2e7d4f">R$'+totalPago.toFixed(2)+'</div><div class="resumo-label">Pago</div></div>'
+      +'<div class="resumo-item"><div class="resumo-val" style="color:#c97d2e">R$'+totalPendente.toFixed(2)+'</div><div class="resumo-label">Pendente</div></div>'
+      +'<div class="resumo-item"><div class="resumo-val" style="color:#c0392b">R$'+totalAtraso.toFixed(2)+'</div><div class="resumo-label">Em atraso</div></div>'
+      +'<div class="resumo-item"><div class="resumo-val">R$'+totalGeral.toFixed(2)+'</div><div class="resumo-label">Total geral</div></div>'
+    +'</div>'
+    +tabelasHtml
+    +'<div class="footer">Extrato gerado em '+hoje+' via TheraFlow · Uso exclusivo do profissional · LGPD</div>'
+    +'</body></html>';
+
+  var win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){ win.print(); }, 400);
+}
+
 function exportarRelatorioEvolucao() {
   var p = patients[_currentProntuarioIdx] || patients[0];
   if (!p) { showToast('Selecione um paciente primeiro.'); return; }
