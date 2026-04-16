@@ -1675,6 +1675,18 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 .patient-msg-card { background: linear-gradient(135deg,#eaf6f0,#f7fbf9); border: 1px solid rgba(74,124,89,.2); border-radius: 14px; padding: 18px 20px; }
 .patient-msg-label { font-size: 11px; font-weight: 700; color: var(--sage); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
 .patient-msg-text { font-size: 14px; color: var(--ink-soft); line-height: 1.7; font-style: italic; }
+/* ── PORTAL PACIENTE — COMPONENTES v4 ── */
+.breath-ring{width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(90,138,106,.28),rgba(90,138,106,.05));border:3px solid rgba(90,138,106,.4);display:flex;align-items:center;justify-content:center;margin:0 auto;transition:transform 4s ease-in-out,opacity 4s ease-in-out}
+.breath-ring.expanding{transform:scale(1.5);opacity:1}
+.breath-ring.contracting{transform:scale(.65);opacity:.55}
+.breath-inner{width:52px;height:52px;border-radius:50%;background:rgba(90,138,106,.15)}
+.streak-bar{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#fff8ec,#fffcf4);border:1px solid rgba(201,125,46,.22);border-radius:14px;padding:14px 18px}
+.badges-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badge-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 6px;border-radius:12px;border:1.5px solid var(--border);text-align:center;transition:border-color .2s}
+.badge-card.earned{border-color:rgba(90,138,106,.4);background:linear-gradient(135deg,#f0f7f3,#fafff8)}
+.badge-card.locked{opacity:.28;filter:grayscale(.9)}
+.pac-emergency-overlay{position:fixed;inset:0;background:rgba(10,20,15,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+.pac-emergency-panel{background:#fff;border-radius:20px;width:100%;max-width:420px;max-height:92vh;overflow-y:auto;padding:28px 22px}
 /* ── DIÁRIO ADAPTADO ── */
 .diary-label { font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px; }
 /* ── STATUS DROPDOWN ── */
@@ -6543,6 +6555,7 @@ async function _supaPatientSync() {
     await supaPatient.from('patients').update({
       metadata: {
         moodHistory: p.moodHistory || [],
+        moodNotes: p.moodNotes || [],
         prontuarioNotes: p.prontuarioNotes || [],
         exercises: p.exercises || [],
         materials: p.materials || [],
@@ -6555,6 +6568,11 @@ async function _supaPatientSync() {
         fin: p.fin || null,
         forma_pagamento: p.forma_pagamento || null,
         portalPassword: p.portalPassword || null,
+        checkInStreak: p.checkInStreak || 0,
+        lastCheckInDate: p.lastCheckInDate || null,
+        readMaterials: p.readMaterials || [],
+        portalNota: p.portalNota || null,
+        portalNotifHour: p.portalNotifHour || null,
       }
     }).eq('id', p.id);
   } catch(e) {
@@ -14077,6 +14095,284 @@ function pacEnviarSolicitacaoSessao(nomePaciente) {
   document.getElementById('pac-solicitar-form').style.display = 'none';
 }
 
+// ─── TÉCNICAS DO DIA por abordagem ──────────────────────────────────
+var TECNICAS_DIA = {
+  'TCC': [
+    { icone:'🧠', titulo:'Registro de pensamento automático', instrucao:'Quando um pensamento negativo surgir, pergunte: qual a evidência a favor? E contra? Qual seria o pensamento mais equilibrado?' },
+    { icone:'📊', titulo:'Escala de catastrofização', instrucao:'Numa escala de 0 a 100%, qual a probabilidade real do pior cenário? E se acontecer, o quanto você consegue lidar com isso?' },
+    { icone:'🔬', titulo:'Experimento comportamental', instrucao:'Escolha uma crença que quer testar. Defina uma ação pequena para verificar se ela é verdadeira. Anote o resultado depois.' },
+    { icone:'📅', titulo:'Programação de atividades', instrucao:'Liste 3 atividades que lhe dão prazer ou senso de realização. Comprometa-se com pelo menos uma para hoje.' },
+    { icone:'🔄', titulo:'Reestruturação cognitiva', instrucao:'Identifique um pensamento disfuncional. Classifique a distorção (catastrofização, leitura mental…) e reescreva de forma mais realista.' },
+    { icone:'🔧', titulo:'Resolução de problemas', instrucao:'1) Defina o problema claramente. 2) Liste todas as soluções possíveis. 3) Escolha a melhor. 4) Execute. 5) Avalie o resultado.' },
+    { icone:'⏱', titulo:'Técnica 5-4-3-2-1 de aterramento', instrucao:'Nomeie 5 coisas que você vê, 4 que pode tocar, 3 sons que ouve, 2 cheiros que percebe, 1 sabor. Você está no presente.' },
+  ],
+  'Psicanálise': [
+    { icone:'💭', titulo:'Associação livre', instrucao:'Reserve 10 minutos. Escreva sem censura tudo que surgir, sem julgar nem editar. Observe o que emerge livremente.' },
+    { icone:'🌙', titulo:'Registro de sonhos', instrucao:'Ao acordar, escreva imediatamente o que lembrar do sonho — imagens, emoções, personagens. Não interprete, apenas registre.' },
+    { icone:'🪞', titulo:'Atenção ao que evita', instrucao:'Observe hoje quais assuntos você desvia, quais conversas abrevia, quais lembranças afasta. Registre sem julgamento.' },
+    { icone:'🔓', titulo:'Resistência e insight', instrucao:'Há algo difícil de trazer à sessão? Escreva livremente sobre esse assunto apenas para você. O que a resistência está protegendo?' },
+    { icone:'🗣', titulo:'Atos falhos', instrucao:'Preste atenção em erros de fala, esquecimentos ou atos falhos ao longo do dia. O que o inconsciente pode estar comunicando?' },
+  ],
+  'ACT': [
+    { icone:'☁️', titulo:'Desfusão cognitiva', instrucao:'Quando um pensamento perturbador surgir, diga: "Estou tendo o pensamento de que…". Observe-o como um objeto que passa, não como verdade.' },
+    { icone:'⚓', titulo:'Aterramento no presente', instrucao:'Pause. 5 coisas que você vê, 4 que ouve, 3 que pode tocar, 2 que cheira, 1 que saboreia. Você está aqui, agora.' },
+    { icone:'🧭', titulo:'Valores em ação', instrucao:'Escolha um valor seu (família, saúde, criatividade…). Identifique uma ação pequena e concreta que você pode fazer hoje alinhada a esse valor.' },
+    { icone:'🌊', titulo:'Aceitação da emoção', instrucao:'Identifique uma emoção difícil. Em vez de lutar, imagine-a como uma onda: observe sua intensidade, onde você sente no corpo. Deixe-a passar.' },
+    { icone:'👁', titulo:'Perspectiva do observador', instrucao:'Há uma parte de você que observa tudo sem julgar. O que esse observador interno nota em você agora, com curiosidade e sem crítica?' },
+    { icone:'🚌', titulo:'Metáfora do ônibus', instrucao:'Você é o motorista do ônibus da sua vida. Passageiros (pensamentos) gritam para você desviar. Você pode ouvi-los sem obedecer.' },
+  ],
+  'Gestalt': [
+    { icone:'⏱', titulo:'Experimento "Agora"', instrucao:'Complete 10 vezes a frase "Agora eu percebo…" incluindo sensações físicas, emoções, pensamentos. Fique apenas no momento presente.' },
+    { icone:'💬', titulo:'Responsabilidade da linguagem', instrucao:'Por algumas horas, troque "não consigo" por "não quero" e "tenho que" por "escolho". Note o que muda na sua experiência.' },
+    { icone:'🫀', titulo:'Contato com o corpo', instrucao:'Feche os olhos. Onde você sente tensão agora? Respire nesse lugar por 3 minutos. Se essa tensão tivesse voz, o que diria?' },
+    { icone:'🪑', titulo:'Cadeira vazia', instrucao:'Imagine alguém com quem tem tensão sentado numa cadeira à sua frente. Fale em voz alta o que nunca disse. O que você sente ao fazer isso?' },
+  ],
+  'Humanista': [
+    { icone:'🤍', titulo:'Autocompaixão', instrucao:'Pense em algo que te preocupa. Imagine um amigo querido contando isso a você. O que você diria a ele? Agora diga exatamente isso para si mesmo.' },
+    { icone:'🪞', titulo:'Congruência', instrucao:'Em que situações você age diferente do que realmente sente? O que impede mais autenticidade nesses momentos? O que você ganharia sendo mais congruente?' },
+    { icone:'🔺', titulo:'Necessidades presentes', instrucao:'Quais necessidades suas estão satisfeitas hoje? Quais estão em déficit? Que pequena ação poderia atender a uma delas agora?' },
+  ],
+};
+TECNICAS_DIA['—'] = TECNICAS_DIA['default'] = [
+  { icone:'🌬', titulo:'Respiração 4-4-4-4', instrucao:'Inspire por 4 tempos, segure 4, expire por 4, segure 4. Repita 4 ciclos. Simples e comprovado para reduzir ansiedade imediatamente.' },
+  { icone:'🙏', titulo:'Registro de gratidão', instrucao:'Escreva 3 coisas pelas quais você é grato hoje — grandes ou pequenas. Estudos mostram que essa prática aumenta bem-estar em apenas 2 semanas.' },
+  { icone:'🚶', titulo:'Movimento de 5 minutos', instrucao:'Levante e mova seu corpo por 5 minutos: caminhe, alongue, dance. O movimento físico é um dos reguladores emocionais mais efetivos.' },
+  { icone:'👂', titulo:'Autoescuta', instrucao:'Pergunte a si mesmo: "O que estou sentindo agora?" Não resolva, não julgue — apenas nomeie a emoção. Nomear reduz a intensidade emocional.' },
+  { icone:'📝', titulo:'Carta para si mesmo', instrucao:'Escreva uma carta curta para a versão de você de 5 anos atrás. O que você diria? O que aprendeu? O que essa pessoa precisaria ouvir?' },
+  { icone:'⏸', titulo:'Pausa consciente', instrucao:'Coloque um alarme para 5 minutos. Fique sem tela, sem tarefa. Apenas observe o ambiente e sua própria respiração.' },
+  { icone:'🎯', titulo:'Uma coisa de cada vez', instrucao:'Escolha uma tarefa. Feche o resto. Dê atenção plena por 25 minutos. Note a diferença na qualidade e na sensação ao terminar.' },
+];
+
+// ─── CONQUISTAS ──────────────────────────────────────────────────────
+var BADGES_DEF = [
+  { id:'primeira_sessao', icon:'🌱', name:'Primeiro passo',  desc:'1ª sessão realizada',          cond:function(p){ return (p.sessions||0)>=1; } },
+  { id:'dez_sessoes',     icon:'🏆', name:'10 sessões',      desc:'Consistência é progresso',      cond:function(p){ return (p.sessions||0)>=10; } },
+  { id:'mood_7',          icon:'🔥', name:'7 check-ins',     desc:'7 registros de humor',          cond:function(p){ return (p.moodHistory||[]).length>=7; } },
+  { id:'mood_30',         icon:'💎', name:'Mestre do humor', desc:'30 registros de humor',         cond:function(p){ return (p.moodHistory||[]).length>=30; } },
+  { id:'diario_1',        icon:'📓', name:'Diário aberto',   desc:'1ª entrada no diário',          cond:function(p){ return (p.diary||[]).length>=1; } },
+  { id:'diario_7',        icon:'✍️', name:'Escritor(a)',     desc:'7 entradas no diário',          cond:function(p){ return (p.diary||[]).length>=7; } },
+  { id:'ex_5',            icon:'⚡', name:'Em movimento',    desc:'5 exercícios concluídos',       cond:function(p){ return (p.exercises||[]).filter(function(e){return e.done;}).length>=5; } },
+  { id:'streak_7',        icon:'🌟', name:'Semana perfeita', desc:'7 dias seguidos de check-in',  cond:function(p){ return (p.checkInStreak||0)>=7; } },
+  { id:'streak_30',       icon:'🦋', name:'Transformação',   desc:'30 dias seguidos de check-in', cond:function(p){ return (p.checkInStreak||0)>=30; } },
+];
+
+function _calcStreak(p) {
+  var hoje = new Date();
+  var hojeStr = hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
+  var ontem = new Date(hoje); ontem.setDate(ontem.getDate()-1);
+  var ontemStr = ontem.getFullYear()+'-'+String(ontem.getMonth()+1).padStart(2,'0')+'-'+String(ontem.getDate()).padStart(2,'0');
+  if (!p.checkInStreak) p.checkInStreak = 0;
+  if (p.lastCheckInDate === hojeStr) {
+    // já registrou hoje — mantém
+  } else if (p.lastCheckInDate === ontemStr) {
+    p.checkInStreak = (p.checkInStreak||0) + 1;
+  } else {
+    p.checkInStreak = 1;
+  }
+  p.lastCheckInDate = hojeStr;
+  return p;
+}
+
+function _getMoodInsights(p) {
+  var notes = p.moodNotes || [];
+  if (notes.length < 3) return '';
+  var recent = notes.slice(-7).map(function(n){ return n.val||n; });
+  var prev   = notes.slice(-14,-7).map(function(n){ return n.val||n; });
+  var avgR = recent.reduce(function(a,b){ return a+b; },0)/recent.length;
+  var avgP = prev.length ? prev.reduce(function(a,b){ return a+b; },0)/prev.length : null;
+  var out = '';
+  if (avgP !== null) {
+    var diff = avgR - avgP;
+    var arrow = diff > 0.3 ? '↑' : diff < -0.3 ? '↓' : '→';
+    var cor   = diff > 0.3 ? '#4a7c59' : diff < -0.3 ? '#c0392b' : '#c97d2e';
+    out += '<div style="font-size:12px;background:var(--bg);border-radius:8px;padding:6px 11px;display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+      + '📊 Média 7 dias: <strong style="color:'+cor+'">'+avgR.toFixed(1)+' '+arrow+' '+(diff>0?'+':'')+diff.toFixed(1)+' vs semana anterior</strong></div>';
+  }
+  var diasN = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var byDay = [[],[],[],[],[],[],[]];
+  notes.slice(-28).forEach(function(n){
+    if (!n.date) return;
+    var pts = n.date.split('/');
+    if (pts.length < 3) return;
+    try { var d = new Date(parseInt(pts[2]),parseInt(pts[1])-1,parseInt(pts[0])); byDay[d.getDay()].push(n.val||n); } catch(e){}
+  });
+  var bestDay = -1, bestAvg = -1;
+  byDay.forEach(function(vals,i){
+    if (vals.length < 2) return;
+    var avg = vals.reduce(function(a,b){ return a+b; },0)/vals.length;
+    if (avg > bestAvg) { bestAvg = avg; bestDay = i; }
+  });
+  if (bestDay >= 0) {
+    out += '<div style="font-size:12px;background:var(--bg);border-radius:8px;padding:6px 11px;display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+      + '📅 Você tende a se sentir melhor às <strong>'+diasN[bestDay]+'s</strong></div>';
+  }
+  return out ? '<div style="margin-bottom:10px">'+out+'</div>' : '';
+}
+
+function _getTecnicaDia(abordagem) {
+  var lista = TECNICAS_DIA[abordagem] || TECNICAS_DIA['default'];
+  var dayIdx = Math.floor(Date.now() / 86400000) % lista.length;
+  return lista[dayIdx];
+}
+
+// ─── EMERGÊNCIA ──────────────────────────────────────────────────────
+function pacEmergencia() {
+  var wppTerapeuta = '';
+  try { wppTerapeuta = (JSON.parse(localStorage.getItem('tf_account')||'{}').whatsapp||'').replace(/\D/g,''); } catch(e){}
+  if (wppTerapeuta && !wppTerapeuta.startsWith('55')) wppTerapeuta = '55'+wppTerapeuta;
+  var overlay = document.createElement('div');
+  overlay.className = 'pac-emergency-overlay';
+  overlay.id = 'pac-emergency-overlay';
+  overlay.onclick = function(e){ if (e.target===overlay) pacFecharEmergencia(); };
+  overlay.innerHTML = '<div class="pac-emergency-panel">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'
+      + '<div style="font-size:18px;font-weight:700;color:var(--ink)">🌿 Estou aqui com você</div>'
+      + '<button onclick="pacFecharEmergencia()" style="background:none;border:none;font-size:26px;cursor:pointer;color:var(--muted);padding:4px;line-height:1">×</button>'
+    + '</div>'
+    + '<div style="background:var(--bg);border-radius:14px;padding:20px 18px;margin-bottom:16px;text-align:center">'
+      + '<div style="font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:16px">Vamos respirar juntos — box breathing 4×4</div>'
+      + '<div class="breath-ring" id="emg-breath-ring"><div class="breath-inner"></div></div>'
+      + '<div id="emg-breath-phase" style="font-size:16px;font-weight:600;color:var(--sage);text-align:center;margin-top:14px">Inspire…</div>'
+      + '<div id="emg-breath-counter" style="font-size:36px;font-weight:700;color:var(--sage);text-align:center;margin:4px 0 12px">4</div>'
+      + '<button id="emg-breath-btn" onclick="pacToggleRespiracao()" style="padding:9px 26px;background:var(--sage);color:#fff;border:none;border-radius:20px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit">▶ Iniciar</button>'
+    + '</div>'
+    + '<div style="background:#faf8ff;border:1px solid rgba(90,62,138,.12);border-radius:14px;padding:16px 18px;margin-bottom:16px">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--purple);margin-bottom:10px">⚓ Técnica 5-4-3-2-1 — aterramento</div>'
+      + [['5','👀','coisas que você VÊ agora'],['4','🖐','coisas que pode TOCAR'],['3','👂','sons que OUVE'],['2','👃','cheiros que PERCEBE'],['1','👄','sabor que SENTE']]
+        .map(function(r){
+          return '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px;color:var(--ink-soft)">'
+            + '<div style="width:22px;height:22px;border-radius:50%;background:var(--purple);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+r[0]+'</div>'
+            + '<span>'+r[1]+' '+r[2]+'</span></div>';
+        }).join('')
+    + '</div>'
+    + (wppTerapeuta
+        ? '<a href="https://wa.me/'+wppTerapeuta+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box">💬 Chamar minha terapeuta no WhatsApp</a>'
+        : '<div style="text-align:center;font-size:13px;color:var(--muted);padding:8px 0">Entre em contato com sua terapeuta se precisar de apoio imediato.</div>')
+    + '</div>';
+  document.body.appendChild(overlay);
+  setTimeout(function(){ pacToggleRespiracao(); }, 600);
+}
+
+var _breathInterval = null, _breathRunning = false;
+
+function pacFecharEmergencia() {
+  pacPararRespiracao();
+  var el = document.getElementById('pac-emergency-overlay');
+  if (el) el.remove();
+}
+
+function pacToggleRespiracao() {
+  if (_breathRunning) {
+    pacPararRespiracao();
+    var btn = document.getElementById('emg-breath-btn');
+    if (btn) { btn.textContent = '▶ Iniciar'; btn.style.background = 'var(--sage)'; }
+  } else {
+    pacIniciarRespiracao();
+    var btn2 = document.getElementById('emg-breath-btn');
+    if (btn2) { btn2.textContent = '⏹ Parar'; btn2.style.background = '#777'; }
+  }
+}
+
+function pacIniciarRespiracao() {
+  _breathRunning = true;
+  var fases = [
+    { label:'Inspire…',  dur:4, cls:'expanding' },
+    { label:'Segure…',   dur:4, cls:'expanding' },
+    { label:'Expire…',   dur:4, cls:'contracting' },
+    { label:'Segure…',   dur:4, cls:'contracting' },
+  ];
+  var fi = 0, ct = fases[0].dur;
+  function aplicar() {
+    var f = fases[fi];
+    var ring = document.getElementById('emg-breath-ring');
+    var ph   = document.getElementById('emg-breath-phase');
+    var ctr  = document.getElementById('emg-breath-counter');
+    if (!ring) { pacPararRespiracao(); return; }
+    ring.className = 'breath-ring ' + f.cls;
+    if (ph)  ph.textContent  = f.label;
+    if (ctr) ctr.textContent = f.dur;
+    ct = f.dur;
+  }
+  aplicar();
+  _breathInterval = setInterval(function(){
+    ct--;
+    var ctr = document.getElementById('emg-breath-counter');
+    if (ctr) ctr.textContent = ct;
+    if (ct <= 0) { fi = (fi+1)%fases.length; aplicar(); }
+  }, 1000);
+}
+
+function pacPararRespiracao() {
+  _breathRunning = false;
+  if (_breathInterval) { clearInterval(_breathInterval); _breathInterval = null; }
+  var ring = document.getElementById('emg-breath-ring');
+  if (ring) ring.className = 'breath-ring';
+}
+
+// ─── MATERIAIS ───────────────────────────────────────────────────────
+function pacMarcarMaterialLido(idx, mid) {
+  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+  var p = pacs[idx]; if (!p) return;
+  if (!p.readMaterials) p.readMaterials = [];
+  var pos = p.readMaterials.indexOf(mid);
+  if (pos >= 0) p.readMaterials.splice(pos, 1); else p.readMaterials.push(mid);
+  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.readMaterials = p.readMaterials;
+  if (typeof patients !== 'undefined' && patients[idx]) patients[idx].readMaterials = p.readMaterials;
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+  renderPatientApp(idx, pacs);
+}
+
+// ─── NOTA PRÉ-SESSÃO ─────────────────────────────────────────────────
+function pacSalvarNotaPreSessao(idx) {
+  var texto = (document.getElementById('pac-nota-pre-text')?.value || '').trim();
+  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+  var p = pacs[idx]; if (!p) return;
+  p.portalNota = texto;
+  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.portalNota = texto;
+  if (typeof patients !== 'undefined' && patients[idx]) patients[idx].portalNota = texto;
+  var el = document.getElementById('pac-nota-saved');
+  if (el) { el.style.display=''; setTimeout(function(){ el.style.display='none'; }, 2500); }
+  try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+}
+
+// ─── NOTIFICAÇÕES PWA ────────────────────────────────────────────────
+function pacAtivarNotificacoes(idx) {
+  if (!('Notification' in window)) { alert('Seu navegador não suporta notificações.'); return; }
+  var hora = document.getElementById('pac-notif-hora')?.value || '20';
+  Notification.requestPermission().then(function(perm){
+    var el = document.getElementById('pac-notif-status');
+    if (perm !== 'granted') { if (el) el.textContent = 'Permissão negada — verifique as configurações do navegador'; return; }
+    var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+    var p = pacs[idx]; if (!p) return;
+    p.portalNotifHour = hora;
+    localStorage.setItem('tf_patients', JSON.stringify(pacs));
+    if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.portalNotifHour = hora;
+    if (el) el.textContent = 'Lembrete ativado para as '+hora+'h ✓';
+    _agendarNotificacaoPac(hora);
+  });
+}
+
+function _agendarNotificacaoPac(hora) {
+  var agora = new Date();
+  var alvo  = new Date(); alvo.setHours(parseInt(hora),0,0,0);
+  if (alvo <= agora) alvo.setDate(alvo.getDate()+1);
+  setTimeout(function(){
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('TheraFlow 🌿', { body:'Como você está se sentindo hoje? Registre seu humor!', tag:'tf-mood-reminder' });
+    }
+    _agendarNotificacaoPac(hora);
+  }, alvo - agora);
+}
+
+function _checkNotifPortal(p) {
+  if (!p || !p.portalNotifHour) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  _agendarNotificacaoPac(p.portalNotifHour);
+}
+
 function renderPatientApp(idx, pacs) {
   var src = pacs && pacs.length ? pacs : (typeof patients !== 'undefined' ? patients : []);
   var p = src[idx];
@@ -14153,13 +14449,103 @@ function renderPatientApp(idx, pacs) {
   // Diário — abordagem adaptada
   var diarioHtml = renderPatientDiario(p, idx);
 
+  // ── Streak ──
+  var streakHtml = (p.checkInStreak||0) >= 2
+    ? '<div class="streak-bar">'
+        + '<div style="font-size:32px;line-height:1">🔥</div>'
+        + '<div>'
+          + '<div style="font-size:26px;font-weight:700;color:#c97d2e;line-height:1">'+(p.checkInStreak)+'</div>'
+          + '<div style="font-size:12px;color:var(--muted);margin-top:2px">dias seguidos de check-in — não quebre a sequência!</div>'
+        + '</div>'
+      + '</div>'
+    : '';
+
+  // ── Conquistas ──
+  var badgesHtml = '<div class="patient-section-card">'
+    + '<div class="patient-section-header"><div class="patient-section-title">🏅 Minhas conquistas</div></div>'
+    + '<div class="patient-section-body"><div class="badges-grid">'
+      + BADGES_DEF.map(function(b){
+          var earned = b.cond(p);
+          return '<div class="badge-card '+(earned?'earned':'locked')+'">'
+            + '<div style="font-size:26px;line-height:1">'+b.icon+'</div>'
+            + '<div style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:2px">'+b.name+'</div>'
+            + '<div style="font-size:10px;color:var(--muted)">'+b.desc+'</div>'
+          + '</div>';
+        }).join('')
+    + '</div></div></div>';
+
+  // ── Materiais ──
+  var mats = p.materials || [];
+  var readMats = p.readMaterials || [];
+  var matsHtml = mats.length === 0 ? '' : '<div class="patient-section-card">'
+    + '<div class="patient-section-header"><div class="patient-section-title">📚 Materiais da sua terapeuta <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">'+readMats.length+'/'+mats.length+' lidos</span></div></div>'
+    + '<div class="patient-section-body" style="display:flex;flex-direction:column;gap:10px">'
+      + mats.map(function(m){
+          var lido = readMats.indexOf(m.id) >= 0;
+          var tIcon = m.tipo==='livro'?'📖':m.tipo==='artigo'?'📄':m.tipo==='video'?'🎬':m.tipo==='podcast'?'🎙':'🔗';
+          return '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">'
+            + '<div style="font-size:22px;line-height:1;flex-shrink:0;margin-top:1px">'+tIcon+'</div>'
+            + '<div style="flex:1;min-width:0">'
+              + (m.url ? '<a href="'+escHTML(m.url)+'" target="_blank" rel="noopener" style="font-size:13.5px;font-weight:500;color:var(--sage);text-decoration:none;'+(lido?'opacity:.55;text-decoration:line-through':'')+'">'+escHTML(m.titulo)+'</a>'
+                       : '<div style="font-size:13.5px;font-weight:500;color:var(--ink);'+(lido?'opacity:.55;text-decoration:line-through':'')+'">'+escHTML(m.titulo)+'</div>')
+              + (m.desc ? '<div style="font-size:12px;color:var(--muted);margin-top:3px">'+escHTML(m.desc)+'</div>' : '')
+              + '<div style="margin-top:6px"><button onclick="pacMarcarMaterialLido('+idx+','+m.id+')" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid '+(lido?'var(--sage)':'var(--border)')+';background:'+(lido?'#eaf6f0':'transparent')+';color:'+(lido?'var(--sage)':'var(--muted)')+';cursor:pointer;font-family:inherit">'+(lido?'✓ Lido':'Marcar como lido')+'</button></div>'
+            + '</div>'
+          + '</div>';
+        }).join('')
+    + '</div></div>';
+
+  // ── Técnica do dia ──
+  var tecnica = _getTecnicaDia(p.abordagem || 'default');
+  var tecnicaHtml = '<div style="background:linear-gradient(135deg,#edf7f1,#f4fbf7);border:1px solid rgba(74,124,89,.2);border-radius:14px;padding:18px 20px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚡ Técnica do dia</div>'
+    + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px">'+tecnica.icone+' '+escHTML(tecnica.titulo)+'</div>'
+    + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">'+escHTML(tecnica.instrucao)+'</div>'
+  + '</div>';
+
+  // ── Nota pré-sessão ──
+  var notaPreHtml = '<div class="patient-section-card">'
+    + '<div class="patient-section-header"><div class="patient-section-title">💬 Nota para a próxima sessão</div></div>'
+    + '<div class="patient-section-body">'
+      + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">O que você quer lembrar de trazer para a próxima sessão? Sua terapeuta verá antes de vocês se encontrarem.</div>'
+      + '<textarea id="pac-nota-pre-text" placeholder="Escreva aqui…" style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'+escHTML(p.portalNota||'')+'</textarea>'
+      + '<div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:8px">'
+        + '<div id="pac-nota-saved" style="display:none;font-size:12px;color:var(--sage);font-weight:600">✓ Salvo!</div>'
+        + '<button onclick="pacSalvarNotaPreSessao('+idx+')" class="btn btn-primary btn-sm">Salvar nota</button>'
+      + '</div>'
+    + '</div>'
+  + '</div>';
+
+  // ── Notificações ──
+  var notifPermStatus = (typeof Notification !== 'undefined') ? Notification.permission : 'not-supported';
+  var notifHora = p.portalNotifHour || '20';
+  var notifHtml = '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px">'
+    + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">🔔 Lembrete de check-in diário</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      + '<select id="pac-notif-hora" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff">'
+        + [7,8,9,12,18,19,20,21,22].map(function(h){ return '<option value="'+h+'"'+(h===parseInt(notifHora)?' selected':'')+'>'+h+'h</option>'; }).join('')
+      + '</select>'
+      + '<button onclick="pacAtivarNotificacoes('+idx+')" class="btn btn-secondary btn-sm">Ativar lembrete</button>'
+      + '<div id="pac-notif-status" style="font-size:12px;color:var(--muted);flex:1">'
+        + (notifPermStatus === 'granted' ? '✓ Notificações ativas' : 'Receba um toque diário para registrar seu humor')
+      + '</div>'
+    + '</div>'
+  + '</div>';
+
+  // ── Insights de humor ──
+  var moodInsights = _getMoodInsights(p);
+
   body.innerHTML =
     // Banner
     '<div class="patient-banner">'
       + '<div class="patient-banner-greeting">Olá, ' + escHTML(firstName) + ' 🌿</div>'
       + '<div class="patient-banner-sub">Como você está se sentindo hoje?</div>'
       + proximaHtml
+      + '<button onclick="pacEmergencia()" style="margin-top:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.82);padding:8px 14px;border-radius:8px;font-size:12.5px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;width:100%;justify-content:center">🆘 Preciso de apoio agora</button>'
     + '</div>'
+
+    // Streak
+    + (streakHtml ? '<div style="padding:0">' + streakHtml + '</div>' : '')
 
     // Mensagem
     + msgBlock
@@ -14187,6 +14573,7 @@ function renderPatientApp(idx, pacs) {
               + '<div style="flex-shrink:0;text-align:center"><div style="font-size:22px;font-weight:700;color:'+cor+'">'+ultimo+'</div><div style="font-size:10px;color:var(--muted)">último</div></div>'
               + '</div>';
           })()
+        + moodInsights
         + '<div style="font-size:13px;color:var(--muted);margin-bottom:14px">Como você está neste momento?</div>'
         + '<div style="display:flex;justify-content:space-between;margin-bottom:14px" id="pac-mood-emojis">'
           + [['😢','1','Muito mal'],['😟','3','Mal'],['😐','5','Neutro'],['🙂','7','Bem'],['😄','10','Muito bem']].map(function(e){
@@ -14202,6 +14589,9 @@ function renderPatientApp(idx, pacs) {
       + '</div>'
     + '</div>'
 
+    // Conquistas
+    + badgesHtml
+
     // Exercícios
     + '<div class="patient-section-card">'
       + '<div class="patient-section-header"><div class="patient-section-title">📋 Exercícios entre sessões <span style="margin-left:auto;font-size:12px;color:var(--muted);font-weight:400" id="pac-ex-counter">'+exDone+' de '+exercicios.length+' concluídos</span></div></div>'
@@ -14215,6 +14605,9 @@ function renderPatientApp(idx, pacs) {
           + '<div class="patient-section-body" id="pac-metas-list">'+metasHtml+'</div>'
         + '</div>'
       : '')
+
+    // Materiais
+    + matsHtml
 
     // Diário
     + diarioHtml
@@ -14258,14 +14651,25 @@ function renderPatientApp(idx, pacs) {
       + '</div>'
     + '</div>'
 
-    // Dica
+    // Técnica do dia
+    + tecnicaHtml
+
+    // Dica da semana
     + '<div style="background:linear-gradient(135deg,#f0ecfa,#faf8ff);border:1px solid rgba(90,62,138,.15);border-radius:14px;padding:18px 20px">'
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:20px">💡</span><div style="font-size:15px;font-weight:600;color:var(--purple)">Dica da semana</div></div>'
       + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">'+escHTML(dica)+'</div>'
-    + '</div>';
+    + '</div>'
+
+    // Nota pré-sessão
+    + notaPreHtml
+
+    // Notificações
+    + notifHtml;
 
   // Popula listas de diário com entradas já salvas
   setTimeout(function(){ _renderDiarioExistente(p); }, 0);
+  // Agenda notificação se configurada
+  setTimeout(function(){ _checkNotifPortal(p); }, 0);
 }
 
 function renderPatientDiario(p, idx) {
@@ -14358,6 +14762,8 @@ function pacSalvarMood(idx) {
         : p.moodHistory[p.moodHistory.length-1] < p.moodHistory[p.moodHistory.length-2] ? 'down' : 'stable')
       : 'stable';
     p._moodLastDate = dataStr;
+    // Streak de check-in
+    if (typeof _calcStreak === 'function') _calcStreak(p);
   }
   localStorage.setItem('tf_patients', JSON.stringify(pacs));
 
@@ -14367,12 +14773,14 @@ function pacSalvarMood(idx) {
       mood: p.mood, moodTrend: p.moodTrend,
       moodHistory: p.moodHistory, moodNotes: p.moodNotes,
       _moodLastDate: p._moodLastDate,
+      checkInStreak: p.checkInStreak, lastCheckInDate: p.lastCheckInDate,
     });
   }
   if (typeof patients !== 'undefined' && patients[idx] && p) {
     Object.assign(patients[idx], {
       mood: p.mood, moodTrend: p.moodTrend,
       moodHistory: p.moodHistory, moodNotes: p.moodNotes,
+      checkInStreak: p.checkInStreak, lastCheckInDate: p.lastCheckInDate,
     });
   }
 
