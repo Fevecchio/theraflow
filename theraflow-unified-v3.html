@@ -2654,6 +2654,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
         <div class="tab" onclick="switchTab(this,'tab-ficha')">Ficha clínica</div>
         <div class="tab" onclick="switchTab(this,'tab-plano');renderPlanoProntuario(currentPatientIdx)">Plano</div>
         <div class="tab" onclick="switchTab(this,'tab-materiais')">Materiais</div>
+        <div class="tab" onclick="switchTab(this,'tab-anamnese');_popularAnamnese(_currentProntuarioIdx)">📋 Anamnese</div>
       </div>
       <div id="tab-timeline">
         <div class="timeline">
@@ -2694,6 +2695,131 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
         </div>
         <div id="materiais-list" style="display:flex;flex-direction:column;gap:10px">
           <div style="text-align:center;color:var(--muted);font-size:13px;padding:32px 0" id="materiais-empty">Nenhum material adicionado ainda.</div>
+        </div>
+      </div>
+      <div id="tab-anamnese" style="display:none">
+        <!-- Status bar: mostra quando há anamnese preenchida -->
+        <div id="anamnese-status-bar" style="display:none;background:#edf7f0;border:1px solid #b2d8be;border-radius:8px;padding:9px 14px;margin-bottom:16px;font-size:12px;color:var(--sage-dark)">
+          <span id="anamnese-status-text"></span>
+          <button onclick="ativarAnamnesePaciente(_currentProntuarioIdx)" id="btn-enviar-anamnese-pac" style="margin-left:8px;font-size:11px;padding:3px 11px;border-radius:20px;border:1px solid var(--sage);background:transparent;color:var(--sage);cursor:pointer;font-family:inherit">📤 Reenviar ao paciente</button>
+        </div>
+
+        <!-- Seção: Queixa e início -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Queixa e início</div>
+          <div class="grid-2" style="gap:14px">
+            <div class="form-group">
+              <label>Queixa principal</label>
+              <textarea id="ana-queixa" rows="3" placeholder="O que traz o paciente?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Início dos sintomas</label>
+              <input id="ana-inicio" type="text" placeholder="Ex: há 6 meses, após demissão" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
+            </div>
+            <div class="form-group">
+              <label>Fatores desencadeantes</label>
+              <textarea id="ana-fatores" rows="2" placeholder="O que precipitou?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Tentativas anteriores de resolução</label>
+              <textarea id="ana-tentativas" rows="2" placeholder="Já tentou resolver como?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção: Histórico terapêutico -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Histórico terapêutico</div>
+          <div class="grid-2" style="gap:14px">
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="ana-terapia-ant" style="accent-color:var(--sage);width:15px;height:15px"/> Já fez terapia anteriormente?</label>
+              <textarea id="ana-terapia-ant-desc" rows="2" placeholder="Qual abordagem, por quanto tempo, por que parou?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="ana-psiquiatra" style="accent-color:var(--sage);width:15px;height:15px"/> Acompanha psiquiatra?</label>
+              <textarea id="ana-psiquiatra-desc" rows="2" placeholder="Nome, diagnóstico, medicação atual" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção: Saúde -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Saúde e histórico médico</div>
+          <div class="grid-2" style="gap:14px">
+            <div class="form-group">
+              <label>Doenças crônicas / condições médicas</label>
+              <input id="ana-doencas" type="text" placeholder="Hipertensão, diabetes, etc." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
+            </div>
+            <div class="form-group">
+              <label>Medicações em uso</label>
+              <input id="ana-medicacoes" type="text" placeholder="Nome, dose, há quanto tempo" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label>Histórico familiar de saúde mental</label>
+              <textarea id="ana-hist-familiar" rows="2" placeholder="Familiar com diagnóstico psiquiátrico ou em tratamento?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção: Contexto de vida -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Contexto de vida</div>
+          <div class="grid-2" style="gap:14px">
+            <div class="form-group">
+              <label>Estado civil</label>
+              <select id="ana-estado-civil" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;background:#fff;box-sizing:border-box">
+                <option value="">Selecionar…</option>
+                <option value="Solteiro(a)">Solteiro(a)</option>
+                <option value="Namorando">Namorando</option>
+                <option value="Casado(a)">Casado(a)</option>
+                <option value="União estável">União estável</option>
+                <option value="Divorciado(a)">Divorciado(a)</option>
+                <option value="Viúvo(a)">Viúvo(a)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Situação profissional</label>
+              <select id="ana-sit-prof" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;background:#fff;box-sizing:border-box">
+                <option value="">Selecionar…</option>
+                <option value="Empregado(a) CLT">Empregado(a) CLT</option>
+                <option value="Autônomo / PJ">Autônomo / PJ</option>
+                <option value="Desempregado(a)">Desempregado(a)</option>
+                <option value="Estudante">Estudante</option>
+                <option value="Aposentado(a)">Aposentado(a)</option>
+                <option value="Do lar">Do lar</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Filhos</label>
+              <input id="ana-filhos" type="text" placeholder="Quantos, idades" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
+            </div>
+            <div class="form-group">
+              <label>Rede de apoio afetivo</label>
+              <input id="ana-suporte" type="text" placeholder="Família, amigos, parceiro(a)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção: Objetivos -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Objetivos terapêuticos</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="form-group">
+              <label>O que o paciente espera alcançar com a terapia?</label>
+              <textarea id="ana-objetivos" rows="3" placeholder="Objetivos e expectativas para o processo terapêutico" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Observações livres do terapeuta</label>
+              <textarea id="ana-obs" rows="3" placeholder="Impressões da 1ª sessão, hipóteses iniciais, aspectos de atenção" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botões de ação -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:8px;border-top:1px solid var(--border)">
+          <button id="btn-salvar-anamnese" onclick="salvarAnamnese(_currentProntuarioIdx)" class="btn btn-primary">Salvar anamnese</button>
+          <button onclick="ativarAnamnesePaciente(_currentProntuarioIdx)" class="btn btn-secondary" title="Paciente poderá preencher pelo portal antes da 1ª sessão">📤 Enviar ao paciente</button>
+          <div id="anamnese-save-msg" style="display:none;font-size:12px;color:var(--sage);font-weight:600">✓ Salvo!</div>
         </div>
       </div>
     </div>
@@ -6573,6 +6699,8 @@ async function _supaPatientSync() {
         readMaterials: p.readMaterials || [],
         portalNota: p.portalNota || null,
         portalNotifHour: p.portalNotifHour || null,
+        anamnese: p.anamnese || null,
+        portalAnamneseAtiva: p.portalAnamneseAtiva || false,
       }
     }).eq('id', p.id);
   } catch(e) {
@@ -14406,6 +14534,174 @@ function _checkNotifPortal(p) {
   _agendarNotificacaoPac(p.portalNotifHour);
 }
 
+// ─── ANAMNESE — TERAPEUTA ─────────────────────────────────────────────
+
+function _popularAnamnese(idx) {
+  if (idx == null || idx === undefined) return;
+  var p = (typeof patients !== 'undefined') ? patients[idx] : null;
+  var ana = (p && p.anamnese) ? p.anamnese : {};
+
+  function _set(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!val;
+    else el.value = val || '';
+  }
+
+  _set('ana-queixa',          ana.queixaPrincipal);
+  _set('ana-inicio',          ana.inicioSintomas);
+  _set('ana-fatores',         ana.fatoresDesencadeantes);
+  _set('ana-tentativas',      ana.tentativasAnteriores);
+  _set('ana-terapia-ant',     ana.terapiaAnterior);
+  _set('ana-terapia-ant-desc',ana.terapiaAnteriorDesc);
+  _set('ana-psiquiatra',      ana.psiquiatra);
+  _set('ana-psiquiatra-desc', ana.psiquiatraDesc);
+  _set('ana-doencas',         ana.doencasCronicas);
+  _set('ana-medicacoes',      ana.medicacoes);
+  _set('ana-hist-familiar',   ana.historicoFamiliarSaudeMental);
+  _set('ana-estado-civil',    ana.estadoCivil);
+  _set('ana-sit-prof',        ana.situacaoProfissional);
+  _set('ana-filhos',          ana.filhos);
+  _set('ana-suporte',         ana.suporteAfetivo);
+  _set('ana-objetivos',       ana.objetivosTerapia);
+  _set('ana-obs',             ana.observacoesLivres);
+
+  // Atualiza status bar
+  var bar = document.getElementById('anamnese-status-bar');
+  var txt = document.getElementById('anamnese-status-text');
+  if (bar && txt) {
+    if (ana.dataCriacao) {
+      var quem = ana.preenchidoPor === 'paciente' ? 'pelo paciente' : ana.preenchidoPor === 'conjunto' ? 'em conjunto' : 'pelo terapeuta';
+      var dt = new Date(ana.dataCriacao).toLocaleDateString('pt-BR');
+      txt.textContent = '✓ Anamnese preenchida ' + quem + ' em ' + dt;
+      bar.style.display = '';
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+}
+
+function salvarAnamnese(idx) {
+  if (idx == null || idx === undefined) return;
+  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+  var p = pacs[idx]; if (!p) return;
+
+  function _get(id) {
+    var el = document.getElementById(id);
+    if (!el) return '';
+    return el.type === 'checkbox' ? el.checked : (el.value || '').trim();
+  }
+
+  var existing = p.anamnese || {};
+  p.anamnese = {
+    dataCriacao:                existing.dataCriacao || new Date().toISOString(),
+    preenchidoPor:              existing.preenchidoPor === 'paciente' ? 'conjunto' : 'terapeuta',
+    queixaPrincipal:            _get('ana-queixa'),
+    inicioSintomas:             _get('ana-inicio'),
+    fatoresDesencadeantes:      _get('ana-fatores'),
+    tentativasAnteriores:       _get('ana-tentativas'),
+    terapiaAnterior:            _get('ana-terapia-ant'),
+    terapiaAnteriorDesc:        _get('ana-terapia-ant-desc'),
+    psiquiatra:                 _get('ana-psiquiatra'),
+    psiquiatraDesc:             _get('ana-psiquiatra-desc'),
+    doencasCronicas:            _get('ana-doencas'),
+    medicacoes:                 _get('ana-medicacoes'),
+    historicoFamiliarSaudeMental: _get('ana-hist-familiar'),
+    estadoCivil:                _get('ana-estado-civil'),
+    situacaoProfissional:       _get('ana-sit-prof'),
+    filhos:                     _get('ana-filhos'),
+    suporteAfetivo:             _get('ana-suporte'),
+    objetivosTerapia:           _get('ana-objetivos'),
+    observacoesLivres:          _get('ana-obs'),
+  };
+
+  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof patients !== 'undefined' && patients[idx]) patients[idx].anamnese = p.anamnese;
+
+  // Feedback visual
+  var msg = document.getElementById('anamnese-save-msg');
+  if (msg) { msg.style.display='flex'; setTimeout(function(){ msg.style.display='none'; }, 2500); }
+
+  // Atualiza status bar
+  _popularAnamnese(idx);
+
+  // Sync terapeuta
+  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+}
+
+function ativarAnamnesePaciente(idx) {
+  if (idx == null || idx === undefined) return;
+  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+  var p = pacs[idx]; if (!p) return;
+  // Salva a anamnese atual antes de enviar
+  salvarAnamnese(idx);
+  // Re-ler após salvar
+  pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+  p = pacs[idx]; if (!p) return;
+  p.portalAnamneseAtiva = true;
+  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof patients !== 'undefined' && patients[idx]) patients[idx].portalAnamneseAtiva = true;
+  if (typeof showToast === 'function') showToast('📤 Anamnese enviada! O paciente verá no portal.');
+}
+
+// ─── ANAMNESE — PACIENTE (portal) ────────────────────────────────────
+
+function pacSalvarAnamnese(idx) {
+  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
+  var p = pacs[idx]; if (!p) return;
+
+  function _gp(id) {
+    var el = document.getElementById(id);
+    if (!el) return '';
+    return el.type === 'checkbox' ? el.checked : (el.value || '').trim();
+  }
+
+  var existing = p.anamnese || {};
+  p.anamnese = {
+    dataCriacao: existing.dataCriacao || new Date().toISOString(),
+    preenchidoPor: 'paciente',
+    queixaPrincipal:         _gp('pac-ana-queixa'),
+    inicioSintomas:          _gp('pac-ana-inicio'),
+    fatoresDesencadeantes:   existing.fatoresDesencadeantes || '',
+    tentativasAnteriores:    existing.tentativasAnteriores || '',
+    terapiaAnterior:         _gp('pac-ana-terapia-ant'),
+    terapiaAnteriorDesc:     _gp('pac-ana-terapia-ant-desc'),
+    psiquiatra:              _gp('pac-ana-psiquiatra'),
+    psiquiatraDesc:          _gp('pac-ana-psiquiatra-desc'),
+    doencasCronicas:         _gp('pac-ana-doencas'),
+    medicacoes:              _gp('pac-ana-medicacoes'),
+    historicoFamiliarSaudeMental: _gp('pac-ana-hist-familiar'),
+    estadoCivil:             existing.estadoCivil || '',
+    situacaoProfissional:    existing.situacaoProfissional || '',
+    filhos:                  existing.filhos || '',
+    suporteAfetivo:          existing.suporteAfetivo || '',
+    objetivosTerapia:        _gp('pac-ana-objetivos'),
+    observacoesLivres:       existing.observacoesLivres || '',
+  };
+  p.portalAnamneseAtiva = false; // Some do portal após envio
+
+  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) {
+    _loggedPatientData.anamnese = p.anamnese;
+    _loggedPatientData.portalAnamneseAtiva = false;
+  }
+  if (typeof patients !== 'undefined' && patients[idx]) {
+    patients[idx].anamnese = p.anamnese;
+    patients[idx].portalAnamneseAtiva = false;
+  }
+
+  // Confirmação visual
+  var secao = document.getElementById('pac-anamnese-secao');
+  if (secao) {
+    secao.innerHTML = '<div style="text-align:center;padding:24px 0">'
+      + '<div style="font-size:36px;margin-bottom:10px">✅</div>'
+      + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Formulário enviado!</div>'
+      + '<div style="font-size:13px;color:var(--muted)">Sua terapeuta receberá as informações antes da próxima sessão.</div>'
+      + '</div>';
+  }
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+}
+
 function renderPatientApp(idx, pacs) {
   var src = pacs && pacs.length ? pacs : (typeof patients !== 'undefined' ? patients : []);
   var p = src[idx];
@@ -14565,6 +14861,67 @@ function renderPatientApp(idx, pacs) {
     + '</div>'
   + '</div>';
 
+  // ── Anamnese (portal — só aparece quando terapeuta ativar) ──
+  var anamnesePortalHtml = '';
+  if (p.portalAnamneseAtiva) {
+    var _ana = p.anamnese || {};
+    anamnesePortalHtml = '<div class="patient-section-card" id="pac-anamnese-secao">'
+      + '<div class="patient-section-header"><div class="patient-section-title">📋 Formulário de anamnese</div></div>'
+      + '<div class="patient-section-body">'
+        + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.6">Sua terapeuta precisa de algumas informações antes do início do processo. Preencha com calma — tudo é confidencial.</div>'
+
+        + '<div class="form-group" style="margin-bottom:14px">'
+          + '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">O que te traz para a terapia?</label>'
+          + '<textarea id="pac-ana-queixa" rows="3" placeholder="Descreva com suas palavras…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.queixaPrincipal||'') + '</textarea>'
+        + '</div>'
+
+        + '<div class="form-group" style="margin-bottom:14px">'
+          + '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Há quanto tempo você sente isso?</label>'
+          + '<input id="pac-ana-inicio" type="text" placeholder="Ex: alguns meses, depois de uma situação difícil…" value="' + escHTML(_ana.inicioSintomas||'') + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'
+        + '</div>'
+
+        + '<div class="form-group" style="margin-bottom:14px">'
+          + '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">O que você espera alcançar com a terapia?</label>'
+          + '<textarea id="pac-ana-objetivos" rows="2" placeholder="Seus objetivos e expectativas…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.objetivosTerapia||'') + '</textarea>'
+        + '</div>'
+
+        + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">'
+          + '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">'
+            + '<input type="checkbox" id="pac-ana-terapia-ant"' + (_ana.terapiaAnterior?' checked':'') + ' style="accent-color:var(--sage);width:16px;height:16px"/> Já fiz terapia antes</label>'
+          + '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">'
+            + '<input type="checkbox" id="pac-ana-psiquiatra"' + (_ana.psiquiatra?' checked':'') + ' style="accent-color:var(--sage);width:16px;height:16px"/> Acompanho psiquiatra atualmente</label>'
+        + '</div>'
+
+        + '<div class="form-group" style="margin-bottom:14px">'
+          + '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Terapia anterior (se sim): abordagem, tempo, motivo de encerramento</label>'
+          + '<textarea id="pac-ana-terapia-ant-desc" rows="2" placeholder="Opcional…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.terapiaAnteriorDesc||'') + '</textarea>'
+        + '</div>'
+
+        + '<div class="form-group" style="margin-bottom:14px">'
+          + '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Psiquiatra (se sim): nome, diagnóstico, medicação</label>'
+          + '<textarea id="pac-ana-psiquiatra-desc" rows="2" placeholder="Opcional…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.psiquiatraDesc||'') + '</textarea>'
+        + '</div>'
+
+        + '<div class="form-group" style="margin-bottom:14px">'
+          + '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Medicações em uso</label>'
+          + '<input id="pac-ana-medicacoes" type="text" placeholder="Nome, dose (ou nenhuma)" value="' + escHTML(_ana.medicacoes||'') + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'
+        + '</div>'
+
+        + '<div class="form-group" style="margin-bottom:14px">'
+          + '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Condições de saúde / doenças</label>'
+          + '<input id="pac-ana-doencas" type="text" placeholder="Ex: hipertensão, diabetes (ou nenhuma)" value="' + escHTML(_ana.doencasCronicas||'') + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'
+        + '</div>'
+
+        + '<div class="form-group" style="margin-bottom:20px">'
+          + '<label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Histórico familiar de saúde mental</label>'
+          + '<textarea id="pac-ana-hist-familiar" rows="2" placeholder="Familiar com diagnóstico ou tratamento? (opcional)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.historicoFamiliarSaudeMental||'') + '</textarea>'
+        + '</div>'
+
+        + '<button onclick="pacSalvarAnamnese(' + idx + ')" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Enviar para minha terapeuta</button>'
+      + '</div>'
+    + '</div>';
+  }
+
   // ── Insights de humor ──
   var moodInsights = _getMoodInsights(p);
 
@@ -14695,6 +15052,9 @@ function renderPatientApp(idx, pacs) {
 
     // Nota pré-sessão
     + notaPreHtml
+
+    // Anamnese (visível apenas quando terapeuta ativar)
+    + anamnesePortalHtml
 
     // Notificações
     + notifHtml;
