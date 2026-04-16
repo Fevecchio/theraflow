@@ -4531,6 +4531,7 @@ async function _supaSync_tasks() {
       status: t.status || 'aberta',
       prioridade: t.prioridade || 'media',
       due_date: t.dueDate || null,
+      patient_id: t.patientId || null,
     }));
     await supa.from('tasks').upsert(rows, { onConflict: 'local_id' });
   } catch(e) {
@@ -5897,13 +5898,23 @@ function hideForgotPassword() {
   setTimeout(() => document.getElementById('login-senha')?.focus(), 80);
 }
 
-function sendForgotPassword() {
-  const email = document.getElementById('forgot-email').value.trim();
-  if (!email) { document.getElementById('forgot-email').focus(); return; }
-  // Envia email real de recuperação via Supabase
-  supa.auth.resetPasswordForEmail(email).catch(() => {});
-  document.getElementById('forgot-form-area').style.display = 'none';
-  document.getElementById('forgot-success').style.display = 'block';
+async function sendForgotPassword() {
+  const emailInput = document.getElementById('forgot-email');
+  const email = emailInput.value.trim();
+  if (!email) { emailInput.focus(); return; }
+  const btn = document.querySelector('#tf-forgot-screen button[onclick*="sendForgotPassword"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+  const { error } = await supa.auth.resetPasswordForEmail(email).catch(() => ({ error: { message: 'Erro de rede' } }));
+  if (btn) { btn.disabled = false; btn.textContent = 'Enviar link de recuperação'; }
+  if (error) {
+    const errEl = document.getElementById('forgot-error') || emailInput;
+    // Mostra erro discretamente sem revelar se email existe ou não (segurança)
+    document.getElementById('forgot-form-area').style.display = 'none';
+    document.getElementById('forgot-success').style.display = 'block';
+  } else {
+    document.getElementById('forgot-form-area').style.display = 'none';
+    document.getElementById('forgot-success').style.display = 'block';
+  }
   // Auto-redirect para login após 4 segundos com contador
   let secs = 4;
   const counter = document.getElementById('forgot-redirect-counter');
@@ -6411,7 +6422,7 @@ function salvarPacientes() {
 
 /* Sync de dados do paciente de volta para o Supabase (sessão do paciente) */
 async function _supaPatientSync() {
-  const p = patients[0];
+  const p = _loggedPatientData || patients[0];
   if (!p || !p.id) return;
   try {
     await supaPatient.from('patients').update({
@@ -6567,7 +6578,7 @@ function renderPatients(filter) {
            <div style="font-size:40px;margin-bottom:12px">🌱</div>
            <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Nenhum paciente cadastrado</div>
            <div style="font-size:13px;margin-bottom:20px">Adicione seu primeiro paciente para começar a usar o TheraFlow.</div>
-           <button class="btn-primary" onclick="openModal('modal-novo-paciente')">+ Novo paciente</button>
+           <button class="btn-primary" onclick="showModal('modal-novo-paciente')">+ Novo paciente</button>
          </div>`
       : `<div style="padding:32px;text-align:center;color:var(--muted)">
            <div style="font-size:28px;margin-bottom:8px">🔍</div>
@@ -9962,7 +9973,7 @@ function renderCharges(mesFilter) {
       <div style="font-size:40px;margin-bottom:12px">💳</div>
       <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Nenhuma cobrança ainda</div>
       <div style="font-size:13px;margin-bottom:20px">Registre cobranças avulsas ou crie planos mensais para seus pacientes.</div>
-      <button class="btn-primary" onclick="openModal('modal-nova-cobranca')">+ Nova cobrança</button>
+      <button class="btn-primary" onclick="showModal('modal-nova-cobranca')">+ Nova cobrança</button>
     </div>`;
     return;
   }
@@ -11588,7 +11599,7 @@ function updateExerciseCounter() {
   if (counter) counter.textContent = total > 0 ? `${done} de ${total} concluídos` : 'Nenhum exercício';
 }
 
-function sendPortalMsg() {} // legacy
+
 
 // ── DIÁRIO DA SEMANA ─────────────────────────────────────────────────
 function switchDiaryTab(tab) {
@@ -12972,7 +12983,7 @@ function renderTarefas() {
            <div style="font-size:40px;margin-bottom:12px">✅</div>
            <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Sem tarefas pendentes</div>
            <div style="font-size:13px;margin-bottom:20px">Crie lembretes, follow-ups e pendências dos seus pacientes aqui.</div>
-           <button class="btn-primary" onclick="openModal('modal-nova-tarefa')">+ Nova tarefa</button>
+           <button class="btn-primary" onclick="showModal('modal-nova-tarefa')">+ Nova tarefa</button>
          </div>`
       : `<div style="padding:32px;text-align:center;color:var(--muted)">
            <div style="font-size:28px;margin-bottom:8px">🔍</div>
@@ -13187,6 +13198,7 @@ function initTarefas() {
 ══════════════════════════════════════════ */
 var _loggedPatientIdx = null;
 var _loggedPatientData = null;
+var _therapistPatientsBackup = null; // backup dos pacientes do terapeuta durante sessão do portal
 
 function irParaLoginPaciente() {
   document.getElementById('tf-onboarding-layer').style.display = 'none';
@@ -13290,6 +13302,9 @@ function loginPaciente() {
     _loggedPatientIdx = 0;
     _loggedPatientData = p;
 
+    // Guarda cópia dos pacientes do terapeuta antes de substituir
+    _therapistPatientsBackup = patients.slice();
+
     // Popula patients[] com os dados do paciente para que as funções do portal funcionem
     patients.splice(0, patients.length, p);
     currentPortalPatientIdx = 0;
@@ -13304,17 +13319,30 @@ function sairPaciente() {
   supaPatient.auth.signOut().catch(() => {});
   _loggedPatientIdx = null;
   _loggedPatientData = null;
+
+  // Restaura lista de pacientes do terapeuta
+  if (_therapistPatientsBackup) {
+    patients.splice(0, patients.length, ..._therapistPatientsBackup);
+    _therapistPatientsBackup = null;
+  }
+
   document.getElementById('tf-patient-app-layer').classList.remove('open');
+
+  // Se o terapeuta está logado, retorna para o app dele
+  var appLayer = document.getElementById('tf-app-layer');
+  if (appLayer && appLayer.style.display === 'flex') {
+    return; // terapeuta já está com o app aberto
+  }
+
+  // Caso contrário, vai para login do terapeuta
   document.getElementById('tf-onboarding-layer').style.display = 'flex';
-  // Vai para tela de login do terapeuta
   var hasAccount = false;
   try { hasAccount = !!JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
   if (hasAccount) {
-    document.getElementById('tf-main-onboarding') && (document.getElementById('tf-main-onboarding').style.display = 'none');
+    var mainOb = document.getElementById('tf-main-onboarding');
+    if (mainOb) mainOb.style.display = 'none';
     document.getElementById('tf-login-screen').style.display = 'block';
   }
-  // Abre login paciente
-  irParaLoginPaciente();
 }
 
 function renderPatientApp(idx, pacs) {

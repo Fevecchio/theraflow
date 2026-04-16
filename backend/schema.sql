@@ -419,7 +419,36 @@ create trigger on_session_created
   for each row execute procedure public.increment_sessoes_usadas();
 
 -- ============================================================
--- 12. CONSENT_LOGS (registro de aceite dos termos — LGPD)
+-- 12. PATIENT_USERS (vínculo entre auth.users dos pacientes e patients)
+-- Criado pelo endpoint /api/invite-patient ao convidar um paciente.
+-- ============================================================
+create table public.patient_users (
+  id            uuid primary key default uuid_generate_v4(),
+  auth_user_id  uuid not null references auth.users(id) on delete cascade,
+  patient_id    uuid not null references public.patients(id) on delete cascade,
+  therapist_id  uuid not null references public.users(id) on delete cascade,
+  created_at    timestamptz not null default now(),
+  unique (auth_user_id, patient_id)
+);
+
+alter table public.patient_users enable row level security;
+
+-- Paciente pode ler o próprio vínculo (para login no portal)
+create policy "patient_users: proprio paciente"
+  on public.patient_users for select
+  using (auth.uid() = auth_user_id);
+
+-- Terapeuta pode ver e gerenciar vínculos dos seus pacientes
+create policy "patient_users: proprio terapeuta"
+  on public.patient_users for all
+  using (auth.uid() = therapist_id);
+
+create index idx_patient_users_auth_user_id on public.patient_users(auth_user_id);
+create index idx_patient_users_patient_id   on public.patient_users(patient_id);
+create index idx_patient_users_therapist_id on public.patient_users(therapist_id);
+
+-- ============================================================
+-- 13. CONSENT_LOGS (registro de aceite dos termos — LGPD)
 -- Substitui o localStorage tf_terms_accepted quando houver backend.
 -- ============================================================
 create table public.consent_logs (
@@ -448,7 +477,7 @@ create index idx_consent_logs_patient_id on public.consent_logs(patient_id);
 create index idx_consent_logs_tipo       on public.consent_logs(tipo);
 
 -- ============================================================
--- 13. AUDIT_LOGS (log de auditoria de ações sensíveis — LGPD)
+-- 14. AUDIT_LOGS (log de auditoria de ações sensíveis — LGPD)
 -- Rastreia: criação/exclusão de dados, exports, acesso a prontuários.
 -- ============================================================
 create table public.audit_logs (

@@ -127,7 +127,8 @@ export default async function handler(req, res) {
       const errText = await linkRes.text().catch(() => '');
       console.error('[invite-patient] Falha ao criar vínculo:', linkRes.status, errText.substring(0, 200));
       // Usuário foi criado mas vínculo falhou — retorna erro mas não bloqueia
-      return res.status(207).json({
+      return res.status(200).json({
+        ok: true,
         warning: 'Usuário criado mas vínculo falhou — tente enviar o acesso novamente',
         authUserId,
       });

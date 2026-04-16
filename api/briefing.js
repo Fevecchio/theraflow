@@ -26,7 +26,7 @@ function isAllowedOrigin(origin) {
 }
 
 function setCors(res, origin) {
-  const allowed = isAllowedOrigin(origin) ? (origin || '*') : ALLOWED_ORIGINS[0];
+  const allowed = isAllowedOrigin(origin) ? (origin || ALLOWED_ORIGINS[0]) : ALLOWED_ORIGINS[0];
   res.setHeader('Access-Control-Allow-Origin', allowed);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -108,6 +108,10 @@ export default async function handler(req, res) {
   const content = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   if (content) {
+    // Limita cache a 100 entries — remove a entrada mais antiga se necessário
+    if (briefingCache.size >= 100) {
+      briefingCache.delete(briefingCache.keys().next().value);
+    }
     briefingCache.set(cacheKey, { content, ts: Date.now() });
   }
 
