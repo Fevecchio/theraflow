@@ -9787,7 +9787,9 @@ function renderListaProntuarios(destaque) {
   list.innerHTML = lista.map((p, fi) => {
     const badge = p.status === 'Atenção' || p.alert
       ? `<span class="tag tag-red" style="margin-left:auto;font-size:10px">Revisar</span>`
-      : fi === 0 ? `<span class="tag tag-amber" style="margin-left:auto;font-size:10px">Nova nota</span>` : '';
+      : p.portalNota && p.portalNota.trim()
+        ? `<span class="tag tag-amber" style="margin-left:auto;font-size:10px">📝 Nota</span>`
+        : fi === 0 ? `<span class="tag tag-amber" style="margin-left:auto;font-size:10px">Nova nota</span>` : '';
     return `<div class="list-item ${fi===0?'active':''}" onclick="selecionarProntuario(${p._i},this)">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <div class="patient-avatar" style="background:${p.color};color:#fff;width:32px;height:32px;font-size:11px">${p.initials}</div>
@@ -9892,8 +9894,31 @@ function selecionarProntuario(i, el) {
   // Materiais do paciente
   renderMateriaisProntuario(i);
 
-  // Injeta notas salvas de sessões anteriores no início da aba notas
+  // ── Nota pré-sessão do paciente (portal) ──────────────────────────
   const tabNotas = document.getElementById('tab-notas');
+  if (tabNotas) {
+    // Remove card anterior se existir
+    const prevNota = tabNotas.querySelector('.portal-nota-pre');
+    if (prevNota) prevNota.remove();
+
+    if (p.portalNota && p.portalNota.trim()) {
+      const notaCard = document.createElement('div');
+      notaCard.className = 'portal-nota-pre fade-in';
+      notaCard.style.cssText = 'background:#fffbec;border:1.5px solid #f0d060;border-radius:12px;padding:14px 16px;margin-bottom:16px';
+      notaCard.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+        + '<span style="font-size:16px">📝</span>'
+        + '<span style="font-size:11px;font-weight:700;color:#c97d2e;text-transform:uppercase;letter-spacing:.5px">Nota pré-sessão do paciente</span>'
+        + '<button onclick="if(confirm(\'Limpar nota do paciente?\')){ patients['+i+'].portalNota=\'\'; if(patients['+i+']) localStorage.setItem(\'tf_patients\',JSON.stringify(patients)); this.closest(\'.portal-nota-pre\').remove(); }" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:4px" title="Limpar nota">× Limpar</button>'
+        + '</div>'
+        + '<div style="font-size:14px;color:var(--ink);line-height:1.7;font-style:italic">"' + escHTML(p.portalNota.trim()) + '"</div>'
+        + '<div style="font-size:11px;color:var(--muted);margin-top:8px">Escrita pelo paciente no portal antes da sessão</div>';
+      const container = tabNotas.querySelector('div');
+      if (container) container.insertBefore(notaCard, container.firstChild);
+      else tabNotas.insertBefore(notaCard, tabNotas.firstChild);
+    }
+  }
+
+  // Injeta notas salvas de sessões anteriores no início da aba notas
   if (tabNotas && p.prontuarioNotes && p.prontuarioNotes.length > 0) {
     const container = tabNotas.querySelector('div');
     if (container) {
@@ -14044,6 +14069,7 @@ function sairPaciente() {
   supaPatient.auth.signOut().catch(() => {});
   _loggedPatientIdx = null;
   _loggedPatientData = null;
+  _cancelarNotificacaoPac();
 
   // Restaura lista de pacientes do terapeuta
   if (_therapistPatientsBackup) {
@@ -14254,6 +14280,7 @@ function pacEmergencia() {
 }
 
 var _breathInterval = null, _breathRunning = false;
+var _notifTimeoutId = null;
 
 function pacFecharEmergencia() {
   pacPararRespiracao();
@@ -14356,15 +14383,21 @@ function pacAtivarNotificacoes(idx) {
 }
 
 function _agendarNotificacaoPac(hora) {
+  if (_notifTimeoutId) { clearTimeout(_notifTimeoutId); _notifTimeoutId = null; }
   var agora = new Date();
   var alvo  = new Date(); alvo.setHours(parseInt(hora),0,0,0);
   if (alvo <= agora) alvo.setDate(alvo.getDate()+1);
-  setTimeout(function(){
+  _notifTimeoutId = setTimeout(function(){
+    _notifTimeoutId = null;
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       new Notification('TheraFlow 🌿', { body:'Como você está se sentindo hoje? Registre seu humor!', tag:'tf-mood-reminder' });
     }
     _agendarNotificacaoPac(hora);
   }, alvo - agora);
+}
+
+function _cancelarNotificacaoPac() {
+  if (_notifTimeoutId) { clearTimeout(_notifTimeoutId); _notifTimeoutId = null; }
 }
 
 function _checkNotifPortal(p) {
@@ -14378,7 +14411,7 @@ function renderPatientApp(idx, pacs) {
   var p = src[idx];
   if (!p) return;
 
-  var firstName = p.name.split(' ')[0];
+  var firstName = (p.name || 'Paciente').split(' ')[0];
   document.getElementById('pac-app-name').textContent = firstName;
 
   var body = document.getElementById('pac-app-body');
@@ -14545,7 +14578,7 @@ function renderPatientApp(idx, pacs) {
     + '</div>'
 
     // Streak
-    + (streakHtml ? '<div style="padding:0">' + streakHtml + '</div>' : '')
+    + streakHtml
 
     // Mensagem
     + msgBlock
@@ -14780,6 +14813,7 @@ function pacSalvarMood(idx) {
     Object.assign(patients[idx], {
       mood: p.mood, moodTrend: p.moodTrend,
       moodHistory: p.moodHistory, moodNotes: p.moodNotes,
+      _moodLastDate: p._moodLastDate,
       checkInStreak: p.checkInStreak, lastCheckInDate: p.lastCheckInDate,
     });
   }
@@ -14788,8 +14822,8 @@ function pacSalvarMood(idx) {
   var noteEl = document.getElementById('pac-mood-note');
   if (noteEl) noteEl.value = '';
 
-  document.getElementById('pac-mood-saved').style.display = '';
-  setTimeout(function(){ document.getElementById('pac-mood-saved').style.display='none'; }, 3000);
+  var savedEl = document.getElementById('pac-mood-saved');
+  if (savedEl) { savedEl.style.display = ''; setTimeout(function(){ var e = document.getElementById('pac-mood-saved'); if (e) e.style.display = 'none'; }, 3000); }
   try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
 
   // Sync silencioso para Supabase
