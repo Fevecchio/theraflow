@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>TheraFlow</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234a7c59'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-family='serif' fill='white'>T</text></svg>"/>
-<meta name="theme-color" content="#4a7c59"/>
+<meta name="theme-color" content="#5a8a6a"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="TheraFlow"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="TheraFlow"/>
@@ -2153,7 +2158,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
     </button>
     <button class="nav-item" onclick="navigate('portal')">
       <span class="icon">♡</span> Portal do Paciente
-      <span class="nav-badge-purple">Novo</span>
+      <span id="nav-portal-badge" class="nav-badge-purple" style="display:none">●</span>
     </button>
 
     <!-- DESENVOLVIMENTO PROFISSIONAL -->
@@ -3369,6 +3374,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
     </div>
     <div class="topbar-actions">
       <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">← Voltar</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportarBackupLGPD()" title="Exporta todos os dados locais em JSON (direito LGPD)">⬇ Exportar dados (LGPD)</button>
       <button class="btn btn-primary btn-sm" onclick="saveProfile()">Salvar alterações</button>
     </div>
   </div>
@@ -3432,6 +3438,14 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
           <div>
             <label class="perfil-label">Email de contato / suporte</label>
             <input id="perfil-email-suporte" class="perfil-input" type="email" placeholder="seu@email.com.br" />
+          </div>
+          <div>
+            <label class="perfil-label">WhatsApp (usado pelo portal do paciente para solicitar sessão)</label>
+            <input id="perfil-whatsapp" class="perfil-input" type="tel" placeholder="(11) 99999-9999" />
+          </div>
+          <div>
+            <label class="perfil-label">Template de lembrete WhatsApp <span style="font-weight:400;color:var(--muted)">(variáveis: [Nome], [dia], [hora], [Terapeuta])</span></label>
+            <textarea id="perfil-wpp-template" class="perfil-input" rows="4" style="resize:vertical;line-height:1.6" placeholder="Olá [Nome]! 🌿&#10;&#10;Lembrete da sua sessão de psicoterapia [dia] às [hora].&#10;&#10;Até logo! 💚&#10;— [Terapeuta]"></textarea>
           </div>
         </div>
         <div>
@@ -5008,11 +5022,24 @@ function _stopDashAutoRefresh() {
   if (_dashRefreshInterval) { clearInterval(_dashRefreshInterval); _dashRefreshInterval = null; }
 }
 
+function _wppInterpolate(tpl, nome, dia, hora, terapeuta) {
+  var base = tpl && tpl.trim()
+    ? tpl
+    : 'Olá [Nome]! 🌿\n\nLembrete da sua sessão de psicoterapia [dia].\n\nAté logo! 💚\n— [Terapeuta]';
+  return base
+    .replace(/\[Nome\]/g, nome)
+    .replace(/\[dia\]/g, hora ? dia + ' às ' + hora : dia)
+    .replace(/\[hora\]/g, hora || '')
+    .replace(/\[Terapeuta\]/g, terapeuta);
+}
+
 function enviarLembretesSessoesDia() {
   var hoje = new Date().toISOString().split('T')[0];
   var sessoesHoje = (typeof appointments !== 'undefined' ? appointments : [])
     .filter(function(a){ return a.date === hoje && a.status !== 'cancelada'; });
   if (!sessoesHoje.length) { showToast('Nenhuma sessão agendada para hoje.'); return; }
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+  var tpl = acc.wpp_template || '';
   var enviados = 0;
   var semWpp = 0;
   sessoesHoje.forEach(function(a, idx) {
@@ -5022,10 +5049,7 @@ function enviarLembretesSessoesDia() {
     n = n.startsWith('55') ? n : '55' + n;
     var hora = a.time || '';
     var nomeT = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
-    var msg = 'Olá ' + p.name.split(' ')[0] + '! 🌿\n\n'
-      + 'Lembrete da sua sessão de psicoterapia hoje'
-      + (hora ? ' às ' + hora : '') + '.\n\n'
-      + 'Até logo! 💚\n— ' + nomeT;
+    var msg = _wppInterpolate(tpl, p.name.split(' ')[0], 'hoje', hora, nomeT);
     setTimeout(function(){ window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank'); }, idx * 600);
     enviados++;
   });
@@ -5048,15 +5072,14 @@ function enviarLembretesAmanha() {
 
   // Monta modal de preview
   var nomeT = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
+  var _accA = {}; try { _accA = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+  var tplA = _accA.wpp_template || '';
   var itens = sessoes.map(function(a, idx) {
     var p = patients[a.patientIdx];
     var nome = p ? p.name : a.patientName || 'Paciente';
     var temWpp = p && p.whatsapp;
     var hora = a.time || '';
-    var msg = 'Olá ' + nome.split(' ')[0] + '! 🌿\n\n'
-      + 'Lembrete: sua sessão de psicoterapia é amanhã, ' + amanhaFmt
-      + (hora ? ' às ' + hora : '') + '.\n\n'
-      + 'Até amanhã! 💚\n— ' + nomeT;
+    var msg = _wppInterpolate(tplA, nome.split(' ')[0], 'amanhã, ' + amanhaFmt, hora, nomeT);
     var n = temWpp ? p.whatsapp.replace(/\D/g,'') : '';
     if (n && !n.startsWith('55')) n = '55' + n;
     var link = temWpp ? 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg) : '';
@@ -6344,15 +6367,16 @@ function navigate(page) {
   if (fab) fab.style.display = ['dashboard','pacientes','prontuarios','briefing','supervisao','tarefas'].includes(page) ? 'flex' : 'none';
   if (page === 'dashboard') { checkFirstPatientBanner(); atualizarDashboard(); setTimeout(verificarMarcos, 800); setTimeout(iniciarTour, 500); _startDashAutoRefresh(); }
   else { _stopDashAutoRefresh(); }
-  // Atualiza badge de alertas da supervisão
+  // Atualiza badges de nav
   _atualizarBadgeSupervisao();
+  _atualizarBadgePortal();
   if (page === 'tarefas') initTarefas();
   if (page === 'sessao') startSession();
   if (page === 'pacientes') renderPatients();
   if (page === 'agenda') initAgenda();
   if (page === 'prontuarios') renderProntuarios();
   if (page === 'briefing') initBriefing();
-  if (page === 'portal') initPortal();
+  if (page === 'portal') { initPortal(); _limparBadgePortal(); }
   if (page === 'financeiro') initFinanceiro();
   if (page === 'supervisao') initSupervisao();
   if (page === 'perfil') {
@@ -8114,7 +8138,7 @@ function _promptNotaRapida(appt) {
     + '<div style="display:flex;gap:10px;margin-top:12px">'
       + '<button onclick="document.getElementById(\'modal-nota-rapida\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Pular</button>'
       + '<button onclick="_salvarNotaRapida(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Salvar nota</button>'
-      + '<button onclick="currentSessionPatientIdx=' + appt.patientIdx + ';document.getElementById(\'modal-nota-rapida\').remove();navigate(\'sessao\')" style="flex:2;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✦ Gerar com IA</button>'
+      + '<button id="btn-preench-ia-nota" onclick="_preencherNotaComIA(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✦ Rascunho IA</button>'
     + '</div>'
   + '</div>';
   overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
@@ -8135,6 +8159,45 @@ function _salvarNotaRapida(pidx) {
   salvarPacientes();
   document.getElementById('modal-nota-rapida')?.remove();
   showToast('📋 Nota salva no prontuário de ' + p.name.split(' ')[0] + '.');
+}
+
+async function _preencherNotaComIA(pidx) {
+  var p = patients[pidx];
+  if (!p) return;
+  var btn = document.getElementById('btn-preench-ia-nota');
+  if (btn) { btn.textContent = '⏳ Gerando…'; btn.disabled = true; }
+  try {
+    var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e2){}
+    var hoje = new Date();
+    var dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
+    var userPrompt = 'Gere um rascunho de nota clínica (3-5 linhas) para a sessão de hoje (' + dataStr + ') do paciente '
+      + p.name + '. Baseie-se nos dados disponíveis: abordagem ' + (p.abordagem || 'não especificada')
+      + ', sessão nº ' + (p.sessions || '?')
+      + ', humor recente ' + (p.mood != null ? p.mood + '/10' : 'não registrado')
+      + ', queixa principal: ' + (p.notes || 'não informada') + '.'
+      + ' Escreva em primeira pessoa do terapeuta, tom clínico e objetivo.';
+    var patientData = { name: p.name, abordagem: p.abordagem, sessions: p.sessions, mood: p.mood, notes: p.notes, cid: p.cid };
+    var resp = await fetch('/api/briefing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userPrompt, patientData }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    var texto = data.content || '';
+    if (texto) {
+      var ta = document.getElementById('nota-rapida-text');
+      if (ta) { ta.value = texto; ta.focus(); }
+      showToast('✦ Rascunho gerado — revise antes de salvar.');
+    } else {
+      showToast('⚠ IA não retornou texto. Tente novamente.');
+    }
+  } catch(e) {
+    console.warn('[TF] Erro ao gerar nota com IA:', e.message);
+    showToast('⚠ Erro ao conectar com a IA. Verifique a API Key em Perfil.');
+  } finally {
+    if (btn) { btn.textContent = '✦ Rascunho IA'; btn.disabled = false; }
+  }
 }
 
 function _salvarAppointments() {
@@ -8578,6 +8641,22 @@ function tfTrack(event, props) {
    SUPERVISÃO IA — ALGORITMO REAL
    Analisa dados reais dos pacientes e gera alertas genuínos
 ══════════════════════════════════════════════════════════ */
+function _limparBadgePortal() {
+  try {
+    localStorage.removeItem('tf_portal_new_data');
+    var b = document.getElementById('nav-portal-badge');
+    if (b) b.style.display = 'none';
+  } catch(e) {}
+}
+
+function _atualizarBadgePortal() {
+  try {
+    var b = document.getElementById('nav-portal-badge');
+    if (!b) return;
+    b.style.display = localStorage.getItem('tf_portal_new_data') === '1' ? 'inline-block' : 'none';
+  } catch(e) {}
+}
+
 function _atualizarBadgeSupervisao() {
   try {
     var badge = document.getElementById('nav-supervisao-badge');
@@ -9410,6 +9489,56 @@ function selecionarProntuario(i, el) {
     if (fields[1]) fields[1].innerHTML = `<label>Abordagem</label><div style="font-size:14px;padding:9px 0">${escHTML(p.abordagem || '—')}</div>`;
     if (fields[4]) fields[4].innerHTML = `<label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">${escHTML(p.notes || '—')}</div>`;
   }
+
+  // ── Painel de evolução (sparkline de humor + stats)
+  (function() {
+    var panelId = 'prontuario-evolucao-panel';
+    var existing = document.getElementById(panelId);
+    if (existing) existing.remove();
+    var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
+    var totalSessoes = p.sessions || 0;
+    var prog = p.progress || 0;
+
+    var sparkHtml = '';
+    if (mh.length >= 2) {
+      var pts = mh.slice(-12);
+      var W = 200, H = 44, pad = 5;
+      var stepX = (W - pad*2) / (pts.length - 1);
+      var coords = pts.map(function(v, i) {
+        var x = pad + i * stepX;
+        var y = H - pad - ((v - 1) / 9) * (H - pad*2);
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+      var trend = pts[pts.length-1] - pts[0];
+      var cor = trend > 0.5 ? '#4a7c59' : trend < -0.5 ? '#c0392b' : '#c97d2e';
+      var ultimo = pts[pts.length-1];
+      sparkHtml = '<div style="display:flex;align-items:center;gap:10px;margin-top:6px">'
+        + '<svg width="'+W+'" height="'+H+'" style="flex-shrink:0"><polyline points="'+coords+'" fill="none" stroke="'+cor+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+        + '<div style="flex-shrink:0;text-align:center"><div style="font-size:20px;font-weight:700;color:'+cor+'">'+ultimo+'</div><div style="font-size:10px;color:var(--muted)">/10</div></div>'
+        + '</div>'
+        + '<div style="font-size:11px;color:var(--muted);margin-top:4px">'
+        + (trend > 0.5 ? '↗ Melhora' : trend < -0.5 ? '↘ Queda' : '→ Estável')
+        + ' — últimas '+ pts.length +' sessões</div>';
+    } else {
+      sparkHtml = '<div style="font-size:12px;color:var(--muted);font-style:italic">Humor não registrado ainda.</div>';
+    }
+
+    var panel = document.createElement('div');
+    panel.id = panelId;
+    panel.style.cssText = 'margin:16px 0;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border)';
+    panel.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Evolução do paciente</div>'
+      + '<div style="display:flex;gap:16px;margin-bottom:10px">'
+        + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">'+totalSessoes+'</div><div style="font-size:10px;color:var(--muted)">Sessões</div></div>'
+        + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--sage)">'+prog+'%</div><div style="font-size:10px;color:var(--muted)">Progresso</div></div>'
+        + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">'+(mh.length ? mh[mh.length-1] : '—')+'</div><div style="font-size:10px;color:var(--muted)">Humor atual</div></div>'
+      + '</div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Histórico de humor (últimas sessões)</div>'
+      + sparkHtml;
+
+    // Injeta antes dos materiais (no detail-body ou no tab-ficha)
+    var tabFicha = document.getElementById('tab-ficha');
+    if (tabFicha) tabFicha.appendChild(panel);
+  })();
 
   // Materiais do paciente
   renderMateriaisProntuario(i);
@@ -12016,6 +12145,30 @@ function selectPerfilAbordagem(el, key) {
   if (plano) plano.textContent = cal.plano;
 }
 
+function exportarBackupLGPD() {
+  try {
+    var dados = { _meta: { gerado_em: new Date().toISOString(), versao: '1.0', app: 'TheraFlow' } };
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (!k || !k.startsWith('tf_')) continue;
+      try { dados[k] = JSON.parse(localStorage.getItem(k)); }
+      catch(e) { dados[k] = localStorage.getItem(k); }
+    }
+    var json = JSON.stringify(dados, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    var dt   = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = 'theraflow-backup-' + dt + '.json';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('⬇ Backup exportado com sucesso.');
+  } catch(e) {
+    console.warn('[TF] Erro ao exportar backup LGPD:', e.message);
+    showToast('⚠ Erro ao exportar dados.');
+  }
+}
+
 function saveProfile() {
   const nome        = document.getElementById('perfil-nome')?.value.trim() || '';
   const crp         = document.getElementById('perfil-crp')?.value.trim() || '';
@@ -12080,6 +12233,10 @@ function saveProfile() {
     acc.cidade = cidade;
     var emailSup = document.getElementById('perfil-email-suporte');
     if (emailSup) acc.email_suporte = emailSup.value.trim();
+    var wppEl = document.getElementById('perfil-whatsapp');
+    if (wppEl) acc.whatsapp = wppEl.value.trim();
+    var wppTplEl = document.getElementById('perfil-wpp-template');
+    if (wppTplEl) acc.wpp_template = wppTplEl.value.trim();
     if (apiKeyVal) acc.claude_api_key = apiKeyVal;
     else delete acc.claude_api_key;
     localStorage.setItem('tf_account', JSON.stringify(acc));
@@ -12957,6 +13114,14 @@ function aplicarDadosNoApp() {
   if (fEmailSup) {
     try { var _accE = JSON.parse(localStorage.getItem('tf_account')||'{}'); fEmailSup.value = _accE.email_suporte || ''; } catch(e){}
   }
+  var fWpp = document.getElementById('perfil-whatsapp');
+  if (fWpp) {
+    try { var _accW = JSON.parse(localStorage.getItem('tf_account')||'{}'); fWpp.value = _accW.whatsapp || ''; } catch(e){}
+  }
+  var fWppTpl = document.getElementById('perfil-wpp-template');
+  if (fWppTpl) {
+    try { var _accT = JSON.parse(localStorage.getItem('tf_account')||'{}'); fWppTpl.value = _accT.wpp_template || ''; } catch(e){}
+  }
 
   // Pré-seleciona abordagem no perfil
   profileAbordagem = abordKey;
@@ -13343,6 +13508,33 @@ function voltarLoginTerapeuta() {
   document.getElementById('tf-onboarding-layer').style.display = 'flex';
 }
 
+function _verificarTermosPortal(patientId, callback) {
+  var chave = 'tf_portal_terms_' + patientId;
+  if (localStorage.getItem(chave) === '1') { callback(); return; }
+  // Cria modal de aceite
+  var existing = document.getElementById('modal-termos-portal');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'modal-termos-portal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;padding:28px 24px;box-shadow:0 8px 40px rgba(0,0,0,.2)">'
+    + '<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Termos de uso e privacidade</div>'
+    + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.7;margin-bottom:18px;max-height:200px;overflow-y:auto;padding-right:4px">'
+    + '<b>TheraFlow — Portal do Paciente</b><br><br>'
+    + 'Ao acessar este portal, você concorda com o uso dos seus dados clínicos (registros de humor, diário, tarefas e exercícios) pelo sistema TheraFlow para fins terapêuticos, em conformidade com a <b>LGPD (Lei 13.709/2018)</b>.<br><br>'
+    + 'Seus dados são armazenados com segurança e acessados apenas por você e seu terapeuta. Você pode solicitar a exclusão dos seus dados a qualquer momento diretamente com seu terapeuta.<br><br>'
+    + 'O uso do portal implica concordância com estes termos.'
+    + '</div>'
+    + '<button id="btn-aceitar-termos" style="width:100%;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Entendi e aceito os termos</button>'
+  + '</div>';
+  document.body.appendChild(modal);
+  document.getElementById('btn-aceitar-termos').addEventListener('click', function() {
+    try { localStorage.setItem(chave, '1'); } catch(e) {}
+    modal.remove();
+    callback();
+  });
+}
+
 function loginPaciente() {
   var email = (document.getElementById('pac-login-email').value || '').trim().toLowerCase();
   var senha = (document.getElementById('pac-login-senha').value || '').trim();
@@ -13375,7 +13567,7 @@ function loginPaciente() {
         _loggedPatientData = pacs[idx];
         document.getElementById('tf-patient-login-layer').classList.remove('open');
         document.getElementById('tf-patient-app-layer').classList.add('open');
-        renderPatientApp(idx, pacs);
+        _verificarTermosPortal(pacs[idx].id || 'local-' + idx, function(){ renderPatientApp(idx, pacs); });
         return;
       }
       errEl.textContent = '⚠ Email ou senha incorretos. Verifique com seu terapeuta.';
@@ -13443,7 +13635,7 @@ function loginPaciente() {
 
     document.getElementById('tf-patient-login-layer').classList.remove('open');
     document.getElementById('tf-patient-app-layer').classList.add('open');
-    renderPatientApp(0, [p]);
+    _verificarTermosPortal(p.id || userId, function(){ renderPatientApp(0, [p]); });
   });
 }
 
@@ -13764,6 +13956,7 @@ function pacSalvarMood(idx) {
   if (typeof patients !== 'undefined' && patients[idx]) { patients[idx].mood = parseInt(val); }
   document.getElementById('pac-mood-saved').style.display = '';
   setTimeout(function(){ document.getElementById('pac-mood-saved').style.display='none'; }, 3000);
+  try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
 }
 
 function pacToggleEx(pidx, exId, patientName) {
@@ -13825,6 +14018,7 @@ function pacSalvarDiario(tipo, idx) {
   // Feedback visual
   var btn = event?.target;
   if (btn) { var orig = btn.textContent; btn.textContent = '✓ Salvo!'; btn.style.background='var(--sage)'; setTimeout(function(){ btn.textContent=orig; btn.style.background=''; }, 2000); }
+  try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
 }
 
 </script>
