@@ -17,6 +17,10 @@
 <meta name="description" content="Plataforma de gestão clínica para psicólogos"/>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://js.stripe.com/v3/"></script>
+<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+" (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId setPersonPropertiesForFlags".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https://us.i.posthog.com',person_profiles:'identified_only'});
+</script>
 <style>
 /* ═══════════════════════════════════
    RESET GLOBAL
@@ -4550,6 +4554,7 @@ const _STRIPE_PK = 'pk_test_51TNCbIFY0RoCsYEc3dHRoo3rpeHRP6ucbwzq5NhYLJL3QyGgFvw
 let _tfPlanPro = false;
 
 async function assinarPro(btn) {
+  tfTrack('upgrade_clicked');
   try {
     if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
     const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
@@ -5256,6 +5261,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (window.location.search.includes('checkout=success')) {
     history.replaceState({}, '', window.location.pathname);
     _tfPlanPro = true;
+    tfTrack('checkout_completed', { plano: 'pro' });
     setTimeout(function() { showToast('Assinatura ativa! Bem-vindo ao TheraFlow Pro 🎉', 6000); }, 1500);
   }
 });
@@ -6245,6 +6251,17 @@ function _proceedToApp(account) {
     tfUserData.abordagem   = account.abordagem || '';
     tfUserData.secundarias = account.secundarias || [];
     tfUserData.abordagemKey = account.abordagemKey || ABORDAGEM_KEY_MAP?.[account.abordagem] || 'tcc';
+    try {
+      if (window.posthog && account.email) {
+        posthog.identify(account.supa_id || account.email, {
+          email: account.email,
+          nome: account.nome,
+          plano: account.plano || 'trial',
+          abordagem: account.abordagem || '',
+        });
+      }
+    } catch(e) {}
+    tfTrack('user_logged_in', { plano: account.plano || 'trial' });
   }
   checkTermsAndProceed(function() {
     document.getElementById('tf-onboarding-layer').style.display = 'none';
