@@ -4659,6 +4659,8 @@ async function _supaSync_patients() {
         fin: p.fin || null,
         forma_pagamento: p.forma_pagamento || null,
         portalPassword: p.portalPassword || null,
+        anamnese: p.anamnese || null,
+        portalAnamneseAtiva: p.portalAnamneseAtiva || false,
       },
     }));
     await supa.from('patients').upsert(rows, { onConflict: 'id' });
@@ -14642,6 +14644,8 @@ function ativarAnamnesePaciente(idx) {
   localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof patients !== 'undefined' && patients[idx]) patients[idx].portalAnamneseAtiva = true;
   if (typeof showToast === 'function') showToast('📤 Anamnese enviada! O paciente verá no portal.');
+  // Sync com Supabase para que o portal do paciente receba a flag
+  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
 }
 
 // ─── ANAMNESE — PACIENTE (portal) ────────────────────────────────────
@@ -14657,27 +14661,23 @@ function pacSalvarAnamnese(idx) {
   }
 
   var existing = p.anamnese || {};
-  p.anamnese = {
+  // Preserva TODOS os campos do terapeuta; o paciente só substitui o que ele preencheu
+  p.anamnese = Object.assign({}, existing, {
     dataCriacao: existing.dataCriacao || new Date().toISOString(),
-    preenchidoPor: 'paciente',
-    queixaPrincipal:         _gp('pac-ana-queixa'),
-    inicioSintomas:          _gp('pac-ana-inicio'),
-    fatoresDesencadeantes:   existing.fatoresDesencadeantes || '',
-    tentativasAnteriores:    existing.tentativasAnteriores || '',
-    terapiaAnterior:         _gp('pac-ana-terapia-ant'),
-    terapiaAnteriorDesc:     _gp('pac-ana-terapia-ant-desc'),
-    psiquiatra:              _gp('pac-ana-psiquiatra'),
-    psiquiatraDesc:          _gp('pac-ana-psiquiatra-desc'),
-    doencasCronicas:         _gp('pac-ana-doencas'),
-    medicacoes:              _gp('pac-ana-medicacoes'),
+    // preenchidoPor: 'terapeuta'→'conjunto', vazio/paciente→'paciente'
+    preenchidoPor: existing.preenchidoPor === 'terapeuta' ? 'conjunto' : 'paciente',
+    queixaPrincipal:              _gp('pac-ana-queixa'),
+    inicioSintomas:               _gp('pac-ana-inicio'),
+    terapiaAnterior:              _gp('pac-ana-terapia-ant'),
+    terapiaAnteriorDesc:          _gp('pac-ana-terapia-ant-desc'),
+    psiquiatra:                   _gp('pac-ana-psiquiatra'),
+    psiquiatraDesc:               _gp('pac-ana-psiquiatra-desc'),
+    doencasCronicas:              _gp('pac-ana-doencas'),
+    medicacoes:                   _gp('pac-ana-medicacoes'),
     historicoFamiliarSaudeMental: _gp('pac-ana-hist-familiar'),
-    estadoCivil:             existing.estadoCivil || '',
-    situacaoProfissional:    existing.situacaoProfissional || '',
-    filhos:                  existing.filhos || '',
-    suporteAfetivo:          existing.suporteAfetivo || '',
-    objetivosTerapia:        _gp('pac-ana-objetivos'),
-    observacoesLivres:       existing.observacoesLivres || '',
-  };
+    objetivosTerapia:             _gp('pac-ana-objetivos'),
+    // Campos só visíveis no terapeuta são preservados via Object.assign acima
+  });
   p.portalAnamneseAtiva = false; // Some do portal após envio
 
   localStorage.setItem('tf_patients', JSON.stringify(pacs));
