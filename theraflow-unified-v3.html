@@ -4609,6 +4609,8 @@ async function _supaLoadUserData(userId) {
         sessoes_usadas: profile.sessoes_usadas || 0,
         plano,
         supa_id: userId,
+        referral_count: profile.referral_count || 0,
+        referral_rewarded: profile.referral_rewarded || false,
       }));
     }
     if (pats && pats.length > 0) {
@@ -5256,6 +5258,12 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.modal-overlay').forEach(function(m) {
     m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
   });
+
+  // Captura parâmetro de referral e salva em localStorage
+  (function() {
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if (ref) { localStorage.setItem('tf_referral', ref); history.replaceState({}, '', window.location.pathname); }
+  })();
 
   // Retorno do Stripe Checkout — mostra toast de boas-vindas ao Pro
   if (window.location.search.includes('checkout=success')) {
@@ -13595,11 +13603,15 @@ function abrirApp() {
       }
       // Atualiza perfil no banco se criou com sucesso
       if (data?.user) {
+        const refId = localStorage.getItem('tf_referral');
         supa.from('users').update({
           nome: tfUserData.nome,
           crp: tfUserData.crp || null,
           abordagem: tfUserData.abordagem || null,
-        }).eq('id', data.user.id).then(() => {});
+          ...(refId ? { referred_by: refId } : {}),
+        }).eq('id', data.user.id).then(() => {
+          if (refId) localStorage.removeItem('tf_referral');
+        });
       }
     }).catch(() => {});
   }
@@ -13631,15 +13643,33 @@ function _lancarApp() {
 function abrirReferral() {
   var existing = document.getElementById('modal-referral');
   if (existing) existing.remove();
-  var nome = (tfUserData && tfUserData.nome) ? tfUserData.nome.split(' ')[0] : 'colega';
-  var msg = 'Olá! Estou usando o TheraFlow para gestão do meu consultório — agenda, prontuários e IA calibrada pela minha abordagem. É muito bom! Você pode testar com 20 sessões gratuitas. Veja: https://theraflow.app';
+  var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+  var refId = acc.supa_id || '';
+  var refLink = refId ? ('https://theraflow-one.vercel.app/app?ref=' + refId) : 'https://theraflow-one.vercel.app/app';
+  var refCount = acc.referral_count || 0;
+  var refRewarded = acc.referral_rewarded || false;
+  var msg = 'Olá! Estou usando o TheraFlow para gestão do meu consultório — agenda, prontuários e IA calibrada pela minha abordagem. É muito bom! Você pode testar com 20 sessões gratuitas: ' + refLink;
   var overlay = document.createElement('div');
   overlay.id = 'modal-referral';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:460px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
       <div style="font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px">🎁 Indicar um colega</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">Compartilhe o TheraFlow com psicólogos da sua rede. Cada indicação ajuda a plataforma a crescer e a se tornar melhor para todos.</div>
+      <div style="background:#f0f7f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">🎉</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">Ganhe 1 mês grátis</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">Quando seu indicado assinar o Pro, você recebe 1 mês grátis automaticamente${refRewarded ? ' <span style="color:#5a8a6a;font-weight:600">(já resgatado ✓)</span>' : ''}</div>
+        </div>
+      </div>
+      ${refCount > 0 ? `<div style="font-size:12px;color:var(--sage);font-weight:600;margin-bottom:12px">✓ ${refCount} indicação${refCount > 1 ? 'ões' : ''} realizada${refCount > 1 ? 's' : ''}</div>` : ''}
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">SEU LINK PERSONALIZADO</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="referral-link-input" value="${escHTML(refLink)}" readonly style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--ink-soft);background:var(--bg);font-family:inherit">
+          <button onclick="copiarLinkReferral()" style="padding:9px 14px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Copiar</button>
+        </div>
+      </div>
       <div style="background:var(--sage-light);border-radius:10px;padding:14px 16px;margin-bottom:16px">
         <div style="font-size:11px;font-weight:700;color:var(--sage);margin-bottom:8px">MENSAGEM PRONTA</div>
         <div id="referral-msg-text" style="font-size:13px;color:var(--ink-soft);line-height:1.6">${escHTML(msg)}</div>
@@ -13655,6 +13685,13 @@ function abrirReferral() {
     </div>`;
   overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+}
+
+function copiarLinkReferral() {
+  var input = document.getElementById('referral-link-input');
+  if (!input) return;
+  navigator.clipboard?.writeText(input.value).catch(() => { input.select(); document.execCommand('copy'); });
+  showToast('✓ Link copiado!');
 }
 
 function copiarReferral() {
