@@ -4785,8 +4785,9 @@ async function _supaSync_appointments() {
     const { data: { user } } = await supa.auth.getUser();
     if (!user) return;
     const appts = JSON.parse(localStorage.getItem('tf_appointments') || '[]');
-    if (!appts.length) return;
     const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+    await supa.from('appointments').delete().eq('user_id', user.id);
+    if (!appts.length) return;
     const rows = appts.map(a => ({
       local_id: String(a.id),
       user_id: user.id,
@@ -4802,7 +4803,7 @@ async function _supaSync_appointments() {
       color: a.color || null,
       metadata: {},
     }));
-    const { error } = await supa.from('appointments').upsert(rows, { onConflict: 'local_id,user_id' });
+    const { error } = await supa.from('appointments').insert(rows);
     if (error) throw error;
   } catch(e) { console.warn('[Supa] Sync appointments:', e.message); }
 }
