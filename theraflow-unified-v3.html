@@ -4802,7 +4802,7 @@ async function _supaSync_appointments() {
       color: a.color || null,
       metadata: {},
     }));
-    const { error } = await supa.from('appointments').upsert(rows, { onConflict: 'local_id,user_id' });
+    const { error } = await supa.from('appointments').upsert(rows, { onConflict: 'local_id' });
     if (error) throw error;
   } catch(e) { console.warn('[Supa] Sync appointments:', e.message); }
 }

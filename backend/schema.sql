@@ -225,7 +225,7 @@ create table if not exists public.appointments (
   id            uuid primary key default uuid_generate_v4(),
   local_id      text not null,
   user_id       uuid not null references public.users(id) on delete cascade,
-  patient_id    uuid references public.patients(id) on delete set null,
+  patient_id    uuid, -- sem FK para permitir pacientes ainda não sincronizados
   patient_name  text,
   date          date not null,
   time          text,
