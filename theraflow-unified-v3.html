@@ -4584,11 +4584,12 @@ const supaPatient = supabase.createClient(_SUPA_URL, _SUPA_KEY, {
 /* Carrega dados do Supabase e popula localStorage */
 async function _supaLoadUserData(userId) {
   try {
-    const [{ data: profile }, { data: pats }, { data: chgs }, { data: tsks }] = await Promise.all([
+    const [{ data: profile }, { data: pats }, { data: chgs }, { data: tsks }, { data: appts }] = await Promise.all([
       supa.from('users').select('*').eq('id', userId).single(),
       supa.from('patients').select('*').eq('user_id', userId),
       supa.from('charges').select('*').eq('user_id', userId),
       supa.from('tasks').select('*').eq('user_id', userId),
+      supa.from('appointments').select('*').eq('user_id', userId),
     ]);
     if (profile) {
       const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
@@ -4652,7 +4653,23 @@ async function _supaLoadUserData(userId) {
       }));
       localStorage.setItem('tf_tasks', JSON.stringify(restoredTasks));
     }
-    // Carregar appointments do metadata do primeiro paciente não é viável — ficam no localStorage
+    if (appts && appts.length > 0) {
+      const patsArr = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+      const restoredAppts = appts.map(a => ({
+        id: a.local_id,
+        patientIdx: patsArr.findIndex(p => p.id === a.patient_id),
+        patientName: a.patient_name,
+        date: a.date,
+        time: a.time,
+        duration: a.duration,
+        abordagem: a.abordagem,
+        status: a.status,
+        recorrencia: a.recorrencia,
+        presenca: a.presenca,
+        color: a.color,
+      }));
+      localStorage.setItem('tf_appointments', JSON.stringify(restoredAppts));
+    }
   } catch(e) {
     console.warn('[Supa] Erro ao carregar dados:', e.message);
   }
@@ -4761,6 +4778,33 @@ async function _supaSync_tasks() {
   } catch(e) {
     console.warn('[Supa] Sync tasks falhou:', e.message);
   }
+}
+
+async function _supaSync_appointments() {
+  try {
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) return;
+    const appts = JSON.parse(localStorage.getItem('tf_appointments') || '[]');
+    if (!appts.length) return;
+    const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+    const rows = appts.map(a => ({
+      local_id: String(a.id),
+      user_id: user.id,
+      patient_id: (pats[a.patientIdx] || pats.find(p => p.name === a.patientName))?.id || null,
+      patient_name: a.patientName || '',
+      date: a.date,
+      time: a.time || null,
+      duration: a.duration || null,
+      abordagem: a.abordagem || null,
+      status: a.status || 'agendada',
+      recorrencia: a.recorrencia || null,
+      presenca: a.presenca || null,
+      color: a.color || null,
+      metadata: {},
+    }));
+    const { error } = await supa.from('appointments').upsert(rows, { onConflict: 'local_id,user_id' });
+    if (error) throw error;
+  } catch(e) { console.warn('[Supa] Sync appointments:', e.message); }
 }
 
 /* ── ONBOARDING JS ── */
@@ -8541,6 +8585,7 @@ async function _preencherNotaComIA(pidx) {
 
 function _salvarAppointments() {
   try { localStorage.setItem('tf_appointments', JSON.stringify(appointments)); } catch(e) {}
+  _supaSync_appointments();
 }
 
 function _gerarAppointmentsDemo() {

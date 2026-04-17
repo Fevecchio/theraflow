@@ -219,7 +219,43 @@ create trigger tasks_updated_at
 create index idx_tasks_user_id on public.tasks(user_id);
 
 -- ============================================================
--- 8. EXERCISES (exercícios entre sessões)
+-- 8. APPOINTMENTS (agenda do terapeuta)
+-- ============================================================
+create table if not exists public.appointments (
+  id            uuid primary key default uuid_generate_v4(),
+  local_id      text not null,
+  user_id       uuid not null references public.users(id) on delete cascade,
+  patient_id    uuid references public.patients(id) on delete set null,
+  patient_name  text,
+  date          date not null,
+  time          text,
+  duration      int,
+  abordagem     text,
+  status        text default 'agendada',
+  recorrencia   text,
+  presenca      text,
+  color         text,
+  metadata      jsonb default '{}'::jsonb,
+  created_at    timestamptz default now(),
+  updated_at    timestamptz default now(),
+  constraint appointments_local_id_user_id_key unique (local_id, user_id)
+);
+
+alter table public.appointments enable row level security;
+
+create policy "Terapeuta acessa própria agenda"
+  on public.appointments for all
+  using (user_id = auth.uid());
+
+create trigger appointments_updated_at
+  before update on public.appointments
+  for each row execute procedure public.set_updated_at();
+
+create index idx_appointments_user_id on public.appointments(user_id);
+create index idx_appointments_date    on public.appointments(date);
+
+-- ============================================================
+-- 9. EXERCISES (exercícios entre sessões)
 -- ============================================================
 create table public.exercises (
   id            uuid primary key default uuid_generate_v4(),
