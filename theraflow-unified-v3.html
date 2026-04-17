@@ -2644,6 +2644,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
           <div class="detail-meta"><span>🎂 28 anos</span><span>📋 TCC</span><span>📍 São Paulo</span></div>
         </div>
         <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm" onclick="excluirPaciente(_currentProntuarioIdx)" style="color:var(--red);border-color:rgba(192,57,43,.35)" title="Excluir paciente (LGPD)">🗑</button>
           <button class="btn btn-purple btn-sm" onclick="prontuarioNavBriefing()">✦ Briefing IA</button>
           <button class="btn btn-primary btn-sm" onclick="prontuarioNavSessao()">▶ Sessão</button>
         </div>
@@ -4072,6 +4073,12 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
       <div class="form-group"><label>Status</label><select class="form-input" id="np-status"><option value="Nova">Nova</option><option value="Ativa">Ativa</option><option value="Atenção">Atenção</option><option value="Inativa">Inativa</option></select></div>
     </div>
     <div class="form-group"><label>Queixa principal</label><textarea class="note-area" id="np-queixa" style="min-height:80px" placeholder="Descreva a queixa inicial…"></textarea></div>
+    <div id="np-consentimento-wrap" style="margin:4px 0 12px;padding:10px 12px;background:#f7f8f6;border-radius:8px;border:1px solid var(--border)">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12.5px;line-height:1.5;color:var(--ink-soft)">
+        <input type="checkbox" id="np-consentimento" style="accent-color:var(--sage);width:15px;height:15px;flex-shrink:0;margin-top:2px"/>
+        <span>Confirmo que o paciente foi informado sobre o tratamento de seus dados pessoais e de saúde, em conformidade com a <strong>LGPD (Lei 13.709/2018)</strong> e o sigilo profissional previsto no Código de Ética do CFP.</span>
+      </label>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="fecharModalPaciente()">Cancelar</button>
       <button class="btn btn-primary" id="btn-criar-paciente" onclick="criarPaciente()">Criar ficha</button>
@@ -4623,6 +4630,7 @@ async function _supaLoadUserData(userId) {
 }
 
 /* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos) */
+var _syncErrorCount = 0; // contador de falhas consecutivas de sync
 async function _supaSync_patients() {
   try {
     const { data: { user } } = await supa.auth.getUser();
@@ -4664,8 +4672,14 @@ async function _supaSync_patients() {
       },
     }));
     await supa.from('patients').upsert(rows, { onConflict: 'id' });
+    _syncErrorCount = 0; // reset ao ter sucesso
   } catch(e) {
+    _syncErrorCount++;
     console.warn('[Supa] Sync patients falhou:', e.message);
+    // Avisa o terapeuta após 2 falhas consecutivas (evita ruído em erros pontuais)
+    if (_syncErrorCount === 2 && typeof showToast === 'function') {
+      showToast('⚠ Sincronização com nuvem falhou — dados salvos localmente. Verifique sua conexão.', 'warning');
+    }
   }
 }
 
@@ -5139,6 +5153,18 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 80);
     }
   } catch(e) {}
+
+  // Verificar sessão Supabase ativa — se válida, restaura dados e entra sem re-digitar senha
+  supa.auth.getSession().then(async function({ data: { session } }) {
+    if (!session || !session.user) return;
+    var acc = null;
+    try { acc = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
+    if (!acc) return; // Sem conta local configurada, aguarda login manual
+    // Já tem sessão — restaura dados frescos do Supabase e entra no app
+    try { await _supaLoadUserData(session.user.id); } catch(e) { console.warn('[Supa] Auto-restore:', e.message); }
+    try { acc = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
+    if (acc) _proceedToApp(acc);
+  }).catch(function() {});
 
   // Click fora do modal fecha
   document.querySelectorAll('.modal-overlay').forEach(function(m) {
@@ -6226,6 +6252,10 @@ function limparModalPaciente() {
   const btn = document.getElementById('btn-criar-paciente');
   btn.textContent = 'Criar ficha';
   btn.onclick = criarPaciente;
+  const chk = document.getElementById('np-consentimento');
+  if (chk) chk.checked = false;
+  const wrap = document.getElementById('np-consentimento-wrap');
+  if (wrap) wrap.style.display = '';
 }
 
 function fecharModalPaciente() {
@@ -6237,6 +6267,7 @@ function criarPaciente() {
   const d = lerCamposPaciente();
   if (!d.nome) { showToast('Informe o nome do paciente.'); return; }
   if (!d.whatsapp) { showToast('⚠ WhatsApp é obrigatório para enviar lembretes.'); document.getElementById('np-whatsapp').focus(); return; }
+  if (!document.getElementById('np-consentimento')?.checked) { showToast('⚠ Confirme o consentimento LGPD do paciente para continuar.'); return; }
   const initials = d.nome.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
   const colorPairs = [
     ['#4a7c59','#2a5238'],['#2c5f8a','#1a3d5c'],['#c97d2e','#9a5c1e'],
@@ -6313,7 +6344,43 @@ function showEditarPaciente(i) {
   const btn = document.getElementById('btn-criar-paciente');
   btn.textContent = 'Salvar alterações';
   btn.onclick = () => salvarEdicaoPaciente(i);
+  // Oculta checkbox de consentimento no modo editar (já foi coletado no cadastro)
+  const wrap = document.getElementById('np-consentimento-wrap');
+  if (wrap) wrap.style.display = 'none';
   showModal('modal-novo-paciente');
+}
+
+function excluirPaciente(idx) {
+  const p = patients[idx];
+  if (!p) return;
+  if (!confirm('Excluir permanentemente "' + p.name + '"?\n\nTodos os dados clínicos, notas e histórico serão removidos (LGPD — direito de exclusão). Esta ação não pode ser desfeita.')) return;
+
+  // Remove paciente do array e persiste
+  patients.splice(idx, 1);
+  salvarPacientes();
+
+  // Remove e re-indexa appointments deste paciente
+  appointments = appointments.filter(function(a) { return a.patientIdx !== idx; });
+  appointments.forEach(function(a) { if (a.patientIdx > idx) a.patientIdx--; });
+  localStorage.setItem('tf_appointments', JSON.stringify(appointments));
+
+  // Remove cobranças pelo nome do paciente
+  try {
+    var chgs = JSON.parse(localStorage.getItem('tf_charges') || '[]');
+    chgs = chgs.filter(function(c) { return c.patient !== p.name; });
+    localStorage.setItem('tf_charges', JSON.stringify(chgs));
+  } catch(e) {}
+
+  // Remove do Supabase (assíncrono, sem bloquear UI)
+  if (p.id) {
+    supa.from('patients').delete().eq('id', p.id).catch(function(e) {
+      console.warn('[LGPD] Falha ao excluir paciente do Supabase:', e.message);
+    });
+  }
+
+  showToast('✓ Paciente excluído — dados removidos conforme LGPD.');
+  navigate('pacientes');
+  renderPatients();
 }
 
 function salvarEdicaoPaciente(i) {
