@@ -9,6 +9,14 @@
       "dest": "/theraflow-unified-v3.html"
     },
     {
+      "src": "/termos",
+      "dest": "/termos.html"
+    },
+    {
+      "src": "/privacidade",
+      "dest": "/privacidade.html"
+    },
+    {
       "src": "/",
       "dest": "/landing.html"
     }

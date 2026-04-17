@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Política de Privacidade — TheraFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;color:#1a2e1a;background:#f9faf8;line-height:1.7}
+header{background:#fff;border-bottom:1px solid #e5ebe5;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;color:#1a2e1a;text-decoration:none}
+.logo svg{width:32px;height:32px}
+.back{font-size:13px;color:#5a8a6a;text-decoration:none;display:flex;align-items:center;gap:6px}
+.back:hover{text-decoration:underline}
+main{max-width:720px;margin:0 auto;padding:48px 24px 80px}
+h1{font-family:'Instrument Serif',serif;font-size:36px;font-weight:400;margin-bottom:8px;color:#1a2e1a}
+.meta{font-size:13px;color:#6b7c6b;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid #e5ebe5}
+h3{font-family:'Instrument Serif',serif;font-size:20px;font-weight:400;margin:32px 0 10px;color:#1a2e1a}
+p{margin-bottom:12px;color:#3d4f3d;font-size:15px}
+ul{padding-left:20px;display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+li{color:#3d4f3d;font-size:15px}
+a{color:#5a8a6a}
+.callout{background:#f0f7f0;border-left:3px solid #5a8a6a;padding:12px 16px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14px}
+.callout-purple{background:#f0ecfa;border-left:3px solid #8b6ec5;padding:12px 16px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14px}
+footer{text-align:center;padding:32px 24px;font-size:13px;color:#6b7c6b;border-top:1px solid #e5ebe5}
+</style>
+</head>
+<body>
+<header>
+  <a href="/" class="logo">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="8" fill="#4a7c59"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="18" font-family="serif" fill="white">T</text></svg>
+    TheraFlow
+  </a>
+  <a href="javascript:history.back()" class="back">← Voltar</a>
+</header>
+<main>
+  <h1>Política de Privacidade</h1>
+  <p class="meta">Versão 1.0 · Abril de 2026 · Conforme LGPD (Lei 13.709/2018)</p>
+
+  <h3>1. Quem somos</h3>
+  <p>A TheraFlow é operadora dos dados pessoais tratados nesta Política. Contato do encarregado de dados (DPO): <a href="mailto:privacidade@theraflow.app">privacidade@theraflow.app</a></p>
+
+  <h3>2. Dados que coletamos</h3>
+  <p><strong>Do Terapeuta:</strong> nome, e-mail, CRP, abordagem terapêutica, dados de pagamento (via Stripe), logs de acesso.</p>
+  <p><strong>Dos Pacientes (dados sensíveis de saúde):</strong> nome, contato, prontuário, notas clínicas, histórico de sessões, diário e check-ins de humor.</p>
+  <div class="callout-purple">Dados de saúde mental são tratados como <strong>dados sensíveis</strong> nos termos do Art. 11 da LGPD, com base legal em tutela da saúde (Art. 11, II, f) e consentimento explícito (Art. 11, I).</div>
+
+  <h3>3. Como usamos os dados</h3>
+  <p>Exclusivamente para: prestar o serviço contratado, gerar análises com IA sob instrução do Terapeuta, enviar comunicações do serviço, cumprir obrigações legais e melhorar a Plataforma (sempre com dados anonimizados).</p>
+  <div class="callout"><strong>A TheraFlow não vende, aluga ou compartilha dados pessoais com terceiros para fins comerciais.</strong></div>
+
+  <h3>4. Inteligência Artificial</h3>
+  <p>Os recursos de IA processam dados clínicos exclusivamente para gerar as análises solicitadas pelo Terapeuta. Os dados são enviados à API da Anthropic (Claude), que <strong>não utiliza dados de API para treinar seus modelos</strong>. A TheraFlow não armazena prompts ou respostas da IA associados a pacientes identificados além do necessário.</p>
+
+  <h3>5. Parceiros e transferências</h3>
+  <p>Compartilhamos dados apenas com: Supabase (banco de dados), Anthropic (IA), Stripe (pagamentos), Vercel (hospedagem). Todos sob Data Processing Agreements.</p>
+
+  <h3>6. Segurança</h3>
+  <p>Criptografia em trânsito (HTTPS/TLS) e em repouso (AES-256), senhas com hash bcrypt, controle de acesso por Row Level Security, backups automáticos diários, logs de auditoria.</p>
+
+  <h3>7. Retenção de dados</h3>
+  <p>Dados da conta e dados clínicos são mantidos enquanto a conta estiver ativa + 90 dias após cancelamento. Prontuários podem ser retidos pelo prazo mínimo de 5 anos conforme Resolução CFP 001/2009. Dados financeiros: 5 anos (obrigação fiscal).</p>
+
+  <h3>8. Seus direitos (Art. 18 LGPD)</h3>
+  <ul>
+    <li><strong>Acesso</strong> — saber quais dados temos</li>
+    <li><strong>Correção</strong> — corrigir dados incorretos</li>
+    <li><strong>Exclusão</strong> — solicitar a exclusão</li>
+    <li><strong>Portabilidade</strong> — receber seus dados em formato estruturado</li>
+    <li><strong>Revogação do consentimento</strong> — quando a base for consentimento</li>
+  </ul>
+  <p>Solicitações: <a href="mailto:privacidade@theraflow.app">privacidade@theraflow.app</a> · Prazo de resposta: 15 dias úteis.</p>
+  <p>Você pode registrar reclamações junto à <strong>ANPD</strong>: gov.br/anpd</p>
+
+  <h3>9. Consentimento do paciente</h3>
+  <p>O Terapeuta deve obter consentimento explícito do paciente antes de inserir seus dados. A TheraFlow disponibiliza modelo de Termo de Consentimento mediante solicitação.</p>
+</main>
+<footer>
+  © 2026 TheraFlow · <a href="/termos">Termos de Uso</a> · <a href="mailto:privacidade@theraflow.app">privacidade@theraflow.app</a>
+</footer>
+</body>
+</html>
