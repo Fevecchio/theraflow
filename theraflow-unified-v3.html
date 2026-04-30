@@ -1786,12 +1786,12 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
         </div>
 
         <div class="form-group" style="margin-bottom:0">
-          <label for="senha">Crie uma senha <span style="font-size:11px;color:var(--muted);font-weight:400">· mínimo 6 caracteres</span></label>
+          <label for="senha">Crie uma senha <span style="font-size:11px;color:var(--muted);font-weight:400">· mínimo 8 caracteres</span></label>
           <div style="position:relative">
             <input type="password" id="senha" class="form-input" placeholder="••••••••" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding-right:44px" oninput="this.classList.remove('error');document.getElementById('err-senha').style.display='none'" onkeydown="if(event.key==='Enter')goNext()"/>
             <button type="button" onclick="toggleSenhaOb()" tabindex="-1" id="btn-toggle-ob-pw" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;line-height:1">👁</button>
           </div>
-          <span class="field-error" id="err-senha">A senha precisa ter pelo menos 6 caracteres.</span>
+          <span class="field-error" id="err-senha">A senha precisa ter pelo menos 8 caracteres.</span>
         </div>
       </div>
 
@@ -6569,8 +6569,9 @@ function redefinirSenhaPaciente(i) {
   var p = patients[i];
   if (!p) return;
   var nova = prompt('Nova senha para ' + _firstName(p.name) + ':');
-  if (!nova || !nova.trim()) return;
-  p.portalPassword = nova.trim().toLowerCase();
+  if (nova === null) return;
+  if (!nova.trim()) { showToast('Senha não pode ser vazia.'); return; }
+  p.portalPassword = nova.trim();
   salvarPacientes();
   var el = document.getElementById('pac-senha-display-' + i);
   if (el) el.textContent = p.portalPassword;
@@ -14204,6 +14205,7 @@ function salvarNovaTarefa() {
   closeModal('modal-nova-tarefa');
   renderTarefas();
   renderDashTarefas();
+  atualizarBadgeTarefas();
 }
 
 function renderDashTarefas() {
@@ -14352,8 +14354,8 @@ function loginPaciente() {
       try { pacs = JSON.parse(localStorage.getItem('tf_patients') || '[]'); } catch(e2) {}
       var idx = pacs.findIndex(function(p) {
         var pEmail = (p.email || '').trim().toLowerCase();
-        var pSenha = p.portalPassword || _firstName(p.name).toLowerCase();
-        return pEmail === email && pSenha === senha;
+        var pSenha = p.portalPassword || '';
+        return pEmail === email && pSenha !== '' && pSenha === senha;
       });
       if (idx !== -1) {
         _loggedPatientIdx = idx;

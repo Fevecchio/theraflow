@@ -11,7 +11,6 @@ const ALLOWED_ORIGINS = [
 function isAllowedOrigin(origin) {
   if (!origin) return true;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (origin.endsWith('.vercel.app')) return true;
   return false;
 }
 
@@ -41,8 +40,8 @@ export default async function handler(req, res) {
       line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
       customer_email: email,
       metadata: { supaId: supaId || '' },
-      success_url: 'https://theraflow-one.vercel.app/app?checkout=success',
-      cancel_url: 'https://theraflow-one.vercel.app/app',
+      success_url: (process.env.APP_URL || 'https://theraflow-one.vercel.app') + '/app?checkout=success',
+      cancel_url: (process.env.APP_URL || 'https://theraflow-one.vercel.app') + '/app',
     });
     return res.status(200).json({ url: session.url });
   } catch (err) {
