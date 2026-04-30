@@ -11,6 +11,10 @@
 <meta name="theme-color" content="#4a7c59"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234a7c59'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-family='serif' fill='white'>T</text></svg>"/>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+" (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId setPersonPropertiesForFlags".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https://us.i.posthog.com',person_profiles:'always'});
+</script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -751,6 +755,7 @@ footer { background: var(--ink); padding: 60px 0 32px; }
   <div class="container">
     <div style="text-align:center">
       <div class="section-eyebrow">Depoimentos</div>
+      <p style="color:var(--muted);font-size:11px;margin-top:4px">Relatos de usuários durante o período beta. Nomes alterados.</p>
       <h2 class="section-title">O que psicólogos dizem</h2>
       <p class="section-sub" style="margin:0 auto">Opiniões reais de profissionais que usam o TheraFlow no dia a dia.</p>
     </div>
@@ -764,7 +769,7 @@ footer { background: var(--ink); padding: 60px 0 32px; }
           <div class="testimonial-avatar" style="background:#4a7c59">AM</div>
           <div>
             <div class="testimonial-name">Ana Martins</div>
-            <div class="testimonial-crp">Psicóloga · CRP 06/123456 · TCC · São Paulo</div>
+            <div class="testimonial-crp">Psicóloga · TCC · São Paulo</div>
           </div>
         </div>
       </div>
@@ -776,7 +781,7 @@ footer { background: var(--ink); padding: 60px 0 32px; }
           <div class="testimonial-avatar" style="background:#2c5f8a">RF</div>
           <div>
             <div class="testimonial-name">Ricardo Figueiredo</div>
-            <div class="testimonial-crp">Psicanalista · CRP 06/789012 · São Paulo</div>
+            <div class="testimonial-crp">Psicanalista · São Paulo</div>
           </div>
         </div>
       </div>
@@ -788,7 +793,7 @@ footer { background: var(--ink); padding: 60px 0 32px; }
           <div class="testimonial-avatar" style="background:#6a3d7a">PC</div>
           <div>
             <div class="testimonial-name">Patrícia Cunha</div>
-            <div class="testimonial-crp">Psicóloga · CRP 06/345678 · Abordagem Sistêmica</div>
+            <div class="testimonial-crp">Psicóloga · Abordagem Sistêmica</div>
           </div>
         </div>
       </div>
@@ -841,8 +846,8 @@ footer { background: var(--ink); padding: 60px 0 32px; }
       <div>
         <div class="footer-title">Legal</div>
         <div class="footer-links">
-          <a href="backend/termos-de-uso.md">Termos de uso</a>
-          <a href="backend/politica-de-privacidade.md">Privacidade</a>
+          <a href="termos.html">Termos de uso</a>
+          <a href="privacidade.html">Privacidade</a>
           <a href="#" onclick="alert('DPO: privacidade@theraflow.com.br')">DPO — LGPD</a>
           <a href="#" onclick="alert('Resolução CFP 04/2020 — em conformidade')">CFP 04/2020</a>
         </div>
@@ -851,8 +856,8 @@ footer { background: var(--ink); padding: 60px 0 32px; }
     <div class="footer-bottom">
       <div class="footer-copy">© 2026 TheraFlow. Todos os direitos reservados.</div>
       <div class="footer-legal">
-        <a href="backend/termos-de-uso.md">Termos</a>
-        <a href="backend/politica-de-privacidade.md">Privacidade</a>
+        <a href="termos.html">Termos</a>
+        <a href="privacidade.html">Privacidade</a>
         <a href="mailto:contato@theraflow.com.br">Contato</a>
       </div>
     </div>
@@ -860,6 +865,14 @@ footer { background: var(--ink); padding: 60px 0 32px; }
 </footer>
 
 <script>
+// PostHog: pageview + cliques em CTA
+if (window.posthog) posthog.capture('landing_page_viewed');
+document.querySelectorAll('a[href*="theraflow-unified"]').forEach(el => {
+  el.addEventListener('click', () => {
+    posthog.capture('landing_cta_clicked', { text: el.textContent.trim(), href: el.href });
+  });
+});
+
 // Animação suave nos números do hero
 function animateCounters() {
   document.querySelectorAll('.hero-stat-val').forEach(el => {

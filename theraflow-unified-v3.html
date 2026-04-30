@@ -9148,6 +9148,7 @@ function _atualizarBadgeSupervisao() {
   } catch(e) {}
 }
 
+/* ── ALERTAS & SUPERVISÃO IA ── */
 function gerarAlertasReais() {
   var alertas = [];
   var hoje = new Date();
@@ -10359,6 +10360,7 @@ function salvarMaterial() {
   showToast('Material adicionado!');
 }
 
+/* ── PRONTUÁRIO & NOTAS CLÍNICAS ── */
 function renderMateriaisProntuario(idx) {
   _materialPatientIdx = idx;
   var p = patients[idx];
@@ -10850,6 +10852,7 @@ function salvarCharges() {
   _supaSync_charges().catch(() => {});
 }
 
+/* ── FINANCEIRO & COBRANÇAS ── */
 let charges = carregarCharges();
 let currentFinMode = 'pre';
 
@@ -12208,6 +12211,7 @@ function salvarMensagemPortal() {
   showToast('Mensagem atualizada!');
 }
 
+/* ── PORTAL DO PACIENTE — LÓGICA ── */
 // ── DICA DA SEMANA ──
 function renderDicaPortal() {
   const p = patients[currentPortalPatientIdx] || patients[0];
@@ -14004,6 +14008,7 @@ function getTarefasFiltradas() {
   return list;
 }
 
+/* ── TAREFAS ── */
 function formatarDataTarefa(dateStr) {
   if (!dateStr) return '—';
   var hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -14906,6 +14911,7 @@ function pacSalvarAnamnese(idx) {
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
 }
 
+/* ── APP DO PACIENTE (área do paciente) ── */
 function renderPatientApp(idx, pacs) {
   var src = pacs && pacs.length ? pacs : (typeof patients !== 'undefined' ? patients : []);
   var p = src[idx];
