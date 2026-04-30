@@ -4370,7 +4370,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
     <div class="consent-item"><span class="consent-icon">📅</span><div class="consent-text"><strong>Renovação</strong><br/>Plano renova automaticamente. Pode ser cancelado a qualquer momento.</div></div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-secondary" onclick="closeModal('modal-converter-plano')">Cancelar</button>
-      <button class="btn btn-primary" onclick="closeModal('modal-converter-plano');showToast('Rafael convertido para plano mensal!')">↑ Converter para mensal</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-converter-plano');showToast('✓ Paciente convertido para plano mensal!')">↑ Converter para mensal</button>
     </div>
   </div>
 </div>
@@ -4640,12 +4640,12 @@ async function _supaLoadUserData(userId) {
         id: c.local_id || c.id,
         // Mapeia patient_id (UUID) de volta para o nome do paciente
         patient: (pats && pats.find(p => p.id === c.patient_id)?.name) || c.patient_id,
-        valor: c.valor,
+        value: parseFloat(c.valor) || 0,
         metodo: c.metodo,
         status: c.status,
         descricao: c.descricao,
-        data: c.due_date,
-        pago_em: c.paid_date,
+        date: c.due_date || null,
+        paidDate: c.paid_date || null,
       }));
       localStorage.setItem('tf_charges', JSON.stringify(restoredChgs));
     }
@@ -4759,12 +4759,12 @@ async function _supaSync_charges() {
         const p = pats.find(x => x.name === c.patient || x.id === c.patient);
         return p?.id || null;
       })(),
-      valor: parseFloat(c.valor) || 0,
+      valor: parseFloat(c.value) || 0,
       metodo: c.metodo || 'PIX',
       status: c.status || 'pendente',
       descricao: c.descricao || null,
-      due_date: c.data || null,
-      paid_date: c.pago_em || null,
+      due_date: c.date || null,
+      paid_date: c.paidDate || null,
     })).filter(r => r.patient_id);
     if (rows.length) await supa.from('charges').upsert(rows, { onConflict: 'local_id' });
   } catch(e) {
@@ -5242,6 +5242,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch(e) {}
 
+  // Renovação automática de token — sincroniza plano se sessão mudar
+  supa.auth.onAuthStateChange(function(event, session) {
+    if (event === 'TOKEN_REFRESHED' && session) {
+      _supaLoadUserData(session.user.id).catch(function() {});
+    }
+    if (event === 'SIGNED_OUT') {
+      // Limpa estado Pro se sessão expirar sem renovação
+      _tfPlanPro = false;
+    }
+  });
+
   // Verificar sessão Supabase ativa — se válida, restaura dados e entra sem re-digitar senha
   supa.auth.getSession().then(async function({ data: { session } }) {
     if (!session || !session.user) return;
@@ -5262,15 +5273,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Captura parâmetro de referral e salva em localStorage
   (function() {
     const ref = new URLSearchParams(window.location.search).get('ref');
-    if (ref) { localStorage.setItem('tf_referral', ref); history.replaceState({}, '', window.location.pathname); }
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (ref && uuidRe.test(ref)) { localStorage.setItem('tf_referral', ref); history.replaceState({}, '', window.location.pathname); }
   })();
 
-  // Retorno do Stripe Checkout — mostra toast de boas-vindas ao Pro
+  // Retorno do Stripe Checkout — ativa Pro apenas se há sessão Supabase válida
   if (window.location.search.includes('checkout=success')) {
     history.replaceState({}, '', window.location.pathname);
-    _tfPlanPro = true;
-    tfTrack('checkout_completed', { plano: 'pro' });
-    setTimeout(function() { showToast('Assinatura ativa! Bem-vindo ao TheraFlow Pro 🎉', 6000); }, 1500);
+    supa.auth.getUser().then(function({ data: { user } }) {
+      if (!user) return; // sem sessão autenticada — ignora param
+      _tfPlanPro = true;
+      tfTrack('checkout_completed', { plano: 'pro' });
+      setTimeout(function() { showToast('Assinatura ativa! Bem-vindo ao TheraFlow Pro 🎉', 6000); }, 1500);
+    }).catch(function() {});
   }
 });
 
@@ -5334,7 +5349,7 @@ function enviarLembretesSessoesDia() {
     n = n.startsWith('55') ? n : '55' + n;
     var hora = a.time || '';
     var nomeT = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
-    var msg = _wppInterpolate(tpl, p.name.split(' ')[0], 'hoje', hora, nomeT);
+    var msg = _wppInterpolate(tpl, _firstName(p.name), 'hoje', hora, nomeT);
     setTimeout(function(){ window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank'); }, idx * 600);
     enviados++;
   });
@@ -6418,7 +6433,7 @@ function _showConvitePortalModal(idx) {
       <div style="font-size:36px;margin-bottom:12px">📲</div>
       <div style="font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:8px">Enviar acesso ao portal?</div>
       <div style="font-size:13.5px;color:#6b7280;line-height:1.6;margin-bottom:20px">
-        ${p.name.split(' ')[0]} receberá email e senha pelo WhatsApp para acessar o portal entre as sessões.
+        ${_firstName(p.name)} receberá email e senha pelo WhatsApp para acessar o portal entre as sessões.
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button onclick="compartilharAcessoPortal(${idx});document.getElementById('modal-convite-portal').remove()" style="background:#4a7c59;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">✓ Sim, enviar via WhatsApp</button>
@@ -6526,7 +6541,7 @@ function enviarWhatsappLembrete(i) {
     var dStr = d.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long' });
     detalhe = ' marcada para ' + dStr + ' às ' + proxima.time;
   }
-  const msg = `Olá ${p.name.split(' ')[0]}! Lembrete da sua sessão de psicoterapia${detalhe}. Até breve! 😊`;
+  const msg = `Olá ${_firstName(p.name)}! Lembrete da sua sessão de psicoterapia${detalhe}. Até breve! 😊`;
   window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -6553,7 +6568,7 @@ function limparSessionLink(i) {
 function redefinirSenhaPaciente(i) {
   var p = patients[i];
   if (!p) return;
-  var nova = prompt('Nova senha para ' + p.name.split(' ')[0] + ':');
+  var nova = prompt('Nova senha para ' + _firstName(p.name) + ':');
   if (!nova || !nova.trim()) return;
   p.portalPassword = nova.trim().toLowerCase();
   salvarPacientes();
@@ -6578,7 +6593,7 @@ async function compartilharAcessoPortal(i) {
     salvarPacientes();
   }
 
-  var nome = p.name.split(' ')[0];
+  var nome = _firstName(p.name);
   var senha = p.portalPassword;
 
   // Obtém ID do terapeuta logado
@@ -7295,7 +7310,7 @@ function selectPatient(i, el) {
         <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
         <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
           <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
-          <div>Senha: <strong id="pac-senha-display-${i}">${escHTML(p.portalPassword || p.name.split(' ')[0].toLowerCase())}</strong>
+          <div>Senha: <strong id="pac-senha-display-${i}">${escHTML(p.portalPassword || _firstName(p.name).toLowerCase())}</strong>
             <button onclick="redefinirSenhaPaciente(${i})" style="margin-left:8px;background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
           </div>
           <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 Compartilhar acesso via WhatsApp</button>
@@ -7321,7 +7336,7 @@ function selectPatient(i, el) {
 }
 
 // ── SESSÃO / TIMER ──
-let timerInterval, sessionSeconds = 0;
+let timerInterval = null, sessionSeconds = 0;
 let currentSessionPatientIdx = 0;
 let currentPortalPatientIdx = 0;
 let _editingExerciseId = null;
@@ -7332,7 +7347,7 @@ function startSession() {
     showModal('modal-trial-esgotado');
     return;
   }
-  sessionSeconds = 0; clearInterval(timerInterval);
+  sessionSeconds = 0; if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
   // Reseta estado Whereby para pré-sessão
   const prestate = document.getElementById('whereby-prestate');
   const iframe   = document.getElementById('whereby-iframe');
@@ -7342,7 +7357,7 @@ function startSession() {
   if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO';
   // Atualiza header e ficha com paciente atual
   const sp = patients[currentSessionPatientIdx] || patients[0];
-  tfTrack('session_started', { patient: sp?.name, session_number: sp?.sessions, trial_count: getTrialCount() });
+  tfTrack('session_started', { session_number: sp?.sessions, trial_count: getTrialCount() });
   if (sp) {
     const sub = document.getElementById('session-subtitle');
     if (sub) sub.textContent = `${sp.name} · Sessão ${(sp.sessions||0)+1} · ${sp.abordagem||'—'}`;
@@ -7466,6 +7481,7 @@ function startWherebySession() {
 }
 
 function endWherebySession() {
+  if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
   const iframe = document.getElementById('whereby-iframe');
   const prestate = document.getElementById('whereby-prestate');
 
@@ -7483,7 +7499,7 @@ function showPostSessionFlow() {
   if (existing) existing.remove();
   const _sp = patients[currentSessionPatientIdx] || patients[0];
   const _spNome = _sp ? _sp.name : 'Paciente';
-  const _spFirst = _spNome.split(' ')[0];
+  const _spFirst = _firstName(_spNome);
   const _spInitials = _sp?.initials || _spNome.slice(0,2).toUpperCase();
   const _tNomeCompleto = tfUserData?.nome || 'Terapeuta';
   const _tNome = _tNomeCompleto.split(' ')[0];
@@ -7708,7 +7724,7 @@ function showPostSessionFlow() {
 function _gerarNotaEstrutural() {
   var sp = patients[currentSessionPatientIdx] || patients[0];
   var abord = (sp && sp.abordagem) ? sp.abordagem.toLowerCase() : profileAbordagem || 'tcc';
-  var nome = sp ? sp.name.split(' ')[0] : 'Paciente';
+  var nome = sp ? s_firstName(p.name) : 'Paciente';
   var sessaoNum = sp ? (sp.sessions||0) + 1 : 1;
   var hoje = new Date().toLocaleDateString('pt-BR');
   var qn = _quickNotes || '';
@@ -7895,7 +7911,7 @@ function showExercisePosSession() {
       <div style="padding:22px 28px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
         <div style="width:36px;height:36px;border-radius:50%;background:#f0ecfa;display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>
         <div>
-          <div style="font-weight:600;font-size:15px;color:#1a1a1a">Exercícios para ${escHTML(sp ? sp.name.split(' ')[0] : 'o paciente')}</div>
+          <div style="font-weight:600;font-size:15px;color:#1a1a1a">Exercícios para ${escHTML(sp ? s_firstName(p.name) : 'o paciente')}</div>
           <div style="font-size:12px;color:#888;margin-top:2px">O que ele/ela levará para casa até a próxima sessão?</div>
         </div>
       </div>
@@ -7955,7 +7971,7 @@ function confirmarExercicioPos() {
   const added = checkboxes.length + (customTitulo ? 1 : 0);
   salvarPacientes();
   document.getElementById('modal-exercise-pos')?.remove();
-  if (added > 0) showToast(`✓ ${added} exercício${added > 1 ? 's' : ''} enviado${added > 1 ? 's' : ''} para o portal de ${sp.name.split(' ')[0]}.`);
+  if (added > 0) showToast(`✓ ${added} exercício${added > 1 ? 's' : ''} enviado${added > 1 ? 's' : ''} para o portal de ${s_firstName(p.name)}.`);
   // Atualiza portal se estiver visível para o mesmo paciente
   if (currentPortalPatientIdx === currentSessionPatientIdx) {
     try { renderExercises(); } catch(e) {}
@@ -8186,7 +8202,7 @@ function copySessionLink(link, btn) {
 
 function sendLinkWhatsApp(link) {
   const _wsp = patients[currentSessionPatientIdx] || patients[0];
-  const _wsNome = _wsp ? _wsp.name.split(' ')[0] : 'paciente';
+  const _wsNome = _wsp ? _ws_firstName(p.name) : 'paciente';
   const _wsNum = _wsp?.whatsapp ? _wsp.whatsapp.replace(/\D/g,'') : '';
   const fullLink = link ? (link.startsWith('http') ? link : 'https://' + link) : 'https://theraflow.app/s/sessao';
   _salvarLinkNoPortal(fullLink);
@@ -8372,7 +8388,7 @@ function renderMonthView() {
       // Mostra até 2 nomes e badge com total (sessoes = appointments agora)
       sessoes.slice(0, 2).forEach(function(a) {
         html += '<div style="font-size:10px;background:var(--sage);color:#fff;border-radius:4px;padding:2px 6px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
-          + escHTML((a.patientName||'').split(' ')[0]) + ' ' + (a.time||'') + '</div>';
+          + escHTML(_firstName(a.patientName)) + ' ' + (a.time||'') + '</div>';
       });
       if (sessoes.length > 2) {
         html += '<div style="font-size:10px;color:var(--muted);padding:1px 0">+' + (sessoes.length - 2) + ' mais</div>';
@@ -8498,7 +8514,7 @@ function _ofereceCobrancaPresenca(appt) {
     var diaFmt = hoje.split('-').reverse().join('/');
     var toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a2a1e;color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:12px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw';
-    toast.innerHTML = '<span>💳 Criar cobrança para ' + escHTML(p.name.split(' ')[0]) + '? <strong>R$' + valor.toFixed(0) + '</strong></span>'
+    toast.innerHTML = '<span>💳 Criar cobrança para ' + escHTML(_firstName(p.name)) + '? <strong>R$' + valor.toFixed(0) + '</strong></span>'
       + '<button onclick="_criarCobrancaPresenca(\''+p.name+'\','+valor+',\''+hoje+'\')" style="background:var(--sage);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">Criar</button>'
       + '<button onclick="this.closest(\'div\').remove()" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0 4px">✕</button>';
     document.body.appendChild(toast);
@@ -8525,7 +8541,7 @@ function _criarCobrancaPresenca(nomePaciente, valor, dataIso) {
   });
   salvarCharges();
   if (p) { p.finStatus = 'pending'; p.fin = 'Pendente'; salvarPacientes(); }
-  showToast('💳 Cobrança criada para ' + nomePaciente.split(' ')[0] + ' — R$' + valor.toFixed(0));
+  showToast('💳 Cobrança criada para ' + _firstName(nomePaciente) + ' — R$' + valor.toFixed(0));
   document.querySelectorAll('[onclick*="_criarCobrancaPresenca"]').forEach(function(el){ el.closest('div')?.remove(); });
 }
 
@@ -8539,7 +8555,7 @@ function _promptNotaRapida(appt) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding-bottom:0';
   overlay.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:560px;padding:20px 24px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.18)">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
-      + '<div style="font-size:14px;font-weight:700;color:var(--ink)">📋 Nota rápida — ' + escHTML(p.name.split(' ')[0]) + '</div>'
+      + '<div style="font-size:14px;font-weight:700;color:var(--ink)">📋 Nota rápida — ' + escHTML(_firstName(p.name)) + '</div>'
       + '<button onclick="document.getElementById(\'modal-nota-rapida\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>'
     + '</div>'
     + '<textarea id="nota-rapida-text" placeholder="Registre brevemente o que ocorreu na sessão de hoje…" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--sage);border-radius:10px;font-size:13.5px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;line-height:1.6;color:var(--ink)"></textarea>'
@@ -8566,7 +8582,7 @@ function _salvarNotaRapida(pidx) {
   p.lastSession = data;
   salvarPacientes();
   document.getElementById('modal-nota-rapida')?.remove();
-  showToast('📋 Nota salva no prontuário de ' + p.name.split(' ')[0] + '.');
+  showToast('📋 Nota salva no prontuário de ' + _firstName(p.name) + '.');
 }
 
 async function _preencherNotaComIA(pidx) {
@@ -8712,12 +8728,12 @@ function confirmarAgendamento() {
   p.next = parts[2]+'/'+parts[1]+'/'+parts[0];
   salvarPacientes();
   _salvarAppointments();
-  tfTrack('session_scheduled', { recorrencia: recVal, patient: p.name, occurrences: datas.length });
+  tfTrack('session_scheduled', { recorrencia: recVal, occurrences: datas.length });
 
   document.getElementById('modal-agendar')?.remove();
   var msg = recVal !== 'nenhuma'
     ? '✅ ' + datas.length + ' sessões agendadas (' + recVal + ')!'
-    : '✅ Sessão agendada para ' + horaVal + ' · ' + p.name.split(' ')[0] + '!';
+    : '✅ Sessão agendada para ' + horaVal + ' · ' + _firstName(p.name) + '!';
   showToast(msg);
   if (agendaCurrentView === 'dia') renderDayView();
   else if (agendaCurrentView === 'semana') renderWeekView();
@@ -8788,7 +8804,7 @@ function confirmarCancelamento(id) {
   else if (agendaCurrentView === 'semana') renderWeekView();
   else renderMonthView();
   showToast('✓ Sessão cancelada' + (motivo ? ' — ' + motivo : '') + '.');
-  tfTrack('session_cancelled', { patient: appt.patientName, motivo: motivo });
+  tfTrack('session_cancelled', { motivo: motivo });
 }
 
 function reagendarAppointment(id) {
@@ -8838,7 +8854,7 @@ function confirmarReagendamento(id) {
   if (agendaCurrentView === 'dia') renderDayView();
   else if (agendaCurrentView === 'semana') renderWeekView();
   showToast('✓ Sessão reagendada de ' + dataAnterior + ' para ' + novaData + ' às ' + novaHora);
-  tfTrack('session_rescheduled', { patient: appt.patientName });
+  tfTrack('session_rescheduled', {});
 }
 
 /* ── RENDER DIA ── */
@@ -8932,7 +8948,7 @@ function renderDayView() {
     ? '<div style="font-size:13px;color:var(--muted);font-style:italic">Nenhuma pendência de confirmação.</div>'
     : pendentes.map(function(a){
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
-          + '<span style="font-size:13px">'+escHTML(a.patientName.split(' ')[0])+' · '+escHTML(a.date.split('-').reverse().slice(0,2).join('/'))+'</span>'
+          + '<span style="font-size:13px">'+escHTML(_firstName(a.patientName))+' · '+escHTML(a.date.split('-').reverse().slice(0,2).join('/'))+'</span>'
           + '<button class="btn btn-secondary btn-sm" onclick="enviarLembreteAgenda(\''+escHTML(a.patientName)+'\')">📨 Lembrar</button>'
           + '</div>';
       }).join('');
@@ -9020,7 +9036,7 @@ function renderWeekView() {
           + '</div>';
         gridHtml += '<div class="'+escHTML(a.color)+' appt-block" style="font-size:11px;padding:3px 5px;margin-bottom:2px" title="'+escHTML(a.patientName)+' — '+escHTML(a.abordagem)+'">'
           + '<div style="cursor:pointer" onclick="currentSessionPatientIdx='+a.patientIdx+';navigate(\'sessao\')">'
-          + '<strong>'+escHTML(a.patientName.split(' ')[0])+'</strong><br/>'+escHTML(a.abordagem.split(' ')[0])+' '+a.time+'</div>'
+          + '<strong>'+escHTML(_firstName(a.patientName))+'</strong><br/>'+escHTML(_firstName(a.abordagem))+' '+a.time+'</div>'
           + pBadge
           + '</div>';
       });
@@ -9566,9 +9582,9 @@ function enviarLembreteAgenda(nomeCompleto) {
     var dStr = d.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long' });
     detalhe = ' marcada para ' + dStr + ' às ' + appt.time;
   }
-  var msg = 'Olá ' + p.name.split(' ')[0] + '! Lembrete da sua sessão de psicoterapia' + detalhe + '. Até breve! 😊';
+  var msg = 'Olá ' + _firstName(p.name) + '! Lembrete da sua sessão de psicoterapia' + detalhe + '. Até breve! 😊';
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank');
-  showToast('📨 Lembrete enviado para ' + p.name.split(' ')[0] + '!');
+  showToast('📨 Lembrete enviado para ' + _firstName(p.name) + '!');
 }
 
 // ── /AGENDA ──────────────────────────────────────────────────────────────────
@@ -9712,7 +9728,7 @@ function exportarExtratoPaciente(idx) {
   var cobPac = charges.filter(function(c){ return !c.deleted && c.patient === p.name; })
     .sort(function(a,b){ return (a.date||'') < (b.date||'') ? -1 : 1; });
 
-  if (!cobPac.length) { showToast('Nenhuma cobrança registrada para ' + p.name.split(' ')[0] + '.'); return; }
+  if (!cobPac.length) { showToast('Nenhuma cobrança registrada para ' + _firstName(p.name) + '.'); return; }
 
   // Agrupa por mês
   var grupos = {};
@@ -10840,6 +10856,15 @@ function _chargeInMonth(c, key) {
   return _chargeMonthKey(c) === key;
 }
 
+function _calcDaysOpen(c) {
+  if (c.status === 'paid' || !c.date) return 0;
+  try {
+    var d = new Date(c.date + 'T12:00');
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    return Math.max(0, Math.floor((today - d) / 86400000));
+  } catch(e) { return 0; }
+}
+
 function carregarCharges() {
   try {
     const raw = localStorage.getItem('tf_charges');
@@ -10879,11 +10904,12 @@ function renderCharges(mesFilter) {
     return;
   }
   list.innerHTML = visible.map(c => {
+    const _dOpen = _calcDaysOpen(c);
     const statusTag = c.status === 'paid'
       ? `<span class="tag tag-green tag-dot">Pago${c.paidDate?' · '+c.paidDate:''}</span>`
       : c.status === 'overdue'
-        ? `<span class="tag tag-red tag-dot">${c.daysOpen}d atraso</span>`
-        : `<span class="tag tag-amber tag-dot">Pendente${c.daysOpen?' · '+c.daysOpen+'d':''}</span>`;
+        ? `<span class="tag tag-red tag-dot">${_dOpen}d atraso</span>`
+        : `<span class="tag tag-amber tag-dot">Pendente${_dOpen?' · '+_dOpen+'d':''}</span>`;
 
     const paidActions = c.status === 'paid'
       ? `<button class="charge-btn" onclick="event.stopPropagation();gerarReciboPDF(this)">📄 Recibo</button>
@@ -11157,16 +11183,14 @@ function confirmPayment(btn, chargeId) {
   const charge = charges.find(c => c.id === chargeId);
   if (charge) {
     charge._prevStatus = charge.status;
-    charge._prevDaysOpen = charge.daysOpen;
     charge.status = 'paid';
-    charge.paidDate = 'agora';
+    charge.paidDate = new Date().toISOString().split('T')[0];
     salvarCharges();
     const row = btn.closest('.charge-row');
     row.style.background = '#e8f5ec';
     row.style.transition = 'background .3s';
     showUndoBar(`Pagamento de R$${charge.value} de ${charge.patient} confirmado.`, () => {
       charge.status = charge._prevStatus;
-      charge.daysOpen = charge._prevDaysOpen;
       delete charge.paidDate;
       salvarCharges();
       renderCharges();
@@ -11285,11 +11309,11 @@ function sendWppCharge(name, value) {
   var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
   var pixKey = acc.pix_key || '';
   var nomeT = acc.nome ? acc.nome.split(' ')[0] : 'sua terapeuta';
-  var msg = 'Olá ' + p.name.split(' ')[0] + '! Segue o lembrete de pagamento da sessão de psicoterapia no valor de R$' + value + '.'
+  var msg = 'Olá ' + _firstName(p.name) + '! Segue o lembrete de pagamento da sessão de psicoterapia no valor de R$' + value + '.'
     + (pixKey ? '\n\nChave PIX: ' + pixKey : '')
     + '\n\nPode pagar quando puder! 💚\n— ' + nomeT;
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank');
-  showToast('📲 Cobrança enviada para ' + p.name.split(' ')[0] + '!');
+  showToast('📲 Cobrança enviada para ' + _firstName(p.name) + '!');
 }
 
 function sendWppReminder(name) {
@@ -11386,7 +11410,7 @@ function sendWppBatch() {
     var n = p.whatsapp.replace(/\D/g,'');
     n = n.startsWith('55') ? n : '55' + n;
     var val = 'R$ ' + Number(c.value||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-    var msg = 'Olá ' + p.name.split(' ')[0] + '! Segue o lembrete de pagamento da sua sessão de psicoterapia no valor de ' + val + '. Qualquer dúvida, é só me chamar aqui! 💚';
+    var msg = 'Olá ' + _firstName(p.name) + '! Segue o lembrete de pagamento da sua sessão de psicoterapia no valor de ' + val + '. Qualquer dúvida, é só me chamar aqui! 💚';
     setTimeout(function(){ window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank'); }, enviados * 500);
     enviados++;
   });
@@ -11437,14 +11461,14 @@ function lembreteInadimplentes() {
     var wpp = p && p.whatsapp ? p.whatsapp.replace(/\D/g,'') : '';
     if (wpp && !wpp.startsWith('55')) wpp = '55' + wpp;
     var dataPt = typeof c.date === 'string' && c.date.includes('-') ? c.date.split('-').reverse().join('/') : c.date;
-    var msg = 'Olá ' + escHTML(c.patient.split(' ')[0]) + '! 😊\n\nPassando para lembrar que temos uma cobrança em aberto: sessão de ' + dataPt + ' no valor de R$' + c.value + '.'
+    var msg = 'Olá ' + escHTML(_firstName(c.patient)) + '! 😊\n\nPassando para lembrar que temos uma cobrança em aberto: sessão de ' + dataPt + ' no valor de R$' + c.value + '.'
       + (pixKey ? '\n\nChave PIX: ' + pixKey : '')
       + '\n\nQualquer dúvida estou à disposição! 🌿\n— ' + nomeT;
     var link = wpp ? 'https://wa.me/' + wpp + '?text=' + encodeURIComponent(msg) : '';
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">'
       + '<div>'
         + '<div style="font-size:13.5px;font-weight:500;color:var(--ink)">' + escHTML(c.patient) + '</div>'
-        + '<div style="font-size:12px;color:var(--muted)">Sessão ' + escHTML(dataPt) + ' · R$' + c.value + ' · ' + (c.daysOpen||'?') + 'd em atraso</div>'
+        + '<div style="font-size:12px;color:var(--muted)">Sessão ' + escHTML(dataPt) + ' · R$' + c.value + ' · ' + (_calcDaysOpen(c)||'?') + 'd em atraso</div>'
       + '</div>'
       + (link
         ? '<a href="' + link + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;flex-shrink:0">📲 Cobrar</a>'
@@ -11548,7 +11572,7 @@ function exportarFinanceiro() {
       esc(c.method || 'PIX'),
       esc(statusLabel(c.status)),
       esc(c.paidDate || ''),
-      esc(c.status !== 'paid' ? (c.daysOpen || '') : '')
+      esc(c.status !== 'paid' ? (_calcDaysOpen(c) || '') : '')
     ].join(','));
   });
 
@@ -11880,7 +11904,7 @@ function initPortal() {
   if (!p) return;
   // Atualiza progresso com dados reais antes de renderizar
   p.progress = _calcProgress(p);
-  const firstName = p.name.split(' ')[0];
+  const firstName = _firstName(p.name);
 
   // Greeting e labels
   const greeting = document.getElementById('portal-greeting');
@@ -12423,7 +12447,7 @@ function salvarExercicio() {
     showToast('✓ Exercício atualizado no portal.');
   } else {
     p.exercises.push({ id: Date.now(), title: titulo, desc: desc, tag: tag, done: false, prazo: prazo, total: total, concluidos: 0 });
-    showToast('✓ Exercício adicionado ao portal de ' + p.name.split(' ')[0] + '.');
+    showToast('✓ Exercício adicionado ao portal de ' + _firstName(p.name) + '.');
   }
   salvarPacientes();
   closeModal('modal-exercicio');
@@ -13807,7 +13831,7 @@ function salvarNotaRapida() {
   p.prontuarioNotes.push({ date: data, text: texto });
   salvarPacientes();
   closeModal('modal-nota-rapida');
-  showToast('✓ Nota salva no prontuário de ' + p.name.split(' ')[0] + '.');
+  showToast('✓ Nota salva no prontuário de ' + _firstName(p.name) + '.');
 }
 
 function toggleDarkMode(on) {
@@ -14094,6 +14118,10 @@ function escHTML(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function _firstName(name) {
+  return (name || 'Paciente').split(' ')[0] || 'Paciente';
+}
+
 function toggleTarefa(id) {
   var t = tasks.find(function(x){ return x.id===id; });
   if (!t) return;
@@ -14324,7 +14352,7 @@ function loginPaciente() {
       try { pacs = JSON.parse(localStorage.getItem('tf_patients') || '[]'); } catch(e2) {}
       var idx = pacs.findIndex(function(p) {
         var pEmail = (p.email || '').trim().toLowerCase();
-        var pSenha = p.portalPassword || p.name.split(' ')[0].toLowerCase();
+        var pSenha = p.portalPassword || _firstName(p.name).toLowerCase();
         return pEmail === email && pSenha === senha;
       });
       if (idx !== -1) {
