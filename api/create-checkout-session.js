@@ -9,7 +9,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 function isAllowedOrigin(origin) {
-  if (!origin) return true;
+  if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   return false;
 }

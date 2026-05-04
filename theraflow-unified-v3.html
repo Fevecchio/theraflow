@@ -6267,12 +6267,9 @@ function _proceedToApp(account) {
     tfUserData.secundarias = account.secundarias || [];
     tfUserData.abordagemKey = account.abordagemKey || ABORDAGEM_KEY_MAP?.[account.abordagem] || 'tcc';
     try {
-      if (window.posthog && account.email) {
-        posthog.identify(account.supa_id || account.email, {
-          email: account.email,
-          nome: account.nome,
+      if (window.posthog && account.supa_id) {
+        posthog.identify(account.supa_id, {
           plano: account.plano || 'trial',
-          abordagem: account.abordagem || '',
         });
       }
     } catch(e) {}
@@ -6590,7 +6587,9 @@ async function compartilharAcessoPortal(i) {
 
   // Gera senha forte se não tiver
   if (!p.portalPassword) {
-    p.portalPassword = 'TF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    var _arr = new Uint8Array(4);
+    crypto.getRandomValues(_arr);
+    p.portalPassword = 'TF' + Array.from(_arr).map(function(b){ return b.toString(36); }).join('').toUpperCase().substring(0, 6);
     salvarPacientes();
   }
 
@@ -6988,7 +6987,7 @@ function _recalcSessions() {
   });
   patients.forEach(function(p, i) {
     var contAppt = contadores[i] || 0;
-    if (contAppt > (p.sessions || 0)) p.sessions = contAppt;
+    p.sessions = contAppt;
   });
 }
 
@@ -7455,23 +7454,18 @@ let transcriptMuted = false;
 //
 // No protótipo, simulamos com uma sala de demonstração pública do Whereby:
 
-const WHEREBY_DEMO_URL = 'https://whereby.com/theraflow-demo?minimal&lang=pt&leaveButton=off&background=off';
-
 function startWherebySession() {
-  const prestate = document.getElementById('whereby-prestate');
-  const iframe = document.getElementById('whereby-iframe');
-
-  // Em produção: buscar hostRoomUrl do backend (criada via API antes da sessão)
-  // const { hostRoomUrl } = await fetch('/api/sessions/123/room').then(r => r.json())
-  // iframe.src = hostRoomUrl + '?minimal&lang=pt&leaveButton=off'
-
-  iframe.src = WHEREBY_DEMO_URL;
-  prestate.style.display = 'none';
-  iframe.style.display = 'block';
-
-  // Atualiza badge
-  const badge = document.querySelector('.session-live-badge');
-  if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO · Whereby';
+  // Integração Whereby via API em desenvolvimento.
+  // Por enquanto, usa o link de sessão configurado na ficha do paciente.
+  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const link = sp && sp.sessionLink;
+  if (link) {
+    window.open(link.startsWith('http') ? link : 'https://' + link, '_blank');
+    const badge = document.querySelector('.session-live-badge');
+    if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO';
+  } else {
+    showToast('⚠ Adicione o link da videochamada na ficha do paciente antes de iniciar.');
+  }
 }
 
 function endWherebySession() {
@@ -7826,6 +7820,11 @@ function indexPostSession() {
   // Captura nota: tenta modal primeiro, depois card da sessão
   const noteEl = document.getElementById('post-note-text') || document.getElementById('session-ai-note');
   const noteText = noteEl ? (noteEl.tagName === 'TEXTAREA' ? noteEl.value : noteEl.textContent.trim()) : '';
+  if (!noteText.trim()) {
+    showToast('⚠ Adicione uma nota clínica antes de encerrar a sessão.');
+    if (noteEl) noteEl.focus();
+    return;
+  }
   if (modal) modal.remove();
   incrementarSessaoTrial();
   // Atualiza dados do paciente
@@ -9430,23 +9429,8 @@ function showCalendarSync() {
 }
 
 function connectCalendar(provider) {
-  const id = provider === 'google' ? 'gcal' : 'outlook';
-  const card = document.getElementById(id + '-card');
-  const status = document.getElementById(id + '-status');
-
-  status.textContent = 'Conectando...';
-  status.style.background = '#fff8e1';
-  status.style.color = '#b45309';
-
-  setTimeout(() => {
-    status.textContent = '✓ Conectado';
-    status.style.background = '#f0fdf4';
-    status.style.color = '#4a7c59';
-    card.style.border = '1.5px solid #4a7c59';
-    card.style.background = '#fafff9';
-
-    showToast(provider === 'google' ? 'Google Calendar conectado! Sessões serão sincronizadas.' : 'Outlook conectado! Sessões serão sincronizadas.');
-  }, 1400);
+  var label = provider === 'google' ? 'Google Calendar' : 'Outlook';
+  showToast('⏳ Sincronização com ' + label + ' em breve — disponível na próxima atualização.');
 }
 
 function showAgendarModal(preData, preHora) {

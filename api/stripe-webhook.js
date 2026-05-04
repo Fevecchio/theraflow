@@ -71,16 +71,7 @@ async function supaReferralReward(stripe, newUserId) {
     const r = referrer?.[0];
     if (!r || r.referral_rewarded) return;
 
-    // Aplica crédito de R$89 no Stripe (1 mês grátis)
-    if (r.stripe_customer_id) {
-      await stripe.customers.createBalanceTransaction(r.stripe_customer_id, {
-        amount: -8900,
-        currency: 'brl',
-        description: 'Bônus de indicação — 1 mês grátis TheraFlow Pro',
-      });
-    }
-
-    // Marca recompensado e incrementa contador (não cumulativo)
+    // Marca recompensado PRIMEIRO (idempotência: evita duplo crédito em webhook replay)
     await fetch(`${SUPA_URL}/rest/v1/users?id=eq.${referrerId}`, {
       method: 'PATCH',
       headers: {
@@ -91,6 +82,15 @@ async function supaReferralReward(stripe, newUserId) {
       },
       body: JSON.stringify({ referral_rewarded: true, referral_count: (r.referral_count || 0) + 1 }),
     });
+
+    // Aplica crédito de R$89 no Stripe após garantir flag no banco
+    if (r.stripe_customer_id) {
+      await stripe.customers.createBalanceTransaction(r.stripe_customer_id, {
+        amount: -8900,
+        currency: 'brl',
+        description: 'Bônus de indicação — 1 mês grátis TheraFlow Pro',
+      });
+    }
     console.log(`[webhook] referral reward: referrerId=${referrerId} newUser=${newUserId}`);
   } catch (err) {
     console.warn('[webhook] referral reward error:', err.message);
