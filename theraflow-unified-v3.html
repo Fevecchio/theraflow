@@ -4556,6 +4556,19 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 <!-- ═══════════ SCRIPTS ═══════════ -->
 <script>
 
+/* ── DATE HELPERS (hora local, não UTC — evita bug às 21h BRT) ── */
+function localDateISO(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function hojeISO() { return localDateISO(new Date()); }
+
+/* Formata número para WhatsApp. Retorna null para números inválidos (0800, 0300). */
+function _wppNumero(phone) {
+  var n = (phone || '').replace(/\D/g, '');
+  if (!n || n.startsWith('0800') || n.startsWith('0300') || n.startsWith('0500')) return null;
+  return n.startsWith('55') ? n : '55' + n;
+}
+
 /* ── FETCH COM TIMEOUT ── */
 async function fetchWithTimeout(url, opts, ms = 15000) {
   const ctrl = new AbortController();
@@ -4708,6 +4721,8 @@ async function _supaLoadUserData(userId) {
 
 /* ── SYNC STATUS UI ── */
 var _syncErrorCount = 0;
+var _sessionAlreadySaved = false;
+var _syncPatientsTimer = null;
 function _setSyncStatus(state) {
   var icon = document.getElementById('sync-status-icon');
   var text = document.getElementById('sync-status-text');
@@ -4811,6 +4826,7 @@ async function _supaSync_charges() {
     })).filter(r => r.patient_id);
     if (rows.length) await supa.from('charges').upsert(rows, { onConflict: 'local_id' });
   } catch(e) {
+    _syncErrorCount++;
     console.warn('[Supa] Sync charges falhou:', e.message);
     if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sync de cobranças falhou — dados preservados localmente.');
   }
@@ -4834,6 +4850,7 @@ async function _supaSync_tasks() {
     }));
     await supa.from('tasks').upsert(rows, { onConflict: 'local_id' });
   } catch(e) {
+    _syncErrorCount++;
     console.warn('[Supa] Sync tasks falhou:', e.message);
     if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sync de tarefas falhou — dados preservados localmente.');
   }
@@ -5361,7 +5378,7 @@ function _startDashAutoRefresh() {
   _dashRefreshInterval = setInterval(function() {
     var pg = document.getElementById('page-dashboard');
     if (pg && pg.classList.contains('active')) _renderDashSessoesHoje(
-      appointments.filter(function(a){ return a.date===new Date().toISOString().split('T')[0] && a.status!=='cancelada'; })
+      appointments.filter(function(a){ return a.date===hojeISO() && a.status!=='cancelada'; })
         .sort(function(a,b){ return a.time<b.time?-1:1; })
     );
   }, 60000);
@@ -5382,7 +5399,7 @@ function _wppInterpolate(tpl, nome, dia, hora, terapeuta) {
 }
 
 function enviarLembretesSessoesDia() {
-  var hoje = new Date().toISOString().split('T')[0];
+  var hoje = hojeISO();
   var sessoesHoje = (typeof appointments !== 'undefined' ? appointments : [])
     .filter(function(a){ return a.date === hoje && a.status !== 'cancelada'; });
   if (!sessoesHoje.length) { showToast('Nenhuma sessão agendada para hoje.'); return; }
@@ -5394,8 +5411,8 @@ function enviarLembretesSessoesDia() {
   sessoesHoje.forEach(function(a) {
     var p = patients[a.patientIdx];
     if (!p || !p.whatsapp) { semWpp++; return; }
-    var n = p.whatsapp.replace(/\D/g,'');
-    n = n.startsWith('55') ? n : '55' + n;
+    var n = _wppNumero(p.whatsapp);
+    if (!n) { semWpp++; return; }
     var hora = a.time || '';
     var msg = _wppInterpolate(tpl, _firstName(p.name), 'hoje', hora, nomeT);
     links.push({ nome: _firstName(p.name), url: 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg) });
@@ -5438,7 +5455,7 @@ function enviarLembretesSessoesDia() {
 function enviarLembretesAmanha() {
   var amanha = new Date();
   amanha.setDate(amanha.getDate() + 1);
-  var amanhaIso = amanha.toISOString().split('T')[0];
+  var amanhaIso = localDateISO(amanha);
   var amanhaFmt = String(amanha.getDate()).padStart(2,'0') + '/' + String(amanha.getMonth()+1).padStart(2,'0');
   var sessoes = (typeof appointments !== 'undefined' ? appointments : [])
     .filter(function(a){ return a.date === amanhaIso && a.status !== 'cancelada'; });
@@ -5488,7 +5505,7 @@ function atualizarDashboard() {
   const dias  = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
   const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   const agora  = new Date();
-  const hojeIso = agora.toISOString().split('T')[0];
+  const hojeIso = hojeISO();
 
   // ── Sessões de hoje (appointments reais)
   const sessoesHoje = (typeof appointments !== 'undefined' ? appointments : [])
@@ -5515,8 +5532,8 @@ function atualizarDashboard() {
   // ── Stat: sessões esta semana
   const seg = new Date(agora); seg.setDate(agora.getDate()-((agora.getDay()+6)%7));
   const sex = new Date(seg); sex.setDate(seg.getDate()+4);
-  const segIso = seg.toISOString().split('T')[0];
-  const sexIso = sex.toISOString().split('T')[0];
+  const segIso = localDateISO(seg);
+  const sexIso = localDateISO(sex);
   const sessSemana = (typeof appointments!=='undefined'?appointments:[])
     .filter(a=>a.status!=='cancelada'&&a.date>=segIso&&a.date<=sexIso).length;
   const elSessoes = document.getElementById('stat-sessoes-semana');
@@ -5568,8 +5585,8 @@ function _renderDashSessoesHoje(sessoes) {
   if (!cont) return;
   if (!sessoes.length) {
     // Mostra próximas sessões dos próximos 3 dias em vez de "vazio"
-    var hojeIso = new Date().toISOString().split('T')[0];
-    var proxDias = [1,2,3].map(function(d){ var dt = new Date(); dt.setDate(dt.getDate()+d); return dt.toISOString().split('T')[0]; });
+    var hojeIso = hojeISO();
+    var proxDias = [1,2,3].map(function(d){ var dt = new Date(); dt.setDate(dt.getDate()+d); return localDateISO(dt); });
     var proximas = appointments.filter(function(a){ return proxDias.includes(a.date) && a.status !== 'cancelada'; })
       .sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); }).slice(0,3);
     if (proximas.length) {
@@ -5658,7 +5675,7 @@ function _renderDashInsights() {
   }
 
   // Sem agendar próxima sessão
-  var hojeIso = new Date().toISOString().split('T')[0];
+  var hojeIso = hojeISO();
   var semProxima = patients.filter(function(p){
     if (p.sessions <= 0 || p.status === 'Inativa') return false;
     var pidx = patients.indexOf(p);
@@ -5689,7 +5706,7 @@ function _renderDashInsights() {
 
   // Paciente sem sessão há mais de 30 dias
   var hoje30 = new Date(); hoje30.setDate(hoje30.getDate()-30);
-  var iso30 = hoje30.toISOString().split('T')[0];
+  var iso30 = localDateISO(hoje30);
   var longOut = patients.filter(function(p){
     if (p.status==='Inativa' || !p.sessions) return false;
     var pidx = patients.indexOf(p);
@@ -5879,7 +5896,7 @@ function executarBuscaGlobal(q) {
 
   // ── Agenda (appointments)
   if (q) {
-    var hojeIso = new Date().toISOString().split('T')[0];
+    var hojeIso = hojeISO();
     appointments.filter(function(a){ return a.status !== 'cancelada' && a.date >= hojeIso; }).forEach(function(a){
       if (a.patientName.toLowerCase().includes(q) || (a.abordagem||'').toLowerCase().includes(q)) {
         var d = new Date(a.date+'T12:00');
@@ -6599,10 +6616,10 @@ function salvarEdicaoPaciente(i) {
 function enviarWhatsappLembrete(i) {
   const p = patients[i];
   if (!p?.whatsapp) { showToast('Número de WhatsApp não cadastrado.'); return; }
-  const limpo = p.whatsapp.replace(/\D/g,'');
-  const n = limpo.startsWith('55') ? limpo : '55' + limpo;
+  const n = _wppNumero(p.whatsapp);
+  if (!n) { showToast('Número de WhatsApp inválido para este paciente.'); return; }
   // Busca próxima sessão real na agenda
-  const hojeIso = new Date().toISOString().split('T')[0];
+  const hojeIso = hojeISO();
   const proxima = appointments.filter(function(a){
     return a.patientIdx === i && a.status !== 'cancelada' && a.date >= hojeIso;
   }).sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); })[0];
@@ -6922,8 +6939,9 @@ function salvarPacientes() {
   if (_loggedPatientData) {
     _supaPatientSync().catch(() => {});
   } else {
-    // Sync silencioso do terapeuta para Supabase
-    _supaSync_patients().catch(() => {});
+    // Debounce: evita 15+ syncs simultâneos em edições rápidas
+    clearTimeout(_syncPatientsTimer);
+    _syncPatientsTimer = setTimeout(function(){ _supaSync_patients().catch(function(){}); }, 1500);
   }
 }
 
@@ -7032,7 +7050,7 @@ function _recalcFinStatus() {
 
 function _recalcNextSessions() {
   if (typeof appointments === 'undefined') return;
-  var nowIso = new Date().toISOString().split('T')[0];
+  var nowIso = hojeISO();
   // Constrói mapa patientIdx → próxima data
   var mapa = {};
   appointments.forEach(function(a) {
@@ -7208,7 +7226,7 @@ function selectPatient(i, el) {
     p.progress = _calcProgress(p);
     // Recalcula p.next a partir de appointments reais
     if (typeof appointments !== 'undefined') {
-      var nowIso = new Date().toISOString().split('T')[0];
+      var nowIso = hojeISO();
       var futurosP = appointments.filter(function(a){
         return a.patientIdx === i && a.status !== 'cancelada' && a.date >= nowIso;
       }).sort(function(a,b){ return a.date < b.date ? -1 : 1; });
@@ -7424,6 +7442,7 @@ async function startSession() {
         _accCheck.trial_token = tfTrialToken(profile.sessoes_usadas);
         localStorage.setItem('tf_account', JSON.stringify(_accCheck));
         if (profile.plano === 'pro' || profile.plano === 'clinic') _tfPlanPro = true;
+        if (typeof atualizarTrialUI === 'function') atualizarTrialUI();
       }
     } catch(_) { /* offline ou timeout — usa localStorage */ }
   }
@@ -7433,6 +7452,7 @@ async function startSession() {
     showModal('modal-trial-esgotado');
     return;
   }
+  _sessionAlreadySaved = false;
   sessionSeconds = 0; if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
   // Reseta estado Whereby para pré-sessão
   const prestate = document.getElementById('whereby-prestate');
@@ -7913,6 +7933,8 @@ function closePostSession() {
 }
 
 function indexPostSession() {
+  if (_sessionAlreadySaved) return;
+  _sessionAlreadySaved = true;
   const modal = document.getElementById('modal-post-session');
   // Captura nota: tenta modal primeiro, depois card da sessão
   const noteEl = document.getElementById('post-note-text') || document.getElementById('session-ai-note');
@@ -7929,7 +7951,7 @@ function indexPostSession() {
   if (sp) {
     sp.sessions = (sp.sessions || 0) + 1;
     const hoje = new Date();
-    const hojeIso = hoje.toISOString().split('T')[0];
+    const hojeIso = hojeISO();
     sp.lastSession = `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}`;
     if (noteText) {
       if (!sp.prontuarioNotes) sp.prontuarioNotes = [];
@@ -7940,7 +7962,7 @@ function indexPostSession() {
   }
   // Marca appointment de hoje como 'compareceu' automaticamente
   if (typeof appointments !== 'undefined' && sp) {
-    var hojeIso2 = new Date().toISOString().split('T')[0];
+    var hojeIso2 = hojeISO();
     var apptHoje = appointments.filter(function(a){
       return a.patientIdx === currentSessionPatientIdx && a.date === hojeIso2 && a.status !== 'cancelada';
     }).sort(function(a,b){ return a.time < b.time ? -1 : 1; })[0];
@@ -7956,10 +7978,10 @@ function indexPostSession() {
       var _valorSessao = parseFloat(_profAcc.valor_sessao) || 0;
       if (_valorSessao > 0) {
         var _hojeCharge = new Date();
-        var _isoCharge = _hojeCharge.toISOString().split('T')[0]; // YYYY-MM-DD
+        var _isoCharge = hojeISO();
         var _diaCharge = String(_hojeCharge.getDate()).padStart(2,'0') + '/' + String(_hojeCharge.getMonth()+1).padStart(2,'0') + '/' + _hojeCharge.getFullYear();
         charges.push({
-          id: Date.now(),
+          id: Date.now() + '-' + Math.random().toString(36).slice(2,6),
           patient: sp.name,
           desc: 'Sessão ' + _diaCharge,
           value: _valorSessao,
@@ -8609,7 +8631,7 @@ function _ofereceCobrancaPresenca(appt) {
   // Só cria se ainda não existir cobrança para esta data/paciente
   var p = patients[appt.patientIdx];
   if (!p) return;
-  var hoje = appt.date || new Date().toISOString().split('T')[0];
+  var hoje = appt.date || hojeISO();
   var jaExiste = charges.some(function(c){
     return !c.deleted && c.patient === p.name
       && (c.date === hoje || c.date === hoje.split('-').reverse().join('/'));
@@ -8740,7 +8762,7 @@ function _salvarAppointments() {
 
 function _gerarAppointmentsDemo() {
   var hoje = new Date();
-  var iso = function(d){ return d.toISOString().split('T')[0]; };
+  var iso = localDateISO;
   var addDays = function(d, n){ var r = new Date(d); r.setDate(r.getDate()+n); return r; };
   var seg = new Date(hoje); seg.setDate(hoje.getDate() - ((hoje.getDay()+6)%7)); // segunda desta semana
   var demos = [
@@ -8787,7 +8809,7 @@ function confirmarAgendamento() {
   if (isNaN(pidx) || pidx < 0 || pidx >= patients.length) { showToast('⚠ Selecione um paciente.'); return; }
 
   var p = patients[pidx];
-  var dataVal   = data.value || new Date().toISOString().split('T')[0];
+  var dataVal   = data.value || hojeISO();
   var horaVal   = hora.value || '09:00';
   var durVal    = parseInt(dur?.value || '50');
   var recVal    = recorr?.value || 'nenhuma';
@@ -8812,9 +8834,9 @@ function confirmarAgendamento() {
 
   // Gera ocorrências se recorrente (até 8 semanas)
   var datas = [dataVal];
-  if (recVal === 'semanal')    { for(var w=1;w<=7;w++){ var nd=new Date(dataVal); nd.setDate(nd.getDate()+w*7); datas.push(nd.toISOString().split('T')[0]); } }
-  if (recVal === 'quinzenal')  { for(var w=1;w<=4;w++){ var nd=new Date(dataVal); nd.setDate(nd.getDate()+w*14); datas.push(nd.toISOString().split('T')[0]); } }
-  if (recVal === 'mensal')     { for(var w=1;w<=2;w++){ var nd=new Date(dataVal); nd.setMonth(nd.getMonth()+w); datas.push(nd.toISOString().split('T')[0]); } }
+  if (recVal === 'semanal')    { for(var w=1;w<=7;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*7); datas.push(localDateISO(nd)); } }
+  if (recVal === 'quinzenal')  { for(var w=1;w<=4;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*14); datas.push(localDateISO(nd)); } }
+  if (recVal === 'mensal')     { for(var w=1;w<=2;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setMonth(nd.getMonth()+w); datas.push(localDateISO(nd)); } }
 
   datas.forEach(function(dt, i){
     appointments.push({
@@ -8971,8 +8993,8 @@ function renderDayView() {
   var container = document.getElementById('agenda-dia-render');
   if (!container) return;
   var d = agendaCurrentDate;
-  var iso = d.toISOString().split('T')[0];
-  var hoje = new Date().toISOString().split('T')[0];
+  var iso = localDateISO(d);
+  var hoje = hojeISO();
   var diasNome = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
   var diasAbrev = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   var tituloData = diasNome[d.getDay()] + ', ' + String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
@@ -9038,7 +9060,7 @@ function renderDayView() {
   var seg = new Date(d); seg.setDate(d.getDate()-((d.getDay()+6)%7));
   var resumoSemana = [0,1,2,3,4].map(function(di){
     var dd = new Date(seg); dd.setDate(seg.getDate()+di);
-    var diso = dd.toISOString().split('T')[0];
+    var diso = localDateISO(dd);
     var cnt = appointments.filter(function(a){ return a.date===diso&&a.status!=='cancelada'; }).length;
     var isHoje = diso===hoje;
     var isHD = diso===iso;
@@ -9051,7 +9073,7 @@ function renderDayView() {
   // Confirmações pendentes (hoje ou próximas 48h)
   var amanha = new Date(hoje); amanha.setDate(amanha.getDate()+2);
   var pendentes = appointments.filter(function(a){
-    return a.status==='agendada' && a.date>=hoje && a.date<=amanha.toISOString().split('T')[0];
+    return a.status==='agendada' && a.date>=hoje && a.date<=localDateISO(amanha);
   }).slice(0,4);
   var pendHtml = pendentes.length === 0
     ? '<div style="font-size:13px;color:var(--muted);font-style:italic">Nenhuma pendência de confirmação.</div>'
@@ -9083,13 +9105,13 @@ function renderWeekView() {
   var container = document.getElementById('agenda-semana-render');
   if (!container) return;
   var d = agendaCurrentDate;
-  var hoje = new Date().toISOString().split('T')[0];
+  var hoje = hojeISO();
 
   // Segunda desta semana
   var seg = new Date(d); seg.setDate(d.getDate()-((d.getDay()+6)%7));
   var dias = [0,1,2,3,4].map(function(di){
     var dd = new Date(seg); dd.setDate(seg.getDate()+di);
-    return { date: dd, iso: dd.toISOString().split('T')[0], isHoje: dd.toISOString().split('T')[0]===hoje };
+    var _ddIso = localDateISO(dd); return { date: dd, iso: _ddIso, isHoje: _ddIso===hoje };
   });
 
   var _hConfigW = carregarHorarios();
@@ -9277,7 +9299,7 @@ function _atualizarBadgeSupervisao() {
 function gerarAlertasReais() {
   var alertas = [];
   var hoje = new Date();
-  var isoHoje = hoje.toISOString().split('T')[0];
+  var isoHoje = localDateISO(hoje);
 
   patients.forEach(function(p, i) {
     // ── 1. HUMOR DECLÍNIO (3+ check-ins em queda) ──────────────────────────
@@ -9396,7 +9418,7 @@ function gerarAlertasReais() {
     });
     // Considera apenas as últimas 30 dias
     var limite = new Date(isoHoje); limite.setDate(limite.getDate() - 30);
-    var limiteIso = limite.toISOString().split('T')[0];
+    var limiteIso = localDateISO(limite);
     var faltasRecentes30 = faltasRecentes.filter(function(a){ return a.date >= limiteIso; });
     if (faltasRecentes30.length >= 2) {
       alertas.push({
@@ -9553,7 +9575,7 @@ function showAgendarModal(preData, preHora) {
   const existing = document.getElementById('modal-agendar');
   if (existing) existing.remove();
 
-  const defaultData = preData || new Date().toISOString().split('T')[0];
+  const defaultData = preData || hojeISO();
   const defaultHora = preHora || '09:00';
   // Usa duração configurada no perfil
   var defaultDuracao = 50;
@@ -9657,7 +9679,7 @@ function agendarPacienteChange(select) {
 
 function enviarLembreteAgenda(nomeCompleto) {
   // Encontra o appointment mais próximo para este paciente
-  var hojeIso = new Date().toISOString().split('T')[0];
+  var hojeIso = hojeISO();
   var appt = appointments.filter(function(a){
     return a.patientName === nomeCompleto && a.status !== 'cancelada' && a.date >= hojeIso;
   }).sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); })[0];
@@ -9668,8 +9690,8 @@ function enviarLembreteAgenda(nomeCompleto) {
     showToast('📨 WhatsApp não cadastrado para ' + nomeCompleto.split(' ')[0] + '. Lembrete anotado internamente.');
     return;
   }
-  var limpo = p.whatsapp.replace(/\D/g,'');
-  var n = limpo.startsWith('55') ? limpo : '55' + limpo;
+  var n = _wppNumero(p.whatsapp);
+  if (!n) { showToast('Número de WhatsApp inválido.'); return; }
   var detalhe = '';
   if (appt) {
     var d = new Date(appt.date + 'T12:00');
@@ -9804,7 +9826,7 @@ function exportarListaPacientesCSV() {
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = hojeISO();
   a.href = url; a.download = 'theraflow-pacientes-' + hoje + '.csv';
   a.click(); URL.revokeObjectURL(url);
   showToast('📊 Lista exportada com sucesso!');
@@ -11238,7 +11260,7 @@ function renderFinInadimplencia() {
   var countEl = document.getElementById('fin-inad-count');
   if (!el) return;
   var hoje = new Date();
-  var hojeIso = hoje.toISOString().split('T')[0];
+  var hojeIso = hojeISO();
   var vencidas = charges.filter(function(c) {
     return !c.deleted && (c.status === 'overdue' || (c.status === 'pending' && c.date && c.date < hojeIso));
   });
@@ -11251,7 +11273,7 @@ function renderFinInadimplencia() {
   vencidas.forEach(function(c) {
     var dias = 0;
     if (c.date) {
-      var d = new Date(c.date);
+      var d = new Date(c.date + 'T12:00:00');
       dias = Math.floor((hoje - d) / 86400000);
     }
     var corDias = dias >= 14 ? 'var(--red)' : dias >= 7 ? 'var(--amber)' : 'var(--ink-soft)';
@@ -11278,7 +11300,7 @@ function confirmPayment(btn, chargeId) {
   if (charge) {
     charge._prevStatus = charge.status;
     charge.status = 'paid';
-    charge.paidDate = new Date().toISOString().split('T')[0];
+    charge.paidDate = hojeISO();
     salvarCharges();
     const row = btn.closest('.charge-row');
     row.style.background = '#e8f5ec';
@@ -11399,7 +11421,8 @@ function sendWppCharge(name, value) {
   var pidx = patients.findIndex(function(p){ return p.name === name; });
   var p = pidx >= 0 ? patients[pidx] : null;
   if (!p || !p.whatsapp) { showToast('📲 Cobrança de R$' + value + ' anotada para ' + name + '.'); return; }
-  var n = p.whatsapp.replace(/\D/g,''); n = n.startsWith('55') ? n : '55' + n;
+  var n = _wppNumero(p.whatsapp);
+  if (!n) { showToast('📲 Cobrança anotada — número WhatsApp inválido.'); return; }
   var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
   var pixKey = acc.pix_key || '';
   var nomeT = acc.nome ? acc.nome.split(' ')[0] : 'sua terapeuta';
@@ -12442,7 +12465,7 @@ function renderExercises() {
       <button class="btn btn-primary btn-sm" onclick="abrirModalExercicio()">+ Adicionar primeiro exercício</button>
     </div>`;
   } else {
-    var hoje = new Date().toISOString().split('T')[0];
+    var hoje = hojeISO();
     list.innerHTML = exercises.map(function(ex) {
       var total = ex.total || 1;
       var concluidos = ex.concluidos || 0;
@@ -12584,7 +12607,7 @@ function saveMoodCheckin() {
   const _mp = patients[currentPortalPatientIdx] || patients[0];
   if (_mp) {
     if (!_mp.moodHistory) _mp.moodHistory = [];
-    const _todayKey = new Date().toISOString().split('T')[0];
+    const _todayKey = hojeISO();
     if (_mp._moodLastDate === _todayKey && _mp.moodHistory.length > 0) {
       // já registrou hoje — substitui último valor
       _mp.moodHistory[_mp.moodHistory.length - 1] = sliderVal;
@@ -12803,7 +12826,7 @@ function updateDiaryCount() {
 
 function proximaSessaoDate() {
   const now = new Date();
-  const nowIso = now.toISOString().split('T')[0];
+  const nowIso = localDateISO(now);
   const p = patients[currentPortalPatientIdx] || patients[0];
   const pidx = currentPortalPatientIdx;
 
@@ -13172,7 +13195,7 @@ function salvarBloqueios() {
 }
 
 function abrirModalBloqueio() {
-  var hoje = new Date().toISOString().split('T')[0];
+  var hoje = hojeISO();
   var inI = document.getElementById('bloq-inicio');
   var inF = document.getElementById('bloq-fim');
   if (inI) inI.value = hoje;
@@ -13210,7 +13233,7 @@ function renderBloqueiosList() {
     return;
   }
   var motivoLabel = { ferias:'Férias', feriado:'Feriado', folga:'Folga', congresso:'Congresso/curso', outro:'Outro' };
-  var hoje = new Date().toISOString().split('T')[0];
+  var hoje = hojeISO();
   el.innerHTML = bloqueios.map(function(b) {
     var passado = b.fim < hoje;
     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:' + (passado ? 'var(--bg)' : 'var(--amber-light)') + ';opacity:' + (passado ? '.6' : '1') + '">' +
@@ -14065,7 +14088,7 @@ function carregarTarefas() {
   // demo tasks se vazio
   if (tasks.length === 0) {
     var hoje = new Date();
-    var fmt = function(d){ return d.toISOString().split('T')[0]; };
+    var fmt = localDateISO;
     var ontem = new Date(hoje); ontem.setDate(hoje.getDate()-1);
     var amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
     tasks = [
@@ -14290,7 +14313,7 @@ function salvarNovaTarefa() {
     showToast('Tarefa atualizada!');
   } else {
     var newId = tasks.length > 0 ? Math.max.apply(null, tasks.map(function(t){ return t.id; })) + 1 : 1;
-    tasks.push({ id: newId, title: titulo, patientName: paciente, dueDate: data, status: 'aberta', createdAt: new Date().toISOString().split('T')[0] });
+    tasks.push({ id: newId, title: titulo, patientName: paciente, dueDate: data, status: 'aberta', createdAt: hojeISO() });
     showToast('Tarefa criada!');
   }
   editingTaskId = null;
