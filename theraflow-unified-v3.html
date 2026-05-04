@@ -7725,10 +7725,10 @@ function showPostSessionFlow() {
 function _gerarNotaEstrutural() {
   var sp = patients[currentSessionPatientIdx] || patients[0];
   var abord = (sp && sp.abordagem) ? sp.abordagem.toLowerCase() : profileAbordagem || 'tcc';
-  var nome = sp ? s_firstName(p.name) : 'Paciente';
+  var nome = sp ? _firstName(sp.name) : 'Paciente';
   var sessaoNum = sp ? (sp.sessions||0) + 1 : 1;
   var hoje = new Date().toLocaleDateString('pt-BR');
-  var qn = _quickNotes || '';
+  var qn = (document.getElementById('session-quick-notes')?.value || '').trim();
   var notasHtml = qn ? '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:6px 10px;margin-bottom:10px;border-radius:0 6px 6px 0;font-size:12px;color:#92400e"><strong>Anotações do terapeuta:</strong> ' + qn + '</span>' : '';
   var corpo = '';
   if (abord.includes('tcc') || abord.includes('cognitivo')) {
@@ -7912,7 +7912,7 @@ function showExercisePosSession() {
       <div style="padding:22px 28px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
         <div style="width:36px;height:36px;border-radius:50%;background:#f0ecfa;display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>
         <div>
-          <div style="font-weight:600;font-size:15px;color:#1a1a1a">Exercícios para ${escHTML(sp ? s_firstName(p.name) : 'o paciente')}</div>
+          <div style="font-weight:600;font-size:15px;color:#1a1a1a">Exercícios para ${escHTML(sp ? _firstName(sp.name) : 'o paciente')}</div>
           <div style="font-size:12px;color:#888;margin-top:2px">O que ele/ela levará para casa até a próxima sessão?</div>
         </div>
       </div>
@@ -7972,7 +7972,7 @@ function confirmarExercicioPos() {
   const added = checkboxes.length + (customTitulo ? 1 : 0);
   salvarPacientes();
   document.getElementById('modal-exercise-pos')?.remove();
-  if (added > 0) showToast(`✓ ${added} exercício${added > 1 ? 's' : ''} enviado${added > 1 ? 's' : ''} para o portal de ${s_firstName(p.name)}.`);
+  if (added > 0) showToast(`✓ ${added} exercício${added > 1 ? 's' : ''} enviado${added > 1 ? 's' : ''} para o portal de ${_firstName(sp.name)}.`);
   // Atualiza portal se estiver visível para o mesmo paciente
   if (currentPortalPatientIdx === currentSessionPatientIdx) {
     try { renderExercises(); } catch(e) {}
@@ -8203,7 +8203,7 @@ function copySessionLink(link, btn) {
 
 function sendLinkWhatsApp(link) {
   const _wsp = patients[currentSessionPatientIdx] || patients[0];
-  const _wsNome = _wsp ? _ws_firstName(p.name) : 'paciente';
+  const _wsNome = _wsp ? _firstName(_wsp.name) : 'paciente';
   const _wsNum = _wsp?.whatsapp ? _wsp.whatsapp.replace(/\D/g,'') : '';
   const fullLink = link ? (link.startsWith('http') ? link : 'https://' + link) : 'https://theraflow.app/s/sessao';
   _salvarLinkNoPortal(fullLink);
