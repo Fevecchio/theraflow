@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>TheraFlow — Auditoria Executiva 360°</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sage: #4a7c59;
+    --sage-dark: #2e5c3e;
+    --sage-light: #e8f0eb;
+    --ink: #1a1f1c;
+    --ink-soft: #3d4540;
+    --muted: #6b7570;
+    --border: #dde3de;
+    --amber: #c97d2e;
+    --amber-light: #fdf3e7;
+    --red: #b53a2e;
+    --red-light: #fdf0ef;
+    --blue: #2c5f8a;
+    --blue-light: #eaf1f8;
+    --purple: #5a3e8a;
+    --purple-light: #f0ecfa;
+    --green-light: #edf7f0;
+    --bg: #f7f8f6;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    background: #fff;
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+
+  /* ── CAPA ── */
+  .cover {
+    background: linear-gradient(145deg, var(--sage-dark) 0%, var(--sage) 60%, #6aab7e 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 60px 64px;
+    page-break-after: always;
+  }
+
+  .cover-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 60px;
+  }
+
+  .cover-logo-mark {
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+
+  .cover-logo-text {
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+    color: #fff;
+    opacity: 0.95;
+  }
+
+  .cover-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .cover-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 20px;
+  }
+
+  .cover-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 52px;
+    line-height: 1.1;
+    margin-bottom: 24px;
+  }
+
+  .cover-subtitle {
+    font-size: 18px;
+    opacity: 0.8;
+    max-width: 520px;
+    line-height: 1.5;
+  }
+
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 56px;
+    padding-top: 36px;
+    border-top: 1px solid rgba(255,255,255,0.25);
+  }
+
+  .cover-meta-item label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 6px;
+  }
+
+  .cover-meta-item span {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .cover-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 28px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    font-size: 11px;
+    opacity: 0.55;
+  }
+
+  /* ── LAYOUT GERAL ── */
+  .page {
+    padding: 52px 64px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ── SUMÁRIO ── */
+  .toc-page {
+    page-break-after: always;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 12px;
+  }
+
+  .toc-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 34px;
+    color: var(--ink);
+    margin-bottom: 36px;
+  }
+
+  .toc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+  }
+
+  .toc-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--sage);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .toc-item-text strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .toc-item-text span {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── EXECUTIVE SUMMARY ── */
+  .exec-summary {
+    background: var(--sage-light);
+    border-left: 4px solid var(--sage);
+    border-radius: 0 12px 12px 0;
+    padding: 28px 32px;
+    margin: 32px 0 40px;
+  }
+
+  .exec-summary p {
+    font-size: 13pt;
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+
+  /* ── SEÇÃO ── */
+  .section {
+    page-break-inside: avoid;
+    margin-bottom: 48px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--sage-light);
+  }
+
+  .section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .section-header-text .role {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .section-header-text h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 26px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .section-header-text .verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  /* ── CARDS DE ACHADOS ── */
+  .findings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .finding-card {
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+  }
+
+  .finding-card .finding-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .finding-card .finding-text {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .finding-card.positive {
+    background: var(--green-light);
+    border-color: #b2d8be;
+  }
+  .finding-card.positive .finding-label { color: var(--sage-dark); }
+
+  .finding-card.risk {
+    background: var(--red-light);
+    border-color: #f0b8b2;
+  }
+  .finding-card.risk .finding-label { color: var(--red); }
+
+  .finding-card.warning {
+    background: var(--amber-light);
+    border-color: #f0d898;
+  }
+  .finding-card.warning .finding-label { color: var(--amber); }
+
+  .finding-card.info {
+    background: var(--blue-light);
+    border-color: #b2c8e0;
+  }
+  .finding-card.info .finding-label { color: var(--blue); }
+
+  .finding-card.purple {
+    background: var(--purple-light);
+    border-color: #c8b8e0;
+  }
+  .finding-card.purple .finding-label { color: var(--purple); }
+
+  /* ── LISTAS ── */
+  .action-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .action-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 10px 14px;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .action-list li .priority {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .priority.p1 { background: #fce8e6; color: #b53a2e; }
+  .priority.p2 { background: var(--amber-light); color: var(--amber); }
+  .priority.p3 { background: var(--sage-light); color: var(--sage-dark); }
+
+  /* ── SCORECARDS ── */
+  .scorecard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin: 24px 0;
+  }
+
+  .scorecard {
+    text-align: center;
+    padding: 20px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .scorecard .score {
+    font-family: 'Instrument Serif', serif;
+    font-size: 38px;
+    color: var(--sage);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .scorecard .score-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 2px;
+  }
+
+  .scorecard .score-sub {
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ── TABELA ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    margin-top: 16px;
+  }
+
+  thead th {
+    background: var(--sage);
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  thead th:first-child { border-radius: 8px 0 0 0; }
+  thead th:last-child { border-radius: 0 8px 0 0; }
+
+  tbody tr:nth-child(even) { background: var(--bg); }
+  tbody tr:nth-child(odd) { background: #fff; }
+
+  tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.4;
+  }
+
+  .badge-p1 { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #fce8e6; color: #b53a2e; }
+  .badge-p2 { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; background: var(--amber-light); color: var(--amber); }
+  .badge-p3 { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; background: var(--sage-light); color: var(--sage-dark); }
+
+  /* ── CALL-OUT BOX ── */
+  .callout {
+    padding: 18px 22px;
+    border-radius: 10px;
+    margin: 18px 0;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .callout.red { background: var(--red-light); border-left: 4px solid var(--red); }
+  .callout.amber { background: var(--amber-light); border-left: 4px solid var(--amber); }
+  .callout.green { background: var(--green-light); border-left: 4px solid var(--sage); }
+  .callout.blue { background: var(--blue-light); border-left: 4px solid var(--blue); }
+  .callout.purple { background: var(--purple-light); border-left: 4px solid var(--purple); }
+
+  .callout strong { display: block; font-weight: 700; margin-bottom: 4px; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  /* ── ROADMAP ── */
+  .roadmap {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-top: 24px;
+  }
+
+  .roadmap-col h4 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .roadmap-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .roadmap-col ul li {
+    font-size: 11.5px;
+    line-height: 1.4;
+    padding: 8px 12px;
+    border-radius: 7px;
+    border-left: 3px solid;
+  }
+
+  .col-now h4 { color: var(--red); }
+  .col-now ul li { background: var(--red-light); border-color: var(--red); }
+
+  .col-soon h4 { color: var(--amber); }
+  .col-soon ul li { background: var(--amber-light); border-color: var(--amber); }
+
+  .col-later h4 { color: var(--sage); }
+  .col-later ul li { background: var(--green-light); border-color: var(--sage); }
+
+  /* ── PAGE BREAK ── */
+  .page-break { page-break-before: always; }
+
+  /* ── FOOTER ── */
+  .doc-footer {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ── RATING BADGES ── */
+  .rating-green { background: var(--green-light); color: var(--sage-dark); border: 1px solid #b2d8be; }
+  .rating-amber { background: var(--amber-light); color: var(--amber); border: 1px solid #f0d898; }
+  .rating-red { background: var(--red-light); color: var(--red); border: 1px solid #f0b8b2; }
+
+  /* ── PRINT ── */
+  @media print {
+    body { font-size: 10.5pt; }
+    .cover { min-height: 100vh; }
+    .section { page-break-inside: avoid; }
+    .page-break { page-break-before: always; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm 20mm;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     CAPA
+═══════════════════════════════════════════ -->
+<div class="cover">
+  <div>
+    <div class="cover-logo">
+      <div class="cover-logo-mark">🌿</div>
+      <div class="cover-logo-text">TheraFlow</div>
+    </div>
+  </div>
+
+  <div class="cover-main">
+    <div class="cover-eyebrow">Relatório Executivo Confidencial</div>
+    <div class="cover-title">Auditoria<br/>360° TheraFlow</div>
+    <div class="cover-subtitle">Análise estratégica multidisciplinar: produto, tecnologia, operações, finanças, marketing, crescimento, jurídico e segurança.</div>
+
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <label>Data</label>
+        <span>Abril 2026</span>
+      </div>
+      <div class="cover-meta-item">
+        <label>Versão</label>
+        <span>v1.0 — Sprint 3 Pós-Auditoria</span>
+      </div>
+      <div class="cover-meta-item">
+        <label>Classificação</label>
+        <span>Confidencial</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span>TheraFlow — Gestão Clínica para Psicólogos Brasileiros</span>
+    <span>lealb5@hotmail.com</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SUMÁRIO
+═══════════════════════════════════════════ -->
+<div class="page toc-page">
+  <div class="section-label">Índice</div>
+  <div class="toc-title">Sumário Executivo</div>
+
+  <div class="exec-summary">
+    <p>O TheraFlow é uma plataforma SPA de gestão clínica para psicólogos brasileiros com portal dedicado ao paciente. O produto demonstra <strong>solidez técnica e cuidado com a experiência clínica</strong>, mas enfrenta riscos críticos de arquitetura (localStorage como base de dados primária), ausência de modelo de monetização ativo, lacunas de conformidade com a LGPD e zero infraestrutura de crescimento. Esta auditoria mapeia os pontos fortes, riscos e o roadmap recomendado para as próximas três fases de evolução.</p>
+  </div>
+
+  <div class="toc-grid">
+    <div class="toc-item">
+      <div class="toc-num">1</div>
+      <div class="toc-item-text">
+        <strong>CEO — Estratégia & Posicionamento</strong>
+        <span>Visão, mercado, diferenciais competitivos</span>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">2</div>
+      <div class="toc-item-text">
+        <strong>CPO — Produto & Experiência</strong>
+        <span>Features, UX, completude do portal</span>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">3</div>
+      <div class="toc-item-text">
+        <strong>CTO — Arquitetura & Tecnologia</strong>
+        <span>Stack, dívida técnica, escalabilidade</span>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">4</div>
+      <div class="toc-item-text">
+        <strong>COO — Operações & Suporte</strong>
+        <span>Onboarding, confiabilidade, processos</span>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">5</div>
+      <div class="toc-item-text">
+        <strong>CFO — Financeiro & Monetização</strong>
+        <span>Receita, pricing, sustentabilidade</span>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">6</div>
+      <div class="toc-item-text">
+        <strong>CMO — Marketing & Marca</strong>
+        <span>Branding, canais, comunicação</span>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">7</div>
+      <div class="toc-item-text">
+        <strong>Head Growth — Crescimento</strong>
+        <span>Aquisição, ativação, retenção, viralidade</span>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">8</div>
+      <div class="toc-item-text">
+        <strong>Legal & Segurança</strong>
+        <span>LGPD, CFM/CRP, vulnerabilidades</span>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">9</div>
+      <div class="toc-item-text">
+        <strong>Roadmap Consolidado</strong>
+        <span>Agora, 90 dias, 6 meses</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scorecard-grid" style="margin-top:36px">
+    <div class="scorecard">
+      <div class="score">7.2</div>
+      <div class="score-label">Score Produto</div>
+      <div class="score-sub">Funcionalidade / 10</div>
+    </div>
+    <div class="scorecard">
+      <div class="score">4.8</div>
+      <div class="score-label">Score Técnico</div>
+      <div class="score-sub">Robustez / 10</div>
+    </div>
+    <div class="scorecard">
+      <div class="score">3.1</div>
+      <div class="score-label">Score Negócio</div>
+      <div class="score-sub">Go-to-market / 10</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 1 — CEO
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#e8f0eb">🧭</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 01 — CEO</div>
+        <h2>Estratégia & Posicionamento</h2>
+        <span class="verdict rating-amber" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">⚠ Potencial alto — execução de negócio ausente</span>
+      </div>
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Ponto Forte</div>
+        <div class="finding-text">Nicho claro e bem delimitado: psicólogos brasileiros em consultório particular, um segmento de ~170 mil profissionais com baixíssima digitalização.</div>
+      </div>
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Ponto Forte</div>
+        <div class="finding-text">Produto dual (terapeuta + paciente) cria lock-in natural e diferencia do concorrente genérico. Nenhum player no BR combina gestão + portal do paciente com gamificação.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 Risco Crítico</div>
+        <div class="finding-text">Empresa sem modelo de receita ativo. Sem Stripe, sem plano pago, sem freemium estruturado — o produto é gratuito por padrão, o que impede valuation e captação.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Atenção</div>
+        <div class="finding-text">Posicionamento implícito ("feito por psicólogos") nunca comunicado explicitamente. Narrativa de marca não existe — há produto, não há história.</div>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <strong>Recomendação CEO</strong>
+      O risco existencial não é técnico — é ausência de go-to-market. O produto precisa de landing page, pricing page e pelo menos um plano pago nos próximos 60 dias antes de qualquer nova feature.
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--ink)">Análise Competitiva</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Concorrente</th>
+          <th>Foco</th>
+          <th>Portal Paciente</th>
+          <th>IA Clínica</th>
+          <th>Preço BR</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>ProntuárioFácil</strong></td>
+          <td>Prontuário eletrônico</td>
+          <td>Não</td>
+          <td>Não</td>
+          <td>R$ 59/mês</td>
+        </tr>
+        <tr>
+          <td><strong>TheraSuite</strong></td>
+          <td>Gestão financeira</td>
+          <td>Básico</td>
+          <td>Não</td>
+          <td>R$ 79/mês</td>
+        </tr>
+        <tr>
+          <td><strong>SimplePractice</strong></td>
+          <td>Gestão completa (EUA)</td>
+          <td>Sim</td>
+          <td>Parcial</td>
+          <td>USD 29/mês</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--sage-dark)">TheraFlow</strong></td>
+          <td>Gestão + engajamento</td>
+          <td><strong>Sim + Gamificação</strong></td>
+          <td><strong>Sim (Gemini)</strong></td>
+          <td style="color:var(--red)"><strong>R$ 0 (sem modelo)</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 2 — CPO
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#eaf1f8">🎨</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 02 — CPO</div>
+        <h2>Produto & Experiência</h2>
+        <span class="verdict rating-green" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">✅ Produto maduro para o estágio atual</span>
+      </div>
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Terapeuta</div>
+        <div class="finding-text">Dashboard financeiro, prontuário, agenda, cobrança integrada, extrato PDF, WhatsApp com templates, IA clínica (Gemini), relatórios de evolução — cobertura funcional completa para o consultório solo.</div>
+      </div>
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Portal Paciente</div>
+        <div class="finding-text">9 features implementadas: emergência, materiais, streak, badges, insights de humor, técnica do dia, diário, nota pré-sessão, notificações PWA. Único no mercado BR com esse nível de engajamento.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Gap de Produto</div>
+        <div class="finding-text">Telepsicologia não suportada (videochamada). Prontuário sem assinatura digital. Sem integração com CFM/CFP para emissão de atestados eletrônicos válidos.</div>
+      </div>
+      <div class="finding-card info">
+        <div class="finding-label">ℹ Oportunidade</div>
+        <div class="finding-text">Relatórios de progresso para o paciente (evolução do humor ao longo das sessões, gráfico de streak) aumentariam retenção no portal. Dado já está disponível — falta a visualização.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--ink)">Maturidade das Features — Portal do Paciente</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Status</th>
+          <th>Impacto</th>
+          <th>Próximo passo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Check-in de humor</td>
+          <td>✅ Completo + sync Supabase</td>
+          <td>Alto</td>
+          <td>Gráfico de evolução</td>
+        </tr>
+        <tr>
+          <td>Diário terapêutico</td>
+          <td>✅ Completo + persistência</td>
+          <td>Alto</td>
+          <td>Export PDF do diário</td>
+        </tr>
+        <tr>
+          <td>Streak + badges</td>
+          <td>✅ 9 badges, streak diário</td>
+          <td>Alto</td>
+          <td>Push ao desbloquear badge</td>
+        </tr>
+        <tr>
+          <td>Nota pré-sessão</td>
+          <td>✅ Terapeuta visualiza (bug corrigido)</td>
+          <td>Alto</td>
+          <td>Limpar após sessão realizada</td>
+        </tr>
+        <tr>
+          <td>Técnica do dia</td>
+          <td>✅ 30+ técnicas por abordagem</td>
+          <td>Médio</td>
+          <td>Técnica favorita</td>
+        </tr>
+        <tr>
+          <td>Emergência</td>
+          <td>✅ Respiração + CVV + WhatsApp</td>
+          <td>Crítico</td>
+          <td>Número da família configurável</td>
+        </tr>
+        <tr>
+          <td>Materiais do terapeuta</td>
+          <td>✅ Marcar como lido</td>
+          <td>Médio</td>
+          <td>Upload de arquivo PDF</td>
+        </tr>
+        <tr>
+          <td>Insights de humor</td>
+          <td>✅ Melhor dia da semana</td>
+          <td>Médio</td>
+          <td>Tendência de 30 dias</td>
+        </tr>
+        <tr>
+          <td>Notificações PWA</td>
+          <td>✅ Lembrete diário configurável</td>
+          <td>Alto</td>
+          <td>Service worker para offline</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 3 — CTO
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#f0ecfa">⚙️</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 03 — CTO</div>
+        <h2>Arquitetura & Tecnologia</h2>
+        <span class="verdict rating-red" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">🔴 Risco técnico crítico — ação imediata necessária</span>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <strong>⚠ Risco Crítico — localStorage como Banco de Dados</strong>
+      A arquitetura atual usa localStorage (<code>tf_patients</code>, <code>tf_appointments</code>, <code>tf_charges</code>) como fonte primária de dados do terapeuta. Isso significa: dados perdidos ao limpar cache do navegador, dados não acessíveis em outros dispositivos, dados não compartilháveis entre dispositivos de uma mesma clínica, e zero backup automático. Este é o risco existencial #1 do produto.
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Stack Moderna</div>
+        <div class="finding-text">Vercel (serverless), Supabase Auth + PostgreSQL, Gemini 2.0 Flash para IA, PWA com manifest. Stack serverless reduz custo operacional para quase zero nos primeiros anos.</div>
+      </div>
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Segurança de Chaves</div>
+        <div class="finding-text">Chaves sensíveis (SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY) isoladas em serverless functions no Vercel. Nunca expostas no cliente.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 localStorage Frágil</div>
+        <div class="finding-text">Dados do terapeuta (pacientes, agenda, cobranças) vivem apenas no navegador local. Um clear de cache destrói todos os dados. Não há sync nem backup.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 SPA Monolítica</div>
+        <div class="finding-text">~14.500 linhas em um único arquivo HTML. Impossível fazer code-splitting, lazy loading, testes unitários. Cada deploy é um big bang.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Service Worker Ausente</div>
+        <div class="finding-text">O app é instalável como PWA mas não tem service worker. Sem cache offline, sem estratégia de atualização silenciosa, notificações dependem do navegador aberto.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Sem Testes</div>
+        <div class="finding-text">Zero testes automatizados (unit, integration, e2e). Qualquer refactoring é risco alto. Bugs silenciosos são impossíveis de detectar sistematicamente.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--ink)">Dívida Técnica — Priorizada</h3>
+    <ul class="action-list">
+      <li>
+        <span class="priority p1">P1</span>
+        <div><strong>Migrar dados do terapeuta para Supabase.</strong> Criar tabelas <code>patients</code>, <code>appointments</code>, <code>charges</code> com RLS por <code>therapist_id</code>. localStorage vira cache local, Supabase vira fonte da verdade.</div>
+      </li>
+      <li>
+        <span class="priority p1">P1</span>
+        <div><strong>Implementar service worker.</strong> Cache offline das páginas principais, sync em background quando reconectar, push notifications independentes do app aberto.</div>
+      </li>
+      <li>
+        <span class="priority p2">P2</span>
+        <div><strong>Modularizar o HTML em componentes.</strong> Migração gradual para arquivos JS separados (ex: <code>portal-patient.js</code>, <code>dashboard.js</code>). Não precisa ser React — basta separar responsabilidades.</div>
+      </li>
+      <li>
+        <span class="priority p2">P2</span>
+        <div><strong>Adicionar testes de integração para fluxos críticos.</strong> Login, salvar paciente, registrar cobrança, portal do paciente. Playwright ou Cypress com 20 testes cobre 80% dos riscos.</div>
+      </li>
+      <li>
+        <span class="priority p3">P3</span>
+        <div><strong>Configurar Sentry ou similar.</strong> Monitoramento de erros em produção. Atualmente, bugs silenciosos de usuários reais são invisíveis.</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 4 — COO
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#fdf3e7">🔧</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 04 — COO</div>
+        <h2>Operações & Suporte</h2>
+        <span class="verdict rating-amber" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">⚠ Infra OK — processos ausentes</span>
+      </div>
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Deploy Simples</div>
+        <div class="finding-text">Vercel automatiza deploy a cada push no master. Zero configuração de servidor. Downtime praticamente nulo com edge network global.</div>
+      </div>
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Onboarding Funcional</div>
+        <div class="finding-text">Fluxo de cadastro do terapeuta implementado (email, senha, perfil, abordagem). Paciente recebe acesso via portal com senha gerada pelo terapeuta.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 Sem Canal de Suporte</div>
+        <div class="finding-text">Nenhum canal de suporte ao usuário (chat, email, base de conhecimento). Um terapeuta com problema não tem para onde ir — churna silenciosamente.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Sem Métricas de Uso</div>
+        <div class="finding-text">Zero analytics (Google Analytics, Mixpanel, Posthog). Impossível saber quantos usuários ativos, quais features usam, onde abandonam o onboarding.</div>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <strong>Ação Imediata Recomendada</strong>
+      Instalar Posthog (gratuito, self-hosted opcional, LGPD-friendly) para tracking de eventos. Com 5 eventos instrumentados (login, salvar paciente, abrir portal, registrar humor, emitir cobrança) já é possível tomar decisões de produto baseadas em dados.
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--ink)">Checklist Operacional</h3>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Status</th><th>Prioridade</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Deploy automático (Vercel)</td><td>✅ Ativo</td><td><span class="badge-p3">OK</span></td></tr>
+        <tr><td>Variáveis de ambiente seguras</td><td>✅ Vercel Env Vars</td><td><span class="badge-p3">OK</span></td></tr>
+        <tr><td>Backup de dados</td><td>❌ Não existe</td><td><span class="badge-p1">Crítico</span></td></tr>
+        <tr><td>Monitoramento de erros</td><td>❌ Não existe</td><td><span class="badge-p1">Crítico</span></td></tr>
+        <tr><td>Analytics de produto</td><td>❌ Não existe</td><td><span class="badge-p1">Crítico</span></td></tr>
+        <tr><td>Canal de suporte</td><td>❌ Não existe</td><td><span class="badge-p2">Alto</span></td></tr>
+        <tr><td>Status page</td><td>❌ Não existe</td><td><span class="badge-p3">Médio</span></td></tr>
+        <tr><td>SLA definido</td><td>❌ Não definido</td><td><span class="badge-p2">Alto</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 5 — CFO
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#eaf1f8">💰</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 05 — CFO</div>
+        <h2>Financeiro & Monetização</h2>
+        <span class="verdict rating-red" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">🔴 Sem receita — risco de sustentabilidade</span>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <strong>Estado Atual</strong>
+      O produto não gera nenhuma receita. Não há Stripe conectado, não há plano pago, não há cobrança de nenhuma espécie. Custo mensal estimado: ~R$ 0 (Vercel free tier + Supabase free tier). Isso é sustentável para MVP mas não para escala.
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card info">
+        <div class="finding-label">ℹ Modelo Sugerido — Freemium</div>
+        <div class="finding-text"><strong>Gratuito:</strong> 1 terapeuta, até 10 pacientes, sem IA, sem portal do paciente.<br/><strong>Profissional (R$ 89/mês):</strong> ilimitado, IA clínica, portal completo, notificações.<br/><strong>Clínica (R$ 249/mês):</strong> múltiplos terapeutas, relatórios gerenciais.</div>
+      </div>
+      <div class="finding-card info">
+        <div class="finding-label">ℹ Projeção Conservadora</div>
+        <div class="finding-text">500 usuários pagantes ao preço de R$ 89/mês = <strong>R$ 44.500 MRR</strong> (R$ 534k ARR). Meta realista em 18 meses com go-to-market estruturado. CAC estimado: R$ 60–120 (SEO + referral).</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Custo de Escala</div>
+        <div class="finding-text">Gemini API: ~$0,002/chamada. Com 10k chamadas/mês = $20 (R$ 100). Supabase Pro: $25/mês. Custo total de infra a 1.000 usuários: ~R$ 400/mês. Margens excelentes.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Churn Risco</div>
+        <div class="finding-text">localStorage como banco de dados pode gerar churn por perda de dados — o pior tipo de churn (involuntário e com NPS destruído). Resolver antes de monetizar.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--ink)">Plano de Monetização Recomendado</h3>
+    <ul class="action-list">
+      <li>
+        <span class="priority p1">P1</span>
+        <div><strong>Integrar Stripe Checkout.</strong> Criar serverless function <code>/api/create-checkout</code>. Plano anual com 20% de desconto como âncora de conversão.</div>
+      </li>
+      <li>
+        <span class="priority p1">P1</span>
+        <div><strong>Feature flag por plano.</strong> Bloquear IA e portal do paciente no free tier via verificação de <code>account.plan</code> no Supabase. Urgência para upgrade natural.</div>
+      </li>
+      <li>
+        <span class="priority p2">P2</span>
+        <div><strong>Trial de 14 dias.</strong> Todo cadastro inicia como Profissional por 14 dias. Coleta cartão antecipado via Stripe com cobrança diferida (trial sem cobrança imediata).</div>
+      </li>
+      <li>
+        <span class="priority p3">P3</span>
+        <div><strong>Nota fiscal automática.</strong> Integração com Nuvem Fiscal ou Omie para emitir NF-e de serviço automaticamente ao receber pagamento — diferencial para PJ psicólogos.</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 6 — CMO
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#fce8e6">📣</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 06 — CMO</div>
+        <h2>Marketing & Marca</h2>
+        <span class="verdict rating-red" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">🔴 Marca existe — presença de mercado não existe</span>
+      </div>
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Identidade Visual</div>
+        <div class="finding-text">Paleta sage green, tipografia Instrument Serif + DM Sans, ícones coerentes. Marca transmite cuidado e profissionalismo — alinhada com o público de saúde mental.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 Sem Landing Page</div>
+        <div class="finding-text">theraflow.com.br leva direto para o app de login. Não há página de marketing, sem proposta de valor, sem prova social, sem CTA para cadastro.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 Sem Presença Digital</div>
+        <div class="finding-text">Instagram, LinkedIn, YouTube — nenhum canal ativo. SEO zero. Psicólogos que buscam "software gestão psicólogo" no Google não encontram o TheraFlow.</div>
+      </div>
+      <div class="finding-card info">
+        <div class="finding-label">ℹ Oportunidade</div>
+        <div class="finding-text">Conteúdo educativo (LGPD para psicólogos, prontuário digital, cobrança de sessões) tem alta demanda orgânica. 3 artigos de blog por mês geraria tráfego qualificado sem custo.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--ink)">Mensagem de Valor — Proposta Sugerida</h3>
+    <div class="callout green">
+      <strong>Headline Sugerida</strong>
+      "O único software de gestão clínica com portal do paciente integrado. Cuide melhor — do prontuário ao engajamento entre sessões." <br/><br/>
+      <strong>Sub-headline:</strong> "Agenda, cobrança, prontuário e acompanhamento do paciente em um só lugar. Feito para psicólogos brasileiros."
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 7 — HEAD GROWTH
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#e8f0eb">🚀</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 07 — Head of Growth</div>
+        <h2>Aquisição, Retenção & Viralidade</h2>
+        <span class="verdict rating-amber" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">⚠ Produto retentivo — acquisition zero</span>
+      </div>
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Retenção Natural Alta</div>
+        <div class="finding-text">Psicólogos que cadastram 10+ pacientes dificilmente migram — o custo de reentrada de dados é altíssimo. Lock-in por dados é a melhor retenção possível.</div>
+      </div>
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Viralidade Embutida</div>
+        <div class="finding-text">Cada terapeuta que usa o portal convida seus pacientes. Se 1 terapeuta tem 20 pacientes, cada conversão traz 20 usuários adicionais — loop viral orgânico.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 Sem Funil de Aquisição</div>
+        <div class="finding-text">Não há tráfego orgânico, pago, social ou referral estruturado. Todo usuário atual chegou por indicação direta ou por coincidência. Escalabilidade de aquisição: zero.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Sem Loop de Referral</div>
+        <div class="finding-text">Psicólogos adoram recomendar ferramentas para colegas. Um programa "indique e ganhe 1 mês grátis" poderia gerar CAC negativo. Não existe.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--ink)">Framework AARRR — Estado Atual</h3>
+    <table>
+      <thead>
+        <tr><th>Etapa</th><th>Estado</th><th>Ação</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Acquisition</strong></td><td style="color:var(--red)">❌ Inexistente</td><td>SEO, Google Ads CRP/CFP, LinkedIn</td></tr>
+        <tr><td><strong>Activation</strong></td><td style="color:var(--amber)">⚠ Básico (onboarding funcional)</td><td>Checklist de onboarding guiado</td></tr>
+        <tr><td><strong>Retention</strong></td><td style="color:var(--sage)">✅ Forte (lock-in por dados)</td><td>Email semanal com dica clínica</td></tr>
+        <tr><td><strong>Revenue</strong></td><td style="color:var(--red)">❌ Inexistente</td><td>Stripe + plano pago</td></tr>
+        <tr><td><strong>Referral</strong></td><td style="color:var(--red)">❌ Inexistente</td><td>Programa de indicação</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout blue" style="margin-top:20px">
+      <strong>Growth Hack de Curto Prazo</strong>
+      Grupos de Facebook e Telegram de psicólogos brasileiros somam +80k membros. Uma campanha de conteúdo educativo (não promocional) sobre prontuário digital + LGPD com link para o TheraFlow pode gerar centenas de signups em semanas com custo zero.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 8 — LEGAL & SEGURANÇA
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#fce8e6">⚖️</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 08 — Legal & Segurança</div>
+        <h2>LGPD, CFP & Segurança da Informação</h2>
+        <span class="verdict rating-red" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">🔴 Exposição regulatória alta</span>
+      </div>
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Segurança de Credenciais</div>
+        <div class="finding-text">Chaves de API (Supabase service role, Gemini) nunca expostas no cliente. Isoladas em serverless functions no Vercel. CORS restrito a origins autorizadas.</div>
+      </div>
+      <div class="finding-card positive">
+        <div class="finding-label">✅ Auth Robusto</div>
+        <div class="finding-text">Supabase Auth com JWT, dois contextos separados (terapeuta/paciente), RLS no banco — usuários só acessam seus próprios dados.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 Sem Política de Privacidade</div>
+        <div class="finding-text">A LGPD exige política de privacidade pública explicitando: dados coletados, finalidade, base legal, direitos do titular, DPO. Ausência pode gerar multa de até R$ 50M.</div>
+      </div>
+      <div class="finding-card risk">
+        <div class="finding-label">🔴 Dados Sensíveis sem DPA</div>
+        <div class="finding-text">Prontuários psicológicos são dados sensíveis (art. 11 LGPD). Exigem base legal específica (consentimento ou tratamento de saúde) e Data Processing Agreement com Supabase/Vercel.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Sem Termo de Uso</div>
+        <div class="finding-text">Não há termos de uso com responsabilidades, limitação de responsabilidade, SLA, ou cláusula de rescisão. Risco jurídico na relação com terapeutas.</div>
+      </div>
+      <div class="finding-card warning">
+        <div class="finding-label">⚠ Resolução CFP nº 11/2018</div>
+        <div class="finding-text">Regulamenta atendimento psicológico mediado por tecnologia. O TheraFlow não documenta conformidade com normas de sigilo profissional e segurança de dados clínicos.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--ink)">Checklist de Conformidade LGPD</h3>
+    <ul class="action-list">
+      <li>
+        <span class="priority p1">P1</span>
+        <div><strong>Redigir e publicar Política de Privacidade.</strong> Incluir: dados coletados, finalidade, base legal (art. 7 e 11), prazo de retenção, direitos do titular, contato do DPO.</div>
+      </li>
+      <li>
+        <span class="priority p1">P1</span>
+        <div><strong>Termo de Consentimento no cadastro de pacientes.</strong> O terapeuta deve registrar consentimento do paciente para uso de dados em plataforma digital de saúde.</div>
+      </li>
+      <li>
+        <span class="priority p1">P1</span>
+        <div><strong>Assinar DPA com Supabase e Vercel.</strong> Ambos oferecem Data Processing Agreements — necessário para dados de saúde em conformidade com LGPD.</div>
+      </li>
+      <li>
+        <span class="priority p2">P2</span>
+        <div><strong>Implementar "Direito ao Esquecimento".</strong> Função de exportação + exclusão completa de dados de um paciente, acionável pelo terapeuta ou pelo próprio paciente.</div>
+      </li>
+      <li>
+        <span class="priority p2">P2</span>
+        <div><strong>Redigir Termos de Uso.</strong> Responsabilidades do terapeuta como controlador de dados, limitação de responsabilidade do TheraFlow como operador.</div>
+      </li>
+      <li>
+        <span class="priority p3">P3</span>
+        <div><strong>Criptografia em repouso para prontuários.</strong> Supabase já criptografa o disco — documentar e comunicar esta conformidade aos terapeutas.</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SEÇÃO 9 — ROADMAP CONSOLIDADO
+═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#e8f0eb">🗺️</div>
+      <div class="section-header-text">
+        <div class="role">Perspectiva 09 — Consolidado</div>
+        <h2>Roadmap de Ação</h2>
+        <span class="verdict rating-green" style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">✅ Plano claro em 3 ondas</span>
+      </div>
+    </div>
+
+    <div class="roadmap">
+      <div class="roadmap-col col-now">
+        <h4>🔴 Agora (0–30 dias)<br/><span style="font-weight:400;font-size:10px;color:var(--muted)">Sobrevivência & Compliance</span></h4>
+        <ul>
+          <li>Migrar dados terapeuta para Supabase (localStorage → DB)</li>
+          <li>Política de Privacidade + Termos de Uso publicados</li>
+          <li>Consentimento LGPD no cadastro de pacientes</li>
+          <li>Instalar Posthog (analytics)</li>
+          <li>Canal de suporte (email ou WhatsApp)</li>
+        </ul>
+      </div>
+      <div class="roadmap-col col-soon">
+        <h4>🟡 90 dias<br/><span style="font-weight:400;font-size:10px;color:var(--muted)">Monetização & Crescimento</span></h4>
+        <ul>
+          <li>Stripe integrado + plano pago R$ 89/mês</li>
+          <li>Landing page com proposta de valor</li>
+          <li>Service worker + cache offline</li>
+          <li>Programa de referral (1 mês grátis por indicação)</li>
+          <li>Gráfico de evolução do humor para paciente</li>
+          <li>Sentry para monitoramento de erros</li>
+        </ul>
+      </div>
+      <div class="roadmap-col col-later">
+        <h4>🟢 6 meses<br/><span style="font-weight:400;font-size:10px;color:var(--muted)">Escala & Diferenciação</span></h4>
+        <ul>
+          <li>Telepsicologia (videochamada integrada)</li>
+          <li>Plano multi-terapeuta para clínicas</li>
+          <li>App nativo (Capacitor/React Native)</li>
+          <li>Assinatura digital de prontuários</li>
+          <li>Integração CFP para conformidade de atestados</li>
+          <li>Relatório de progresso compartilhável com paciente</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:36px 0 16px;color:var(--ink)">Score Final por Perspectiva</h3>
+    <table>
+      <thead>
+        <tr><th>Perspectiva</th><th>Score</th><th>Avaliação</th><th>Prioridade de Ação</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>🧭 CEO — Estratégia</td><td>6/10</td><td>Produto forte, empresa sem modelo</td><td><span class="badge-p1">Alta</span></td></tr>
+        <tr><td>🎨 CPO — Produto</td><td>7.5/10</td><td>Feature-complete para o nicho</td><td><span class="badge-p3">Média</span></td></tr>
+        <tr><td>⚙️ CTO — Técnico</td><td>4.5/10</td><td>localStorage = risco existencial</td><td><span class="badge-p1">Crítica</span></td></tr>
+        <tr><td>🔧 COO — Operações</td><td>5/10</td><td>Deploy OK, processos nulos</td><td><span class="badge-p2">Alta</span></td></tr>
+        <tr><td>💰 CFO — Financeiro</td><td>2/10</td><td>Sem receita nenhuma</td><td><span class="badge-p1">Crítica</span></td></tr>
+        <tr><td>📣 CMO — Marketing</td><td>3/10</td><td>Marca boa, presença zero</td><td><span class="badge-p1">Alta</span></td></tr>
+        <tr><td>🚀 Growth — Crescimento</td><td>4/10</td><td>Retenção boa, acquisition zero</td><td><span class="badge-p1">Alta</span></td></tr>
+        <tr><td>⚖️ Legal & Segurança</td><td>4/10</td><td>Exposição regulatória alta</td><td><span class="badge-p1">Crítica</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout green" style="margin-top:28px">
+      <strong>Conclusão da Auditoria</strong>
+      O TheraFlow tem o produto mais completo do segmento de gestão clínica para psicólogos no Brasil. O diferencial do portal do paciente com gamificação é genuinamente único. Os riscos são todos de negócio e infraestrutura — não de produto. A prioridade imediata é: (1) resolver o risco de perda de dados via localStorage, (2) publicar documentação LGPD, (3) ativar monetização. Com essas três ações, o produto está apto a crescer com segurança.
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span>TheraFlow — Auditoria Executiva 360° — Abril 2026</span>
+    <span>Confidencial — Uso interno</span>
+  </div>
+</div>
+
+</body>
+</html>

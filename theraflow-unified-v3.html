@@ -2189,11 +2189,18 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
       <span class="nav-ai-tag">IA</span>
       <span id="nav-supervisao-badge" style="display:none;margin-left:6px;background:#c0392b;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center"></span>
     </button>
-    <button class="nav-item" style="opacity:.45;cursor:default" disabled title="Em breve">
+    <button class="nav-item" style="opacity:.5;cursor:pointer" title="Educação continuada — em desenvolvimento" onclick="showToast('📚 Educação continuada chega em breve! Você será avisado quando lançar.')">
       <span class="icon">📚</span> Educação continuada
-      <span style="margin-left:auto;font-size:9px;color:#556;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;letter-spacing:.3px">Em breve</span>
+      <span style="margin-left:auto;font-size:9px;color:#8fb89c;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;letter-spacing:.3px">Em breve</span>
     </button>
 
+  </div>
+
+  <!-- Sync status -->
+  <div id="sync-status-bar" title="Status de sincronização com a nuvem"
+    style="margin:0 12px 4px;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:11px;background:rgba(74,124,89,.06);color:#8fb89c;transition:color .3s,background .3s">
+    <span id="sync-status-icon" style="font-size:12px">✓</span>
+    <span id="sync-status-text">Sincronizado</span>
   </div>
 
   <!-- Trial counter -->
@@ -4699,14 +4706,35 @@ async function _supaLoadUserData(userId) {
   }
 }
 
+/* ── SYNC STATUS UI ── */
+var _syncErrorCount = 0;
+function _setSyncStatus(state) {
+  var icon = document.getElementById('sync-status-icon');
+  var text = document.getElementById('sync-status-text');
+  var bar  = document.getElementById('sync-status-bar');
+  if (!icon || !text || !bar) return;
+  if (state === 'syncing') {
+    icon.textContent = '↺'; text.textContent = 'Salvando…';
+    bar.style.color = '#d4a017'; bar.style.background = 'rgba(212,160,23,.08)';
+  } else if (state === 'error') {
+    icon.textContent = '⚠'; text.textContent = 'Offline';
+    bar.style.color = '#c0392b'; bar.style.background = 'rgba(192,57,43,.08)';
+  } else {
+    icon.textContent = '✓'; text.textContent = 'Sincronizado';
+    bar.style.color = '#8fb89c'; bar.style.background = 'rgba(74,124,89,.06)';
+  }
+}
+window.addEventListener('offline', function() { _setSyncStatus('error'); });
+window.addEventListener('online',  function() { _setSyncStatus('ok'); });
+
 /* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos) */
-var _syncErrorCount = 0; // contador de falhas consecutivas de sync
 async function _supaSync_patients() {
+  _setSyncStatus('syncing');
   try {
     const { data: { user } } = await supa.auth.getUser();
-    if (!user) return;
+    if (!user) { _setSyncStatus('ok'); return; }
     const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
-    if (!pats.length) return;
+    if (!pats.length) { _setSyncStatus('ok'); return; }
     const rows = pats.map(p => ({
       id: p.id || undefined,
       user_id: user.id,
@@ -4746,13 +4774,14 @@ async function _supaSync_patients() {
     const withoutId = rows.filter(r => !r.id || !UUID_RE.test(r.id)).map(r => { const {id, ...rest} = r; return rest; });
     if (withId.length) { const { error: e1 } = await supa.from('patients').upsert(withId, { onConflict: 'id' }); if (e1) throw e1; }
     if (withoutId.length) { const { error: e2 } = await supa.from('patients').insert(withoutId); if (e2) throw e2; }
-    _syncErrorCount = 0; // reset ao ter sucesso
+    _syncErrorCount = 0;
+    _setSyncStatus('ok');
   } catch(e) {
     _syncErrorCount++;
     console.warn('[Supa] Sync patients falhou:', e.message);
-    // Avisa o terapeuta após 2 falhas consecutivas (evita ruído em erros pontuais)
-    if (_syncErrorCount === 2 && typeof showToast === 'function') {
-      showToast('⚠ Sincronização com nuvem falhou — dados salvos localmente. Verifique sua conexão.', 'warning');
+    if (_syncErrorCount >= 2) {
+      _setSyncStatus('error');
+      if (typeof showToast === 'function') showToast('⚠ Sincronização com nuvem falhou — dados salvos localmente. Verifique sua conexão.');
     }
   }
 }
@@ -5756,7 +5785,7 @@ function globalSearchInput(q) {
   results = results.slice(0, 8);
 
   if (results.length === 0) {
-    box.innerHTML = '<div style="padding:14px 16px;font-size:12.5px;color:#8fb89c;text-align:center">Nenhum resultado para "' + escHTML(q) + '"</div>';
+    box.innerHTML = '<div style="padding:16px;text-align:center"><div style="font-size:12.5px;color:#8fb89c;margin-bottom:6px">Nenhum resultado para "' + escHTML(q) + '"</div><div style="font-size:11px;color:#556;line-height:1.5">Tente o nome do paciente, trecho de nota clínica ou título de tarefa.</div></div>';
   } else {
     var typeLabel = { paciente:'Paciente', nota:'Nota clínica', tarefa:'Tarefa' };
     box.innerHTML = results.map(function(r, idx) {
@@ -5880,7 +5909,7 @@ function executarBuscaGlobal(q) {
   }
 
   if (!resultados.length) {
-    box.innerHTML = '<div class="gs-empty">Nenhum resultado para "' + escHTML(q) + '"</div>';
+    box.innerHTML = '<div class="gs-empty" style="line-height:1.7">Nenhum resultado para "<strong>' + escHTML(q) + '</strong>"<br><span style="font-size:11.5px;opacity:.7">Tente nome do paciente, data, trecho de nota ou título de tarefa.</span></div>';
     return;
   }
 
@@ -7945,6 +7974,24 @@ function indexPostSession() {
         salvarPacientes();
       }
     } catch(_e) {}
+  }
+  // M1: Insere em public.sessions para ativar trigger de sessoes_usadas no Supabase
+  if (sp && sp.id) {
+    (async function() {
+      try {
+        const { data: { user } } = await supa.auth.getUser();
+        if (!user) return;
+        await supa.from('sessions').insert({
+          patient_id: sp.id,
+          user_id: user.id,
+          session_number: sp.sessions,
+          scheduled_at: new Date().toISOString(),
+          started_at: new Date().toISOString(),
+          ended_at: new Date().toISOString(),
+          status: 'realizada',
+        });
+      } catch(_) { /* silencioso — trial já incrementado localmente */ }
+    })();
   }
   // Abre etapa de exercícios antes de ir para supervisão
   showExercisePosSession();

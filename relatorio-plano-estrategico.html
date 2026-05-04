@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TheraFlow — Plano de Ação Estratégico</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sage: #4a7c59; --sage-dark: #2e5237; --sage-light: #e8f0eb; --sage-mid: #8fb89c;
+  --ink: #1a1f1c; --ink-soft: #3d4540; --muted: #6b7280;
+  --border: #e2e8e4; --bg: #f7f8f6; --white: #ffffff;
+  --amber: #c97d2e; --amber-light: #fdf3e7;
+  --red: #c0392b; --red-light: #fdecea;
+  --blue: #2c5f8a; --blue-light: #eaf1f8;
+  --purple: #5a3e8a; --purple-light: #f0ecfa;
+}
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  background: var(--white); color: var(--ink);
+  font-family: 'DM Sans', sans-serif; line-height: 1.65;
+  font-size: 13px; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-family: 'Instrument Serif', serif; letter-spacing: -.2px; }
+
+/* ── CAPA ── */
+.cover {
+  background: linear-gradient(160deg, #0d1f14 0%, #172a1e 45%, #1e3628 100%);
+  min-height: 100vh; display: flex; flex-direction: column;
+  justify-content: center; padding: 80px 72px;
+  position: relative; overflow: hidden; page-break-after: always;
+}
+.cover::before {
+  content: ''; position: absolute; right: -5%; top: -10%;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,124,89,.3) 0%, transparent 65%);
+  pointer-events: none;
+}
+.cover::after {
+  content: ''; position: absolute; left: -5%; bottom: -15%;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(143,184,156,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cover-inner { position: relative; z-index: 1; }
+.cover-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(74,124,89,.25); border: 1px solid rgba(143,184,156,.3);
+  color: #a8d4b5; font-size: 11px; font-weight: 600; letter-spacing: .5px;
+  text-transform: uppercase; padding: 6px 14px; border-radius: 20px; margin-bottom: 32px;
+}
+.cover-dot { width: 6px; height: 6px; border-radius: 50%; background: #6fcf97; }
+.cover h1 {
+  font-size: 58px; color: #fff; line-height: 1.08; max-width: 700px; margin-bottom: 24px;
+}
+.cover h1 em { color: #7fcf97; font-style: italic; }
+.cover-sub { font-size: 17px; color: rgba(255,255,255,.5); max-width: 480px; line-height: 1.7; margin-bottom: 56px; }
+.cover-meta { display: flex; gap: 48px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,.1); }
+.cover-meta-item {}
+.cover-meta-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 4px; }
+.cover-meta-val { font-size: 14px; color: rgba(255,255,255,.7); font-weight: 500; }
+.cover-logo {
+  position: absolute; top: 48px; left: 72px; z-index: 1;
+  font-family: 'Instrument Serif', serif; font-size: 20px; color: rgba(255,255,255,.7);
+  display: flex; align-items: center; gap: 10px;
+}
+.cover-logo-mark {
+  width: 32px; height: 32px; background: var(--sage); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px;
+}
+.cover-page-num {
+  position: absolute; bottom: 48px; right: 72px; z-index: 1;
+  font-size: 11px; color: rgba(255,255,255,.2);
+}
+
+/* ── SUMÁRIO ── */
+.toc-page {
+  padding: 72px; min-height: 100vh; display: flex; flex-direction: column;
+  page-break-after: always;
+}
+.toc-title { font-size: 36px; color: var(--ink); margin-bottom: 8px; }
+.toc-sub { font-size: 14px; color: var(--muted); margin-bottom: 48px; }
+.toc-list { display: flex; flex-direction: column; gap: 0; }
+.toc-item {
+  display: flex; align-items: baseline; gap: 12px; padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toc-item:last-child { border-bottom: none; }
+.toc-num { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--sage); min-width: 36px; }
+.toc-name { font-size: 15px; font-weight: 500; color: var(--ink); flex: 1; }
+.toc-dots { flex: 1; border-bottom: 1px dotted var(--border); margin: 0 8px 4px; }
+.toc-page-num { font-size: 12px; color: var(--muted); }
+.toc-footer { margin-top: auto; padding-top: 48px; font-size: 11px; color: var(--muted); }
+
+/* ── PÁGINAS INTERNAS ── */
+.page {
+  padding: 64px 72px; min-height: 100vh;
+  display: flex; flex-direction: column;
+  page-break-after: always; position: relative;
+}
+.page:last-child { page-break-after: auto; }
+
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding-bottom: 28px; border-bottom: 2px solid var(--sage-light); margin-bottom: 40px;
+}
+.page-num-badge {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--sage); background: var(--sage-light); padding: 4px 12px; border-radius: 20px;
+}
+.page-logo-small { font-family: 'Instrument Serif', serif; font-size: 15px; color: var(--muted); }
+
+.section-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--sage); margin-bottom: 8px;
+}
+.section-title { font-size: 32px; color: var(--ink); line-height: 1.15; margin-bottom: 6px; }
+.section-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; line-height: 1.7; }
+
+/* ── CARDS ── */
+.cards-grid { display: grid; gap: 16px; margin-bottom: 24px; }
+.cards-grid-2 { grid-template-columns: 1fr 1fr; }
+.cards-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.card {
+  border: 1.5px solid var(--border); border-radius: 14px;
+  padding: 22px 24px; background: var(--white);
+}
+.card-sage { border-color: var(--sage-mid); background: var(--sage-light); }
+.card-amber { border-color: #e6b77a; background: var(--amber-light); }
+.card-red { border-color: #e8a09a; background: var(--red-light); }
+.card-blue { border-color: #7aace6; background: var(--blue-light); }
+.card-purple { border-color: #a08ae6; background: var(--purple-light); }
+.card-dark { border-color: #2e3d33; background: #172a1e; }
+
+.card-icon { font-size: 22px; margin-bottom: 10px; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.card-dark .card-title { color: #fff; }
+.card-body { font-size: 12.5px; color: var(--ink-soft); line-height: 1.65; }
+.card-dark .card-body { color: rgba(255,255,255,.6); }
+.card-sage .card-title { color: var(--sage-dark); }
+.card-amber .card-title { color: var(--amber); }
+.card-red .card-title { color: var(--red); }
+.card-blue .card-title { color: var(--blue); }
+.card-purple .card-title { color: var(--purple); }
+
+/* ── TIMELINE ── */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.timeline-item { display: flex; gap: 20px; padding-bottom: 28px; position: relative; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item:last-child .timeline-line { display: none; }
+.timeline-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.timeline-dot {
+  width: 36px; height: 36px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+  color: #fff; flex-shrink: 0; font-family: 'Instrument Serif', serif; font-size: 16px;
+}
+.timeline-line { flex: 1; width: 2px; background: var(--border); margin-top: 4px; }
+.timeline-content { flex: 1; padding-top: 6px; }
+.timeline-period {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.timeline-title { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+.timeline-items { display: flex; flex-direction: column; gap: 6px; }
+.timeline-action {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.5;
+}
+.timeline-action::before { content: '→'; color: var(--sage); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+/* ── LISTA ── */
+.list { display: flex; flex-direction: column; gap: 8px; }
+.list-item { display: flex; align-items: flex-start; gap: 10px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+.list-item-num {
+  min-width: 22px; height: 22px; border-radius: 50%; background: var(--sage-light);
+  color: var(--sage); font-size: 11px; font-weight: 700; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+.list-check { color: var(--sage); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.list-x { color: var(--red); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+
+/* ── TABELA MÉTRICAS ── */
+.metrics-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.metrics-table th {
+  text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted); padding: 10px 14px;
+  background: var(--bg); border-bottom: 2px solid var(--border);
+}
+.metrics-table td {
+  padding: 12px 14px; font-size: 12.5px; color: var(--ink-soft);
+  border-bottom: 1px solid var(--border); vertical-align: top;
+}
+.metrics-table tr:last-child td { border-bottom: none; }
+.metrics-table .cat { font-weight: 700; color: var(--ink); }
+.metrics-table .meta { font-weight: 700; color: var(--sage); }
+
+/* ── DESTAQUES ── */
+.highlight-box {
+  background: linear-gradient(135deg, #0d1f14, #172a1e);
+  border-radius: 16px; padding: 28px 32px; margin: 24px 0;
+}
+.highlight-box p { font-size: 16px; color: rgba(255,255,255,.8); line-height: 1.7; font-style: italic; }
+.highlight-box strong { color: #7fcf97; font-style: normal; }
+
+/* ── SCRIPT BOX ── */
+.script-box {
+  background: var(--bg); border: 1px solid var(--border); border-left: 4px solid var(--sage);
+  border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 12px 0;
+}
+.script-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--sage); margin-bottom: 8px; }
+.script-text { font-size: 12.5px; color: var(--ink-soft); line-height: 1.7; font-style: italic; }
+
+/* ── PILLARES FINAIS ── */
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 8px; }
+.summary-card {
+  border-radius: 14px; padding: 24px; text-align: center;
+}
+.summary-card.green { background: var(--sage); }
+.summary-card.dark { background: #172a1e; }
+.summary-card.amber { background: #c97d2e; }
+.summary-num { font-family: 'Instrument Serif', serif; font-size: 48px; color: rgba(255,255,255,.9); line-height: 1; margin-bottom: 6px; }
+.summary-label { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: rgba(255,255,255,.6); margin-bottom: 16px; }
+.summary-items { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.summary-item { font-size: 11.5px; color: rgba(255,255,255,.75); line-height: 1.5; display: flex; gap: 6px; }
+.summary-item::before { content: '·'; color: rgba(255,255,255,.4); flex-shrink: 0; }
+
+/* ── RODAPÉ DAS PÁGINAS ── */
+.page-footer {
+  margin-top: auto; padding-top: 24px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10.5px; color: var(--muted);
+}
+
+/* ── DIVIDER ── */
+.divider { width: 36px; height: 3px; background: var(--sage); border-radius: 2px; margin: 20px 0; }
+
+/* ── PRINT ── */
+@media print {
+  @page { margin: 0; size: A4; }
+  body { font-size: 12px; }
+  .cover { min-height: 100vh; }
+  .page { min-height: 100vh; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ CAPA ═══ -->
+<div class="cover">
+  <div class="cover-logo">
+    <div class="cover-logo-mark">T</div>
+    TheraFlow
+  </div>
+
+  <div class="cover-inner">
+    <div class="cover-badge">
+      <div class="cover-dot"></div>
+      Documento Estratégico Confidencial
+    </div>
+
+    <h1>
+      Plano de Ação<br/>
+      <em>Estratégico</em>
+    </h1>
+    <p class="cover-sub">
+      Diagnóstico, prioridades, alavancas de crescimento e execução comercial para os próximos 12 meses.
+    </p>
+
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Empresa</div>
+        <div class="cover-meta-val">TheraFlow</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Mercado</div>
+        <div class="cover-meta-val">SaaS · Psicólogos Brasileiros</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Data</div>
+        <div class="cover-meta-val">Abril 2026</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Horizonte</div>
+        <div class="cover-meta-val">12 meses</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-page-num">Confidencial · TheraFlow 2026</div>
+</div>
+
+<!-- ═══ SUMÁRIO ═══ -->
+<div class="toc-page">
+  <div class="page-header">
+    <div>
+      <div class="section-eyebrow">Índice</div>
+      <h2 class="section-title" style="font-size:28px">Sumário Executivo</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">1</div>
+      <div class="toc-name">Diagnóstico Rápido</div>
+      <div class="toc-dots"></div>
+      <div class="toc-page-num">Pontos fortes, lacunas e riscos imediatos</div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">2</div>
+      <div class="toc-name">Plano de Ação Priorizado</div>
+      <div class="toc-dots"></div>
+      <div class="toc-page-num">0–30 · 30–90 · 3–12 meses</div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">3</div>
+      <div class="toc-name">Alavancas de Crescimento</div>
+      <div class="toc-dots"></div>
+      <div class="toc-page-num">O que acelera, onde focar, o que ignorar</div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">4</div>
+      <div class="toc-name">Execução Comercial</div>
+      <div class="toc-dots"></div>
+      <div class="toc-page-num">Primeiros clientes, scripts e abordagens</div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">5</div>
+      <div class="toc-name">Estrutura e Ferramentas</div>
+      <div class="toc-dots"></div>
+      <div class="toc-page-num">Equipe mínima e o que terceirizar</div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">6</div>
+      <div class="toc-name">Métricas Essenciais</div>
+      <div class="toc-dots"></div>
+      <div class="toc-page-num">Aquisição, conversão, receita, retenção</div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">7</div>
+      <div class="toc-name">Erros a Evitar</div>
+      <div class="toc-dots"></div>
+      <div class="toc-page-num">7 armadilhas comuns em SaaS de nicho</div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">8</div>
+      <div class="toc-name">Resumo Executivo</div>
+      <div class="toc-dots"></div>
+      <div class="toc-page-num">5 prioridades · 3 riscos · 3 ações imediatas</div>
+    </div>
+  </div>
+
+  <div class="toc-footer">
+    TheraFlow — Plano de Ação Estratégico · Abril 2026 · Documento Confidencial
+  </div>
+</div>
+
+<!-- ═══ PÁGINA 1: DIAGNÓSTICO ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-num-badge">01 · Diagnóstico</div>
+      <h2 class="section-title" style="margin-top:10px">Onde estamos agora</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="section-eyebrow">O que está funcionando</div>
+  <div class="divider"></div>
+
+  <div class="cards-grid cards-grid-2" style="margin-bottom:32px">
+    <div class="card card-sage">
+      <div class="card-icon">🧠</div>
+      <div class="card-title">Diferencial real de produto</div>
+      <div class="card-body">IA calibrada por abordagem terapêutica (TCC, Psicanálise, Sistêmica, ACT…). Nenhum concorrente oferece isso. É um moat genuíno.</div>
+    </div>
+    <div class="card card-sage">
+      <div class="card-icon">💰</div>
+      <div class="card-title">Precificação correta</div>
+      <div class="card-body">R$89/mês é menos que uma sessão. Objeção de preço praticamente inexistente. Trial de 20 sessões elimina fricção de aquisição.</div>
+    </div>
+    <div class="card card-sage">
+      <div class="card-icon">⚙️</div>
+      <div class="card-title">Stack completa e funcionando</div>
+      <div class="card-body">Agenda, prontuários, financeiro, portal do paciente, Stripe, Supabase, PWA offline — tudo integrado e em produção no Vercel.</div>
+    </div>
+    <div class="card card-sage">
+      <div class="card-icon">🛡️</div>
+      <div class="card-title">Compliance desde o início</div>
+      <div class="card-body">LGPD implementada, termos e privacidade publicados, CFP 04/2020 mapeado. Reduz fricção com psicólogos preocupados com sigilo.</div>
+    </div>
+  </div>
+
+  <div class="section-eyebrow">O que está incompleto ou em risco</div>
+  <div class="divider"></div>
+
+  <div class="cards-grid cards-grid-3">
+    <div class="card card-red">
+      <div class="card-icon">🚨</div>
+      <div class="card-title">Nenhum usuário real</div>
+      <div class="card-body">O produto foi construído mas não validado com clientes pagantes. Pode haver problema de retenção invisível.</div>
+    </div>
+    <div class="card card-red">
+      <div class="card-icon">⚠️</div>
+      <div class="card-title">Rebrand pendente</div>
+      <div class="card-body">Nome "TheraFlow" conflita com plataforma americana. Risco jurídico sobe com cada novo usuário adquirido.</div>
+    </div>
+    <div class="card card-amber">
+      <div class="card-icon">📵</div>
+      <div class="card-title">Suporte inexistente</div>
+      <div class="card-body">Emails no footer podem não existir. Um problema sem resposta em nicho de saúde vale -10 clientes por boca a boca.</div>
+    </div>
+    <div class="card card-amber">
+      <div class="card-icon">📣</div>
+      <div class="card-title">Sem canal de aquisição</div>
+      <div class="card-body">O produto está no ar mas não há fluxo ativo de visitantes. Landing sem tráfego = produto inexistente para o mercado.</div>
+    </div>
+    <div class="card card-amber">
+      <div class="card-icon">👥</div>
+      <div class="card-title">Prova social fabricada</div>
+      <div class="card-body">Depoimentos fictícios na landing. Qualquer psicólogo que tente verificar um CRP no CFP e não encontre perde a confiança.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏗️</div>
+      <div class="card-title">Funcionalidades prometidas</div>
+      <div class="card-body">"Videosessão + Whisper" está como "em breve" na landing. Cria expectativa que precisa ser gerenciada.</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>TheraFlow · Plano de Ação Estratégico · Abril 2026</span>
+    <span>01 / 08</span>
+  </div>
+</div>
+
+<!-- ═══ PÁGINA 2: PLANO DE AÇÃO ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-num-badge">02 · Plano de Ação</div>
+      <h2 class="section-title" style="margin-top:10px">Execução em 3 horizontes</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="timeline">
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot" style="background:var(--red)">1</div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-period" style="color:var(--red)">Curto prazo · 0–30 dias · Validação</div>
+        <div class="timeline-title">Provar que alguém paga</div>
+        <div class="timeline-items">
+          <div class="timeline-action">Fechar o novo nome — testar 3 candidatos com 5 psicólogos, registrar domínio .com.br e iniciar processo INPI</div>
+          <div class="timeline-action">Criar WhatsApp Business como suporte — número dedicado, resposta em até 4h</div>
+          <div class="timeline-action">Recrutar 10 beta testers via LinkedIn, grupos CFP no WhatsApp e Instagram — oferecer acesso gratuito em troca de feedback semanal</div>
+          <div class="timeline-action">Criar grupo privado no WhatsApp com beta testers — canal de produto, suporte e prova social simultâneos</div>
+          <div class="timeline-action">Instalar Hotjar (ou Microsoft Clarity) na landing para ver onde as pessoas param de rolar</div>
+          <div class="timeline-action">Substituir depoimentos falsos por relatos reais assim que tiver 3 feedbacks</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot" style="background:var(--amber)">2</div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-period" style="color:var(--amber)">Médio prazo · 30–90 dias · Primeiros pagantes</div>
+        <div class="timeline-title">10 clientes pagantes e MRR de R$890</div>
+        <div class="timeline-items">
+          <div class="timeline-action">Converter os melhores beta testers em pagantes — oferta de R$49/mês vitalício para "fundadores". Meta: 10 pagantes até o dia 60</div>
+          <div class="timeline-action">Produzir 2 posts/semana no Instagram — formato "antes vs depois" do fluxo clínico, conta pessoal do fundador converte melhor</div>
+          <div class="timeline-action">Fazer 1 live/mês em grupos de psicólogos demonstrando o produto — demo ao vivo converte muito bem em nichos profissionais</div>
+          <div class="timeline-action">Completar o rebrand — trocar nome em todos os arquivos, domínio, Stripe e Supabase</div>
+          <div class="timeline-action">Criar FAQ de objeções baseado no que os beta testers perguntaram (LGPD, segurança dos dados, backup, exportação)</div>
+          <div class="timeline-action">No trial, quando o usuário chegar na sessão 15 das 20, enviar mensagem manual no WhatsApp pedindo feedback — ação ativa antes do paywall dobra conversão</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot" style="background:var(--sage)">3</div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-period" style="color:var(--sage)">Longo prazo · 3–12 meses · Escala com canal</div>
+        <div class="timeline-title">Canal previsível e plano Clínica</div>
+        <div class="timeline-items">
+          <div class="timeline-action">Google Ads em termos de alta intenção: "prontuário psicólogo", "software para psicólogo", "agenda psicólogo online"</div>
+          <div class="timeline-action">Parceria com formações de pós-graduação em psicologia — desconto para alunos, demo para turmas como canal recorrente</div>
+          <div class="timeline-action">Programa de afiliados para supervisores — supervisor indica para supervisionando, ganha crédito. Alta confiança no relacionamento</div>
+          <div class="timeline-action">Lançar plano Clínica (3–5 psicólogos): ticket médio de R$200+ por conta</div>
+          <div class="timeline-action">Ativar Whisper real para transcrição automática — diferencial enorme, muda a proposta de valor completamente</div>
+          <div class="timeline-action">SEO de nicho: artigos sobre "nota clínica TCC modelo", "prontuário psicólogo LGPD", "agenda psicólogo online" — captura intenção de compra com custo zero</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="page-footer">
+    <span>TheraFlow · Plano de Ação Estratégico · Abril 2026</span>
+    <span>02 / 08</span>
+  </div>
+</div>
+
+<!-- ═══ PÁGINA 3: ALAVANCAS ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-num-badge">03 · Alavancas</div>
+      <h2 class="section-title" style="margin-top:10px">O que acelera o crescimento</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="section-eyebrow">Máximo impacto agora</div>
+  <div class="divider"></div>
+
+  <div class="cards-grid cards-grid-2" style="margin-bottom:36px">
+    <div class="card card-dark">
+      <div class="card-icon">🎥</div>
+      <div class="card-title">Prova social em vídeo</div>
+      <div class="card-body">1 vídeo de 60 segundos de um psicólogo mostrando o briefing IA antes de uma sessão vale mais que qualquer copy. É o ativo de marketing número 1 a produzir.</div>
+    </div>
+    <div class="card card-dark">
+      <div class="card-icon">💬</div>
+      <div class="card-title">Boca a boca em grupos</div>
+      <div class="card-body">Psicólogos compartilham muito entre pares — especialmente quando algo economiza tempo real de prontuário. 1 defensor vocal em um grupo de 200 vale uma campanha inteira.</div>
+    </div>
+    <div class="card card-dark">
+      <div class="card-icon">🔍</div>
+      <div class="card-title">SEO de nicho</div>
+      <div class="card-body">Conteúdo sobre "prontuário psicólogo LGPD", "nota clínica TCC modelo" captura intenção de compra com custo zero. Canal de longo prazo que cresce sozinho.</div>
+    </div>
+    <div class="card card-dark">
+      <div class="card-icon">🤝</div>
+      <div class="card-title">Referral estruturado</div>
+      <div class="card-body">O programa de referral já está implementado. Ativá-lo com beta testers satisfeitos cria loop viral no próprio nicho antes de qualquer gasto com tráfego pago.</div>
+    </div>
+  </div>
+
+  <div class="section-eyebrow">Onde focar o esforço agora</div>
+  <div class="divider"></div>
+
+  <div class="list" style="margin-bottom:32px">
+    <div class="list-item">
+      <span class="list-check">✓</span>
+      <span><strong>Aquisição orgânica</strong> — Instagram (conta pessoal) + grupos de WhatsApp/Telegram nos primeiros 90 dias</span>
+    </div>
+    <div class="list-item">
+      <span class="list-check">✓</span>
+      <span><strong>Produto</strong> — só o que os beta testers pedem. Nenhuma feature nova que não seja demanda real</span>
+    </div>
+    <div class="list-item">
+      <span class="list-check">✓</span>
+      <span><strong>Relacionamento</strong> — cada beta tester deve ser tratado como cliente pagante. Resposta rápida = retenção + referral</span>
+    </div>
+  </div>
+
+  <div class="section-eyebrow">O que ignorar agora</div>
+  <div class="divider"></div>
+
+  <div class="cards-grid cards-grid-3">
+    <div class="card">
+      <div class="card-title" style="color:var(--muted);font-size:13px">TikTok / YouTube / Podcast</div>
+      <div class="card-body" style="font-size:12px">Alto esforço de produção, retorno lento. Não para fase pré-MRR.</div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--muted);font-size:13px">Integração com planos de saúde</div>
+      <div class="card-body" style="font-size:12px">Complexidade jurídica e técnica enorme. Não é diferencial para psicólogos de consultório.</div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--muted);font-size:13px">Funcionalidades para clínicas</div>
+      <div class="card-body" style="font-size:12px">Ticket maior mas ciclo de venda longo. Validar o plano individual primeiro.</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>TheraFlow · Plano de Ação Estratégico · Abril 2026</span>
+    <span>03 / 08</span>
+  </div>
+</div>
+
+<!-- ═══ PÁGINA 4: EXECUÇÃO COMERCIAL ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-num-badge">04 · Comercial</div>
+      <h2 class="section-title" style="margin-top:10px">Como conseguir os primeiros clientes</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="section-eyebrow">Semana 1–2: Rede próxima</div>
+  <div class="divider"></div>
+
+  <div class="list" style="margin-bottom:28px">
+    <div class="list-item">
+      <div class="list-item-num">1</div>
+      Mapear todo psicólogo que você conhece direta ou indiretamente (amigos, conhecidos, ex-colegas de faculdade)
+    </div>
+    <div class="list-item">
+      <div class="list-item-num">2</div>
+      Enviar mensagem direta e pessoal — não um link, não um post. Uma conversa
+    </div>
+    <div class="list-item">
+      <div class="list-item-num">3</div>
+      Meta: 5 confirmações de teste na primeira semana
+    </div>
+  </div>
+
+  <div class="script-box">
+    <div class="script-label">Script · Abordagem por mensagem direta</div>
+    <div class="script-text">"Oi [nome]! Estou construindo uma plataforma de gestão clínica com IA para psicólogos. Você teria 20 minutos para testar comigo e me dar feedback? É de graça."</div>
+  </div>
+
+  <div class="section-eyebrow" style="margin-top:28px">Semana 3–4: Grupos profissionais</div>
+  <div class="divider"></div>
+
+  <div class="list" style="margin-bottom:28px">
+    <div class="list-item">
+      <div class="list-item-num">1</div>
+      Entrar em 10 grupos de psicólogos no WhatsApp/Telegram
+    </div>
+    <div class="list-item">
+      <div class="list-item-num">2</div>
+      <strong>Não vender</strong> — fazer perguntas: "Qual é a parte mais chata da sua rotina clínica?"
+    </div>
+    <div class="list-item">
+      <div class="list-item-num">3</div>
+      Quando alguém responder algo que o TheraFlow resolve, aí entra com o produto
+    </div>
+  </div>
+
+  <div class="script-box">
+    <div class="script-label">Script · DM no Instagram para psicólogos de TCC</div>
+    <div class="script-text">"Oi [nome]! Vi que você trabalha com TCC — estou construindo uma ferramenta que gera nota clínica no formato SOAP automaticamente ao encerrar a sessão. Posso te mostrar em 10 minutos? Sem compromisso."</div>
+  </div>
+
+  <div class="section-eyebrow" style="margin-top:28px">Conversão de trial para pago</div>
+  <div class="divider"></div>
+
+  <div class="highlight-box">
+    <p>Quando o usuário chegar na <strong>sessão 15 das 20 do trial</strong>, enviar mensagem manual no WhatsApp: <strong>"Você está na sessão 15. O que você achou até agora? Tem algo que posso melhorar antes de você decidir?"</strong> — contato ativo antes do paywall dobra a conversão.</p>
+  </div>
+
+  <div class="cards-grid cards-grid-2" style="margin-top:20px">
+    <div class="card card-sage">
+      <div class="card-title">Oferta de fundadores</div>
+      <div class="card-body">Para os primeiros 20 clientes: R$49/mês vitalício. Cria urgência real, não artificial. Esses clientes viram defensores da marca.</div>
+    </div>
+    <div class="card card-sage">
+      <div class="card-title">Pedir referência sempre</div>
+      <div class="card-body">Todo beta tester satisfeito conhece 3+ psicólogos. Perguntar "você conhece alguém?" deve ser processo padrão, não exceção.</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>TheraFlow · Plano de Ação Estratégico · Abril 2026</span>
+    <span>04 / 08</span>
+  </div>
+</div>
+
+<!-- ═══ PÁGINA 5: ESTRUTURA ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-num-badge">05 · Estrutura</div>
+      <h2 class="section-title" style="margin-top:10px">Equipe e ferramentas</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="section-eyebrow">Equipe mínima por fase</div>
+  <div class="divider"></div>
+
+  <div class="cards-grid cards-grid-3" style="margin-bottom:36px">
+    <div class="card">
+      <div class="card-title">Agora · Solo</div>
+      <div class="card-body" style="margin-top:10px">
+        <div class="list" style="gap:6px">
+          <div class="list-item"><span class="list-check">✓</span>Fundador: produto + vendas + suporte</div>
+          <div class="list-item"><span class="list-check">✓</span>Nada mais até R$5k MRR</div>
+        </div>
+      </div>
+    </div>
+    <div class="card card-sage">
+      <div class="card-title">R$5k–15k MRR</div>
+      <div class="card-body" style="margin-top:10px">
+        <div class="list" style="gap:6px">
+          <div class="list-item"><span class="list-check">✓</span>Suporte/CS: freelancer 20h/semana</div>
+          <div class="list-item"><span class="list-check">✓</span>Conteúdo: freelancer (1 post/dia)</div>
+        </div>
+      </div>
+    </div>
+    <div class="card card-dark">
+      <div class="card-title">R$15k+ MRR</div>
+      <div class="card-body" style="margin-top:10px">
+        <div class="list" style="gap:6px">
+          <div class="list-item"><span class="list-check" style="color:#7fcf97">✓</span><span style="color:rgba(255,255,255,.6)">CS dedicado full-time</span></div>
+          <div class="list-item"><span class="list-check" style="color:#7fcf97">✓</span><span style="color:rgba(255,255,255,.6)">Dev part-time para backlog</span></div>
+          <div class="list-item"><span class="list-check" style="color:#7fcf97">✓</span><span style="color:rgba(255,255,255,.6)">Growth focado em tráfego pago</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-eyebrow">Ferramentas recomendadas</div>
+  <div class="divider"></div>
+
+  <div class="cards-grid cards-grid-2" style="margin-bottom:28px">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Já implementado — usar de verdade</div>
+      <div class="list">
+        <div class="list-item"><span class="list-check">✓</span><strong>PostHog</strong> — analytics já instalado; criar dashboards de conversão</div>
+        <div class="list-item"><span class="list-check">✓</span><strong>Stripe</strong> — pagamentos; ativar email automático ao completar 15 sessões do trial</div>
+        <div class="list-item"><span class="list-check">✓</span><strong>Supabase</strong> — banco de dados; monitorar churn e atividade dos usuários</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Adicionar agora</div>
+      <div class="list">
+        <div class="list-item"><span class="list-check">✓</span><strong>WhatsApp Business</strong> — suporte, número dedicado</div>
+        <div class="list-item"><span class="list-check">✓</span><strong>Notion</strong> — roadmap de produto e feedback dos beta testers</div>
+        <div class="list-item"><span class="list-check">✓</span><strong>Hotjar / Microsoft Clarity</strong> — heatmap na landing (gratuito)</div>
+        <div class="list-item"><span class="list-check">✓</span><strong>Contador MEI</strong> — ~R$150/mês, obrigatório para emitir NF</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-eyebrow">O que terceirizar agora</div>
+  <div class="divider"></div>
+
+  <div class="list">
+    <div class="list-item"><span class="list-check">✓</span>Design de posts: Canva com templates — não contratar designer ainda</div>
+    <div class="list-item"><span class="list-check">✓</span>Transcrição Whisper: quando ativar, usar API da OpenAI (paga por uso — zero custo fixo)</div>
+    <div class="list-item"><span class="list-check">✓</span>Contabilidade: contador MEI (~R$150/mês)</div>
+    <div class="list-item"><span class="list-check">✓</span>Tradução/adaptação para outros países: só depois de R$30k MRR no Brasil</div>
+  </div>
+
+  <div class="page-footer">
+    <span>TheraFlow · Plano de Ação Estratégico · Abril 2026</span>
+    <span>05 / 08</span>
+  </div>
+</div>
+
+<!-- ═══ PÁGINA 6: MÉTRICAS ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-num-badge">06 · Métricas</div>
+      <h2 class="section-title" style="margin-top:10px">O que acompanhar</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="highlight-box" style="margin-bottom:32px">
+    <p>O único número que importa nos próximos 30 dias: <strong>quantos psicólogos usaram o produto esta semana?</strong> Tudo o mais é detalhe até ter resposta para essa pergunta.</p>
+  </div>
+
+  <table class="metrics-table">
+    <thead>
+      <tr>
+        <th>Categoria</th>
+        <th>Métrica</th>
+        <th>Como medir</th>
+        <th>Meta (90 dias)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cat">Aquisição</td>
+        <td>Novos usuários / semana</td>
+        <td>PostHog · signup events</td>
+        <td class="meta">5 / semana</td>
+      </tr>
+      <tr>
+        <td class="cat">Aquisição</td>
+        <td>Origem dos cadastros</td>
+        <td>PostHog · UTM source</td>
+        <td class="meta">Identificar o top 1 canal</td>
+      </tr>
+      <tr>
+        <td class="cat">Ativação</td>
+        <td>Usou na primeira semana</td>
+        <td>Supabase · sessions table</td>
+        <td class="meta">&gt; 60% dos novos</td>
+      </tr>
+      <tr>
+        <td class="cat">Ativação</td>
+        <td>Completou primeira sessão com IA</td>
+        <td>PostHog · session_started</td>
+        <td class="meta">&gt; 80% dos ativados</td>
+      </tr>
+      <tr>
+        <td class="cat">Conversão</td>
+        <td>Trial → Pago</td>
+        <td>Stripe · subscriptions</td>
+        <td class="meta">&gt; 20%</td>
+      </tr>
+      <tr>
+        <td class="cat">Conversão</td>
+        <td>Tempo médio trial → pago</td>
+        <td>Stripe · created_at delta</td>
+        <td class="meta">&lt; 45 dias</td>
+      </tr>
+      <tr>
+        <td class="cat">Receita</td>
+        <td>MRR</td>
+        <td>Stripe Dashboard</td>
+        <td class="meta">R$1.000 (≈11 pagantes)</td>
+      </tr>
+      <tr>
+        <td class="cat">Receita</td>
+        <td>Churn mensal</td>
+        <td>Stripe · cancelamentos</td>
+        <td class="meta">&lt; 5% / mês</td>
+      </tr>
+      <tr>
+        <td class="cat">Retenção</td>
+        <td>Ativos 30 dias após signup</td>
+        <td>PostHog · cohorts</td>
+        <td class="meta">&gt; 50%</td>
+      </tr>
+      <tr>
+        <td class="cat">Retenção</td>
+        <td>NPS dos usuários ativos</td>
+        <td>Pergunta manual no WhatsApp</td>
+        <td class="meta">&gt; 40</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="cards-grid cards-grid-3" style="margin-top:24px">
+    <div class="card card-sage">
+      <div class="card-title">Alerta vermelho</div>
+      <div class="card-body">Se churn > 10% no segundo mês, parar aquisição e investigar. Problema de produto, não de marketing.</div>
+    </div>
+    <div class="card card-amber">
+      <div class="card-title">Alerta amarelo</div>
+      <div class="card-body">Se conversão trial→pago &lt; 10%, revisar o momento do paywall e o contato ativo na sessão 15.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sinal positivo</div>
+      <div class="card-body">NPS > 50 + churn &lt; 3% = produto validado. Hora de ligar o tráfego pago com confiança.</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>TheraFlow · Plano de Ação Estratégico · Abril 2026</span>
+    <span>06 / 08</span>
+  </div>
+</div>
+
+<!-- ═══ PÁGINA 7: ERROS ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-num-badge">07 · Erros</div>
+      <h2 class="section-title" style="margin-top:10px">7 armadilhas a evitar</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="list" style="gap:20px">
+
+    <div class="list-item" style="align-items:flex-start;gap:14px">
+      <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">1</div>
+      <div>
+        <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">Construir antes de vender</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.65">A tentação de adicionar features em vez de falar com clientes mata SaaS B2B na fase inicial. Toda hora de desenvolvimento que não resolve dor confirmada de um usuário real é desperdício.</div>
+      </div>
+    </div>
+
+    <div class="list-item" style="align-items:flex-start;gap:14px">
+      <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">2</div>
+      <div>
+        <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">Escalar antes de reter</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.65">Gastar em tráfego pago com churn alto é jogar dinheiro fora. Primeiro entender por que as pessoas ficam ou saem — depois abrir o torneira de aquisição.</div>
+      </div>
+    </div>
+
+    <div class="list-item" style="align-items:flex-start;gap:14px">
+      <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">3</div>
+      <div>
+        <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">Descontar indiscriminadamente</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.65">R$89 está correto. Descontos aleatórios destroem âncora de preço e atraem o perfil errado de cliente. A oferta de fundadores (R$49 vitalício) é intencional e controlada — não uma política geral.</div>
+      </div>
+    </div>
+
+    <div class="list-item" style="align-items:flex-start;gap:14px">
+      <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">4</div>
+      <div>
+        <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">Ignorar o suporte no início</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.65">No nicho de saúde, um psicólogo com problema e sem resposta conta para todos os colegas. 1 caso ruim equivale a -10 clientes potenciais. Suporte rápido é produto, não overhead.</div>
+      </div>
+    </div>
+
+    <div class="list-item" style="align-items:flex-start;gap:14px">
+      <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">5</div>
+      <div>
+        <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">Não pedir referência</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.65">Todo beta tester satisfeito conhece pelo menos 3 psicólogos. "Você conhece alguém que poderia se beneficiar?" deve ser rotina, não exceção. O canal mais barato que existe é o boca a boca ativado.</div>
+      </div>
+    </div>
+
+    <div class="list-item" style="align-items:flex-start;gap:14px">
+      <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">6</div>
+      <div>
+        <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">Esconder que é beta</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.65">Psicólogos toleram bugs se você for transparente e resolver rápido. Não toleram ser enganados — especialmente sobre uma ferramenta que guarda dados sigilosos de pacientes.</div>
+      </div>
+    </div>
+
+    <div class="list-item" style="align-items:flex-start;gap:14px">
+      <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">7</div>
+      <div>
+        <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">Fazer o rebrand tarde demais</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.65">Quanto mais usuários, mais caro e doloroso é mudar o nome. Banco de dados, domínio, Stripe, comunicação de marca — tudo precisa migrar. Fazer agora, enquanto o custo ainda é baixo.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="page-footer">
+    <span>TheraFlow · Plano de Ação Estratégico · Abril 2026</span>
+    <span>07 / 08</span>
+  </div>
+</div>
+
+<!-- ═══ PÁGINA 8: RESUMO ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-num-badge">08 · Resumo</div>
+      <h2 class="section-title" style="margin-top:10px">Plano em formato simples</h2>
+    </div>
+    <div class="page-logo-small">TheraFlow</div>
+  </div>
+
+  <div class="summary-grid" style="margin-bottom:28px">
+    <div class="summary-card green">
+      <div class="summary-num">5</div>
+      <div class="summary-label">Prioridades</div>
+      <div class="summary-items">
+        <div class="summary-item">Definir e registrar o novo nome</div>
+        <div class="summary-item">Recrutar 10 beta testers reais</div>
+        <div class="summary-item">Criar suporte via WhatsApp Business</div>
+        <div class="summary-item">Converter 5 beta testers em pagantes</div>
+        <div class="summary-item">Substituir depoimentos falsos por reais</div>
+      </div>
+    </div>
+    <div class="summary-card dark">
+      <div class="summary-num">3</div>
+      <div class="summary-label">Riscos Críticos</div>
+      <div class="summary-items">
+        <div class="summary-item">Nenhum usuário real — produto não validado com pagamento real</div>
+        <div class="summary-item">Nome com conflito — risco jurídico sobe com cada novo usuário</div>
+        <div class="summary-item">Solo sem suporte — um problema viral no nicho pode travar o lançamento</div>
+      </div>
+    </div>
+    <div class="summary-card amber">
+      <div class="summary-num">3</div>
+      <div class="summary-label">Ações Imediatas</div>
+      <div class="summary-items">
+        <div class="summary-item">Criar WhatsApp Business e colocar na landing agora</div>
+        <div class="summary-item">Mandar DM para 20 psicólogos pedindo para testar</div>
+        <div class="summary-item">Fechar o novo nome e comprar o domínio esta semana</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <p>O produto está pronto para ser validado. O risco agora não é técnico — é comercial. A única pergunta que precisa de resposta nos próximos 30 dias: <strong>algum psicólogo paga R$89/mês por isso e continua usando na semana seguinte?</strong> Tudo o mais é detalhe.</p>
+  </div>
+
+  <div style="margin-top:auto">
+    <div style="background:var(--bg);border-radius:14px;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;margin-top:28px">
+      <div>
+        <div style="font-family:'Instrument Serif',serif;font-size:22px;color:var(--ink)">TheraFlow</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">A clínica inteligente para psicólogos brasileiros</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--muted)">Plano de Ação Estratégico</div>
+        <div style="font-size:11px;color:var(--muted)">Abril 2026 · Documento Confidencial</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>TheraFlow · Plano de Ação Estratégico · Abril 2026</span>
+    <span>08 / 08</span>
+  </div>
+</div>
+
+</body>
+</html>

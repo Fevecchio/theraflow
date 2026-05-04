@@ -544,5 +544,43 @@ create index idx_audit_logs_patient_id on public.audit_logs(patient_id);
 create index idx_audit_logs_created_at on public.audit_logs(created_at desc);
 
 -- ============================================================
+-- MIGRATIONS PÓS-DEPLOY INICIAL
+-- Aplicar no Supabase → SQL Editor se estiver recriando o banco.
+-- ============================================================
+
+-- Adicionadas em 2026-04-18 (programa de referral)
+alter table public.users add column if not exists referred_by        uuid references public.users(id) on delete set null;
+alter table public.users add column if not exists referral_rewarded  boolean not null default false;
+alter table public.users add column if not exists referral_count     int not null default 0;
+
+-- Adicionada para suporte ao portal do paciente (dados ricos em JSONB)
+-- Armazena: moodHistory, diary, exercises, materials, metas, sessionLink, etc.
+alter table public.patients add column if not exists metadata jsonb default '{}'::jsonb;
+
+-- ============================================================
+-- RLS ADICIONAL — Portal do Paciente (C1 da auditoria 2026-05-04)
+-- Permite que paciente autenticado leia e atualize seu próprio registro.
+-- ============================================================
+create policy if not exists "patients: leitura pelo proprio paciente"
+  on public.patients for select
+  using (
+    exists (
+      select 1 from public.patient_users pu
+      where pu.patient_id = patients.id
+        and pu.auth_user_id = auth.uid()
+    )
+  );
+
+create policy if not exists "patients: update pelo proprio paciente"
+  on public.patients for update
+  using (
+    exists (
+      select 1 from public.patient_users pu
+      where pu.patient_id = patients.id
+        and pu.auth_user_id = auth.uid()
+    )
+  );
+
+-- ============================================================
 -- FIM DO SCHEMA
 -- ============================================================
