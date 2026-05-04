@@ -6675,15 +6675,6 @@ document.addEventListener('click', function(e) {
   }
 });
 
-function excluirPaciente(i) {
-  const nome = patients[i]?.name || 'este paciente';
-  if (!confirm(`Excluir "${nome}" permanentemente?\n\nEsta ação não pode ser desfeita.`)) return;
-  patients.splice(i, 1);
-  salvarPacientes();
-  showToast('Paciente excluído.');
-  checkFirstPatientBanner();
-  renderPatients();
-}
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar() {
@@ -7113,6 +7104,7 @@ function filterPatientsByAbordagem(val) {
 
 function selectPatient(i, el) {
   if (i < 0 || i >= patients.length) return;
+  currentPatientIdx = i;
   const p = patients[i];
 
   // ── Recalcula fin/finStatus + mood a partir de dados reais ──
@@ -7340,6 +7332,7 @@ function selectPatient(i, el) {
 let timerInterval = null, sessionSeconds = 0;
 let currentSessionPatientIdx = 0;
 let currentPortalPatientIdx = 0;
+let currentPatientIdx = 0;
 let _editingExerciseId = null;
 function startSession() {
   if (!patients || patients.length === 0) { showToast('⚠ Cadastre um paciente antes de iniciar uma sessão.'); navigate('pacientes'); return; }
@@ -7800,8 +7793,8 @@ function editPostNote() {
     return;
   }
 
-  // Entrar em modo edição
-  const currentText = noteEl.textContent.trim();
+  // Entrar em modo edição — preserva conteúdo, converte HTML de notas estruturais para texto editável
+  const currentText = (noteEl.tagName === 'TEXTAREA' ? noteEl.value : noteEl.innerText || noteEl.textContent).trim();
   const textarea = document.createElement('textarea');
   textarea.id = 'post-note-text';
   textarea.value = currentText;
@@ -8673,7 +8666,7 @@ function confirmarAgendamento() {
   var dur    = document.getElementById('agendar-duracao');
   var recorr = document.getElementById('agendar-recorrencia');
 
-  if (!sel || !data || !hora) { document.getElementById('modal-agendar')?.remove(); showToast('✅ Sessão agendada!'); return; }
+  if (!sel || !data || !hora) { showToast('⚠ Erro ao abrir formulário de agendamento. Tente novamente.'); return; }
 
   var pidx = parseInt(sel.value);
   if (isNaN(pidx) || pidx < 0 || pidx >= patients.length) { showToast('⚠ Selecione um paciente.'); return; }
