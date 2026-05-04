@@ -4549,6 +4549,20 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 <!-- ═══════════ SCRIPTS ═══════════ -->
 <script>
 
+/* ── FETCH COM TIMEOUT ── */
+async function fetchWithTimeout(url, opts, ms = 15000) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: ctrl.signal });
+  } catch(e) {
+    if (e.name === 'AbortError') throw new Error('Tempo esgotado. Verifique sua conexão e tente novamente.');
+    throw e;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 /* ── STRIPE ── */
 const _STRIPE_PK = 'pk_test_51TNCbIFY0RoCsYEc3dHRoo3rpeHRP6ucbwzq5NhYLJL3QyGgFvwj88XLvamEd02rdgWX09UlESaSz83K64AGdL2m00gzfh3Tca';
 let _tfPlanPro = false;
@@ -4558,11 +4572,11 @@ async function assinarPro(btn) {
   try {
     if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
     const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
-    const res = await fetch('/api/create-checkout-session', {
+    const res = await fetchWithTimeout('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: acc.email || '', supaId: acc.supa_id || '' }),
-    });
+    }, 20000);
     const data = await res.json();
     if (data.url) {
       window.location.href = data.url;
@@ -4769,6 +4783,7 @@ async function _supaSync_charges() {
     if (rows.length) await supa.from('charges').upsert(rows, { onConflict: 'local_id' });
   } catch(e) {
     console.warn('[Supa] Sync charges falhou:', e.message);
+    if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sync de cobranças falhou — dados preservados localmente.');
   }
 }
 
@@ -4791,6 +4806,7 @@ async function _supaSync_tasks() {
     await supa.from('tasks').upsert(rows, { onConflict: 'local_id' });
   } catch(e) {
     console.warn('[Supa] Sync tasks falhou:', e.message);
+    if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sync de tarefas falhou — dados preservados localmente.');
   }
 }
 
@@ -4819,7 +4835,10 @@ async function _supaSync_appointments() {
     }));
     const { error } = await supa.from('appointments').insert(rows);
     if (error) throw error;
-  } catch(e) { console.warn('[Supa] Sync appointments:', e.message); }
+  } catch(e) {
+    console.warn('[Supa] Sync appointments:', e.message);
+    if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sync de agenda falhou — dados preservados localmente.');
+  }
 }
 
 /* ── ONBOARDING JS ── */
@@ -5340,25 +5359,51 @@ function enviarLembretesSessoesDia() {
   if (!sessoesHoje.length) { showToast('Nenhuma sessão agendada para hoje.'); return; }
   var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
   var tpl = acc.wpp_template || '';
-  var enviados = 0;
+  var links = [];
   var semWpp = 0;
-  sessoesHoje.forEach(function(a, idx) {
+  var nomeT = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
+  sessoesHoje.forEach(function(a) {
     var p = patients[a.patientIdx];
     if (!p || !p.whatsapp) { semWpp++; return; }
     var n = p.whatsapp.replace(/\D/g,'');
     n = n.startsWith('55') ? n : '55' + n;
     var hora = a.time || '';
-    var nomeT = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
     var msg = _wppInterpolate(tpl, _firstName(p.name), 'hoje', hora, nomeT);
-    setTimeout(function(){ window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank'); }, idx * 600);
-    enviados++;
+    links.push({ nome: _firstName(p.name), url: 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg) });
   });
-  if (enviados > 0) {
-    showToast('💬 Lembretes enviados para ' + enviados + ' paciente' + (enviados > 1 ? 's' : '') + '!');
-  } else {
+
+  if (!links.length) {
     showToast('⚠ Pacientes sem WhatsApp cadastrado. Cadastre em Pacientes → Editar.');
+    if (semWpp > 0) showToast('⚠ ' + semWpp + ' paciente(s) sem WhatsApp não receberão o lembrete.');
+    return;
   }
-  if (semWpp > 0 && enviados > 0) showToast('⚠ ' + semWpp + ' paciente(s) sem WhatsApp não receberam o lembrete.');
+
+  // Se apenas 1 paciente, abre direto (gesto do usuário permite popup)
+  if (links.length === 1) {
+    window.open(links[0].url, '_blank');
+    showToast('💬 Lembrete aberto para ' + links[0].nome + '!');
+    if (semWpp > 0) showToast('⚠ ' + semWpp + ' paciente(s) sem WhatsApp omitidos.');
+    return;
+  }
+
+  // Para múltiplos: exibe modal com botões clicáveis (browsers bloqueiam window.open em loop)
+  var existingModal = document.getElementById('modal-wpp-links');
+  if (existingModal) existingModal.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'modal-wpp-links';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9990;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:360px;width:90%;max-height:80vh;overflow-y:auto">'
+    + '<h3 style="margin:0 0 4px;font-size:16px;color:#1a2a1a">💬 Lembretes WhatsApp</h3>'
+    + '<p style="margin:0 0 16px;font-size:13px;color:#666">Clique em cada paciente para abrir o WhatsApp.</p>'
+    + links.map(function(l) {
+        return '<a href="' + l.url + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#e8f5e9;border-radius:10px;margin-bottom:8px;text-decoration:none;color:#1a2a1a;font-size:14px;font-weight:600">'
+          + '<span style="font-size:20px">💚</span>' + escHTML(l.nome) + '</a>';
+      }).join('')
+    + (semWpp > 0 ? '<p style="font-size:12px;color:#999;margin:8px 0 0">⚠ ' + semWpp + ' paciente(s) sem WhatsApp omitidos.</p>' : '')
+    + '<button onclick="document.getElementById(\'modal-wpp-links\').remove()" style="margin-top:16px;width:100%;padding:11px;background:#f5f5f5;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;color:#555">Fechar</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
 
 function enviarLembretesAmanha() {
@@ -6606,7 +6651,7 @@ async function compartilharAcessoPortal(i) {
     // Sync antes para garantir que o paciente existe no banco
     await _supaSync_patients().catch(() => {});
     try {
-      var r = await fetch('/api/invite-patient', {
+      var r = await fetchWithTimeout('/api/invite-patient', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -6616,7 +6661,7 @@ async function compartilharAcessoPortal(i) {
           therapistId: therapistId,
           patientName: p.name,
         }),
-      });
+      }, 15000);
       var result = await r.json();
       if (r.ok) {
         showToast('Acesso criado para ' + nome + '!');
@@ -7333,8 +7378,27 @@ let currentSessionPatientIdx = 0;
 let currentPortalPatientIdx = 0;
 let currentPatientIdx = 0;
 let _editingExerciseId = null;
-function startSession() {
+async function startSession() {
   if (!patients || patients.length === 0) { showToast('⚠ Cadastre um paciente antes de iniciar uma sessão.'); navigate('pacientes'); return; }
+
+  // C2: Verifica trial contra o Supabase para bloquear bypass via localStorage
+  const _accCheck = JSON.parse(localStorage.getItem('tf_account') || '{}');
+  if (_accCheck.supa_id && _accCheck.plano !== 'pro' && _accCheck.plano !== 'clinic') {
+    try {
+      const { data: profile } = await Promise.race([
+        supa.from('users').select('sessoes_usadas, plano').eq('id', _accCheck.supa_id).single(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+      ]);
+      if (profile) {
+        _accCheck.sessoes_usadas = profile.sessoes_usadas;
+        _accCheck.plano = profile.plano;
+        _accCheck.trial_token = tfTrialToken(profile.sessoes_usadas);
+        localStorage.setItem('tf_account', JSON.stringify(_accCheck));
+        if (profile.plano === 'pro' || profile.plano === 'clinic') _tfPlanPro = true;
+      }
+    } catch(_) { /* offline ou timeout — usa localStorage */ }
+  }
+
   // Guard de trial: bloqueia após 20 sessões
   if (getTrialCount() >= 20) {
     showModal('modal-trial-esgotado');
@@ -7363,7 +7427,11 @@ function startSession() {
     const sfS = document.getElementById('sf-sessao');
     const sfC = document.getElementById('sf-cid');
     if (sfA) sfA.textContent = sp.abordagem || '—';
-    if (sfS) sfS.textContent = `${(sp.sessions||0)+1} de 20 (trial)`;
+    const _acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    const _isPro = _acc.plano === 'pro' || _acc.plano === 'clinic';
+    if (sfS) sfS.textContent = _isPro
+      ? `Sessão ${(sp.sessions||0)+1}`
+      : `${(sp.sessions||0)+1} de 20 (trial)`;
     if (sfC) sfC.textContent = sp.cid !== '—' ? sp.cid : '—';
   }
   // Limpa anotações rápidas
@@ -7839,6 +7907,7 @@ function indexPostSession() {
       sp.prontuarioNotes.push({ date: sp.lastSession, text: noteText });
     }
     salvarPacientes();
+    showToast('✓ Sessão encerrada e nota salva.');
   }
   // Marca appointment de hoje como 'compareceu' automaticamente
   if (typeof appointments !== 'undefined' && sp) {
@@ -8594,11 +8663,11 @@ async function _preencherNotaComIA(pidx) {
       + ', queixa principal: ' + (p.notes || 'não informada') + '.'
       + ' Escreva em primeira pessoa do terapeuta, tom clínico e objetivo.';
     var patientData = { name: p.name, abordagem: p.abordagem, sessions: p.sessions, mood: p.mood, notes: p.notes, cid: p.cid };
-    var resp = await fetch('/api/briefing', {
+    var resp = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userPrompt, patientData }),
-    });
+    }, 30000);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     var data = await resp.json();
     var texto = data.content || '';
@@ -10630,11 +10699,11 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
 
   try {
     // Chama a Edge Function no servidor (chave Gemini fica no servidor, não no cliente)
-    const res = await fetch('/api/briefing', {
+    const res = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ systemPrompt: system, userPrompt: user, patientData: bp })
-    });
+    }, 30000);
     if (!res.ok) {
       let errDetail = 'API status ' + res.status;
       try { const eb = await res.json(); errDetail = eb.error || errDetail; } catch(_){}
@@ -14371,7 +14440,7 @@ function loginPaciente() {
       .single();
 
     if (!patResult.data) {
-      errEl.textContent = '⚠ Dados não encontrados. Tente novamente.';
+      errEl.textContent = '⚠ Acesso ainda não configurado. Aguarde seu terapeuta concluir a configuração e tente novamente.';
       errEl.style.display = '';
       await supaPatient.auth.signOut().catch(() => {});
       return;

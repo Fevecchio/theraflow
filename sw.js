@@ -1,4 +1,4 @@
-const CACHE = 'tf-v1';
+const CACHE = 'tf-v3';
 const APP_SHELL = [
   '/app',
   '/theraflow-unified-v3.html',

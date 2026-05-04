@@ -9,6 +9,7 @@
 const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supabase.co';
 
 const ALLOWED_ORIGINS = [
+  'https://theraflow-one.vercel.app',
   'https://theraflow.com.br',
   'https://www.theraflow.com.br',
   'https://app.theraflow.com.br',
@@ -17,8 +18,8 @@ const ALLOWED_ORIGINS = [
 ];
 
 function setCors(res, origin) {
-  const allowed = (!origin || ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app'))
-    ? (origin || '*')
+  const allowed = (!origin || ALLOWED_ORIGINS.includes(origin))
+    ? (origin || ALLOWED_ORIGINS[0])
     : ALLOWED_ORIGINS[0];
   res.setHeader('Access-Control-Allow-Origin', allowed);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

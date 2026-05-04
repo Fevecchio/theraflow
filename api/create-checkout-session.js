@@ -34,11 +34,18 @@ export default async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
   try {
+    // Reutiliza customer existente para evitar duplicatas no Stripe
+    let customerId;
+    try {
+      const existing = await stripe.customers.list({ email, limit: 1 });
+      customerId = existing.data[0]?.id;
+    } catch(_) { /* sem customer existente — cria novo */ }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
-      customer_email: email,
+      ...(customerId ? { customer: customerId } : { customer_email: email }),
       metadata: { supaId: supaId || '' },
       success_url: (process.env.APP_URL || 'https://theraflow-one.vercel.app') + '/app?checkout=success',
       cancel_url: (process.env.APP_URL || 'https://theraflow-one.vercel.app') + '/app',
