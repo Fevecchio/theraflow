@@ -4155,7 +4155,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
     <button class="btn btn-primary btn-full btn-lg" onclick="assinarPro(this)" style="justify-content:center;margin-bottom:10px">
       Assinar agora — R$89/mês →
     </button>
-    <button onclick="closeModal('modal-trial-esgotado')" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);font-family:inherit;padding:4px">
+    <button onclick="_tfTrialDismissed=true;closeModal('modal-trial-esgotado')" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);font-family:inherit;padding:4px">
       Continuar em modo demonstração
     </button>
   </div>
@@ -4586,6 +4586,7 @@ async function fetchWithTimeout(url, opts, ms = 15000) {
 /* ── STRIPE ── */
 const _STRIPE_PK = 'pk_test_51TNCbIFY0RoCsYEc3dHRoo3rpeHRP6ucbwzq5NhYLJL3QyGgFvwj88XLvamEd02rdgWX09UlESaSz83K64AGdL2m00gzfh3Tca';
 let _tfPlanPro = false;
+let _tfTrialDismissed = false;
 
 async function assinarPro(btn) {
   tfTrack('upgrade_clicked');
@@ -7460,7 +7461,11 @@ async function startSession() {
 
   // Guard de trial: bloqueia após 20 sessões
   if (getTrialCount() >= 20) {
-    showModal('modal-trial-esgotado');
+    if (_tfTrialDismissed) {
+      showToast('Trial esgotado — assine o plano Pro para iniciar novas sessões.', 5000);
+    } else {
+      showModal('modal-trial-esgotado');
+    }
     return;
   }
   _sessionAlreadySaved = false;
@@ -8267,6 +8272,14 @@ function atualizarTrialUI(count) {
     bar.style.borderColor = 'rgba(192,57,43,.25)';
     bar.querySelectorAll('span').forEach(s => s.style.color = '#c0392b');
     if (fill) fill.style.background = '#c0392b';
+    if (!bar.querySelector('#trial-assinar-btn')) {
+      const btn = document.createElement('button');
+      btn.id = 'trial-assinar-btn';
+      btn.textContent = 'Assinar Pro — R$89/mês →';
+      btn.onclick = function() { assinarPro(btn); };
+      btn.style.cssText = 'margin-top:8px;width:100%;padding:6px;background:#c0392b;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit';
+      bar.appendChild(btn);
+    }
   }
 }
 
