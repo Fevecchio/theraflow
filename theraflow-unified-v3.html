@@ -10916,7 +10916,7 @@ Estruture em 5 blocos com estes títulos EXATOS:
 Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos acima.`;
 
   try {
-    // Chama a Edge Function no servidor (chave Gemini fica no servidor, não no cliente)
+    // Chama a Edge Function no servidor (chave Anthropic fica no servidor, não no cliente)
     const res = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

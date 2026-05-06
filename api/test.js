@@ -1,5 +1,5 @@
 export default function handler(req, res) {
-  const key = process.env.GEMINI_API_KEY || process.env.gemini_key || '';
+  const key = process.env.ANTHROPIC_API_KEY || '';
   res.status(200).json({
     ok: true,
     hasKey: key.length > 0,
