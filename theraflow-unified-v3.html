@@ -4587,6 +4587,7 @@ async function fetchWithTimeout(url, opts, ms = 15000) {
 const _STRIPE_PK = 'pk_test_51TNCbIFY0RoCsYEc3dHRoo3rpeHRP6ucbwzq5NhYLJL3QyGgFvwj88XLvamEd02rdgWX09UlESaSz83K64AGdL2m00gzfh3Tca';
 let _tfPlanPro = false;
 let _tfTrialDismissed = false;
+let _loadingUserData = false;
 
 async function assinarPro(btn) {
   tfTrack('upgrade_clicked');
@@ -4623,6 +4624,8 @@ const supaPatient = supabase.createClient(_SUPA_URL, _SUPA_KEY, {
 
 /* Carrega dados do Supabase e popula localStorage */
 async function _supaLoadUserData(userId) {
+  if (_loadingUserData) return;
+  _loadingUserData = true;
   try {
     const [{ data: profile }, { data: pats }, { data: chgs }, { data: tsks }, { data: appts }] = await Promise.all([
       supa.from('users').select('*').eq('id', userId).single(),
@@ -4672,7 +4675,9 @@ async function _supaLoadUserData(userId) {
       }));
       // Preserva pacientes criados offline (UUID local não existe no Supabase ainda)
       const offlinePats = localPats.filter(p => p.id && !supaPatIds.has(p.id));
-      localStorage.setItem('tf_patients', JSON.stringify([...restored, ...offlinePats]));
+      const mergedPats = [...restored, ...offlinePats];
+      localStorage.setItem('tf_patients', JSON.stringify(mergedPats));
+      try { if (typeof patients !== 'undefined') patients.splice(0, patients.length, ...mergedPats); } catch(_) {}
       if (offlinePats.length) _supaSync_patients().catch(() => {});
     }
     if (chgs && chgs.length > 0) {
@@ -4692,7 +4697,9 @@ async function _supaLoadUserData(userId) {
       }));
       // Preserva cobranças criadas offline
       const offlineChgs = localChgs.filter(c => c.id && !supaChgIds.has(String(c.id)));
-      localStorage.setItem('tf_charges', JSON.stringify([...restoredChgs, ...offlineChgs]));
+      const mergedChgs = [...restoredChgs, ...offlineChgs];
+      localStorage.setItem('tf_charges', JSON.stringify(mergedChgs));
+      try { if (typeof charges !== 'undefined') charges = mergedChgs; } catch(_) {}
       if (offlineChgs.length) _supaSync_charges().catch(() => {});
     }
     if (tsks && tsks.length > 0) {
@@ -4732,14 +4739,18 @@ async function _supaLoadUserData(userId) {
       const offlineAppts = localAppts
         .filter(a => a.id && !supaApptIds.has(String(a.id)))
         .map(a => ({ ...a, patientIdx: patsArr.findIndex(p => p.name === a.patientName) }));
-      localStorage.setItem('tf_appointments', JSON.stringify([...restoredAppts, ...offlineAppts]));
+      const mergedAppts = [...restoredAppts, ...offlineAppts];
+      localStorage.setItem('tf_appointments', JSON.stringify(mergedAppts));
+      try { if (typeof appointments !== 'undefined') appointments.splice(0, appointments.length, ...mergedAppts); } catch(_) {}
       if (offlineAppts.length) _supaSync_appointments().catch(() => {});
     } else {
       const localAppts = JSON.parse(localStorage.getItem('tf_appointments') || '[]');
-      if (localAppts.length > 0) _supaSync_appointments();
+      if (localAppts.length > 0) _supaSync_appointments().catch(() => {});
     }
   } catch(e) {
     console.warn('[Supa] Erro ao carregar dados:', e.message);
+  } finally {
+    _loadingUserData = false;
   }
 }
 
@@ -4915,9 +4926,10 @@ async function _supaSync_appointments() {
     const { error: delError } = await supa.from('appointments')
       .delete()
       .eq('user_id', user.id)
-      .not('local_id', 'in', `(${localIds.join(',')})`);
+      .not('local_id', 'in', `(${localIds.map(id => `"${id}"`).join(',')})`);
     if (delError) throw delError;
   } catch(e) {
+    _syncErrorCount++;
     console.warn('[Supa] Sync appointments:', e.message);
     if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sync de agenda falhou — dados preservados localmente.');
   }
@@ -7492,7 +7504,7 @@ async function startSession() {
   // Guard de trial: bloqueia após 20 sessões
   if (getTrialCount() >= 20) {
     if (_tfTrialDismissed) {
-      showToast('Trial esgotado — assine o plano Pro para iniciar novas sessões.', 5000);
+      showToast('Trial esgotado — assine o plano Pro para iniciar novas sessões.');
     } else {
       showModal('modal-trial-esgotado');
     }
@@ -8243,8 +8255,12 @@ function _mostrarMarco(m) {
 
 /* ── SHA-256 para senha do portal do paciente ── */
 async function _portalHash(senha) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('tf-portal:' + senha));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('tf-portal:' + senha));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  } catch(e) {
+    return tfHashSenha('portal:' + senha);
+  }
 }
 
 /* ── Hash de senha (evita plain text no localStorage) ── */
@@ -8290,7 +8306,7 @@ function incrementarSessaoTrial() {
     acc.trial_token = tfTrialToken(acc.sessoes_usadas); // assina o contador
     localStorage.setItem('tf_account', JSON.stringify(acc));
     atualizarTrialUI(acc.sessoes_usadas);
-    if (acc.sessoes_usadas >= 20) {
+    if (acc.sessoes_usadas >= 20 && !_tfTrialDismissed) {
       setTimeout(() => showModal('modal-trial-esgotado'), 600);
     }
   } catch(e) { console.warn('[TF] Erro ao incrementar sessão trial:', e.message); }
@@ -9217,6 +9233,7 @@ function renderWeekView() {
         gridHtml += '<div class="week-cell-add" '+clickEmpty+' title="Agendar '+horaStr+' — '+diasAbrev[di.date.getDay()]+'"><span>+</span></div>';
       }
       appts.forEach(function(a){
+        if (a.patientIdx < 0) return;
         var isPastW = di.iso < hoje || (di.iso === hoje && parseInt((a.time||'23:59').split(':')[0]) < new Date().getHours());
         var pBadge = '';
         if (a.presenca === 'compareceu') pBadge = '<div style="font-size:9px;color:#065f46;background:#d1fae5;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✓</div>';
@@ -14542,6 +14559,7 @@ function loginPaciente() {
       if (idx !== -1 && !pacs[idx].portalPasswordHash) {
         pacs[idx].portalPasswordHash = senhaHash;
         try { localStorage.setItem('tf_patients', JSON.stringify(pacs)); } catch(_) {}
+        if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(() => {});
       }
       if (idx !== -1) {
         _loggedPatientIdx = idx;
