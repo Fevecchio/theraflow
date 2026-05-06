@@ -10942,7 +10942,7 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
     } else if (status.includes('500')) {
       _showBriefingError('🔑', 'Erro interno no servidor. Verifique se ANTHROPIC_API_KEY está configurada no Vercel. <span style="opacity:.5;font-size:11px">[' + status.substring(0,60) + ']</span>');
     } else {
-      _showBriefingNote('⚡ Análise local [<code style="font-size:10px">' + status.substring(0, 120) + '</code>] · <a href="#" onclick="callBriefingAI();return false" style="color:inherit;text-decoration:underline;font-weight:600">Tentar novamente</a>');
+      _showBriefingNote('⚡ Análise local · <a href="#" onclick="callBriefingAI();return false" style="color:inherit;text-decoration:underline;font-weight:600">Tentar novamente</a>');
     }
   }
 }
