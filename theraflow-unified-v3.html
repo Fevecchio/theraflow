@@ -4649,6 +4649,8 @@ async function _supaLoadUserData(userId) {
       }));
     }
     if (pats && pats.length > 0) {
+      const localPats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+      const supaPatIds = new Set(pats.map(p => p.id));
       // Restaura dados completos mesclando campos DB com metadata
       const restored = pats.map(p => ({
         ...(p.metadata || {}),
@@ -4667,9 +4669,14 @@ async function _supaLoadUserData(userId) {
         progress: p.progress,
         portalPassword: (p.metadata && p.metadata.portalPassword) || null,
       }));
-      localStorage.setItem('tf_patients', JSON.stringify(restored));
+      // Preserva pacientes criados offline (UUID local não existe no Supabase ainda)
+      const offlinePats = localPats.filter(p => p.id && !supaPatIds.has(p.id));
+      localStorage.setItem('tf_patients', JSON.stringify([...restored, ...offlinePats]));
+      if (offlinePats.length) _supaSync_patients().catch(() => {});
     }
     if (chgs && chgs.length > 0) {
+      const localChgs = JSON.parse(localStorage.getItem('tf_charges') || '[]');
+      const supaChgIds = new Set(chgs.map(c => String(c.local_id || c.id)));
       const restoredChgs = chgs.map(c => ({
         ...(c.metadata || {}),
         id: c.local_id || c.id,
@@ -4682,9 +4689,14 @@ async function _supaLoadUserData(userId) {
         date: c.due_date || null,
         paidDate: c.paid_date || null,
       }));
-      localStorage.setItem('tf_charges', JSON.stringify(restoredChgs));
+      // Preserva cobranças criadas offline
+      const offlineChgs = localChgs.filter(c => c.id && !supaChgIds.has(String(c.id)));
+      localStorage.setItem('tf_charges', JSON.stringify([...restoredChgs, ...offlineChgs]));
+      if (offlineChgs.length) _supaSync_charges().catch(() => {});
     }
     if (tsks && tsks.length > 0) {
+      const localTsks = JSON.parse(localStorage.getItem('tf_tasks') || '[]');
+      const supaTskIds = new Set(tsks.map(t => String(t.local_id || t.id)));
       const restoredTasks = tsks.map(t => ({
         id: t.local_id || t.id,
         titulo: t.titulo,
@@ -4693,9 +4705,14 @@ async function _supaLoadUserData(userId) {
         dueDate: t.due_date,
         patientId: t.patient_id,
       }));
-      localStorage.setItem('tf_tasks', JSON.stringify(restoredTasks));
+      // Preserva tarefas criadas offline
+      const offlineTsks = localTsks.filter(t => t.id && !supaTskIds.has(String(t.id)));
+      localStorage.setItem('tf_tasks', JSON.stringify([...restoredTasks, ...offlineTsks]));
+      if (offlineTsks.length) _supaSync_tasks().catch(() => {});
     }
     if (appts && appts.length > 0) {
+      const localAppts = JSON.parse(localStorage.getItem('tf_appointments') || '[]');
+      const supaApptIds = new Set(appts.map(a => String(a.local_id)));
       const patsArr = JSON.parse(localStorage.getItem('tf_patients') || '[]');
       const restoredAppts = appts.map(a => ({
         id: a.local_id,
@@ -4710,7 +4727,12 @@ async function _supaLoadUserData(userId) {
         presenca: a.presenca,
         color: a.color,
       }));
-      localStorage.setItem('tf_appointments', JSON.stringify(restoredAppts));
+      // Preserva agendamentos criados offline; re-resolve patientIdx pelo nome
+      const offlineAppts = localAppts
+        .filter(a => a.id && !supaApptIds.has(String(a.id)))
+        .map(a => ({ ...a, patientIdx: patsArr.findIndex(p => p.name === a.patientName) }));
+      localStorage.setItem('tf_appointments', JSON.stringify([...restoredAppts, ...offlineAppts]));
+      if (offlineAppts.length) _supaSync_appointments().catch(() => {});
     } else {
       const localAppts = JSON.parse(localStorage.getItem('tf_appointments') || '[]');
       if (localAppts.length > 0) _supaSync_appointments();
