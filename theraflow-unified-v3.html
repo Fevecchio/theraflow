@@ -2939,7 +2939,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
       <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div><div style="font-family:'Instrument Serif',serif;font-size:17px" id="b-result-title">Briefing — Paciente</div><div style="font-size:12px;color:var(--muted);margin-top:2px" id="b-result-subtitle">Gerado agora</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="regen-btn" onclick="regenerateBriefing()">↺ Regenerar</button>
+          <button class="regen-btn" id="briefing-regen-btn" onclick="regenerateBriefing()">↺ Regenerar</button>
           <button class="btn btn-ghost btn-sm" onclick="copiarBriefing()">📋 Copiar</button>
           <button class="btn btn-ghost btn-sm" onclick="exportarBriefing()">⬇ Exportar</button>
           <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨 Imprimir</button>
@@ -10813,6 +10813,7 @@ function initBriefing() {
     if (subEl) subEl.textContent = 'Cache de ' + _ts + ' · ' + (p.sessions||0) + ' sessões · sem alterações';
     renderBriefingContent(_bcache.content);
     renderThemes(); renderTimeline();
+    _setRegenBtn(true);
   }
 }
 
@@ -10845,6 +10846,22 @@ function _saveBriefingCache(key, content) {
       noteCount: (bp.prontuarioNotes || []).length
     }));
   } catch(_) {}
+}
+
+function _setRegenBtn(disabled) {
+  var btn = document.getElementById('briefing-regen-btn');
+  if (!btn) return;
+  if (disabled) {
+    btn.disabled = true;
+    btn.title = 'Nenhuma alteração desde o último briefing — regenerar não agrega valor e consome créditos';
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+  } else {
+    btn.disabled = false;
+    btn.title = '';
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+  }
 }
 
 function startBriefing() {
@@ -10946,6 +10963,7 @@ async function callBriefingAI() {
       var _cts = String(_cct.getHours()).padStart(2,'0') + ':' + String(_cct.getMinutes()).padStart(2,'0');
       var _subEl = document.getElementById('b-result-subtitle');
       if (_subEl) _subEl.textContent = 'Cache de ' + _cts + ' · ' + (bp.sessions||0) + ' sessões · sem alterações';
+      _setRegenBtn(true);
       _briefingForceRefresh = false;
       return;
     }
@@ -11004,6 +11022,7 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
     if (!text || text.length < 80) throw new Error('Resposta vazia');
     renderBriefingContent(text);
     _saveBriefingCache((bp.id || bp.name), text);
+    _setRegenBtn(false);
     try { localStorage.setItem('tf_last_briefing', Date.now()); verificarMarcos(); } catch(e2){}
   } catch(e) {
     renderBriefingFallback();
