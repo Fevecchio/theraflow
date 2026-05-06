@@ -2878,7 +2878,8 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   <div class="briefing-hero">
     <div class="hero-av" style="background:#4a7c59">CR</div>
     <div>
-      <div class="hero-name">Camila Rocha</div>
+      <div class="hero-name" id="briefing-hero-name">Camila Rocha</div>
+      <select id="briefing-patient-select" onchange="trocarPacienteBriefing(parseInt(this.value))" style="margin-top:5px;font-size:12px;border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:3px 8px;background:rgba(0,0,0,.25);color:#fff;cursor:pointer;max-width:220px"></select>
       <div class="hero-sub">
         <span>📋 TCC — Ansiedade</span>
         <span>🕐 Hoje às 09:00</span>
@@ -10755,6 +10756,7 @@ function buildThemes(p) {
 }
 
 let currentBriefingPatientIdx = 0;
+let _briefingForceRefresh = false;
 
 function initBriefing() {
   // Reseta para estado inicial "gerar"
@@ -10773,6 +10775,13 @@ function initBriefing() {
   // Atualiza hero com paciente atual
   const p = patients[currentBriefingPatientIdx] || patients[0];
   if (!p) return;
+  // Popula seletor de pacientes
+  var sel = document.getElementById('briefing-patient-select');
+  if (sel) {
+    sel.innerHTML = patients.map(function(pt, i) {
+      return '<option value="' + i + '"' + (i === currentBriefingPatientIdx ? ' selected' : '') + '>' + escHTML(pt.name) + '</option>';
+    }).join('');
+  }
   const av = document.querySelector('.briefing-hero .hero-av');
   const nm = document.querySelector('.briefing-hero .hero-name');
   if (av) { av.style.background = p.color; av.textContent = p.initials; }
@@ -10785,12 +10794,57 @@ function initBriefing() {
   const memSessions = document.querySelector('.memory-chip b');
   if (memSessions) memSessions.textContent = p.sessions || 0;
   // Atualiza badge
-  const badge = document.querySelector('#briefing-card #b-state-load .ai-dot');
   const loadTxt = document.querySelector('#b-state-load > div:first-child');
   if (loadTxt) loadTxt.innerHTML = `<div class="ai-dot"></div>Analisando ${p.sessions || 0} sessões…`;
   // Atualiza header do resultado
   const resHeader = document.querySelector('#b-state-result > div:first-child > div > div:first-child');
   if (resHeader) resHeader.textContent = `Briefing — ${p.name}`;
+  // Verificar cache — exibir direto se válido
+  var _bpKey = p.id || p.name;
+  var _bcache = _getBriefingCache(_bpKey);
+  if (_bcache) {
+    document.getElementById('b-state-gen').style.display = 'none';
+    document.getElementById('b-state-result').style.display = 'block';
+    document.getElementById('b-section-themes').style.display = 'block';
+    document.getElementById('b-section-timeline').style.display = 'block';
+    var _ct = new Date(_bcache.generatedAt);
+    var _ts = String(_ct.getHours()).padStart(2,'0') + ':' + String(_ct.getMinutes()).padStart(2,'0');
+    var subEl = document.getElementById('b-result-subtitle');
+    if (subEl) subEl.textContent = 'Cache de ' + _ts + ' · ' + (p.sessions||0) + ' sessões · sem alterações';
+    renderBriefingContent(_bcache.content);
+    renderThemes(); renderTimeline();
+  }
+}
+
+function trocarPacienteBriefing(idx) {
+  currentBriefingPatientIdx = idx;
+  initBriefing();
+}
+
+function _getBriefingCache(key) {
+  try {
+    var raw = localStorage.getItem('tf_bc_' + key);
+    if (!raw) return null;
+    var c = JSON.parse(raw);
+    var bp = patients[currentBriefingPatientIdx] || {};
+    var todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    if (c.generatedAt < todayStart.getTime()) return null;
+    if (c.sessionCount !== (bp.sessions || 0)) return null;
+    if (c.noteCount !== (bp.prontuarioNotes || []).length) return null;
+    return c;
+  } catch(_) { return null; }
+}
+
+function _saveBriefingCache(key, content) {
+  try {
+    var bp = patients[currentBriefingPatientIdx] || {};
+    localStorage.setItem('tf_bc_' + key, JSON.stringify({
+      content: content,
+      generatedAt: Date.now(),
+      sessionCount: bp.sessions || 0,
+      noteCount: (bp.prontuarioNotes || []).length
+    }));
+  } catch(_) {}
 }
 
 function startBriefing() {
@@ -10876,13 +10930,31 @@ async function callBriefingAI() {
     c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
     await new Promise(r => setTimeout(r, 1200));
     renderBriefingFallback();
+    _briefingForceRefresh = false;
     return;
   }
+
+  const bp = patients[currentBriefingPatientIdx] || patients[0];
+
+  // Verificar cache antes de chamar API
+  if (!_briefingForceRefresh) {
+    var _cacheKey = bp.id || bp.name;
+    var _cached = _getBriefingCache(_cacheKey);
+    if (_cached) {
+      renderBriefingContent(_cached.content);
+      var _cct = new Date(_cached.generatedAt);
+      var _cts = String(_cct.getHours()).padStart(2,'0') + ':' + String(_cct.getMinutes()).padStart(2,'0');
+      var _subEl = document.getElementById('b-result-subtitle');
+      if (_subEl) _subEl.textContent = 'Cache de ' + _cts + ' · ' + (bp.sessions||0) + ' sessões · sem alterações';
+      _briefingForceRefresh = false;
+      return;
+    }
+  }
+  _briefingForceRefresh = false;
+
   c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
 
   const system = `Você é um assistente clínico especializado em psicologia. Gera briefings pré-sessão para psicólogos e terapeutas. Tom clínico, objetivo e empático. Nunca faz diagnósticos — apenas observações baseadas no histórico. Responda em português brasileiro.`;
-
-  const bp = patients[currentBriefingPatientIdx] || patients[0];
   const bpHistory = buildSessionHistory(bp);
   const bpThemes = buildThemes(bp);
   const totalSessoes = bp?.sessions || 0;
@@ -10931,6 +11003,7 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
     const text = data.content || '';
     if (!text || text.length < 80) throw new Error('Resposta vazia');
     renderBriefingContent(text);
+    _saveBriefingCache((bp.id || bp.name), text);
     try { localStorage.setItem('tf_last_briefing', Date.now()); verificarMarcos(); } catch(e2){}
   } catch(e) {
     renderBriefingFallback();
@@ -11141,6 +11214,7 @@ function renderTimeline() {
 }
 
 function regenerateBriefing() {
+  _briefingForceRefresh = true;
   document.getElementById('b-state-result').style.display = 'none';
   document.getElementById('b-section-themes').style.display = 'none';
   document.getElementById('b-section-timeline').style.display = 'none';
