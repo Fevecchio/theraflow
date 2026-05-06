@@ -4668,6 +4668,7 @@ async function _supaLoadUserData(userId) {
         valorSessao: p.valor_sessao,
         progress: p.progress,
         portalPassword: (p.metadata && p.metadata.portalPassword) || null,
+        portalPasswordHash: (p.metadata && p.metadata.portalPasswordHash) || null,
       }));
       // Preserva pacientes criados offline (UUID local não existe no Supabase ainda)
       const offlinePats = localPats.filter(p => p.id && !supaPatIds.has(p.id));
@@ -4803,6 +4804,7 @@ async function _supaSync_patients() {
         fin: p.fin || null,
         forma_pagamento: p.forma_pagamento || null,
         portalPassword: p.portalPassword || null,
+        portalPasswordHash: p.portalPasswordHash || null,
         anamnese: p.anamnese || null,
         portalAnamneseAtiva: p.portalAnamneseAtiva || false,
       },
@@ -6687,13 +6689,14 @@ function limparSessionLink(i) {
   selectPatient(i);
 }
 
-function redefinirSenhaPaciente(i) {
+async function redefinirSenhaPaciente(i) {
   var p = patients[i];
   if (!p) return;
   var nova = prompt('Nova senha para ' + _firstName(p.name) + ':');
   if (nova === null) return;
   if (!nova.trim()) { showToast('Senha não pode ser vazia.'); return; }
   p.portalPassword = nova.trim();
+  p.portalPasswordHash = await _portalHash(nova.trim());
   salvarPacientes();
   var el = document.getElementById('pac-senha-display-' + i);
   if (el) el.textContent = p.portalPassword;
@@ -6715,6 +6718,10 @@ async function compartilharAcessoPortal(i) {
     var _arr = new Uint8Array(4);
     crypto.getRandomValues(_arr);
     p.portalPassword = 'TF' + Array.from(_arr).map(function(b){ return b.toString(36); }).join('').toUpperCase().substring(0, 6);
+    p.portalPasswordHash = await _portalHash(p.portalPassword);
+    salvarPacientes();
+  } else if (!p.portalPasswordHash) {
+    p.portalPasswordHash = await _portalHash(p.portalPassword);
     salvarPacientes();
   }
 
@@ -7000,6 +7007,7 @@ async function _supaPatientSync() {
         fin: p.fin || null,
         forma_pagamento: p.forma_pagamento || null,
         portalPassword: p.portalPassword || null,
+        portalPasswordHash: p.portalPasswordHash || null,
         checkInStreak: p.checkInStreak || 0,
         lastCheckInDate: p.lastCheckInDate || null,
         readMaterials: p.readMaterials || [],
@@ -8231,6 +8239,12 @@ function _mostrarMarco(m) {
   document.body.appendChild(el);
   setTimeout(function(){ el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(0)'; }, 50);
   setTimeout(function(){ el.style.opacity='0'; el.style.transform='translateX(-50%) translateY(30px)'; setTimeout(function(){ el.remove(); }, 400); }, 6000);
+}
+
+/* ── SHA-256 para senha do portal do paciente ── */
+async function _portalHash(senha) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('tf-portal:' + senha));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 /* ── Hash de senha (evita plain text no localStorage) ── */
@@ -14515,11 +14529,20 @@ function loginPaciente() {
       // Fallback: login local (funciona sem internet ou sem conta Supabase)
       var pacs = [];
       try { pacs = JSON.parse(localStorage.getItem('tf_patients') || '[]'); } catch(e2) {}
+      var senhaHash = await _portalHash(senha);
       var idx = pacs.findIndex(function(p) {
         var pEmail = (p.email || '').trim().toLowerCase();
-        var pSenha = p.portalPassword || '';
-        return pEmail === email && pSenha !== '' && pSenha === senha;
+        if (pEmail !== email) return false;
+        // Preferência: comparar hash (contas já migradas)
+        if (p.portalPasswordHash) return p.portalPasswordHash === senhaHash;
+        // Fallback plaintext para contas antigas — migra na primeira entrada
+        return (p.portalPassword || '') !== '' && p.portalPassword === senha;
       });
+      // Migra automaticamente conta antiga para hash após login bem-sucedido
+      if (idx !== -1 && !pacs[idx].portalPasswordHash) {
+        pacs[idx].portalPasswordHash = senhaHash;
+        try { localStorage.setItem('tf_patients', JSON.stringify(pacs)); } catch(_) {}
+      }
       if (idx !== -1) {
         _loggedPatientIdx = idx;
         _loggedPatientData = pacs[idx];
