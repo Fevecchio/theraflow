@@ -10936,8 +10936,9 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
     renderBriefingFallback();
     const status = e.message || '';
     console.error('[Briefing] Erro:', status, e);
-    if (status.includes('401') || status.includes('403')) {
-      _showBriefingError('🔑', 'Chave de API inválida ou não configurada no servidor. <span style="opacity:.5;font-size:11px">[' + status.substring(0,60) + ']</span>');
+    if (status.includes('401') || status.includes('402') || status.includes('403')) {
+      const billingLink = status.includes('402') ? ' · <a href="https://console.anthropic.com/settings/billing" target="_blank" style="color:inherit;text-decoration:underline">Adicionar créditos →</a>' : '';
+      _showBriefingError('💳', (status.includes('402') ? 'Saldo insuficiente na conta Anthropic.' : 'Chave de API inválida ou não configurada no servidor.') + billingLink + ' <span style="opacity:.5;font-size:11px">[' + status.substring(0,60) + ']</span>');
     } else if (status.includes('500')) {
       _showBriefingError('🔑', 'Erro interno no servidor. Verifique se ANTHROPIC_API_KEY está configurada no Vercel. <span style="opacity:.5;font-size:11px">[' + status.substring(0,60) + ']</span>');
     } else {

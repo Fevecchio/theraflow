@@ -42,7 +42,7 @@ async function callClaude(system, userPrompt) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 1024,
       system,
       messages: [{ role: 'user', content: userPrompt }],
@@ -75,9 +75,16 @@ export default async function handler(req, res) {
   }
 
   if (!claudeRes.ok) {
-    const errText = await claudeRes.text().catch(() => '');
-    console.error('[briefing] Claude HTTP', claudeRes.status, errText.substring(0, 300));
-    return res.status(claudeRes.status).json({ error: `Claude ${claudeRes.status}: ${errText.substring(0, 120)}` });
+    let errMsg = `status ${claudeRes.status}`;
+    try {
+      const errBody = await claudeRes.json();
+      errMsg = errBody?.error?.message || JSON.stringify(errBody);
+    } catch(_) {}
+    console.error('[briefing] Claude HTTP', claudeRes.status, errMsg);
+    if (errMsg.toLowerCase().includes('credit') || errMsg.toLowerCase().includes('billing')) {
+      return res.status(402).json({ error: 'Saldo insuficiente na conta Anthropic. Acesse console.anthropic.com/settings/billing para adicionar créditos.' });
+    }
+    return res.status(claudeRes.status).json({ error: `Claude ${claudeRes.status}: ${errMsg.substring(0, 200)}` });
   }
 
   const data = await claudeRes.json();
