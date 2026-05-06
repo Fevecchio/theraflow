@@ -10936,22 +10936,13 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
     renderBriefingFallback();
     const status = e.message || '';
     console.error('[Briefing] Erro:', status, e);
-    let icon = '⚠', msg = 'Erro ao conectar com a IA. Tente novamente.';
     if (status.includes('401') || status.includes('403')) {
-      icon = '🔑'; msg = 'Chave de API inválida ou não configurada no servidor.';
-    } else if (status.includes('429')) {
-      icon = '⏳'; msg = 'Limite de uso da IA atingido. Aguarde alguns minutos e tente novamente.';
-    } else if (status.includes('502') || status.includes('503')) {
-      icon = '🌐'; msg = 'Serviço de IA temporariamente indisponível. Tente novamente em instantes.';
+      _showBriefingError('🔑', 'Chave de API inválida ou não configurada no servidor. <span style="opacity:.5;font-size:11px">[' + status.substring(0,60) + ']</span>');
     } else if (status.includes('500')) {
-      icon = '🔑'; msg = 'Erro interno no servidor. Verifique se GEMINI_API_KEY está configurada no Vercel.';
-    } else if (status.toLowerCase().includes('fetch') || status.toLowerCase().includes('network')) {
-      icon = '🌐'; msg = 'Erro de rede ao chamar /api/briefing. Verifique o deploy.';
-    } else if (status.includes('vazia')) {
-      icon = '⚠'; msg = 'IA retornou resposta vazia. Tente novamente.';
+      _showBriefingError('🔑', 'Erro interno no servidor. Verifique se ANTHROPIC_API_KEY está configurada no Vercel. <span style="opacity:.5;font-size:11px">[' + status.substring(0,60) + ']</span>');
+    } else {
+      _showBriefingNote('⚡ Análise local · <a href="#" onclick="callBriefingAI();return false" style="color:inherit;text-decoration:underline;font-weight:600">Tentar novamente</a>');
     }
-    msg += ' <span style="opacity:.5;font-size:11px">[' + status.substring(0,60) + ']</span>';
-    _showBriefingError(icon, msg);
   }
 }
 
@@ -10960,7 +10951,16 @@ function _showBriefingError(icon, msg) {
   if (!c) return;
   const note = document.createElement('div');
   note.style.cssText = 'margin:0 0 16px;padding:12px 16px;background:#fff8e1;border:1px solid #f0c040;border-radius:10px;font-size:13px;color:#7a5c00;display:flex;gap:10px;align-items:flex-start;line-height:1.5';
-  note.innerHTML = '<span style="font-size:18px;flex-shrink:0;line-height:1">' + icon + '</span><span>' + msg + ' <span style="opacity:.65;font-size:12px">(Exibindo análise de demonstração)</span></span>';
+  note.innerHTML = '<span style="font-size:18px;flex-shrink:0;line-height:1">' + icon + '</span><span>' + msg + '</span>';
+  c.insertBefore(note, c.firstChild);
+}
+
+function _showBriefingNote(html) {
+  const c = document.getElementById('b-content');
+  if (!c) return;
+  const note = document.createElement('div');
+  note.style.cssText = 'margin:0 0 16px;padding:10px 14px;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:10px;font-size:12px;color:#777;display:flex;gap:8px;align-items:center;line-height:1.4';
+  note.innerHTML = html;
   c.insertBefore(note, c.firstChild);
 }
 
@@ -10991,31 +10991,102 @@ function renderBriefingContent(text) {
 }
 
 function renderBriefingFallback() {
-  document.getElementById('b-content').innerHTML = `
-    <div class="insight-block priority fade-in">
-      <div class="insight-type">🎯 Foco recomendado para hoje</div>
-      <div class="insight-text">Retomar o <strong>exercício de diário de pensamentos</strong> e verificar aderência desde a sessão 11. Camila identificou o padrão de antecipação catastrófica — vale aprofundar com exemplos concretos da semana atual.</div>
-      <div class="insight-evidence">"Percebi que fico muito ansiosa antes de apresentações no trabalho… é muito intenso." — Sessão 11</div>
-    </div>
-    <div class="insight-block pattern fade-in">
-      <div class="insight-type">🔁 Padrão identificado</div>
-      <div class="insight-text"><strong>Medo de falhar no trabalho</strong> é o tema mais persistente: 9 das 11 sessões. Padrão cognitivo central: <em>erro = fracasso total = perda de valor pessoal</em>. Diretamente ligado a cobranças da figura materna (4 sessões).</div>
-      <div class="insight-evidence">Recorrência: sessões 3, 5, 7, 8, 9, 10, 11 · Intensidade crescente em contextos de avaliação profissional.</div>
-    </div>
-    <div class="insight-block progress fade-in">
-      <div class="insight-type">📈 Evolução clínica</div>
-      <div class="insight-text">Evolução <strong>consistente e mensurável</strong>: humor subiu de 4/10 para 6/10 nas últimas semanas. Aderência ao diário ~70%. Paciente demonstra crescente capacidade de nomeação dos próprios processos cognitivos.</div>
-    </div>
-    <div class="insight-block alert fade-in">
-      <div class="insight-type">⚠ Ponto de atenção</div>
-      <div class="insight-text"><strong>Insônia ainda presente</strong> em 5 das 11 sessões — verificar se Escitalopram (3 meses) está impactando o sono. Pode valer alinhamento com Dr. Carlos Melo (psiquiatra). Monitorar: falta sem aviso na sessão 6 pode indicar resistência episódica.</div>
-    </div>
-    <div class="insight-block question fade-in">
-      <div class="insight-type">💬 Perguntas sugeridas para hoje</div>
-      <button class="question-item" onclick="markQuestion(this)"><span class="q-num">1.</span><span>Você conseguiu usar o diário esta semana? O que chamou mais atenção?</span></button>
-      <button class="question-item" onclick="markQuestion(this)"><span class="q-num">2.</span><span>Quando imagina cometer um erro no trabalho, o que acontece nessa história que você conta para si mesma?</span></button>
-      <button class="question-item" onclick="markQuestion(this)"><span class="q-num">3.</span><span>Como está seu sono essa semana? Percebeu alguma mudança desde que começou a medicação?</span></button>
-    </div>`;
+  const bp = patients[currentBriefingPatientIdx] || patients[0] || {};
+  const nome = bp.name || 'Paciente';
+  const abordagem = bp.abordagem || 'TCC';
+  const totalSessoes = bp.sessions || 0;
+  const queixa = bp.notes || 'não informada';
+
+  const moodHist = bp.moodHistory || [];
+  const moodRecente = moodHist.length > 0 ? moodHist[moodHist.length - 1].value : null;
+  const moodAnterior = moodHist.length > 1 ? moodHist[moodHist.length - 2].value : null;
+  const moodTrend = moodRecente && moodAnterior
+    ? (moodRecente > moodAnterior ? 'em alta' : moodRecente < moodAnterior ? 'em queda' : 'estável')
+    : '';
+  const moodStr = moodRecente ? (moodRecente + '/10' + (moodTrend ? ' · ' + moodTrend : '')) : 'não registrado';
+
+  const notas = (bp.prontuarioNotes || []).slice(-3);
+  const ultimaNota = notas.length > 0 ? notas[notas.length - 1] : null;
+  const temaRecente = ultimaNota ? (ultimaNota.content || ultimaNota.text || '').replace(/<[^>]+>/g,'').substring(0, 120) : null;
+
+  const exerciciosPend = (bp.exercicios || []).filter(function(e){ return !e.done; }).slice(0, 2);
+  const exercStr = exerciciosPend.length > 0
+    ? exerciciosPend.map(function(e){ return '“' + (e.titulo || e.title || e.nome || 'exercício') + '”'; }).join(' e ')
+    : null;
+
+  const questoes = _briefingQuestoesPorAbordagem(abordagem, nome);
+  const faseStr = totalSessoes === 0
+    ? 'Primeira sessão — estabelecer vínculo e colher anamnese.'
+    : totalSessoes < 5
+      ? 'Fase inicial — foco em vínculo terapêutico e definição de objetivos.'
+      : 'Fase intermediária — consolidar ganhos e aprofundar o processo.';
+
+  document.getElementById('b-content').innerHTML =
+    '<div class="insight-block priority fade-in">' +
+      '<div class="insight-type">🎯 Foco recomendado para hoje</div>' +
+      '<div class="insight-text">' +
+        (exercStr ? 'Verificar aderência ao(s) exercício(s) ' + exercStr + ' desde a sessão anterior. ' : 'Retomar os objetivos terapêuticos e verificar o progresso desde a última sessão. ') +
+        faseStr +
+      '</div>' +
+    '</div>' +
+    '<div class="insight-block pattern fade-in">' +
+      '<div class="insight-type">🔁 Padrão identificado</div>' +
+      '<div class="insight-text">' +
+        (temaRecente
+          ? 'Temas recentes: "' + temaRecente + (temaRecente.length >= 120 ? '…' : '') + '". Queixa principal: <strong>' + queixa + '</strong>.'
+          : 'Queixa principal: <strong>' + queixa + '</strong>. Observe padrões cognitivos e emocionais ao longo das sessões.') +
+        ' <em>Abordagem: ' + abordagem + '.</em>' +
+      '</div>' +
+    '</div>' +
+    '<div class="insight-block progress fade-in">' +
+      '<div class="insight-type">📈 Evolução clínica</div>' +
+      '<div class="insight-text">' +
+        (totalSessoes === 0
+          ? 'Primeira sessão — estabelecer vínculo terapêutico, colher anamnese detalhada e definir objetivos iniciais.'
+          : totalSessoes + ' sessão' + (totalSessoes > 1 ? 'ões' : '') + ' realizada' + (totalSessoes > 1 ? 's' : '') + '. Humor mais recente: <strong>' + moodStr + '</strong>. Monitore a evolução e ajuste as intervenções conforme necessário.') +
+      '</div>' +
+    '</div>' +
+    '<div class="insight-block alert fade-in">' +
+      '<div class="insight-type">⚠ Ponto de atenção</div>' +
+      '<div class="insight-text">' +
+        (notas.length < 2
+          ? 'Poucas notas indexadas (' + notas.length + '). Indexe as sessões anteriores para análises mais precisas pela IA.'
+          : 'Revise as últimas ' + notas.length + ' notas clínicas antes da sessão. Verifique temas recorrentes não resolvidos ou mudanças relevantes no contexto de vida de ' + nome + '.') +
+      '</div>' +
+    '</div>' +
+    '<div class="insight-block question fade-in">' +
+      '<div class="insight-type">💬 Perguntas sugeridas para hoje</div>' +
+      questoes.map(function(q, i){ return '<button class="question-item" onclick="markQuestion(this)"><span class="q-num">' + (i+1) + '.</span><span>' + q + '</span></button>'; }).join('') +
+    '</div>';
+}
+
+function _briefingQuestoesPorAbordagem(abordagem, nome) {
+  var ab = (abordagem || '').toLowerCase();
+  if (ab.includes('tcc') || ab.includes('cognitivo-comportamental') || ab.includes('cognitivo comportamental')) return [
+    'O que passou pela sua cabeça quando a situação aconteceu? Quais pensamentos automáticos surgiram?',
+    'Em uma escala de 0 a 10, como você avaliaria a intensidade da emoção que sentiu naquele momento?',
+    'Que evidências você tem a favor e contra esse pensamento?',
+  ];
+  if (ab.includes('psicanáli') || ab.includes('psicanalít') || ab.includes('dinâmic') || ab.includes('freudian')) return [
+    'O que vem à sua mente quando pensa nisso — deixe fluir livremente.',
+    'Você lembra de algum momento na infância que lhe faz pensar nessa situação?',
+    'Como você se sentiu em relação ao nosso trabalho terapêutico ao longo desta semana?',
+  ];
+  if (ab.includes('humanis') || ab.includes('centrada na pessoa') || ab.includes('gestalt') || ab.includes('rogers')) return [
+    'Como você está se sentindo agora, neste momento, aqui na sessão?',
+    'O que essa experiência significa para você como pessoa?',
+    'O que você precisaria para se sentir mais inteiro(a) nessa situação?',
+  ];
+  if (ab.includes('act') || ab.includes('aceitação e compromisso') || ab.includes('mindful')) return [
+    'Que valores são mais importantes para você nessa situação?',
+    'Você consegue observar esse pensamento como um evento mental, sem se fundir a ele?',
+    'Que ação comprometida com seus valores você poderia tomar esta semana?',
+  ];
+  return [
+    'Como foi a sua semana desde nossa última conversa?',
+    'Houve alguma situação que chamou especialmente sua atenção ou que ficou na cabeça?',
+    'Que expectativa você tem para a sessão de hoje?',
+  ];
 }
 
 function markQuestion(el) {

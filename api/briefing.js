@@ -1,9 +1,9 @@
 /**
- * TheraFlow — Serverless Function: Proxy da Google Gemini API
+ * TheraFlow — Serverless Function: Proxy da Anthropic Claude API
  * Deploy: Vercel → /api/briefing  (Node.js runtime)
  *
- * A chave gemini_key fica apenas no servidor (variável de ambiente).
- * Settings → Environment Variables → gemini_key = AIza...
+ * A chave ANTHROPIC_API_KEY fica apenas no servidor (variável de ambiente).
+ * Settings → Environment Variables → ANTHROPIC_API_KEY = sk-ant-...
  */
 
 const ALLOWED_ORIGINS = [
@@ -16,7 +16,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 function isAllowedOrigin(origin) {
-  if (!origin) return false; // Rejeita requisições sem Origin (curl, scripts server-side)
+  if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   if (origin.endsWith('.vercel.app')) return true;
   return false;
@@ -30,18 +30,24 @@ function setCors(res, origin) {
   res.setHeader('Access-Control-Max-Age', '86400');
 }
 
-async function callGemini(url, payload) {
-  const opts = {
+async function callClaude(system, userPrompt) {
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+  if (!ANTHROPIC_KEY) throw new Error('ANTHROPIC_API_KEY não configurada');
+
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  };
-  let r = await fetch(url, opts);
-  // Retry único após 429 (rate limit temporário)
-  if (r.status === 429) {
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    r = await fetch(url, opts);
-  }
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system,
+      messages: [{ role: 'user', content: userPrompt }],
+    }),
+  });
   return r;
 }
 
@@ -58,43 +64,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'userPrompt is required' });
   }
 
-  const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.gemini_key;
-  if (!GEMINI_KEY) {
-    console.error('[briefing] Nenhuma chave Gemini configurada');
-    return res.status(500).json({ error: 'Service misconfigured: gemini_key ausente' });
-  }
-
   const system = systemPrompt || buildDefaultSystem(patientData);
-  const fullPrompt = system + '\n\n' + userPrompt;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
-  const payload = {
-    contents: [{ parts: [{ text: fullPrompt }] }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
-    safetySettings: [
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-    ],
-  };
-
-  let geminiRes;
+  let claudeRes;
   try {
-    geminiRes = await callGemini(url, payload);
+    claudeRes = await callClaude(system, userPrompt);
   } catch (err) {
-    console.error('[briefing] Fetch para Gemini falhou:', err.message);
+    console.error('[briefing] Fetch para Claude falhou:', err.message);
     return res.status(502).json({ error: 'Upstream fetch error: ' + err.message });
   }
 
-  if (!geminiRes.ok) {
-    const errText = await geminiRes.text().catch(() => '');
-    console.error('[briefing] Gemini HTTP', geminiRes.status, errText.substring(0, 300));
-    return res.status(502).json({ error: `Gemini ${geminiRes.status}: ${errText.substring(0, 120)}` });
+  if (!claudeRes.ok) {
+    const errText = await claudeRes.text().catch(() => '');
+    console.error('[briefing] Claude HTTP', claudeRes.status, errText.substring(0, 300));
+    return res.status(claudeRes.status).json({ error: `Claude ${claudeRes.status}: ${errText.substring(0, 120)}` });
   }
 
-  const data = await geminiRes.json();
-  const content = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const data = await claudeRes.json();
+  const content = data?.content?.[0]?.text || '';
   return res.status(200).json({ content });
 }
 
