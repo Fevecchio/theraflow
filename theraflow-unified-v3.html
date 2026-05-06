@@ -3332,6 +3332,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
       <button class="sup-tab active" onclick="switchSupTab(this,'sup-tab-alertas')">⚡ Alertas e padrões</button>
       <button class="sup-tab" onclick="switchSupTab(this,'sup-tab-carteira')">📊 Saúde da carteira</button>
       <button class="sup-tab" onclick="switchSupTab(this,'sup-tab-reflexoes')">✍ Reflexões</button>
+      <button class="sup-tab" onclick="switchSupTab(this,'sup-tab-autoconhecimento')">🪞 Minha supervisão</button>
     </div>
 
     <!-- TAB: Alertas -->
@@ -3551,6 +3552,45 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
         </div>
       </div>
     </div>
+
+    <!-- TAB: Minha Supervisão -->
+    <div id="sup-tab-autoconhecimento" style="display:none">
+
+      <div class="sup-alert-card reflection" style="margin-bottom:20px">
+        <div class="sup-alert-icon">🌐</div>
+        <div style="flex:1">
+          <div class="sup-alert-type">Prática internacional · Supervisão clínica entre pares</div>
+          <div class="sup-alert-title">Minha supervisão</div>
+          <div class="sup-alert-text">Inspirada na supervisão entre pares praticada internacionalmente, esta seção ajuda você a identificar contratransferência, vieses inconscientes e pontos cegos — para que seus valores pessoais, preconceitos inconscientes ou reações emocionais não interfiram na objetividade do tratamento.</div>
+        </div>
+      </div>
+
+      <!-- Check-in semanal -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="section-header">
+          <div class="section-title">Check-in desta semana</div>
+          <span class="tag tag-purple">Como você está?</span>
+        </div>
+        <div id="checkin-sliders" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px"></div>
+        <div style="display:flex;gap:10px;margin-top:16px;align-items:center">
+          <button class="btn btn-purple" onclick="salvarCheckInTerapeuta()">Salvar check-in</button>
+          <span style="font-size:12px;color:var(--muted)">Registrado apenas para você · não compartilhado</span>
+        </div>
+        <div id="checkin-historico" style="margin-top:16px"></div>
+      </div>
+
+      <!-- Contratransferência e pontos cegos -->
+      <div class="section-lbl" style="margin-bottom:16px">Contratransferência e pontos cegos detectados</div>
+      <div id="sup-contratransf-content"></div>
+
+      <!-- Perguntas de supervisão entre pares -->
+      <div class="section-lbl" style="margin:24px 0 16px">Perguntas do supervisor IA</div>
+      <div class="card">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Se você estivesse em supervisão com um colega experiente agora, essas seriam as perguntas sobre a sua prática desta semana:</div>
+        <div id="sup-peer-questions" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+
+    </div><!-- /#sup-tab-autoconhecimento -->
 
   </div><!-- /#sup-dashboard -->
 </div><!-- /#page-supervisao -->
@@ -13604,9 +13644,11 @@ function initSupervisao() {
   const alertasTab = document.getElementById('sup-tab-alertas');
   const carteiraTab = document.getElementById('sup-tab-carteira');
   const reflexoesTab = document.getElementById('sup-tab-reflexoes');
+  const autoTab = document.getElementById('sup-tab-autoconhecimento');
   if (alertasTab) alertasTab.style.display = '';
   if (carteiraTab) carteiraTab.style.display = 'none';
   if (reflexoesTab) reflexoesTab.style.display = 'none';
+  if (autoTab) autoTab.style.display = 'none';
   document.querySelectorAll('.sup-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
   const loading = document.getElementById('sup-ai-loading');
   const content = document.getElementById('sup-ai-content');
@@ -13831,10 +13873,11 @@ function toggleSupervisao(checked) {
 function switchSupTab(el, tabId) {
   el.closest('.sup-tab-bar').querySelectorAll('.sup-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  ['sup-tab-alertas','sup-tab-carteira','sup-tab-reflexoes'].forEach(id => {
+  ['sup-tab-alertas','sup-tab-carteira','sup-tab-reflexoes','sup-tab-autoconhecimento'].forEach(id => {
     const e = document.getElementById(id);
     if (e) e.style.display = id === tabId ? '' : 'none';
   });
+  if (tabId === 'sup-tab-autoconhecimento') renderAutoconhecimento();
 }
 
 function runSupAnalysis() {
@@ -14012,6 +14055,262 @@ function saveReflection() {
     qEl.textContent = '"'+qs[Math.floor(Math.random()*qs.length)]+'"';
   }
   showToast('Reflexão salva.');
+}
+
+// ═══════════════════════════════════════════════
+// MINHA SUPERVISÃO — autoconhecimento do terapeuta
+// ═══════════════════════════════════════════════
+
+function renderAutoconhecimento() {
+  _renderCheckinSliders();
+  _renderCheckinHistorico();
+  _renderContratransferencia();
+  _renderPerguntasSupervPares();
+}
+
+function _renderCheckinSliders() {
+  var dims = [
+    { id: 'ci-energia',    label: 'Energia clínica',        desc: 'Sua vitalidade para os atendimentos' },
+    { id: 'ci-equilibrio', label: 'Equilíbrio emocional',   desc: 'Separar trabalho da vida pessoal' },
+    { id: 'ci-satisfacao', label: 'Satisfação profissional', desc: 'O trabalho está fazendo sentido' }
+  ];
+  var container = document.getElementById('checkin-sliders');
+  if (!container) return;
+  var saved = _loadCheckinSemana();
+  container.innerHTML = dims.map(function(d) {
+    var val = saved ? (saved[d.id] || 5) : 5;
+    return '<div style="background:rgba(74,124,89,.05);border:1px solid var(--border);border-radius:10px;padding:14px">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px">' + d.label + '</div>'
+      + '<div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">' + d.desc + '</div>'
+      + '<input type="range" min="1" max="10" value="' + val + '" id="' + d.id + '" style="width:100%;accent-color:var(--purple)">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">'
+        + '<span>Baixo</span>'
+        + '<span id="' + d.id + '-val" style="font-weight:700;color:var(--purple)">' + val + '/10</span>'
+        + '<span>Alto</span>'
+      + '</div>'
+    + '</div>';
+  }).join('');
+  dims.forEach(function(d) {
+    var input = document.getElementById(d.id);
+    if (!input) return;
+    input.oninput = function() {
+      var el = document.getElementById(d.id + '-val');
+      if (el) el.textContent = input.value + '/10';
+    };
+  });
+}
+
+function _loadCheckinSemana() {
+  try {
+    var arr = JSON.parse(localStorage.getItem('tf_checkin_terapeuta') || '[]');
+    if (!arr.length) return null;
+    var weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    var weekStartIso = localDateISO(weekStart);
+    return arr.find(function(c){ return c.date >= weekStartIso; }) || null;
+  } catch(e) { return null; }
+}
+
+function salvarCheckInTerapeuta() {
+  var entry = { date: localDateISO(new Date()) };
+  ['ci-energia','ci-equilibrio','ci-satisfacao'].forEach(function(id) {
+    var el = document.getElementById(id);
+    entry[id] = el ? parseInt(el.value) : 5;
+  });
+  try {
+    var arr = JSON.parse(localStorage.getItem('tf_checkin_terapeuta') || '[]');
+    var weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    var weekStartIso = localDateISO(weekStart);
+    arr = arr.filter(function(c){ return c.date < weekStartIso; });
+    arr.unshift(entry);
+    localStorage.setItem('tf_checkin_terapeuta', JSON.stringify(arr.slice(0, 12)));
+    _renderCheckinHistorico();
+    showToast('Check-in salvo. Autoconhecimento em dia.');
+  } catch(e) { showToast('Erro ao salvar check-in.'); }
+}
+
+function _renderCheckinHistorico() {
+  var container = document.getElementById('checkin-historico');
+  if (!container) return;
+  try {
+    var arr = JSON.parse(localStorage.getItem('tf_checkin_terapeuta') || '[]').slice(0, 4);
+    if (!arr.length) { container.innerHTML = ''; return; }
+    container.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:4px">Últimas semanas</div>'
+      + '<div style="display:flex;flex-direction:column;gap:6px">'
+      + arr.map(function(c) {
+          var media = ((c['ci-energia']||5) + (c['ci-equilibrio']||5) + (c['ci-satisfacao']||5)) / 3;
+          var color = media >= 7 ? 'var(--sage)' : media >= 5 ? 'var(--amber)' : 'var(--red)';
+          var dt = new Date(c.date + 'T12:00:00');
+          var dtStr = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0');
+          return '<div style="display:flex;align-items:center;gap:10px;font-size:12.5px">'
+            + '<span style="color:var(--muted);width:42px;flex-shrink:0">' + dtStr + '</span>'
+            + '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden">'
+              + '<div style="height:100%;width:' + Math.round(media/10*100) + '%;background:' + color + ';border-radius:3px"></div>'
+            + '</div>'
+            + '<span style="color:' + color + ';font-weight:700;width:32px;text-align:right">' + media.toFixed(1) + '</span>'
+          + '</div>';
+        }).join('')
+      + '</div>';
+  } catch(e) {}
+}
+
+function _analisarContratransferencia() {
+  var insights = [];
+  var emotionWords = ['difícil','pesado','desconforto','resistente','cansativo','frustrante','travado','impasse','bloqueado','esgotante','desgastante'];
+
+  patients.forEach(function(p, idx) {
+    var notas = p.prontuarioNotes || [];
+    if (notas.length < 2) return;
+    var textos = notas.map(function(n){ return (n.text || '').toLowerCase(); });
+
+    // 1. Carga emocional elevada na linguagem das notas
+    var emoCount = textos.filter(function(t){
+      return emotionWords.some(function(w){ return t.includes(w); });
+    }).length;
+    if (emoCount / notas.length >= 0.45) {
+      insights.push({
+        tipo: 'contratransferencia',
+        titulo: 'Carga emocional elevada com ' + escHTML(p.name),
+        texto: Math.round(emoCount/notas.length*100) + '% das notas de ' + escHTML(p.name.split(' ')[0]) + ' contêm palavras que indicam sobrecarga (impasse, resistência, dificuldade). Esse padrão pode refletir contratransferência — vale explorar o que esse vínculo desperta em você.',
+        paciente: p.name
+      });
+    }
+
+    // 2. Notas sistematicamente muito curtas (evitação de conteúdo)
+    var curtas = textos.filter(function(t){ return t.length < 90; }).length;
+    if (notas.length >= 3 && curtas / notas.length >= 0.5) {
+      insights.push({
+        tipo: 'ponto-cego',
+        titulo: 'Registros breves com ' + escHTML(p.name),
+        texto: 'Mais da metade das notas de ' + escHTML(p.name.split(' ')[0]) + ' têm menos de 90 caracteres. Notas muito curtas em casos específicos podem indicar evitação de conteúdos desconfortáveis ou dificuldade de elaborar o que ocorreu na sessão.',
+        paciente: p.name
+      });
+    }
+
+    // 3. Tema presente na queixa mas ausente nas notas (pontos cegos temáticos)
+    if (p.notes && notas.length >= 3) {
+      var queixa = (p.notes).toLowerCase();
+      var notasTexto = textos.join(' ');
+      ['família','relacionamento','trauma','luto','infância','sexualidade','violência','abuso'].forEach(function(tema) {
+        if (queixa.includes(tema) && !notasTexto.includes(tema)) {
+          insights.push({
+            tipo: 'ponto-cego',
+            titulo: 'Tema "' + tema + '" ausente nas notas de ' + escHTML(p.name),
+            texto: 'O tema "' + tema + '" aparece na queixa inicial de ' + escHTML(p.name.split(' ')[0]) + ', mas não está presente em nenhuma das ' + notas.length + ' notas clínicas. Pode ser uma omissão natural — ou um tema que você inconscientemente evita aprofundar.',
+            paciente: p.name
+          });
+        }
+      });
+    }
+  });
+
+  // 4. Tema ausente sistematicamente em todos os pacientes (viés estrutural)
+  var topicsCheck = ['família','trauma','relacionamento','sexualidade','raiva','controle','abuso'];
+  topicsCheck.forEach(function(tema) {
+    var emQueixa = patients.filter(function(p){ return (p.notes||'').toLowerCase().includes(tema); });
+    var emNotas  = patients.filter(function(p){
+      return (p.prontuarioNotes||[]).some(function(n){ return (n.text||'').toLowerCase().includes(tema); });
+    });
+    if (emQueixa.length >= 2 && emNotas.length === 0) {
+      insights.push({
+        tipo: 'contratransferencia',
+        titulo: 'Viés sistemático: "' + tema + '" nunca aparece nas notas',
+        texto: emQueixa.length + ' pacientes citam "' + tema + '" na queixa inicial, mas o tema não aparece nas notas de nenhum deles. Isso pode indicar um ponto cego sistemático — um tema que você tende a não registrar ou aprofundar.',
+        paciente: null
+      });
+    }
+  });
+
+  return insights.slice(0, 5);
+}
+
+function _renderContratransferencia() {
+  var container = document.getElementById('sup-contratransf-content');
+  if (!container) return;
+  var insights = _analisarContratransferencia();
+  if (!insights.length) {
+    container.innerHTML = '<div style="text-align:center;padding:28px 16px;color:var(--muted);font-size:13px;line-height:1.6">'
+      + '<div style="font-size:28px;margin-bottom:8px">🌱</div>'
+      + '<strong style="color:var(--ink)">Nenhum padrão preocupante identificado</strong><br>'
+      + 'Continue registrando notas clínicas para que a análise fique mais precisa ao longo do tempo.'
+      + '</div>';
+    return;
+  }
+  container.innerHTML = insights.map(function(a) {
+    var icon = a.tipo === 'contratransferencia' ? '🪞' : '🔍';
+    var tipoCls = a.tipo === 'contratransferencia' ? 'reflection' : 'note';
+    var tipoLabel = a.tipo === 'contratransferencia' ? 'Contratransferência · Atenção' : 'Ponto cego · Observação';
+    return '<div class="sup-alert-card ' + tipoCls + '" style="margin-bottom:12px">'
+      + '<div class="sup-alert-icon">' + icon + '</div>'
+      + '<div style="flex:1">'
+        + '<div class="sup-alert-type">' + tipoLabel + '</div>'
+        + '<div class="sup-alert-title">' + a.titulo + '</div>'
+        + '<div class="sup-alert-text">' + a.texto + '</div>'
+        + (a.paciente ? '<div class="sup-alert-patient"><span>' + escHTML(a.paciente) + '</span></div>' : '')
+        + '<div class="sup-alert-actions"><button class="btn btn-sm btn-secondary" onclick="showReflectionModal()">✍ Refletir sobre isso</button></div>'
+      + '</div>'
+    + '</div>';
+  }).join('');
+}
+
+function _gerarPerguntasSupervPares() {
+  var qs = [
+    'Qual paciente você mais resistiu em atender esta semana? O que essa resistência revela sobre você?',
+    'Você evitou algum silêncio esta semana, preenchendo o espaço antes de ser necessário? Por quê?',
+    'Há algum paciente que você está "protegendo" de um insight que poderia acelerar — mas também desconfortabilizar — o processo?',
+    'Quais valores seus podem estar influenciando a direção do tratamento de algum paciente sem que você perceba?',
+    'Em algum momento você se sentiu mais ansioso com o problema do paciente do que ele mesmo? O que isso diz?'
+  ];
+
+  var ativos = patients.filter(function(p){ return (p.sessions||0) >= 3; });
+
+  var longos = ativos.filter(function(p){ return (p.sessions||0) >= 15; });
+  if (longos.length) {
+    var pl = longos[0];
+    qs.push('Com ' + escHTML(pl.name.split(' ')[0]) + ' já em ' + pl.sessions + ' sessões, o processo ainda está avançando — ou se tornou uma zona de conforto para você também?');
+  }
+
+  var estagnados = ativos.filter(function(p){ return (p.progress !== undefined && p.progress < 30 && (p.sessions||0) >= 6); });
+  if (estagnados.length) {
+    var pe = estagnados[0];
+    qs.push('O caso de ' + escHTML(pe.name.split(' ')[0]) + ' parece estagnado. Que emoção aparece em você quando pensa nisso — frustração, resignação, alívio?');
+  }
+
+  var comMelhora = ativos.filter(function(p){
+    var mh = (p.moodHistory||[]).filter(function(v){return v!=null;});
+    return mh.length >= 2 && mh[mh.length-1] > mh[0];
+  });
+  if (comMelhora.length >= 2 && patients.length >= 4) {
+    qs.push('Você se sente melhor após atender pacientes que estão progredindo? Como isso pode influenciar sua postura com quem está estagnado?');
+  }
+
+  var temasTodos = {};
+  patients.forEach(function(p){
+    var notas = (p.prontuarioNotes||[]).map(function(n){ return (n.text||'').toLowerCase(); }).join(' ');
+    ['autonomia','dependência','raiva','família','limite','abandono'].forEach(function(t){
+      if (notas.includes(t)) temasTodos[t] = (temasTodos[t]||0) + 1;
+    });
+  });
+  var temaTop = Object.entries(temasTodos).sort(function(a,b){return b[1]-a[1];})[0];
+  if (temaTop && temaTop[1] >= 2) {
+    qs.push(temaTop[1] + ' pacientes trouxeram o tema de "' + temaTop[0] + '". Esse tema ressoa com algo na sua própria história? Como isso pode estar influenciando suas intervenções?');
+  }
+
+  qs.push('Há algum valor cultural, religioso ou socioeconômico de um paciente que você teve dificuldade em não julgar internamente?');
+
+  return qs.slice(0, 5);
+}
+
+function _renderPerguntasSupervPares() {
+  var container = document.getElementById('sup-peer-questions');
+  if (!container) return;
+  var qs = _gerarPerguntasSupervPares();
+  container.innerHTML = qs.map(function(q, i) {
+    return '<div style="background:var(--purple-light);border:1px solid rgba(90,62,138,.15);border-radius:10px;padding:14px 16px">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Supervisor IA · Questão ' + (i+1) + '</div>'
+      + '<div style="font-size:14px;color:var(--ink);line-height:1.7;font-style:italic">"' + q + '"</div>'
+      + '<button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="showReflectionModal()">✍ Registrar reflexão</button>'
+    + '</div>';
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════
