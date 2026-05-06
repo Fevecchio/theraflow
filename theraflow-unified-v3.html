@@ -456,6 +456,8 @@ body { background: var(--bg); color: var(--ink); min-height: 100vh; display: fle
 .btn-purple { background: var(--purple); color: #fff; }
 .btn-purple:hover { background: #4a2e7a; }
 .btn-sm { padding: 6px 13px; font-size: 12.5px; }
+.btn-sage { background: var(--sage-light); color: var(--sage-dark); border: 1px solid var(--sage-mid); }
+.btn-sage:hover { background: var(--sage); color: #fff; border-color: var(--sage); }
 
 /* ── CARDS ── */
 .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; }
@@ -3251,7 +3253,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
       <div class="page-subtitle">Desenvolvimento clínico assistido por inteligência artificial</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-secondary btn-sm" onclick="showReflectionModal()">✦ Reflexão pós-sessão</button>
+      <button class="btn btn-sage btn-sm" onclick="showReflectionModal()">✦ Reflexão pós-sessão</button>
       <button class="btn btn-purple btn-sm" onclick="runSupAnalysis()">⟳ Atualizar análise</button>
     </div>
   </div>
@@ -3504,9 +3506,15 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 
     <!-- TAB: Reflexões -->
     <div id="sup-tab-reflexoes" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="section-lbl" style="margin:0">Reflexões</span>
+          <span id="reflexoes-consistencia-badge" style="font-size:12px;padding:3px 10px;border-radius:20px;font-weight:600"></span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="exportarReflexoes()">⬇ Exportar</button>
+      </div>
       <div class="grid-2">
         <div>
-          <div class="section-lbl" style="margin-bottom:16px">Reflexões recentes</div>
           <div id="reflections-list" style="display:flex;flex-direction:column;gap:12px">
             <div class="card card-sm">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
@@ -8223,6 +8231,7 @@ function fecharExercicioPos() {
   document.getElementById('modal-exercise-pos')?.remove();
   navigate('supervisao');
   setTimeout(() => { const b = document.getElementById('sup-new-session-banner'); if (b) b.style.display = 'flex'; }, 400);
+  setTimeout(() => _mostrarPromptReflexao(patients[currentSessionPatientIdx]), 2200);
 }
 
 function confirmarExercicioPos() {
@@ -8250,6 +8259,7 @@ function confirmarExercicioPos() {
   }
   navigate('supervisao');
   setTimeout(() => { const b = document.getElementById('sup-new-session-banner'); if (b) b.style.display = 'flex'; }, 400);
+  setTimeout(() => _mostrarPromptReflexao(patients[currentSessionPatientIdx]), 2200);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -14017,12 +14027,23 @@ function _renderReflectionCard(r) {
 function renderReflectionsList() {
   var list = document.getElementById('reflections-list');
   if (!list) return;
+  _atualizarBadgeConsistencia();
   var arr = _loadReflections();
   if (!arr.length) {
     list.innerHTML = '<div style="text-align:center;padding:28px 16px;color:var(--muted);font-size:13px;font-style:italic">Nenhuma reflexão registrada ainda. Use o botão acima para começar.</div>';
     return;
   }
-  list.innerHTML = arr.map(_renderReflectionCard).join('');
+  // Análise de padrões emocionais nas próprias reflexões
+  var padroes = _analisarPadroesReflexoes();
+  var padroesHtml = '';
+  if (padroes) {
+    var termos = padroes.map(function(p){ return '"' + p[0] + '" (' + p[1] + 'x)'; }).join(', ');
+    padroesHtml = '<div style="background:var(--purple-light);border:1px solid rgba(90,62,138,.15);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.6">'
+      + '<span style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Padrão nas suas reflexões</span>'
+      + 'Você usa com frequência: ' + termos + '. Esses temas recorrentes podem merecer atenção em sua própria supervisão.'
+    + '</div>';
+  }
+  list.innerHTML = padroesHtml + arr.map(_renderReflectionCard).join('');
 }
 
 function saveModalReflection(btn, question) {
@@ -14055,6 +14076,112 @@ function saveReflection() {
     qEl.textContent = '"'+qs[Math.floor(Math.random()*qs.length)]+'"';
   }
   showToast('Reflexão salva.');
+}
+
+// ═══════════════════════════════════════════════
+// REFLEXÕES — consistência, padrões, exportação e prompt pós-sessão
+// ═══════════════════════════════════════════════
+
+function _calcConsistenciaReflexoes() {
+  var arr = _loadReflections();
+  // Verifica quantas das últimas 4 semanas tiveram ao menos 1 reflexão
+  var semanas = 0;
+  for (var w = 0; w < 4; w++) {
+    var start = new Date(); start.setDate(start.getDate() - start.getDay() - w * 7); start.setHours(0,0,0,0);
+    var end   = new Date(start); end.setDate(end.getDate() + 7);
+    var startIso = localDateISO(start);
+    var endIso   = localDateISO(end);
+    // reflexões têm date no formato "DD/MM · HH:MM" — tentar converter
+    var temReflexao = arr.some(function(r) {
+      if (!r.date) return false;
+      var parts = r.date.split('/');
+      if (parts.length < 2) return false;
+      var day = parseInt(parts[0]); var mon = parseInt(parts[1]);
+      var year = new Date().getFullYear();
+      var iso = year + '-' + String(mon).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+      return iso >= startIso && iso < endIso;
+    });
+    if (temReflexao) semanas++;
+  }
+  return { semanas: semanas, de: 4 };
+}
+
+function _atualizarBadgeConsistencia() {
+  var badge = document.getElementById('reflexoes-consistencia-badge');
+  if (!badge) return;
+  var c = _calcConsistenciaReflexoes();
+  if (c.semanas >= 4) {
+    badge.textContent = '✓ 4 semanas seguidas';
+    badge.style.cssText = 'font-size:12px;padding:3px 10px;border-radius:20px;font-weight:600;background:var(--sage-light);color:var(--sage-dark);border:1px solid var(--sage-mid)';
+  } else if (c.semanas >= 2) {
+    badge.textContent = c.semanas + ' de 4 semanas';
+    badge.style.cssText = 'font-size:12px;padding:3px 10px;border-radius:20px;font-weight:600;background:var(--amber-light);color:var(--amber);border:1px solid rgba(201,125,46,.3)';
+  } else {
+    badge.textContent = 'Reflita semanalmente';
+    badge.style.cssText = 'font-size:12px;padding:3px 10px;border-radius:20px;font-weight:600;background:var(--bg);color:var(--muted);border:1px solid var(--border)';
+  }
+}
+
+function _analisarPadroesReflexoes() {
+  var arr = _loadReflections();
+  if (arr.length < 3) return null;
+  var emocoes = ['ansiedade','frustração','desconforto','cansaço','dúvida','insegurança','satisfação','alegria','conexão','impasse','dificuldade','raiva'];
+  var counts = {};
+  arr.forEach(function(r) {
+    var texto = (r.text || '').toLowerCase();
+    emocoes.forEach(function(e) {
+      if (texto.includes(e)) counts[e] = (counts[e] || 0) + 1;
+    });
+  });
+  var top = Object.entries(counts).sort(function(a,b){ return b[1]-a[1]; }).filter(function(e){ return e[1] >= 2; }).slice(0, 3);
+  return top.length ? top : null;
+}
+
+function exportarReflexoes() {
+  var arr = _loadReflections();
+  if (!arr.length) { showToast('Nenhuma reflexão para exportar.'); return; }
+  var nome = (typeof tfUserData !== 'undefined' && tfUserData.nome) ? tfUserData.nome : 'Terapeuta';
+  var lines = ['Reflexões clínicas — ' + nome, 'Exportado em ' + new Date().toLocaleDateString('pt-BR'), '═'.repeat(50), ''];
+  arr.forEach(function(r) {
+    lines.push('[' + (r.date || '') + '] ' + (r.tag || ''));
+    if (r.question) lines.push('Questão: ' + r.question);
+    lines.push(r.text || '');
+    lines.push('─'.repeat(40));
+    lines.push('');
+  });
+  var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var mes = String(new Date().getMonth()+1).padStart(2,'0');
+  a.href = url; a.download = 'reflexoes-theraflow-' + new Date().getFullYear() + '-' + mes + '.txt';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('Reflexões exportadas com sucesso.');
+}
+
+function _mostrarPromptReflexao(p) {
+  var existente = document.getElementById('prompt-reflexao-posssessao');
+  if (existente) existente.remove();
+  var nome = p ? _firstName(p.name) : 'paciente';
+  var banner = document.createElement('div');
+  banner.id = 'prompt-reflexao-posssessao';
+  banner.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:8000;'
+    + 'background:var(--sage-light);border:1px solid var(--sage-mid);border-radius:14px;padding:14px 20px;'
+    + 'display:flex;align-items:center;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);'
+    + 'max-width:520px;width:calc(100% - 48px);transition:transform .35s cubic-bezier(.34,1.56,.64,1)';
+  banner.innerHTML = '<span style="font-size:20px">🪞</span>'
+    + '<div style="flex:1">'
+      + '<div style="font-size:13.5px;font-weight:600;color:var(--sage-dark)">Sessão com ' + escHTML(nome) + ' encerrada</div>'
+      + '<div style="font-size:12px;color:var(--sage);margin-top:2px">Quer registrar uma reflexão enquanto está fresco?</div>'
+    + '</div>'
+    + '<button class="btn btn-sage btn-sm" onclick="document.getElementById(\'prompt-reflexao-posssessao\').remove();showReflectionModal()">✍ Refletir</button>'
+    + '<button onclick="document.getElementById(\'prompt-reflexao-posssessao\').remove()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px 4px">✕</button>';
+  document.body.appendChild(banner);
+  requestAnimationFrame(function() {
+    banner.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  var timer = setTimeout(function() { if (banner.parentNode) banner.remove(); }, 8000);
+  banner.querySelector('.btn-sage').addEventListener('click', function() { clearTimeout(timer); });
 }
 
 // ═══════════════════════════════════════════════
