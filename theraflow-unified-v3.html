@@ -69,6 +69,24 @@ body { background: #f7f8f6; color: #1a1f1c; font-family: 'DM Sans', sans-serif; 
   min-height: 100vh;
 }
 
+/* ── DEMO BANNER ── */
+#tf-demo-banner {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  height: 40px;
+  background: linear-gradient(90deg, #c97d2e, #d4892a);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 48px;
+  box-shadow: 0 2px 8px rgba(201,125,46,.35);
+}
+
 /* ═══════════════════════════════════
    CSS DO ONBOARDING (isolado)
 ═══════════════════════════════════ */
@@ -2088,6 +2106,13 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 
 <!-- ═══════════ APP ═══════════ -->
 <div id="tf-app-layer">
+
+<!-- ═══════ DEMO BANNER ═══════ -->
+<div id="tf-demo-banner">
+  <span>🔍 <strong>Modo demonstração</strong> — dados fictícios · explore à vontade.</span>
+  <a href="theraflow-unified-v3.html" style="background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.45);color:#fff;padding:4px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap">Criar conta grátis →</a>
+  <button onclick="_hideDemoBanner()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.65);font-size:20px;cursor:pointer;line-height:1;padding:0" title="Fechar">×</button>
+</div>
 
 <!-- ═══════ NOTA RÁPIDA FLUTUANTE ═══════ -->
 <div id="quick-note-fab" onclick="abrirNotaRapida()" title="Nota rápida (N)" style="position:fixed;bottom:28px;right:28px;z-index:8888;width:48px;height:48px;border-radius:50%;background:var(--sage);color:#fff;display:none;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(74,124,89,.4);cursor:pointer;transition:transform .15s,box-shadow .15s;border:none;font-family:inherit" onmouseenter="this.style.transform='scale(1.1)';this.style.boxShadow='0 6px 24px rgba(74,124,89,.5)'" onmouseleave="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(74,124,89,.4)'">✏</div>
@@ -5341,6 +5366,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Modo demo: ?demo=1 entra no app sem cadastro, com dados fictícios
+  if (new URLSearchParams(window.location.search).has('demo')) {
+    history.replaceState({}, '', window.location.pathname);
+    window._tfDemo = true;
+    _proceedToApp({ nome:'Dra. Ana Meireles', crp:'06/123456', email:'demo@theraflow.com.br', abordagem:'TCC', abordagemKey:'tcc', secundarias:['ACT','Humanista'], plano:'pro', sessoes_usadas:5 });
+    setTimeout(function() {
+      var b = document.getElementById('tf-demo-banner');
+      if (b) { b.style.display='flex'; document.body.style.paddingTop='40px'; var s=document.getElementById('main-sidebar'); if(s) s.style.top='40px'; }
+    }, 150);
+    document.querySelectorAll('.modal-overlay').forEach(function(m) {
+      m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
+    });
+    return;
+  }
+
   // Se já existe conta salva → vai direto para o login
   try {
     var account = JSON.parse(localStorage.getItem('tf_account') || 'null');
@@ -6322,7 +6362,7 @@ function acceptTerms() {
 }
 
 function checkTermsAndProceed(callback) {
-  if (termsAlreadyAccepted()) {
+  if (window._tfDemo || termsAlreadyAccepted()) {
     callback();
   } else {
     showTermsModal(callback);
@@ -7052,6 +7092,7 @@ function carregarPacientes() {
 }
 
 function temPacientesReais() {
+  if (window._tfDemo) return true;
   try { return !!localStorage.getItem('tf_patients'); } catch(e) { return false; }
 }
 function _calcProgress(p) {
@@ -11018,16 +11059,19 @@ function regenerateBriefing() {
 }
 
 // ── FINANCEIRO V2 ──
-const DEMO_CHARGES = [
-  { id:1, patient:'Camila Rocha', initials:'CR', color:'#4a7c59', session:12, date:'2026-03-24', value:720, method:'PIX', status:'paid', paidDate:'2026-03-01', billing:'mensal', planLabel:'Março · 4 sessões' },
-  { id:2, patient:'Rafael Andrade', initials:'RA', color:'#2c5f8a', session:7, date:'2026-03-21', value:200, method:'PIX', status:'pending', daysOpen:3, billing:'avulso' },
-  { id:3, patient:'Rafael Andrade', initials:'RA', color:'#2c5f8a', session:6, date:'2026-03-14', value:200, method:'PIX', status:'overdue', daysOpen:10, billing:'avulso' },
-  { id:4, patient:'Marcos Oliveira', initials:'MO', color:'#c97d2e', session:5, date:'2026-03-20', value:720, method:'PIX', status:'paid', paidDate:'2026-03-03', billing:'mensal', planLabel:'Março · 4 sessões' },
-  { id:5, patient:'Pedro Alves', initials:'PA', color:'#8b4513', session:3, date:'2026-03-17', value:200, method:'PIX', status:'overdue', daysOpen:7, billing:'avulso' },
-  { id:6, patient:'Pedro Alves', initials:'PA', color:'#8b4513', session:2, date:'2026-03-10', value:200, method:'PIX', status:'overdue', daysOpen:14, billing:'avulso' },
-  { id:7, patient:'Juliana Costa', initials:'JC', color:'#6a3d7a', session:9, date:'2026-03-19', value:250, method:'PIX', status:'pending', daysOpen:5, billing:'avulso' },
-  { id:8, patient:'Rafael Andrade', initials:'RA', color:'#2c5f8a', session:5, date:'2026-03-07', value:200, method:'PIX', status:'paid', paidDate:'2026-03-07', billing:'avulso' },
-];
+function _getDemoCharges() {
+  function dAgo(n) { var d=new Date(); d.setDate(d.getDate()-n); return localDateISO(d); }
+  return [
+    { id:1, patient:'Camila Rocha',  initials:'CR', color:'#4a7c59', session:12, date:dAgo(5),  value:720, method:'PIX', status:'paid',    paidDate:dAgo(5),  billing:'mensal', planLabel:'Mensal · 4 sessões' },
+    { id:2, patient:'Rafael Andrade',initials:'RA', color:'#2c5f8a', session:7,  date:dAgo(3),  value:200, method:'PIX', status:'pending', daysOpen:3,  billing:'avulso' },
+    { id:3, patient:'Rafael Andrade',initials:'RA', color:'#2c5f8a', session:6,  date:dAgo(14), value:200, method:'PIX', status:'overdue', daysOpen:14, billing:'avulso' },
+    { id:4, patient:'Marcos Oliveira',initials:'MO',color:'#c97d2e', session:5,  date:dAgo(6),  value:720, method:'PIX', status:'paid',    paidDate:dAgo(6),  billing:'mensal', planLabel:'Mensal · 4 sessões' },
+    { id:5, patient:'Pedro Alves',   initials:'PA', color:'#8b4513', session:3,  date:dAgo(7),  value:200, method:'PIX', status:'overdue', daysOpen:7,  billing:'avulso' },
+    { id:6, patient:'Pedro Alves',   initials:'PA', color:'#8b4513', session:2,  date:dAgo(19), value:200, method:'PIX', status:'overdue', daysOpen:19, billing:'avulso' },
+    { id:7, patient:'Juliana Costa', initials:'JC', color:'#6a3d7a', session:9,  date:dAgo(4),  value:250, method:'PIX', status:'pending', daysOpen:4,  billing:'avulso' },
+    { id:8, patient:'Rafael Andrade',initials:'RA', color:'#2c5f8a', session:5,  date:dAgo(22), value:200, method:'PIX', status:'paid',    paidDate:dAgo(22), billing:'avulso' },
+  ];
+}
 
 // Normaliza data de cobrança para YYYY-MM para filtros
 // Suporta: YYYY-MM-DD, DD/MM/YYYY, DD/MM (assume ano atual)
@@ -11062,8 +11106,8 @@ function _calcDaysOpen(c) {
 function carregarCharges() {
   try {
     const raw = localStorage.getItem('tf_charges');
-    return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEMO_CHARGES));
-  } catch(e) { return JSON.parse(JSON.stringify(DEMO_CHARGES)); }
+    return raw ? JSON.parse(raw) : _getDemoCharges();
+  } catch(e) { return _getDemoCharges(); }
 }
 
 function salvarCharges() {
@@ -13940,7 +13984,19 @@ function compartilharEmail() {
   tfTrack('referral_shared', { channel: 'email' });
 }
 
+function _hideDemoBanner() {
+  var b = document.getElementById('tf-demo-banner');
+  if (b) b.style.display = 'none';
+  document.body.style.paddingTop = '';
+  var s = document.getElementById('main-sidebar');
+  if (s) s.style.top = '';
+}
+
 function sairDaConta() {
+  if (window._tfDemo) {
+    window._tfDemo = false;
+    _hideDemoBanner();
+  }
   supa.auth.signOut().catch(() => {});
   document.getElementById('tf-app-layer').style.display        = 'none';
   document.getElementById('tf-onboarding-layer').style.display = 'flex';
