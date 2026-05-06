@@ -10799,7 +10799,7 @@ function initBriefing() {
   // Atualiza header do resultado
   const resHeader = document.querySelector('#b-state-result > div:first-child > div > div:first-child');
   if (resHeader) resHeader.textContent = `Briefing — ${p.name}`;
-  // Verificar cache — exibir direto se válido
+  // Verificar cache — exibir direto se válido (hoje)
   var _bpKey = p.id || p.name;
   var _bcache = _getBriefingCache(_bpKey);
   if (_bcache) {
@@ -10810,10 +10810,11 @@ function initBriefing() {
     var _ct = new Date(_bcache.generatedAt);
     var _ts = String(_ct.getHours()).padStart(2,'0') + ':' + String(_ct.getMinutes()).padStart(2,'0');
     var subEl = document.getElementById('b-result-subtitle');
-    if (subEl) subEl.textContent = 'Cache de ' + _ts + ' · ' + (p.sessions||0) + ' sessões · sem alterações';
+    var _unch = _briefingCacheUnchanged(_bcache, p);
+    if (subEl) subEl.textContent = 'Cache de ' + _ts + ' · ' + (p.sessions||0) + ' sessões · ' + (_unch ? 'sem alterações' : 'há alterações');
     renderBriefingContent(_bcache.content);
     renderThemes(); renderTimeline();
-    _setRegenBtn(true);
+    _setRegenBtn(_unch);
   }
 }
 
@@ -10827,13 +10828,15 @@ function _getBriefingCache(key) {
     var raw = localStorage.getItem('tf_bc_' + key);
     if (!raw) return null;
     var c = JSON.parse(raw);
-    var bp = patients[currentBriefingPatientIdx] || {};
     var todayStart = new Date(); todayStart.setHours(0,0,0,0);
     if (c.generatedAt < todayStart.getTime()) return null;
-    if (c.sessionCount !== (bp.sessions || 0)) return null;
-    if (c.noteCount !== (bp.prontuarioNotes || []).length) return null;
     return c;
   } catch(_) { return null; }
+}
+
+function _briefingCacheUnchanged(c, bp) {
+  return c.sessionCount === (bp.sessions || 0) &&
+         c.noteCount === (bp.prontuarioNotes || []).length;
 }
 
 function _saveBriefingCache(key, content) {
@@ -10962,8 +10965,9 @@ async function callBriefingAI() {
       var _cct = new Date(_cached.generatedAt);
       var _cts = String(_cct.getHours()).padStart(2,'0') + ':' + String(_cct.getMinutes()).padStart(2,'0');
       var _subEl = document.getElementById('b-result-subtitle');
-      if (_subEl) _subEl.textContent = 'Cache de ' + _cts + ' · ' + (bp.sessions||0) + ' sessões · sem alterações';
-      _setRegenBtn(true);
+      var _cUnch = _briefingCacheUnchanged(_cached, bp);
+      if (_subEl) _subEl.textContent = 'Cache de ' + _cts + ' · ' + (bp.sessions||0) + ' sessões · ' + (_cUnch ? 'sem alterações' : 'há alterações');
+      _setRegenBtn(_cUnch);
       _briefingForceRefresh = false;
       return;
     }
