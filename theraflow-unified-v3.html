@@ -8848,6 +8848,19 @@ async function _preencherNotaComIA(pidx) {
   if (!p) return;
   var btn = document.getElementById('btn-preench-ia-nota');
   if (btn) { btn.textContent = '⏳ Gerando…'; btn.disabled = true; }
+  // Demo mode: gera nota fictícia sem chamar API
+  if (window._tfDemo) {
+    await new Promise(r => setTimeout(r, 900));
+    var notaDemo = 'Paciente ' + p.name + ' compareceu à sessão ' + ((p.sessions||0)+1) + ' demonstrando boa adesão ao processo terapêutico. '
+      + 'Foram abordados temas relacionados a ' + (p.notes || 'queixa principal').toLowerCase().replace(/\.$/, '') + '. '
+      + 'Paciente mostrou-se reflexivo(a) e receptivo(a) às intervenções. '
+      + 'Manutenção do plano terapêutico vigente. Próxima sessão agendada conforme combinado.';
+    var ta = document.getElementById('nota-rapida-text');
+    if (ta) { ta.value = notaDemo; ta.focus(); }
+    if (btn) { btn.textContent = '✦ Rascunho IA'; btn.disabled = false; }
+    showToast('✦ Rascunho gerado — revise antes de salvar.');
+    return;
+  }
   try {
     var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e2){}
     var hoje = new Date();
@@ -10858,6 +10871,13 @@ function exportarBriefing() {
 
 async function callBriefingAI() {
   const c = document.getElementById('b-content');
+  // Demo mode: exibe fallback diretamente sem chamar API
+  if (window._tfDemo) {
+    c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
+    await new Promise(r => setTimeout(r, 1200));
+    renderBriefingFallback();
+    return;
+  }
   c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
 
   const system = `Você é um assistente clínico especializado em psicologia. Gera briefings pré-sessão para psicólogos e terapeutas. Tom clínico, objetivo e empático. Nunca faz diagnósticos — apenas observações baseadas no histórico. Responda em português brasileiro.`;
