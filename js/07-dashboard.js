@@ -1,8 +1,5 @@
 // 07-dashboard.js — Dashboard, sessões de hoje, insights, tarefas dash, contadores
 
-/* ── APP JS ── */
-/* APP JS */
-
 // ── NAVEGAÇÃO ──
 function countUp(el, target, duration) {
   if (!el || typeof target !== 'number') return;
