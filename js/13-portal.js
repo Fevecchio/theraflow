@@ -466,8 +466,10 @@ function saveDiaryTCC() {
 }
 
 function updateDiaryCount() {
-  const livreCount = document.getElementById('diary-livre-list').children.length;
-  const tccCount = document.getElementById('diary-tcc-list').children.length;
+  const livreEl = document.getElementById('diary-livre-list');
+  const tccEl   = document.getElementById('diary-tcc-list');
+  const livreCount = livreEl ? livreEl.children.length : 0;
+  const tccCount   = tccEl   ? tccEl.children.length   : 0;
   const el = document.getElementById('diary-count');
   if (el) el.textContent = (livreCount + tccCount) + ' registros';
 }

@@ -130,7 +130,7 @@ async function _supaSync_tasks() {
       due_date: t.dueDate || null,
       patient_id: t.patientId || null,
     }));
-    await supa.from('tasks').upsert(rows, { onConflict: 'local_id' });
+    await supa.from('tasks').upsert(rows, { onConflict: 'user_id,local_id' });
   } catch(e) {
     _syncErrorCount++;
     console.warn('[Supa] Sync tasks falhou:', e.message);
