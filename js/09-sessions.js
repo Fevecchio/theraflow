@@ -596,6 +596,10 @@ function indexPostSession() {
   }
   // Abre etapa de exercícios antes de ir para supervisão
   showExercisePosSession();
+  // Atualiza supervisão IA com evidências da sessão recém-encerrada
+  if (typeof injectNewEvidenceIntoSupervisao === 'function') {
+    injectNewEvidenceIntoSupervisao();
+  }
 }
 
 function showExercisePosSession() {

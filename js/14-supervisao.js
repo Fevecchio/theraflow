@@ -2034,20 +2034,4 @@ function _renderPerguntasSupervPares() {
 // ═══════════════════════════════════════════════
 // BRIDGE: ONBOARDING ↔ APP
 // ═══════════════════════════════════════════════
-
-// Objeto central com TODOS os dados do usuário
-var tfUserData = {
-  nome: '',
-  crp: '',
-  email: '',
-  abordagem: '',       // primária (ex: 'TCC')
-  secundarias: [],     // array de strings
-  // mapeamento onboarding → chave calibração
-  abordagemKey: 'tcc' // usada para calibração da IA
-};
-
-// Mapa nome display → chave interna de calibração
-var ABORDAGEM_KEY_MAP = {
-  'TCC': 'tcc', 'Psicanálise': 'psicanalise', 'Humanista': 'humanista',
-  'Sistêmica': 'sistemica', 'ACT': 'act', 'EMDR': 'emdr'
-};
+// tfUserData e ABORDAGEM_KEY_MAP declarados em 00-globals.js

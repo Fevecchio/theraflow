@@ -39,6 +39,22 @@ const supaPatient = supabase.createClient(_SUPA_URL, _SUPA_KEY, {
   auth: { storageKey: 'tf_patient_session' }
 });
 
+/* ── DADOS DO USUÁRIO TERAPEUTA ── */
+var tfUserData = {
+  nome: '',
+  crp: '',
+  email: '',
+  abordagem: '',
+  secundarias: [],
+  abordagemKey: 'tcc'
+};
+
+// Mapa nome display → chave interna de calibração da IA
+var ABORDAGEM_KEY_MAP = {
+  'TCC': 'tcc', 'Psicanálise': 'psicanalise', 'Humanista': 'humanista',
+  'Sistêmica': 'sistemica', 'ACT': 'act', 'EMDR': 'emdr'
+};
+
 /* Carrega dados do Supabase e popula localStorage */
 async function _supaLoadUserData(userId) {
   if (_loadingUserData) return;

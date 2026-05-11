@@ -62,6 +62,7 @@ function _lancarApp() {
 
   carregarPacientes();
   carregarAppointments();
+  carregarCharges();
   aplicarDadosNoApp();
   checkFirstPatientBanner();
   atualizarTrialUI();

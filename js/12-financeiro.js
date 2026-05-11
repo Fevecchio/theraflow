@@ -1,7 +1,7 @@
 // 12-financeiro.js — Financeiro, cobranças, planos mensais, recibos, relatórios
 
 /* ── FINANCEIRO & COBRANÇAS ── */
-let charges = carregarCharges();
+let charges = [];
 let currentFinMode = 'pre';
 
 function renderCharges(mesFilter) {
