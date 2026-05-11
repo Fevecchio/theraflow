@@ -670,8 +670,6 @@ function initAgenda() {
 
 
 // ── Horários de atendimento e bloqueios ──
-   HORÁRIOS DE ATENDIMENTO — Perfil
-══════════════════════════════════════════════════════════ */
 var DIAS_SEMANA_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 var DEFAULT_HORARIOS = { 1:true, 2:true, 3:true, 4:true, 5:true }; // Seg–Sex
 
