@@ -90,9 +90,14 @@ function _proceedToApp(account) {
     document.getElementById('tf-onboarding-layer').style.display = 'none';
     document.getElementById('tf-app-layer').style.display = 'flex';
     carregarPacientes();
+    carregarAppointments();
     aplicarDadosNoApp();
     checkFirstPatientBanner();
     atualizarTrialUI();
+    var lastPage = 'dashboard';
+    try { lastPage = localStorage.getItem('tf_current_page') || 'dashboard'; } catch(e) {}
+    if (lastPage === 'sessao') lastPage = 'dashboard';
+    navigate(lastPage);
   });
 }
 

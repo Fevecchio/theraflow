@@ -55,10 +55,11 @@ async function _supaLoadUserData(userId) {
       const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
       const plano = profile.plano || 'trial';
       if (plano === 'pro' || plano === 'clinic') _tfPlanPro = true;
+      const nomeFromDB = profile.nome && !profile.nome.includes('@') ? profile.nome : null;
       localStorage.setItem('tf_account', JSON.stringify({
         ...acc,
-        nome: profile.nome,
-        crp: profile.crp || '',
+        nome: nomeFromDB || acc.nome || '',
+        crp: profile.crp || acc.crp || '',
         email: profile.email,
         abordagem: profile.abordagem || '',
         sessoes_usadas: profile.sessoes_usadas || 0,
