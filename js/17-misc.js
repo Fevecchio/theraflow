@@ -510,8 +510,6 @@ function agendaMesDetalhe(day, month, year) {
   document.body.appendChild(overlay);
 }
 
-/* ══════════════════════════════════════════════════════════
-
 // ── Perfil do terapeuta ──
 function initPerfil() {
   loadApiKeyToForm();
