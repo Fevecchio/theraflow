@@ -1000,12 +1000,20 @@ function selecionarProntuario(i, el) {
   if (nm) nm.textContent = p.name;
   if (mt) mt.innerHTML = `<span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span><span>📋 ${escHTML(p.abordagem)}</span><span>📍 ${p.cidade !== '—' ? escHTML(p.cidade) : '—'}</span>`;
 
+  // Limpa notas demo estáticas do HTML — substitui por dados reais do paciente
+  const tabNotas = document.getElementById('tab-notas');
+  if (tabNotas) {
+    tabNotas.innerHTML = '<div style="display:flex;flex-direction:column;gap:12px"></div>';
+  }
+
   // Atualiza ficha clínica com dados reais do paciente
   const tabFicha = document.getElementById('tab-ficha');
   if (tabFicha) {
     const fields = tabFicha.querySelectorAll('.form-group');
     if (fields[0]) fields[0].innerHTML = `<label>CID principal</label><div style="font-size:14px;padding:9px 0">${p.cid !== '—' ? escHTML(p.cid) : 'Não informado'}</div>`;
     if (fields[1]) fields[1].innerHTML = `<label>Abordagem</label><div style="font-size:14px;padding:9px 0">${escHTML(p.abordagem || '—')}</div>`;
+    if (fields[2]) fields[2].innerHTML = `<label>Frequência</label><div style="font-size:14px;padding:9px 0">—</div>`;
+    if (fields[3]) fields[3].innerHTML = `<label>Medicamentos</label><div style="font-size:14px;padding:9px 0">—</div>`;
     if (fields[4]) fields[4].innerHTML = `<label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">${escHTML(p.notes || '—')}</div>`;
   }
 
@@ -1068,7 +1076,7 @@ function selecionarProntuario(i, el) {
   renderMateriaisProntuario(i);
 
   // ── Nota pré-sessão do paciente (portal) ──────────────────────────
-  const tabNotas = document.getElementById('tab-notas');
+  // tabNotas já declarado acima — não redeclara com const
   if (tabNotas) {
     // Remove card anterior se existir
     const prevNota = tabNotas.querySelector('.portal-nota-pre');

@@ -619,10 +619,10 @@ function renderPatients(filter) {
     if (patientStatusFilter && p.status !== patientStatusFilter) return false;
     if (patientAbordagemFilter && (!p.abordagem || !p.abordagem.toLowerCase().includes(patientAbordagemFilter.toLowerCase()))) return false;
     return !q || p.name.toLowerCase().includes(q) ||
-      p.abordagem.toLowerCase().includes(q) ||
-      p.cid.toLowerCase().includes(q) ||
-      p.cidade.toLowerCase().includes(q) ||
-      p.status.toLowerCase().includes(q);
+      (p.abordagem||'').toLowerCase().includes(q) ||
+      (p.cid||'').toLowerCase().includes(q) ||
+      (p.cidade||'').toLowerCase().includes(q) ||
+      (p.status||'').toLowerCase().includes(q);
   });
   if (!filtered.length) {
     const noPatients = patients.length === 0;
