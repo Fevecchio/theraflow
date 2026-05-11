@@ -1,8 +1,5 @@
 // 14-supervisao.js — Supervisão IA, alertas, reflexões, autoconhecimento
 
-   SUPERVISÃO IA — ALGORITMO REAL
-   Analisa dados reais dos pacientes e gera alertas genuínos
-══════════════════════════════════════════════════════════ */
 function _limparBadgePortal() {
   try {
     localStorage.removeItem('tf_portal_new_data');

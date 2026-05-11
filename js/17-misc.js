@@ -1,8 +1,5 @@
 // 17-misc.js — Marcos, tour, SHA-256, trial, termos legais, nota rápida, perfil, referral
 
-// ── Marcos de uso + tour + SHA-256 + trial protection ──
-   MARCOS DE USO — Milestones celebrados uma vez
-══════════════════════════════════════════════════════════ */
 var _MARCOS = [
   { key: 'first_patient',   check: function(){ return patients.length >= 1; },          msg: '🎉 Primeiro paciente cadastrado! O TheraFlow começa a tomar forma.', cor: '#4a7c59' },
   { key: 'five_patients',   check: function(){ return patients.length >= 5; },          msg: '🌱 5 pacientes! Sua carteira está crescendo.', cor: '#4a7c59' },

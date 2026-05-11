@@ -1,7 +1,5 @@
 // 08-agenda.js — Agenda, views mês/dia/semana, appointments, horários, bloqueios
 
-   APPOINTMENTS — PERSISTÊNCIA REAL
-══════════════════════════════════════════════════════════ */
 var appointments = [];
 var APPT_COLORS = ['appt-green','appt-blue','appt-amber','appt-purple'];
 

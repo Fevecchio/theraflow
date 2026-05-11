@@ -692,4 +692,3 @@ function confirmarExercicioPos() {
   setTimeout(() => _mostrarPromptReflexao(patients[currentSessionPatientIdx]), 2200);
 }
 
-/* ══════════════════════════════════════════════════════════

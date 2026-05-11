@@ -110,8 +110,3 @@ function toggleDarkMode(on) {
   }
 }
 
-function aplicarDadosNoApp() {
-  // Carregar dark mode
-  var isDark = localStorage.getItem('tf_dark_mode') === '1';
-  if (isDark) document.documentElement.setAttribute('data-theme','dark');
-  var dmToggle = document.getElementById('toggle-dark-mode');
