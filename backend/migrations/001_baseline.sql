@@ -1,0 +1,8 @@
+-- Migration 001 — Baseline
+-- Data: 2026-04-17
+-- Aplicar: backend/schema.sql completo (até a seção "MIGRATIONS PÓS-DEPLOY INICIAL")
+-- Tabelas: clinics, users, patients, sessions, notes, charges, tasks, appointments,
+--           exercises, diary_entries, mood_checkins, materials, patient_users,
+--           consent_logs, audit_logs
+-- Triggers: set_updated_at, handle_new_user, increment_sessoes_usadas
+-- RLS: habilitado em todas as tabelas com políticas por terapeuta

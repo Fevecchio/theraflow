@@ -4644,6 +4644,13 @@ function _wppNumero(phone) {
 }
 
 /* ── FETCH COM TIMEOUT ── */
+async function _apiAuthHeader() {
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    return session?.access_token ? { 'Authorization': 'Bearer ' + session.access_token } : {};
+  } catch(e) { return {}; }
+}
+
 async function fetchWithTimeout(url, opts, ms = 15000) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), ms);
@@ -4670,7 +4677,7 @@ async function assinarPro(btn) {
     const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
     const res = await fetchWithTimeout('/api/create-checkout-session', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
       body: JSON.stringify({ email: acc.email || '', supaId: acc.supa_id || '' }),
     }, 20000);
     const data = await res.json();
@@ -6842,7 +6849,7 @@ async function compartilharAcessoPortal(i) {
     try {
       var r = await fetchWithTimeout('/api/invite-patient', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
         body: JSON.stringify({
           email: p.email,
           password: senha,
@@ -6854,6 +6861,13 @@ async function compartilharAcessoPortal(i) {
       var result = await r.json();
       if (r.ok) {
         showToast('Acesso criado para ' + nome + '!');
+        // Re-ativa portal caso tenha sido revogado anteriormente
+        var _acc2 = JSON.parse(localStorage.getItem('tf_account') || '{}');
+        if (_acc2.supa_id) {
+          await supa.from('patient_users').update({ portal_active: true }).eq('patient_id', p.id).eq('therapist_id', _acc2.supa_id).catch(() => {});
+        }
+        p.portalRevogado = false;
+        salvarPacientes();
       } else if (r.status === 409) {
         showToast('⚠ ' + result.error);
       } else {
@@ -6879,6 +6893,28 @@ function _enviarWhatsAppAcesso(p, nome, senha) {
   var tel = (p.whatsapp || '').replace(/\D/g,'');
   var url = 'https://wa.me/' + (tel ? '55' + tel : '') + '?text=' + encodeURIComponent(msg);
   window.open(url, '_blank');
+}
+
+async function revogarPortalPaciente(i) {
+  var p = patients[i];
+  if (!p) return;
+  var nome = _firstName(p.name);
+  if (!confirm('Desativar acesso de ' + nome + ' ao portal? Eles não conseguirão mais fazer login até você compartilhar o acesso novamente.')) return;
+  try {
+    var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    var therapistId = acc.supa_id;
+    if (!therapistId) { showToast('Erro: terapeuta não identificado.'); return; }
+    await supa
+      .from('patient_users')
+      .update({ portal_active: false })
+      .eq('patient_id', p.id)
+      .eq('therapist_id', therapistId);
+    p.portalRevogado = true;
+    salvarPacientes();
+    showToast('Acesso de ' + nome + ' ao portal desativado.');
+  } catch(e) {
+    showToast('Erro ao desativar portal: ' + (e.message || 'tente novamente'));
+  }
 }
 
 function toggleStatusDropdown(i) {
@@ -7543,6 +7579,7 @@ function selectPatient(i, el) {
             <button onclick="redefinirSenhaPaciente(${i})" style="margin-left:8px;background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
           </div>
           <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 Compartilhar acesso via WhatsApp</button>
+          <button onclick="revogarPortalPaciente(${i})" style="margin-top:4px;display:flex;align-items:center;gap:6px;background:none;border:1px solid rgba(220,38,38,.3);color:#dc2626;border-radius:7px;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">🚫 Desativar acesso ao portal</button>
           <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(44,95,138,.12)">
             <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:5px">🔗 Link da sala de sessão</div>
             <div style="display:flex;gap:6px;align-items:center">
@@ -8925,7 +8962,7 @@ async function _preencherNotaComIA(pidx) {
     var patientData = { name: p.name, abordagem: p.abordagem, sessions: p.sessions, mood: p.mood, notes: p.notes, cid: p.cid };
     var resp = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
       body: JSON.stringify({ userPrompt, patientData }),
     }, 30000);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -11063,7 +11100,7 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
     // Chama a Edge Function no servidor (chave Anthropic fica no servidor, não no cliente)
     const res = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
       body: JSON.stringify({ systemPrompt: system, userPrompt: user, patientData: bp })
     }, 30000);
     if (!res.ok) {

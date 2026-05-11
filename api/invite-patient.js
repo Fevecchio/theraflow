@@ -35,12 +35,28 @@ function supaHeaders(serviceKey) {
   };
 }
 
+async function verifySupabaseJWT(req, serviceKey) {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+  try {
+    const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
+      headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${token}` },
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   setCors(res, origin);
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const SERVICE_KEY_EARLY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const caller = SERVICE_KEY_EARLY ? await verifySupabaseJWT(req, SERVICE_KEY_EARLY) : null;
+  if (!caller) return res.status(401).json({ error: 'Autenticação necessária' });
 
   const { email, password, patientId, therapistId, patientName } = req.body || {};
 
