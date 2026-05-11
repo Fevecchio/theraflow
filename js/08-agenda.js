@@ -1,0 +1,809 @@
+// 08-agenda.js — Agenda, views mês/dia/semana, appointments, horários, bloqueios
+
+   APPOINTMENTS — PERSISTÊNCIA REAL
+══════════════════════════════════════════════════════════ */
+var appointments = [];
+var APPT_COLORS = ['appt-green','appt-blue','appt-amber','appt-purple'];
+
+function carregarAppointments() {
+  try { appointments = JSON.parse(localStorage.getItem('tf_appointments') || '[]'); } catch(e) { appointments = []; }
+  if (appointments.length === 0) { _gerarAppointmentsDemo(); _salvarAppointments(); }
+}
+
+function marcarPresenca(apptId, tipo) {
+  var a = appointments.find(function(ap){ return String(ap.id)===String(apptId); });
+  if (!a) return;
+  a.presenca = tipo;
+  _salvarAppointments();
+  var overlay = document.getElementById('modal-mes-detalhe');
+  if (overlay) overlay.remove();
+  var msg = tipo==='compareceu' ? '✓ Presença registrada.' : tipo==='faltou' ? '✗ Falta registrada.' : '~ Atraso registrado.';
+  showToast(msg);
+  // Ao marcar compareceu: oferecer adicionar nota clínica rápida + criar cobrança
+  if (tipo === 'compareceu') {
+    _promptNotaRapida(a);
+    _ofereceCobrancaPresenca(a);
+  }
+  if (agendaCurrentView === 'dia') renderDayView();
+  else if (agendaCurrentView === 'semana') renderWeekView();
+  else renderMonthView();
+}
+
+function _ofereceCobrancaPresenca(appt) {
+  // Só cria se ainda não existir cobrança para esta data/paciente
+  var p = patients[appt.patientIdx];
+  if (!p) return;
+  var hoje = appt.date || hojeISO();
+  var jaExiste = charges.some(function(c){
+    return !c.deleted && c.patient === p.name
+      && (c.date === hoje || c.date === hoje.split('-').reverse().join('/'));
+  });
+  if (jaExiste) return;
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+  var valor = parseFloat(p.valorSessao || acc.valor_sessao) || 0;
+  if (!valor) return; // sem valor configurado, silencioso
+  // Toast com ação inline (aparece 1.5s após a nota rápida)
+  setTimeout(function() {
+    var diaFmt = hoje.split('-').reverse().join('/');
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a2a1e;color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:12px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw';
+    toast.innerHTML = '<span>💳 Criar cobrança para ' + escHTML(_firstName(p.name)) + '? <strong>R$' + valor.toFixed(0) + '</strong></span>'
+      + '<button onclick="_criarCobrancaPresenca(\''+p.name+'\','+valor+',\''+hoje+'\')" style="background:var(--sage);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">Criar</button>'
+      + '<button onclick="this.closest(\'div\').remove()" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0 4px">✕</button>';
+    document.body.appendChild(toast);
+    setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 8000);
+  }, 1500);
+}
+
+function _criarCobrancaPresenca(nomePaciente, valor, dataIso) {
+  var diaFmt = dataIso.split('-').reverse().join('/');
+  var p = patients.find(function(x){ return x.name === nomePaciente; });
+  charges.push({
+    id: Date.now(),
+    patient: nomePaciente,
+    initials: p ? p.initials : nomePaciente.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase(),
+    color: p ? p.color : '#4a7c59',
+    desc: 'Sessão ' + diaFmt,
+    value: valor,
+    date: dataIso,
+    status: 'pending',
+    deleted: false,
+    billing: 'avulso',
+    session: diaFmt,
+    method: 'PIX',
+  });
+  salvarCharges();
+  if (p) { p.finStatus = 'pending'; p.fin = 'Pendente'; salvarPacientes(); }
+  showToast('💳 Cobrança criada para ' + _firstName(nomePaciente) + ' — R$' + valor.toFixed(0));
+  document.querySelectorAll('[onclick*="_criarCobrancaPresenca"]').forEach(function(el){ el.closest('div')?.remove(); });
+}
+
+function _promptNotaRapida(appt) {
+  var existing = document.getElementById('modal-nota-rapida');
+  if (existing) existing.remove();
+  var p = patients[appt.patientIdx];
+  if (!p) return;
+  var overlay = document.createElement('div');
+  overlay.id = 'modal-nota-rapida';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding-bottom:0';
+  overlay.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:560px;padding:20px 24px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.18)">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--ink)">📋 Nota rápida — ' + escHTML(_firstName(p.name)) + '</div>'
+      + '<button onclick="document.getElementById(\'modal-nota-rapida\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>'
+    + '</div>'
+    + '<textarea id="nota-rapida-text" placeholder="Registre brevemente o que ocorreu na sessão de hoje…" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--sage);border-radius:10px;font-size:13.5px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;line-height:1.6;color:var(--ink)"></textarea>'
+    + '<div style="display:flex;gap:10px;margin-top:12px">'
+      + '<button onclick="document.getElementById(\'modal-nota-rapida\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Pular</button>'
+      + '<button onclick="_salvarNotaRapida(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Salvar nota</button>'
+      + '<button id="btn-preench-ia-nota" onclick="_preencherNotaComIA(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✦ Rascunho IA</button>'
+    + '</div>'
+  + '</div>';
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  setTimeout(function(){ document.getElementById('nota-rapida-text')?.focus(); }, 80);
+}
+
+function _salvarNotaRapida(pidx) {
+  var texto = (document.getElementById('nota-rapida-text')?.value || '').trim();
+  if (!texto) { showToast('⚠ Escreva algo antes de salvar.'); return; }
+  var p = patients[pidx];
+  if (!p) return;
+  if (!p.prontuarioNotes) p.prontuarioNotes = [];
+  var hoje = new Date();
+  var data = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0');
+  p.prontuarioNotes.push({ date: data, text: texto });
+  p.lastSession = data;
+  salvarPacientes();
+  document.getElementById('modal-nota-rapida')?.remove();
+  showToast('📋 Nota salva no prontuário de ' + _firstName(p.name) + '.');
+}
+
+async function _preencherNotaComIA(pidx) {
+  var p = patients[pidx];
+  if (!p) return;
+  var btn = document.getElementById('btn-preench-ia-nota');
+  if (btn) { btn.textContent = '⏳ Gerando…'; btn.disabled = true; }
+  // Demo mode: gera nota fictícia sem chamar API
+  if (window._tfDemo) {
+    await new Promise(r => setTimeout(r, 900));
+    var notaDemo = 'Paciente ' + p.name + ' compareceu à sessão ' + ((p.sessions||0)+1) + ' demonstrando boa adesão ao processo terapêutico. '
+      + 'Foram abordados temas relacionados a ' + (p.notes || 'queixa principal').toLowerCase().replace(/\.$/, '') + '. '
+      + 'Paciente mostrou-se reflexivo(a) e receptivo(a) às intervenções. '
+      + 'Manutenção do plano terapêutico vigente. Próxima sessão agendada conforme combinado.';
+    var ta = document.getElementById('nota-rapida-text');
+    if (ta) { ta.value = notaDemo; ta.focus(); }
+    if (btn) { btn.textContent = '✦ Rascunho IA'; btn.disabled = false; }
+    showToast('✦ Rascunho gerado — revise antes de salvar.');
+    return;
+  }
+  try {
+    var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e2){}
+    var hoje = new Date();
+    var dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
+    var userPrompt = 'Gere um rascunho de nota clínica (3-5 linhas) para a sessão de hoje (' + dataStr + ') do paciente '
+      + p.name + '. Baseie-se nos dados disponíveis: abordagem ' + (p.abordagem || 'não especificada')
+      + ', sessão nº ' + (p.sessions || '?')
+      + ', humor recente ' + (p.mood != null ? p.mood + '/10' : 'não registrado')
+      + ', queixa principal: ' + (p.notes || 'não informada') + '.'
+      + ' Escreva em primeira pessoa do terapeuta, tom clínico e objetivo.';
+    var patientData = { name: p.name, abordagem: p.abordagem, sessions: p.sessions, mood: p.mood, notes: p.notes, cid: p.cid };
+    var resp = await fetchWithTimeout('/api/briefing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
+      body: JSON.stringify({ userPrompt, patientData }),
+    }, 30000);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    var texto = data.content || '';
+    if (texto) {
+      var ta = document.getElementById('nota-rapida-text');
+      if (ta) { ta.value = texto; ta.focus(); }
+      showToast('✦ Rascunho gerado — revise antes de salvar.');
+    } else {
+      showToast('⚠ IA não retornou texto. Tente novamente.');
+    }
+  } catch(e) {
+    console.warn('[TF] Erro ao gerar nota com IA:', e.message);
+    showToast('⚠ Erro ao conectar com a IA. Verifique a API Key em Perfil.');
+  } finally {
+    if (btn) { btn.textContent = '✦ Rascunho IA'; btn.disabled = false; }
+  }
+}
+
+function _salvarAppointments() {
+  try { localStorage.setItem('tf_appointments', JSON.stringify(appointments)); } catch(e) {}
+  _supaSync_appointments();
+}
+
+function _gerarAppointmentsDemo() {
+  var hoje = new Date();
+  var iso = localDateISO;
+  var addDays = function(d, n){ var r = new Date(d); r.setDate(r.getDate()+n); return r; };
+  var seg = new Date(hoje); seg.setDate(hoje.getDate() - ((hoje.getDay()+6)%7)); // segunda desta semana
+  var demos = [
+    {h:'08:00', di:0, pi:1, abordagem:'Psicanálise', cor:'appt-blue'},   // seg
+    {h:'09:00', di:0, pi:0, abordagem:'TCC', cor:'appt-green'},           // seg
+    {h:'09:00', di:1, pi:0, abordagem:'TCC', cor:'appt-green'},           // ter (hoje)
+    {h:'11:00', di:1, pi:1, abordagem:'Psicanálise', cor:'appt-blue'},    // ter
+    {h:'14:00', di:1, pi:2, abordagem:'TCC', cor:'appt-amber'},           // ter
+    {h:'09:00', di:2, pi:3, abordagem:'Gestalt', cor:'appt-amber'},       // qua
+    {h:'11:00', di:2, pi:4, abordagem:'TCC', cor:'appt-green'},           // qua
+    {h:'14:00', di:2, pi:0, abordagem:'TCC', cor:'appt-green'},           // qua
+    {h:'10:00', di:3, pi:5, abordagem:'Avaliação', cor:'appt-amber'},     // qui
+    {h:'15:00', di:3, pi:6, abordagem:'Psicanálise', cor:'appt-blue'},    // qui
+    {h:'09:00', di:4, pi:1, abordagem:'Psicanálise', cor:'appt-blue'},    // sex
+  ];
+  demos.forEach(function(d, i){
+    var p = patients[d.pi] || patients[0];
+    if (!p) return;
+    appointments.push({
+      id: Date.now() + i,
+      patientIdx: d.pi,
+      patientName: p.name,
+      date: iso(addDays(seg, d.di)),
+      time: d.h,
+      duration: 50,
+      abordagem: d.abordagem,
+      color: d.cor,
+      status: 'agendada',
+      recorrencia: d.di % 2 === 0 ? 'semanal' : 'nenhuma'
+    });
+  });
+}
+
+function confirmarAgendamento() {
+  var sel    = document.getElementById('agendar-paciente-select');
+  var data   = document.getElementById('agendar-data');
+  var hora   = document.getElementById('agendar-hora');
+  var dur    = document.getElementById('agendar-duracao');
+  var recorr = document.getElementById('agendar-recorrencia');
+
+  if (!sel || !data || !hora) { showToast('⚠ Erro ao abrir formulário de agendamento. Tente novamente.'); return; }
+
+  var pidx = parseInt(sel.value);
+  if (isNaN(pidx) || pidx < 0 || pidx >= patients.length) { showToast('⚠ Selecione um paciente.'); return; }
+
+  var p = patients[pidx];
+  var dataVal   = data.value || hojeISO();
+  var horaVal   = hora.value || '09:00';
+  var durVal    = parseInt(dur?.value || '50');
+  var recVal    = recorr?.value || 'nenhuma';
+  var colorIdx  = pidx % APPT_COLORS.length;
+
+  // Aviso de bloqueio de horário
+  if (isDiaBlockeado(dataVal)) {
+    var motivo = _motivoBloqueio ? _motivoBloqueio(dataVal) : 'Dia bloqueado';
+    if (!confirm('⛔ Atenção: ' + dataVal.split('-').reverse().join('/') + ' está bloqueado (' + motivo + ').\nDeseja agendar mesmo assim?')) return;
+  }
+
+  // Verificar conflito de horário (± 30 min)
+  var horaMin = parseInt(horaVal.split(':')[0])*60 + parseInt(horaVal.split(':')[1]);
+  var conflito = appointments.find(function(a) {
+    if (a.status === 'cancelada' || a.date !== dataVal) return false;
+    var aMin = parseInt((a.time||'00:00').split(':')[0])*60 + parseInt((a.time||'00:00').split(':')[1]);
+    return Math.abs(aMin - horaMin) < 30;
+  });
+  if (conflito) {
+    if (!confirm('⚠ Já existe sessão de ' + escHTML(conflito.patientName) + ' às ' + conflito.time + ' neste dia.\nDeseja agendar mesmo assim?')) return;
+  }
+
+  // Gera ocorrências se recorrente (até 8 semanas)
+  var datas = [dataVal];
+  if (recVal === 'semanal')    { for(var w=1;w<=7;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*7); datas.push(localDateISO(nd)); } }
+  if (recVal === 'quinzenal')  { for(var w=1;w<=4;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*14); datas.push(localDateISO(nd)); } }
+  if (recVal === 'mensal')     { for(var w=1;w<=2;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setMonth(nd.getMonth()+w); datas.push(localDateISO(nd)); } }
+
+  datas.forEach(function(dt, i){
+    appointments.push({
+      id: Date.now() + i,
+      patientIdx: pidx,
+      patientName: p.name,
+      date: dt,
+      time: horaVal,
+      duration: durVal,
+      abordagem: p.abordagem || 'TCC',
+      color: APPT_COLORS[colorIdx],
+      status: 'agendada',
+      recorrencia: recVal
+    });
+  });
+
+  // Atualiza p.next com a data mais próxima
+  var proxima = datas[0];
+  var parts = proxima.split('-');
+  p.next = parts[2]+'/'+parts[1]+'/'+parts[0];
+  salvarPacientes();
+  _salvarAppointments();
+  tfTrack('session_scheduled', { recorrencia: recVal, occurrences: datas.length });
+
+  document.getElementById('modal-agendar')?.remove();
+  var msg = recVal !== 'nenhuma'
+    ? '✅ ' + datas.length + ' sessões agendadas (' + recVal + ')!'
+    : '✅ Sessão agendada para ' + horaVal + ' · ' + _firstName(p.name) + '!';
+  showToast(msg);
+  if (agendaCurrentView === 'dia') renderDayView();
+  else if (agendaCurrentView === 'semana') renderWeekView();
+  else renderMonthView();
+}
+
+function cancelarAppointment(id) {
+  var appt = appointments.find(function(a){ return a.id === id; });
+  if (!appt) return;
+
+  var existing = document.getElementById('modal-cancelar-appt');
+  if (existing) existing.remove();
+
+  var d = new Date(appt.date + 'T12:00');
+  var dateLbl = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+
+  var overlay = document.createElement('div');
+  overlay.id = 'modal-cancelar-appt';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
+      <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:6px">Cancelar sessão</div>
+      <div style="font-size:13px;color:#666;margin-bottom:20px">${escHTML(appt.patientName)} · ${dateLbl} às ${appt.time}</div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:8px">Motivo do cancelamento</label>
+        <div style="display:flex;flex-direction:column;gap:8px" id="cancel-motivos">
+          ${['Paciente cancelou','Encaixe/reagendamento','Feriado ou folga','Emergência clínica','Outro'].map(function(m,i){
+            return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;cursor:pointer;font-size:13px;transition:border .15s" onclick="selecionarMotivoCancel(this)">'
+              + '<input type="radio" name="cancel-motivo" value="'+m+'" style="accent-color:#4a7c59">'
+              + escHTML(m) + '</label>';
+          }).join('')}
+        </div>
+        <input type="text" id="cancel-outro" placeholder="Descreva o motivo…" style="display:none;width:100%;margin-top:8px;padding:9px 12px;border:1.5px solid #4a7c59;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;outline:none">
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('modal-cancelar-appt').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Voltar</button>
+        <button onclick="confirmarCancelamento(${id})" style="flex:1;padding:11px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Confirmar cancelamento</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function selecionarMotivoCancel(label) {
+  document.querySelectorAll('#cancel-motivos label').forEach(function(l){ l.style.borderColor='#e0e0e0'; l.style.background=''; });
+  label.style.borderColor = '#4a7c59';
+  label.style.background = '#f0fdf4';
+  var radio = label.querySelector('input[type=radio]');
+  if (radio) radio.checked = true;
+  var outro = document.getElementById('cancel-outro');
+  if (outro) outro.style.display = radio && radio.value === 'Outro' ? 'block' : 'none';
+}
+
+function confirmarCancelamento(id) {
+  var appt = appointments.find(function(a){ return a.id === id; });
+  if (!appt) return;
+  var radio = document.querySelector('#cancel-motivos input[type=radio]:checked');
+  var motivo = radio ? radio.value : '';
+  if (motivo === 'Outro') {
+    var outro = document.getElementById('cancel-outro');
+    motivo = (outro && outro.value.trim()) ? outro.value.trim() : 'Outro';
+  }
+  appt.status = 'cancelada';
+  appt.motivoCancelamento = motivo;
+  appt.canceladoEm = new Date().toISOString();
+  _salvarAppointments();
+  document.getElementById('modal-cancelar-appt')?.remove();
+  if (agendaCurrentView === 'dia') renderDayView();
+  else if (agendaCurrentView === 'semana') renderWeekView();
+  else renderMonthView();
+  showToast('✓ Sessão cancelada' + (motivo ? ' — ' + motivo : '') + '.');
+  tfTrack('session_cancelled', { motivo: motivo });
+}
+
+function reagendarAppointment(id) {
+  var appt = appointments.find(function(a){ return a.id === id; });
+  if (!appt) return;
+
+  var existing = document.getElementById('modal-reagendar');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'modal-reagendar';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:380px;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.2)">
+      <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px">↻ Reagendar sessão</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px">${escHTML(appt.patientName)} · atual: ${appt.date} às ${appt.time}</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Nova data</label>
+          <input type="date" id="reagendar-data" value="${appt.date}" style="width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Novo horário</label>
+          <input type="time" id="reagendar-hora" value="${appt.time}" style="width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button onclick="document.getElementById('modal-reagendar').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
+        <button onclick="confirmarReagendamento(${id})" style="flex:1;padding:11px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Confirmar</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function confirmarReagendamento(id) {
+  var appt = appointments.find(function(a){ return a.id === id; });
+  if (!appt) return;
+  var novaData = document.getElementById('reagendar-data')?.value;
+  var novaHora = document.getElementById('reagendar-hora')?.value;
+  if (!novaData || !novaHora) { showToast('⚠ Preencha data e horário.'); return; }
+  var dataAnterior = appt.date + ' ' + appt.time;
+  appt.date = novaData;
+  appt.time = novaHora;
+  _salvarAppointments();
+  document.getElementById('modal-reagendar')?.remove();
+  if (agendaCurrentView === 'dia') renderDayView();
+  else if (agendaCurrentView === 'semana') renderWeekView();
+  showToast('✓ Sessão reagendada de ' + dataAnterior + ' para ' + novaData + ' às ' + novaHora);
+  tfTrack('session_rescheduled', {});
+}
+
+/* ── RENDER DIA ── */
+function renderDayView() {
+  var container = document.getElementById('agenda-dia-render');
+  if (!container) return;
+  var d = agendaCurrentDate;
+  var iso = localDateISO(d);
+  var hoje = hojeISO();
+  var diasNome = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  var diasAbrev = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var tituloData = diasNome[d.getDay()] + ', ' + String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+  if (iso === hoje) tituloData = 'Hoje — ' + diasNome[d.getDay()];
+
+  var _hConfig = carregarHorarios();
+  var _hIni = _hConfig ? parseInt((_hConfig.inicio||'08:00').split(':')[0]) : 8;
+  var _hFim = _hConfig ? parseInt((_hConfig.fim||'18:00').split(':')[0]) : 18;
+  var horas = [];
+  for (var _hi = _hIni; _hi <= _hFim; _hi++) horas.push(_hi);
+  var sessoesDia = appointments.filter(function(a){ return a.date===iso && a.status!=='cancelada'; });
+
+  // Mapa hora → agendamentos
+  var porHora = {};
+  sessoesDia.forEach(function(a){
+    var h = parseInt((a.time||'09:00').split(':')[0]);
+    if (!porHora[h]) porHora[h] = [];
+    porHora[h].push(a);
+  });
+
+  var slotsHtml = horas.map(function(h){
+    var appts = porHora[h] || [];
+    var horaStr = String(h).padStart(2,'0')+':00';
+    var slotContent = appts.length === 0
+      ? '<div class="slot-add" onclick="showAgendarModal(\''+iso+'\',\''+horaStr+'\')" title="Agendar sessão às '+horaStr+'"><span class="slot-add-icon">+</span><span class="slot-add-label">Nova sessão</span></div>'
+      : appts.map(function(a){
+          if (a.patientIdx < 0) return '';
+          var pi = a.patientIdx;
+          var nome = escHTML(a.patientName);
+          var isPast = a.date < hoje || (a.date === hoje && parseInt((a.time||'23:59').split(':')[0]) < new Date().getHours());
+          var presencaBadge = '';
+          if (a.presenca === 'compareceu') {
+            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#d1fae5;color:#065f46;font-weight:600">✓ compareceu</span>';
+          } else if (a.presenca === 'faltou') {
+            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fee2e2;color:#991b1b;font-weight:600">✗ faltou</span>';
+          } else if (a.presenca === 'atrasou') {
+            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fef3c7;color:#92400e;font-weight:600">~ atrasou</span>';
+          } else if (isPast) {
+            presencaBadge = '<span style="display:flex;gap:3px">'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:10px;padding:2px 6px;background:#d1fae5;color:#065f46;border:none;border-radius:8px;cursor:pointer" title="Compareceu">✓</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:10px;padding:2px 6px;background:#fee2e2;color:#991b1b;border:none;border-radius:8px;cursor:pointer" title="Faltou">✗</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'atrasou\')" style="font-size:10px;padding:2px 6px;background:#fef3c7;color:#92400e;border:none;border-radius:8px;cursor:pointer" title="Atrasou">~</button>'
+              + '</span>';
+          }
+          return '<div class="'+escHTML(a.color)+' appt-block" style="display:flex;flex-direction:column;gap:5px;margin-bottom:4px;padding:8px">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
+              + '<div onclick="currentSessionPatientIdx='+pi+';navigate(\'sessao\')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong><br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
+              + '<div style="display:flex;gap:4px;flex-shrink:0">'
+                + '<button class="btn btn-purple btn-sm" onclick="event.stopPropagation();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="font-size:10px;padding:3px 7px" title="Briefing IA">✦</button>'
+                + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();reagendarAppointment('+a.id+')" style="font-size:10px;padding:3px 7px" title="Reagendar">↻</button>'
+                + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();cancelarAppointment('+a.id+')" style="font-size:10px;padding:3px 7px;color:var(--red)" title="Cancelar">✕</button>'
+              + '</div>'
+            + '</div>'
+            + (presencaBadge ? '<div>'+presencaBadge+'</div>' : '')
+            + '</div>';
+        }).join('');
+    return '<div style="display:grid;grid-template-columns:56px 1fr;border-top:1px solid var(--border)">'
+      + '<div class="time-slot" style="padding:10px 8px;font-size:11px;color:var(--muted);display:flex;align-items:flex-start;padding-top:12px">'+horaStr+'</div>'
+      + '<div class="appt-slot" style="padding:6px 8px;min-height:56px">'+slotContent+'</div>'
+      + '</div>';
+  }).join('');
+
+  // Resumo da semana
+  var seg = new Date(d); seg.setDate(d.getDate()-((d.getDay()+6)%7));
+  var resumoSemana = [0,1,2,3,4].map(function(di){
+    var dd = new Date(seg); dd.setDate(seg.getDate()+di);
+    var diso = localDateISO(dd);
+    var cnt = appointments.filter(function(a){ return a.date===diso&&a.status!=='cancelada'; }).length;
+    var isHoje = diso===hoje;
+    var isHD = diso===iso;
+    return '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:13px;'+(isHD?'font-weight:600;color:var(--ink)':'color:var(--muted)')+'">'+diasAbrev[dd.getDay()]+' '+(isHoje?'(hoje)':'')+'</span>'
+      + '<span class="tag '+(cnt>0?'tag-green':'tag-gray')+'">'+cnt+' sessão'+(cnt!==1?'s':'')+'</span>'
+      + '</div>';
+  }).join('');
+
+  // Confirmações pendentes (hoje ou próximas 48h)
+  var amanha = new Date(hoje); amanha.setDate(amanha.getDate()+2);
+  var pendentes = appointments.filter(function(a){
+    return a.status==='agendada' && a.date>=hoje && a.date<=localDateISO(amanha);
+  }).slice(0,4);
+  var pendHtml = pendentes.length === 0
+    ? '<div style="font-size:13px;color:var(--muted);font-style:italic">Nenhuma pendência de confirmação.</div>'
+    : pendentes.map(function(a){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
+          + '<span style="font-size:13px">'+escHTML(_firstName(a.patientName))+' · '+escHTML(a.date.split('-').reverse().slice(0,2).join('/'))+'</span>'
+          + '<button class="btn btn-secondary btn-sm" onclick="enviarLembreteAgenda(\''+escHTML(a.patientName)+'\')">📨 Lembrar</button>'
+          + '</div>';
+      }).join('');
+
+  container.innerHTML =
+    '<div class="grid-2">'
+      + '<div class="card">'
+        + '<div class="section-header" style="margin-bottom:20px">'
+          + '<div class="section-title">'+tituloData+'</div>'
+          + '<span class="tag '+(sessoesDia.length>0?'tag-blue':'tag-gray')+'">'+sessoesDia.length+' sessão'+(sessoesDia.length!==1?'s':'')+'</span>'
+        + '</div>'
+        + '<div>'+slotsHtml+'</div>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:16px">'
+        + '<div class="card"><div class="section-title" style="margin-bottom:14px">Semana — resumo</div><div style="display:flex;flex-direction:column;gap:8px">'+resumoSemana+'</div></div>'
+        + '<div class="card"><div class="section-title" style="margin-bottom:12px">Pendências de confirmação</div><div style="display:flex;flex-direction:column;gap:8px">'+pendHtml+'</div></div>'
+      + '</div>'
+    + '</div>';
+}
+
+/* ── RENDER SEMANA ── */
+function renderWeekView() {
+  var container = document.getElementById('agenda-semana-render');
+  if (!container) return;
+  var d = agendaCurrentDate;
+  var hoje = hojeISO();
+
+  // Segunda desta semana
+  var seg = new Date(d); seg.setDate(d.getDate()-((d.getDay()+6)%7));
+  var dias = [0,1,2,3,4].map(function(di){
+    var dd = new Date(seg); dd.setDate(seg.getDate()+di);
+    var _ddIso = localDateISO(dd); return { date: dd, iso: _ddIso, isHoje: _ddIso===hoje };
+  });
+
+  var _hConfigW = carregarHorarios();
+  var _hIniW = _hConfigW ? parseInt((_hConfigW.inicio||'08:00').split(':')[0]) : 8;
+  var _hFimW = _hConfigW ? parseInt((_hConfigW.fim||'18:00').split(':')[0]) : 18;
+  var horas = [];
+  for (var _hiw = _hIniW; _hiw <= _hFimW; _hiw++) horas.push(_hiw);
+  var diasAbrev = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+
+  // Cabeçalho
+  var cabHtml = '<div style="padding:10px 0"></div>';
+  dias.forEach(function(di){
+    var isH = di.isHoje;
+    var isBloqH = isDiaBlockeado(di.iso);
+    cabHtml += '<div style="padding:10px 8px;text-align:center;border-bottom:2px solid '+(isH?'var(--sage)':isBloqH?'var(--muted)':'var(--border)')
+      +';'+(isH?'background:var(--sage-light);border-radius:8px 8px 0 0':isBloqH?'background:var(--bg);opacity:.6':'') +'">'
+      + '<div style="font-size:12px;color:'+(isH?'var(--sage)':isBloqH?'var(--muted)':'var(--muted)')+'">'+diasAbrev[di.date.getDay()]+'</div>'
+      + '<div style="font-weight:'+(isH?'700':'600')+';color:'+(isH?'var(--sage)':isBloqH?'var(--muted)':'var(--ink)')+'">'+di.date.getDate()+'</div>'
+      + (isH?'<div style="font-size:10px;color:var(--sage)">hoje</div>':isBloqH?'<div style="font-size:10px;color:var(--muted)">bloqueado</div>':'')
+      + '</div>';
+  });
+
+  var gridHtml = '<div style="display:grid;grid-template-columns:56px repeat(5,1fr);gap:0;min-width:560px">'
+    + cabHtml;
+
+  horas.forEach(function(h){
+    var horaStr = String(h).padStart(2,'0')+':00';
+    gridHtml += '<div style="padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:10px">'+horaStr+'</div>';
+    dias.forEach(function(di, ci){
+      var appts = appointments.filter(function(a){
+        return a.date===di.iso && a.status!=='cancelada' && parseInt((a.time||'09:00').split(':')[0])===h;
+      });
+      var isLast = ci===4;
+      var bg = di.isHoje ? 'rgba(74,124,89,.04)' : '#fff';
+      var clickEmpty = 'onclick="showAgendarModal(\''+di.iso+'\',\''+horaStr+'\')"';
+      var isBloq = isDiaBlockeado(di.iso);
+      var bgFinal = isBloq ? 'var(--bg)' : bg;
+      gridHtml += '<div style="border-top:1px solid var(--border);'+(isLast?'':'border-right:1px solid var(--border);')+'padding:3px;min-height:52px;background:'+bgFinal+';position:relative" class="week-cell">';
+      if (isBloq) {
+        gridHtml += '<div style="font-size:10px;color:var(--muted);padding:4px;text-align:center">⛔</div>';
+      } else if (appts.length === 0) {
+        gridHtml += '<div class="week-cell-add" '+clickEmpty+' title="Agendar '+horaStr+' — '+diasAbrev[di.date.getDay()]+'"><span>+</span></div>';
+      }
+      appts.forEach(function(a){
+        if (a.patientIdx < 0) return;
+        var isPastW = di.iso < hoje || (di.iso === hoje && parseInt((a.time||'23:59').split(':')[0]) < new Date().getHours());
+        var pBadge = '';
+        if (a.presenca === 'compareceu') pBadge = '<div style="font-size:9px;color:#065f46;background:#d1fae5;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✓</div>';
+        else if (a.presenca === 'faltou') pBadge = '<div style="font-size:9px;color:#991b1b;background:#fee2e2;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✗</div>';
+        else if (a.presenca === 'atrasou') pBadge = '<div style="font-size:9px;color:#92400e;background:#fef3c7;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">~</div>';
+        else if (isPastW) pBadge = '<div style="display:flex;gap:2px;margin-top:2px">'
+          + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:9px;cursor:pointer;color:#065f46;background:#d1fae5;border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
+          + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:9px;cursor:pointer;color:#991b1b;background:#fee2e2;border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
+          + '</div>';
+        gridHtml += '<div class="'+escHTML(a.color)+' appt-block" style="font-size:11px;padding:3px 5px;margin-bottom:2px" title="'+escHTML(a.patientName)+' — '+escHTML(a.abordagem)+'">'
+          + '<div style="cursor:pointer" onclick="currentSessionPatientIdx='+a.patientIdx+';navigate(\'sessao\')">'
+          + '<strong>'+escHTML(_firstName(a.patientName))+'</strong><br/>'+escHTML(_firstName(a.abordagem))+' '+a.time+'</div>'
+          + pBadge
+          + '</div>';
+      });
+      gridHtml += '</div>';
+    });
+  });
+
+  gridHtml += '</div>';
+  container.innerHTML = '<div class="card" style="overflow-x:auto">'+gridHtml+'</div>';
+}
+
+var agendaCompacto = localStorage.getItem('tf_agenda_compact') === '1';
+
+function toggleAgendaCompacto() {
+  agendaCompacto = !agendaCompacto;
+  try { localStorage.setItem('tf_agenda_compact', agendaCompacto ? '1' : '0'); } catch(e){}
+  _aplicarModoCompactoAgenda();
+  if (agendaCurrentView === 'dia') renderDayView();
+  else if (agendaCurrentView === 'semana') renderWeekView();
+  else renderMonthView();
+}
+
+function _aplicarModoCompactoAgenda() {
+  var pg = document.getElementById('page-agenda');
+  if (!pg) return;
+  pg.classList.toggle('agenda-compacto', agendaCompacto);
+  var btn = document.getElementById('btn-agenda-compacto');
+  if (btn) btn.textContent = agendaCompacto ? '⊞ Normal' : '⊡ Compacto';
+}
+
+function exportarAgendaICS() {
+  if (!appointments || !appointments.length) { showToast('Nenhuma sessão para exportar.'); return; }
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+  var nomeT = acc.nome || 'Terapeuta';
+  function fmtICS(dateIso, timeStr) {
+    // dateIso: YYYY-MM-DD, timeStr: HH:MM or empty
+    var d = dateIso.replace(/-/g,'');
+    if (!timeStr) return d;
+    var t = timeStr.replace(':','') + '00';
+    return d + 'T' + t;
+  }
+  function fmtICSEnd(dateIso, timeStr, durMin) {
+    if (!timeStr) return dateIso.replace(/-/g,'');
+    var parts = timeStr.split(':').map(Number);
+    var mins = parts[0]*60 + parts[1] + (durMin || 50);
+    var h = String(Math.floor(mins/60)%24).padStart(2,'0');
+    var m = String(mins%60).padStart(2,'0');
+    return dateIso.replace(/-/g,'') + 'T' + h + m + '00';
+  }
+  var lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//TheraFlow//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  appointments.filter(function(a){ return a.status !== 'cancelada'; }).forEach(function(a, i) {
+    var p = patients[a.patientIdx];
+    var nome = p ? p.name : a.patientName || 'Paciente';
+    var uid = 'tf-' + (a.id || i) + '@theraflow';
+    var dtStart = fmtICS(a.date, a.time);
+    var dtEnd   = fmtICSEnd(a.date, a.time, a.duration || 50);
+    var allDay  = !a.time;
+    lines.push('BEGIN:VEVENT');
+    lines.push('UID:' + uid);
+    lines.push('SUMMARY:Sessão — ' + nome);
+    lines.push('DESCRIPTION:Abordagem: ' + (a.abordagem||'—') + '\\nTerapeuta: ' + nomeT);
+    lines.push('LOCATION:Consultório');
+    if (allDay) { lines.push('DTSTART;VALUE=DATE:' + dtStart); lines.push('DTEND;VALUE=DATE:' + dtEnd); }
+    else        { lines.push('DTSTART:' + dtStart); lines.push('DTEND:' + dtEnd); }
+    lines.push('STATUS:' + (a.status === 'cancelada' ? 'CANCELLED' : 'CONFIRMED'));
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'theraflow-agenda.ics';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('📅 Agenda exportada — importe no Google Calendar ou Apple Calendar.');
+}
+
+function initAgenda() {
+  carregarAppointments();
+  agendaCurrentDate = new Date();
+  agendaCompacto = localStorage.getItem('tf_agenda_compact') === '1';
+  _aplicarModoCompactoAgenda();
+  agendaSetView(agendaCurrentView || 'dia');
+}
+
+
+// ── Horários de atendimento e bloqueios ──
+   HORÁRIOS DE ATENDIMENTO — Perfil
+══════════════════════════════════════════════════════════ */
+var DIAS_SEMANA_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+var DEFAULT_HORARIOS = { 1:true, 2:true, 3:true, 4:true, 5:true }; // Seg–Sex
+
+function carregarHorarios() {
+  try { return JSON.parse(localStorage.getItem('tf_horarios') || 'null'); } catch(e) { return null; }
+}
+
+function salvarHorarios() {
+  var dias = {};
+  DIAS_SEMANA_PT.forEach(function(d, i) {
+    var cb = document.getElementById('hora-dia-' + i);
+    if (cb) dias[i] = cb.checked;
+  });
+  var inicio = document.getElementById('horario-inicio')?.value || '08:00';
+  var fim    = document.getElementById('horario-fim')?.value    || '18:00';
+  var config = { dias: dias, inicio: inicio, fim: fim };
+  try { localStorage.setItem('tf_horarios', JSON.stringify(config)); } catch(e) {}
+  return config;
+}
+
+function initHorariosGrid() {
+  var grid = document.getElementById('horarios-grid');
+  if (!grid) return;
+  var saved = carregarHorarios();
+  var diasAtivos = saved ? saved.dias : DEFAULT_HORARIOS;
+  var inicio = saved ? saved.inicio : '08:00';
+  var fim    = saved ? saved.fim    : '18:00';
+
+  // Popula horário inicio/fim
+  var inpI = document.getElementById('horario-inicio');
+  var inpF = document.getElementById('horario-fim');
+  if (inpI) inpI.value = inicio;
+  if (inpF) inpF.value = fim;
+
+  grid.innerHTML = '';
+  DIAS_SEMANA_PT.forEach(function(nome, i) {
+    var checked = diasAtivos[i] !== undefined ? diasAtivos[i] : !!DEFAULT_HORARIOS[i];
+    var div = document.createElement('label');
+    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:'+(checked?'var(--sage-light)':'#fff');
+    div.innerHTML = '<input type="checkbox" id="hora-dia-'+i+'" '+(checked?'checked':'')+' style="accent-color:var(--sage);width:16px;height:16px" onchange="this.closest(\'label\').style.background=this.checked?\'var(--sage-light)\':\'#fff\'">'
+      + '<span style="font-size:13px;font-weight:500;color:var(--ink)">'+nome+'</span>'
+      + (i === 0 || i === 6 ? '<span style="font-size:11px;color:var(--muted);margin-left:auto">Fim de semana</span>' : '');
+    grid.appendChild(div);
+  });
+}
+
+/* ── BLOQUEIOS DE HORÁRIO ── */
+var bloqueios = [];
+try { bloqueios = JSON.parse(localStorage.getItem('tf_bloqueios') || '[]'); } catch(e) { bloqueios = []; }
+
+function salvarBloqueios() {
+  try { localStorage.setItem('tf_bloqueios', JSON.stringify(bloqueios)); } catch(e) {}
+}
+
+function abrirModalBloqueio() {
+  var hoje = hojeISO();
+  var inI = document.getElementById('bloq-inicio');
+  var inF = document.getElementById('bloq-fim');
+  if (inI) inI.value = hoje;
+  if (inF) inF.value = hoje;
+  showModal('modal-bloqueio');
+}
+
+function salvarBloqueio() {
+  var inicio = document.getElementById('bloq-inicio')?.value;
+  var fim    = document.getElementById('bloq-fim')?.value;
+  var motivo = document.getElementById('bloq-motivo')?.value || 'folga';
+  var obs    = document.getElementById('bloq-obs')?.value.trim() || '';
+  if (!inicio || !fim) { showToast('Informe as datas do bloqueio.'); return; }
+  if (fim < inicio)    { showToast('A data final deve ser igual ou posterior à inicial.'); return; }
+  bloqueios.push({ id: Date.now(), inicio: inicio, fim: fim, motivo: motivo, obs: obs });
+  bloqueios.sort(function(a,b){ return a.inicio.localeCompare(b.inicio); });
+  salvarBloqueios();
+  closeModal('modal-bloqueio');
+  renderBloqueiosList();
+  showToast('✓ Bloqueio salvo — ' + formatarDataBR(inicio) + (fim !== inicio ? ' a ' + formatarDataBR(fim) : ''));
+}
+
+function removerBloqueio(id) {
+  bloqueios = bloqueios.filter(function(b){ return b.id !== id; });
+  salvarBloqueios();
+  renderBloqueiosList();
+  showToast('Bloqueio removido.');
+}
+
+function renderBloqueiosList() {
+  var el = document.getElementById('bloqueios-list');
+  if (!el) return;
+  if (!bloqueios.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Nenhum bloqueio cadastrado.</div>';
+    return;
+  }
+  var motivoLabel = { ferias:'Férias', feriado:'Feriado', folga:'Folga', congresso:'Congresso/curso', outro:'Outro' };
+  var hoje = hojeISO();
+  el.innerHTML = bloqueios.map(function(b) {
+    var passado = b.fim < hoje;
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:' + (passado ? 'var(--bg)' : 'var(--amber-light)') + ';opacity:' + (passado ? '.6' : '1') + '">' +
+      '<div style="font-size:20px">' + (b.motivo==='ferias'?'🏖':b.motivo==='feriado'?'🎉':b.motivo==='congresso'?'📚':'🚫') + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-weight:500;font-size:13.5px">' + (motivoLabel[b.motivo]||'Bloqueio') + (b.obs ? ' — ' + escHTML(b.obs) : '') + '</div>' +
+        '<div style="font-size:12px;color:var(--muted)">' + formatarDataBR(b.inicio) + (b.fim !== b.inicio ? ' → ' + formatarDataBR(b.fim) : '') + '</div>' +
+      '</div>' +
+      '<button onclick="removerBloqueio(' + b.id + ')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:4px" title="Remover">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function formatarDataBR(iso) {
+  if (!iso) return '—';
+  var p = iso.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+function isDiaBlockeado(dateIso) {
+  return bloqueios.some(function(b){ return dateIso >= b.inicio && dateIso <= b.fim; });
+}
+function _motivoBloqueio(dateIso) {
+  var motivoLabel = { ferias:'Férias', feriado:'Feriado', folga:'Folga', congresso:'Congresso/curso', outro:'Outro' };
+  var b = bloqueios.find(function(b){ return dateIso >= b.inicio && dateIso <= b.fim; });
+  if (!b) return 'Bloqueado';
+  return (motivoLabel[b.motivo] || 'Bloqueio') + (b.obs ? ': ' + b.obs : '');
+}
+
+// ── INIT: renderPatients é chamado via navigate() ──
+
+// ── SUPERVISÃO IA ──
+let supActivated = (function() {
+  try { var v = localStorage.getItem('tf_sup_activated'); return v === null ? true : v === 'true'; } catch(e) { return true; }
+})();
+
+function _salvarSupActivated() {
+  try { localStorage.setItem('tf_sup_activated', String(supActivated)); } catch(e) {}
+}
