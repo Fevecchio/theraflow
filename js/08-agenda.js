@@ -30,6 +30,7 @@ function marcarPresenca(apptId, tipo) {
 function _ofereceCobrancaPresenca(appt) {
   // Só cria se ainda não existir cobrança para esta data/paciente
   var p = patients[appt.patientIdx];
+  if (!p || (appt.patientName && p.name !== appt.patientName)) p = patients.find(function(x){ return x.name === appt.patientName; }) || p;
   if (!p) return;
   var hoje = appt.date || hojeISO();
   var jaExiste = charges.some(function(c){
@@ -80,6 +81,7 @@ function _promptNotaRapida(appt) {
   var existing = document.getElementById('modal-nota-rapida');
   if (existing) existing.remove();
   var p = patients[appt.patientIdx];
+  if (!p || (appt.patientName && p.name !== appt.patientName)) p = patients.find(function(x){ return x.name === appt.patientName; }) || p;
   if (!p) return;
   var overlay = document.createElement('div');
   overlay.id = 'modal-nota-rapida';

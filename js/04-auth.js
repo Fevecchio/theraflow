@@ -91,6 +91,7 @@ function _proceedToApp(account) {
     document.getElementById('tf-app-layer').style.display = 'flex';
     carregarPacientes();
     carregarAppointments();
+    charges = carregarCharges();
     aplicarDadosNoApp();
     checkFirstPatientBanner();
     atualizarTrialUI();

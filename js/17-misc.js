@@ -275,7 +275,7 @@ function simulateTranscript() {
       const l = transcriptLines[tIdx];
       const d = document.createElement('div');
       d.className = 'transcript-line fade-in' + (l.flag ? ' flagged' : '');
-      d.innerHTML = `<span class="who ${l.cls}">${l.label[0]}</span><span class="transcript-text">${l.text}${l.flag ? `<span class="transcript-flag-badge">✦ ${l.flagLabel}</span>` : ''}</span>`;
+      d.innerHTML = `<span class="who ${l.cls}">${escHTML(l.label[0])}</span><span class="transcript-text">${escHTML(l.text)}${l.flag ? `<span class="transcript-flag-badge">✦ ${escHTML(l.flagLabel)}</span>` : ''}</span>`;
       feed.appendChild(d); feed.scrollTop = feed.scrollHeight;
       sessionTranscriptLogged.push(l);
       const marcos = sessionTranscriptLogged.filter(l => l.flag).length;

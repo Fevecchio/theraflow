@@ -172,7 +172,7 @@ async function _supaSync_appointments() {
     const { error: delError } = await supa.from('appointments')
       .delete()
       .eq('user_id', user.id)
-      .not('local_id', 'in', `(${localIds.map(id => `"${id}"`).join(',')})`);
+      .not('local_id', 'in', localIds);
     if (delError) throw delError;
   } catch(e) {
     _syncErrorCount++;

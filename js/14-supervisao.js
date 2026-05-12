@@ -1109,7 +1109,7 @@ function selecionarProntuario(i, el) {
         const card = document.createElement('div');
         card.className = 'card card-sm injected-note fade-in';
         card.style.borderLeft = '3px solid var(--sage)';
-        card.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:500">Sessão ${p.sessions - ni} — ${n.date}</span><span class="tag tag-green">Indexada</span></div><p style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">${n.text}</p>`;
+        card.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:500">Sessão ${p.sessions - ni} — ${escHTML(n.date)}</span><span class="tag tag-green">Indexada</span></div><p style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">${escHTML(n.text)}</p>`;
         container.insertBefore(card, container.firstChild);
       });
     }
