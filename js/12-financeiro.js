@@ -371,11 +371,13 @@ function editField(el, chargeId, field) {
   const save = () => {
     const newVal = input.value.trim();
     if (field === 'value') {
-      const num = parseInt(newVal);
-      if (!isNaN(num) && num > 0) {
+      const num = parseFloat(newVal);
+      if (!isNaN(num) && num > 0 && num < 100000) {
         charge.value = num;
         salvarCharges();
         showToast(`Valor de ${charge.patient} alterado para R$${num}.`);
+      } else if (!isNaN(num) && num <= 0) {
+        showToast('⚠ O valor da sessão deve ser maior que zero.');
       }
     } else {
       if (newVal.length >= 4) {

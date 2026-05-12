@@ -114,6 +114,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
+  // C3: idempotência — ignora evento já processado (Stripe pode reenviar o mesmo event.id)
+  const alreadyProcessed = await supaGet(`processed_webhooks?stripe_event_id=eq.${encodeURIComponent(event.id)}&select=stripe_event_id`);
+  if (Array.isArray(alreadyProcessed) && alreadyProcessed.length > 0) {
+    return res.status(200).json({ received: true, skipped: true });
+  }
+
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
@@ -133,6 +139,18 @@ export default async function handler(req, res) {
         console.log(`[webhook] plano=trial para supaId=${supaId}`);
       }
     }
+
+    // Registra evento como processado
+    await fetch(`${SUPA_URL}/rest/v1/processed_webhooks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({ stripe_event_id: event.id }),
+    });
   } catch (err) {
     console.error('[webhook] Handler error:', err.message);
     return res.status(500).json({ error: err.message });

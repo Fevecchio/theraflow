@@ -151,6 +151,8 @@ function sairDaConta() {
     window._tfDemo = false;
     _tfPlanPro = false;
     _hideDemoBanner();
+    // Remove conta demo do localStorage para não persistir plano entre sessões
+    localStorage.removeItem('tf_account');
   }
   supa.auth.signOut().catch(() => {});
   document.getElementById('tf-app-layer').style.display        = 'none';

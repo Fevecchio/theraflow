@@ -50,6 +50,11 @@ export default async function handler(req, res) {
   const { email, supaId } = req.body || {};
   if (!email) return res.status(400).json({ error: 'email is required' });
 
+  // C1: garante que o supaId do body pertence ao JWT do caller
+  if (supaId && supaId !== caller.id) {
+    return res.status(403).json({ error: 'Forbidden: supaId não corresponde ao usuário autenticado' });
+  }
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
   try {

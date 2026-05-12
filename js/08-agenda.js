@@ -230,6 +230,11 @@ function confirmarAgendamento() {
   var recVal    = recorr?.value || 'nenhuma';
   var colorIdx  = pidx % APPT_COLORS.length;
 
+  // Aviso de data no passado
+  if (dataVal < hojeISO()) {
+    if (!confirm('⚠ Você está agendando para uma data no passado (' + dataVal.split('-').reverse().join('/') + ').\nDeseja continuar mesmo assim?')) return;
+  }
+
   // Aviso de bloqueio de horário
   if (isDiaBlockeado(dataVal)) {
     var motivo = _motivoBloqueio ? _motivoBloqueio(dataVal) : 'Dia bloqueado';

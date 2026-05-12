@@ -60,7 +60,6 @@ async function _supaSync_patients() {
         mood: p.mood || null,
         fin: p.fin || null,
         forma_pagamento: p.forma_pagamento || null,
-        portalPassword: p.portalPassword || null,
         portalPasswordHash: p.portalPasswordHash || null,
         anamnese: p.anamnese || null,
         portalAnamneseAtiva: p.portalAnamneseAtiva || false,

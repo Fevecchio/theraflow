@@ -165,6 +165,7 @@ function excluirPaciente(idx) {
   if (p.id) {
     supa.from('patients').delete().eq('id', p.id).catch(function(e) {
       console.warn('[LGPD] Falha ao excluir paciente do Supabase:', e.message);
+      showToast('⚠ Dados removidos localmente, mas a exclusão na nuvem falhou. Verifique sua conexão e tente novamente.');
     });
   }
 

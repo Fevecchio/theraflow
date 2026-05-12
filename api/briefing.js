@@ -18,7 +18,6 @@ const ALLOWED_ORIGINS = [
 function isAllowedOrigin(origin) {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (/^https:\/\/theraflow[^.]*\.vercel\.app$/.test(origin)) return true;
   return false;
 }
 
