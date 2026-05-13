@@ -246,8 +246,8 @@ async function redefinirSenhaPaciente(i) {
   p.portalPasswordHash = await _portalHash(nova.trim());
   salvarPacientes();
   var el = document.getElementById('pac-senha-display-' + i);
-  if (el) el.textContent = p.portalPassword;
-  showToast('Senha atualizada: ' + p.portalPassword);
+  if (el) { el.dataset.real = p.portalPassword; el.dataset.visible = '0'; el.textContent = '••••••'; }
+  showToast('Senha atualizada.');
 }
 
 async function compartilharAcessoPortal(i) {
@@ -501,6 +501,11 @@ async function _supaPatientSync() {
 }
 
 function carregarPacientes() {
+  // Demo mode always uses fresh DEMO_PATIENTS — localStorage may have stale data with sessions:0
+  if (window._tfDemo) {
+    patients = JSON.parse(JSON.stringify(DEMO_PATIENTS));
+    return;
+  }
   try {
     const raw = localStorage.getItem('tf_patients');
     if (raw) {
@@ -589,6 +594,8 @@ function _recalcNextSessions() {
 }
 
 function _recalcSessions() {
+  // Demo patients have accurate sessions in DEMO_PATIENTS — don't overwrite with appointment counts
+  if (window._tfDemo) return;
   // Conta sessões realizadas a partir de appointments com presença='compareceu'
   // Só atualiza se o valor de appointments for >= ao armazenado (não regride)
   if (typeof appointments === 'undefined') return;
@@ -600,7 +607,10 @@ function _recalcSessions() {
   });
   patients.forEach(function(p, i) {
     var contAppt = contadores[i] || 0;
-    p.sessions = contAppt;
+    // Só sobrescreve sessions se há dados reais de presença para o paciente;
+    // caso contrário preserva o valor existente (ex.: dados demo).
+    var hasPresenca = appointments.some(function(a){ return a.patientIdx === i && a.presenca; });
+    if (hasPresenca) p.sessions = contAppt;
   });
 }
 
@@ -915,8 +925,9 @@ function selectPatient(i, el) {
         <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
         <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
           <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
-          <div>Senha: <strong id="pac-senha-display-${i}">${escHTML(p.portalPassword || _firstName(p.name).toLowerCase())}</strong>
-            <button onclick="redefinirSenhaPaciente(${i})" style="margin-left:8px;background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
+          <div style="display:flex;align-items:center;gap:6px">Senha: <strong id="pac-senha-display-${i}" data-real="${escHTML(p.portalPassword || _firstName(p.name).toLowerCase())}" data-visible="0">••••••</strong>
+            <button onclick="_toggleSenhaPortal(${i})" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px" title="Mostrar/ocultar senha">👁</button>
+            <button onclick="redefinirSenhaPaciente(${i})" style="background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
           </div>
           <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 Compartilhar acesso via WhatsApp</button>
           <button onclick="revogarPortalPaciente(${i})" style="margin-top:4px;display:flex;align-items:center;gap:6px;background:none;border:1px solid rgba(220,38,38,.3);color:#dc2626;border-radius:7px;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">🚫 Desativar acesso ao portal</button>
@@ -939,6 +950,18 @@ function selectPatient(i, el) {
         ✕ Excluir paciente
       </button>
     </div>`;
+}
+
+function _toggleSenhaPortal(i) {
+  var el = document.getElementById('pac-senha-display-' + i);
+  if (!el) return;
+  if (el.dataset.visible === '1') {
+    el.textContent = '••••••';
+    el.dataset.visible = '0';
+  } else {
+    el.textContent = el.dataset.real || '••••••';
+    el.dataset.visible = '1';
+  }
 }
 
 // ── SESSÃO / TIMER ──
