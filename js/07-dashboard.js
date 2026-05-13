@@ -164,9 +164,9 @@ function atualizarDashboard() {
   if (greeting) {
     var _hora = agora.getHours();
     var _saudacao = _hora < 12 ? 'Bom dia' : _hora < 18 ? 'Boa tarde' : 'Boa noite';
-    var _nomeT = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome)
-      ? ', ' + tfUserData.nome.split(' ')[0]
-      : '';
+    var _nomeRawG = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome : '';
+    var _nomePartsG = _nomeRawG.split(' ').filter(function(w){ return !/^(Dr|Dra|Prof|Profa|Me)\.?$/i.test(w); });
+    var _nomeT = _nomePartsG[0] ? ', ' + _nomePartsG[0] : '';
     greeting.textContent = _saudacao + _nomeT + ' 👋';
   }
 
