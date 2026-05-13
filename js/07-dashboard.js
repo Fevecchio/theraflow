@@ -50,7 +50,9 @@ function enviarLembretesSessoesDia() {
   var tpl = acc.wpp_template || '';
   var links = [];
   var semWpp = 0;
-  var nomeT = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
+  var _nTRaw = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome : '';
+  var _nTParts = _nTRaw.split(' ').filter(function(w){ return !/^(Dr|Dra|Prof|Profa|Me)\.?$/i.test(w); });
+  var nomeT = _nTParts[0] || 'sua terapeuta';
   sessoesHoje.forEach(function(a) {
     var p = patients[a.patientIdx];
     if (!p || !p.whatsapp) { semWpp++; return; }
@@ -105,7 +107,9 @@ function enviarLembretesAmanha() {
   if (!sessoes.length) { showToast('Nenhuma sessão agendada para amanhã.'); return; }
 
   // Monta modal de preview
-  var nomeT = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
+  var _nTRaw2 = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome : '';
+  var _nTParts2 = _nTRaw2.split(' ').filter(function(w){ return !/^(Dr|Dra|Prof|Profa|Me)\.?$/i.test(w); });
+  var nomeT = _nTParts2[0] || 'sua terapeuta';
   var _accA = {}; try { _accA = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
   var tplA = _accA.wpp_template || '';
   var itens = sessoes.map(function(a, idx) {
@@ -155,17 +159,28 @@ function atualizarDashboard() {
     .filter(a => a.date === hojeIso && a.status !== 'cancelada')
     .sort((a,b) => a.time < b.time ? -1 : 1);
 
+  // Atualiza greeting com nome real do terapeuta
+  const greeting = document.getElementById('dash-greeting');
+  if (greeting) {
+    var _hora = agora.getHours();
+    var _saudacao = _hora < 12 ? 'Bom dia' : _hora < 18 ? 'Boa tarde' : 'Boa noite';
+    var _nomeT = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome)
+      ? ', ' + tfUserData.nome.split(' ')[0]
+      : '';
+    greeting.textContent = _saudacao + _nomeT + ' 👋';
+  }
+
   const subtitle = document.getElementById('dash-subtitle');
   if (subtitle) {
     const dataFmt = `${dias[agora.getDay()]}, ${agora.getDate()} de ${meses[agora.getMonth()]} de ${agora.getFullYear()}`;
-    subtitle.textContent = dataFmt + (sessoesHoje.length > 0 ? ` · ${sessoesHoje.length} sessão${sessoesHoje.length!==1?'es':''} hoje` : ' · Sem sessões hoje');
+    subtitle.textContent = dataFmt + (sessoesHoje.length > 0 ? ` · ${sessoesHoje.length} ${sessoesHoje.length!==1?'sessões':'sessão'} hoje` : ' · Sem sessões hoje');
   }
 
   // Renderiza lista "Sessões de hoje"
   _renderDashSessoesHoje(sessoesHoje);
 
-  // ── Stat: pacientes ativos
-  const ativos = patients.filter(p => p.status === 'Ativa').length;
+  // ── Stat: pacientes ativos ('Atenção' também é ativo)
+  const ativos = patients.filter(p => p.status === 'Ativa' || p.status === 'Atenção').length;
   const novos  = patients.filter(p => p.status === 'Nova').length;
   const elAtivos = document.getElementById('stat-pacientes-ativos');
   const elDelta  = document.getElementById('stat-pacientes-delta');

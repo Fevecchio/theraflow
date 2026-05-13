@@ -119,7 +119,7 @@ function hideForgotPassword() {
 async function sendForgotPassword() {
   const emailInput = document.getElementById('forgot-email');
   const email = emailInput.value.trim();
-  if (!email) { emailInput.focus(); return; }
+  if (!email) { showToast('⚠ Informe seu e-mail de cadastro.'); emailInput.focus(); emailInput.style.borderColor='#e74c3c'; return; }
   const btn = document.querySelector('#tf-forgot-screen button[onclick*="sendForgotPassword"]');
   if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
   const { error } = await supa.auth.resetPasswordForEmail(email).catch(() => ({ error: { message: 'Erro de rede' } }));

@@ -186,7 +186,7 @@ function _gerarAppointmentsDemo() {
     {h:'09:00', di:1, pi:0, abordagem:'TCC', cor:'appt-green'},           // ter (hoje)
     {h:'11:00', di:1, pi:1, abordagem:'Psicanálise', cor:'appt-blue'},    // ter
     {h:'14:00', di:1, pi:2, abordagem:'TCC', cor:'appt-amber'},           // ter
-    {h:'09:00', di:2, pi:3, abordagem:'Gestalt', cor:'appt-amber'},       // qua
+    {h:'09:00', di:2, pi:3, abordagem:'Sistêmica', cor:'appt-amber'},      // qua
     {h:'11:00', di:2, pi:4, abordagem:'TCC', cor:'appt-green'},           // qua
     {h:'14:00', di:2, pi:0, abordagem:'TCC', cor:'appt-green'},           // qua
     {h:'10:00', di:3, pi:5, abordagem:'Avaliação', cor:'appt-amber'},     // qui
@@ -211,6 +211,46 @@ function _gerarAppointmentsDemo() {
   });
 }
 
+function _mostrarOpcoesAppt(pi, apptId) {
+  var existente = document.getElementById('_appt-opts-popup');
+  if (existente) existente.remove();
+  var a = (typeof appointments !== 'undefined' ? appointments : []).find(function(ap){ return ap.id == apptId; });
+  var p = (typeof patients !== 'undefined' ? patients : [])[pi];
+  if (!p) return;
+  var popup = document.createElement('div');
+  popup.id = '_appt-opts-popup';
+  popup.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.35);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+  popup.innerHTML = '<div style="background:#fff;border-radius:14px;padding:20px 24px;max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      + '<div><div style="font-weight:600;font-size:15px;color:#1a1a1a">'+escHTML(p.name)+'</div>'
+      + '<div style="font-size:12px;color:var(--muted)">'+(a ? escHTML(a.abordagem || '—')+' · '+a.time : '—')+'</div></div>'
+      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:#999;padding:0;line-height:1">✕</button>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();currentSessionPatientIdx='+pi+';navigate(\'sessao\')" style="width:100%;padding:10px;background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">▶ Iniciar sessão agora</button>'
+      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="width:100%;padding:10px;background:var(--purple-light,#f0ecfa);color:var(--purple,#5a3e8a);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">✦ Briefing IA</button>'
+      + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();reagendarAppointment('+apptId+')" style="width:100%;padding:10px;background:#f5f5f5;color:#555;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left">↻ Reagendar</button>' : '')
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(popup);
+  popup.addEventListener('click', function(e){ if(e.target===popup) popup.remove(); });
+}
+
+function _agendaConfirm(msg, onConfirm) {
+  var over = document.createElement('div');
+  over.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+  over.innerHTML = '<div style="background:#fff;border-radius:14px;padding:24px 28px;max-width:380px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
+    + '<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#1a1a1a;white-space:pre-line">'+escHTML(msg)+'</p>'
+    + '<div style="display:flex;gap:10px;justify-content:flex-end">'
+    + '<button class="_aga-cancel" style="padding:9px 18px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:#555">Cancelar</button>'
+    + '<button class="_aga-ok" style="padding:9px 18px;background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Continuar</button>'
+    + '</div></div>';
+  document.body.appendChild(over);
+  over.querySelector('._aga-cancel').addEventListener('click', function(){ over.remove(); });
+  over.querySelector('._aga-ok').addEventListener('click', function(){ over.remove(); onConfirm(); });
+  over.addEventListener('click', function(e){ if(e.target===over) over.remove(); });
+}
+
 function confirmarAgendamento() {
   var sel    = document.getElementById('agendar-paciente-select');
   var data   = document.getElementById('agendar-data');
@@ -229,17 +269,7 @@ function confirmarAgendamento() {
   var durVal    = parseInt(dur?.value || '50');
   var recVal    = recorr?.value || 'nenhuma';
   var colorIdx  = pidx % APPT_COLORS.length;
-
-  // Aviso de data no passado
-  if (dataVal < hojeISO()) {
-    if (!confirm('⚠ Você está agendando para uma data no passado (' + dataVal.split('-').reverse().join('/') + ').\nDeseja continuar mesmo assim?')) return;
-  }
-
-  // Aviso de bloqueio de horário
-  if (isDiaBlockeado(dataVal)) {
-    var motivo = _motivoBloqueio ? _motivoBloqueio(dataVal) : 'Dia bloqueado';
-    if (!confirm('⛔ Atenção: ' + dataVal.split('-').reverse().join('/') + ' está bloqueado (' + motivo + ').\nDeseja agendar mesmo assim?')) return;
-  }
+  var dataBR    = dataVal.split('-').reverse().join('/');
 
   // Verificar conflito de horário (± 30 min)
   var horaMin = parseInt(horaVal.split(':')[0])*60 + parseInt(horaVal.split(':')[1]);
@@ -248,47 +278,63 @@ function confirmarAgendamento() {
     var aMin = parseInt((a.time||'00:00').split(':')[0])*60 + parseInt((a.time||'00:00').split(':')[1]);
     return Math.abs(aMin - horaMin) < 30;
   });
+
+  // Monta lista de avisos para confirmação
+  var avisos = [];
+  if (dataVal < hojeISO()) {
+    avisos.push('⚠ Você está agendando para uma data no passado (' + dataBR + ').\nDeseja continuar mesmo assim?');
+  }
+  if (isDiaBlockeado(dataVal)) {
+    var motivo = typeof _motivoBloqueio === 'function' ? _motivoBloqueio(dataVal) : 'Dia bloqueado';
+    avisos.push('⛔ Atenção: ' + dataBR + ' está bloqueado (' + motivo + ').\nDeseja agendar mesmo assim?');
+  }
   if (conflito) {
-    if (!confirm('⚠ Já existe sessão de ' + escHTML(conflito.patientName) + ' às ' + conflito.time + ' neste dia.\nDeseja agendar mesmo assim?')) return;
+    avisos.push('⚠ Já existe sessão de ' + conflito.patientName + ' às ' + conflito.time + ' neste dia.\nDeseja agendar mesmo assim?');
   }
 
-  // Gera ocorrências se recorrente (até 8 semanas)
-  var datas = [dataVal];
-  if (recVal === 'semanal')    { for(var w=1;w<=7;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*7); datas.push(localDateISO(nd)); } }
-  if (recVal === 'quinzenal')  { for(var w=1;w<=4;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*14); datas.push(localDateISO(nd)); } }
-  if (recVal === 'mensal')     { for(var w=1;w<=2;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setMonth(nd.getMonth()+w); datas.push(localDateISO(nd)); } }
+  function _executar() {
+    var datas = [dataVal];
+    if (recVal === 'semanal')    { for(var w=1;w<=7;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*7); datas.push(localDateISO(nd)); } }
+    if (recVal === 'quinzenal')  { for(var w=1;w<=4;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*14); datas.push(localDateISO(nd)); } }
+    if (recVal === 'mensal')     { for(var w=1;w<=2;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setMonth(nd.getMonth()+w); datas.push(localDateISO(nd)); } }
 
-  datas.forEach(function(dt, i){
-    appointments.push({
-      id: Date.now() + i,
-      patientIdx: pidx,
-      patientName: p.name,
-      date: dt,
-      time: horaVal,
-      duration: durVal,
-      abordagem: p.abordagem || 'TCC',
-      color: APPT_COLORS[colorIdx],
-      status: 'agendada',
-      recorrencia: recVal
+    datas.forEach(function(dt, i){
+      appointments.push({
+        id: Date.now() + i,
+        patientIdx: pidx,
+        patientName: p.name,
+        date: dt,
+        time: horaVal,
+        duration: durVal,
+        abordagem: p.abordagem || 'TCC',
+        color: APPT_COLORS[colorIdx],
+        status: 'agendada',
+        recorrencia: recVal
+      });
     });
-  });
 
-  // Atualiza p.next com a data mais próxima
-  var proxima = datas[0];
-  var parts = proxima.split('-');
-  p.next = parts[2]+'/'+parts[1]+'/'+parts[0];
-  salvarPacientes();
-  _salvarAppointments();
-  tfTrack('session_scheduled', { recorrencia: recVal, occurrences: datas.length });
+    var proxima = datas[0];
+    var parts = proxima.split('-');
+    p.next = parts[2]+'/'+parts[1]+'/'+parts[0];
+    salvarPacientes();
+    _salvarAppointments();
+    tfTrack('session_scheduled', { recorrencia: recVal, occurrences: datas.length });
 
-  document.getElementById('modal-agendar')?.remove();
-  var msg = recVal !== 'nenhuma'
-    ? '✅ ' + datas.length + ' sessões agendadas (' + recVal + ')!'
-    : '✅ Sessão agendada para ' + horaVal + ' · ' + _firstName(p.name) + '!';
-  showToast(msg);
-  if (agendaCurrentView === 'dia') renderDayView();
-  else if (agendaCurrentView === 'semana') renderWeekView();
-  else renderMonthView();
+    document.getElementById('modal-agendar')?.remove();
+    var toastMsg = recVal !== 'nenhuma'
+      ? '✅ ' + datas.length + ' sessões agendadas (' + recVal + ')!'
+      : '✅ Sessão agendada para ' + horaVal + ' · ' + _firstName(p.name) + '!';
+    showToast(toastMsg);
+    if (agendaCurrentView === 'dia') renderDayView();
+    else if (agendaCurrentView === 'semana') renderWeekView();
+    else renderMonthView();
+  }
+
+  function _processarAvisos(idx) {
+    if (idx >= avisos.length) { _executar(); return; }
+    _agendaConfirm(avisos[idx], function(){ _processarAvisos(idx + 1); });
+  }
+  _processarAvisos(0);
 }
 
 function cancelarAppointment(id) {
@@ -461,7 +507,7 @@ function renderDayView() {
           }
           return '<div class="'+escHTML(a.color)+' appt-block" style="display:flex;flex-direction:column;gap:5px;margin-bottom:4px;padding:8px">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
-              + '<div onclick="currentSessionPatientIdx='+pi+';navigate(\'sessao\')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong><br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
+              + '<div onclick="event.stopPropagation();_mostrarOpcoesAppt('+pi+','+a.id+')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong><br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
               + '<div style="display:flex;gap:4px;flex-shrink:0">'
                 + '<button class="btn btn-purple btn-sm" onclick="event.stopPropagation();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="font-size:10px;padding:3px 7px" title="Briefing IA">✦</button>'
                 + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();reagendarAppointment('+a.id+')" style="font-size:10px;padding:3px 7px" title="Reagendar">↻</button>'
@@ -487,7 +533,7 @@ function renderDayView() {
     var isHD = diso===iso;
     return '<div style="display:flex;justify-content:space-between;align-items:center">'
       + '<span style="font-size:13px;'+(isHD?'font-weight:600;color:var(--ink)':'color:var(--muted)')+'">'+diasAbrev[dd.getDay()]+' '+(isHoje?'(hoje)':'')+'</span>'
-      + '<span class="tag '+(cnt>0?'tag-green':'tag-gray')+'">'+cnt+' sessão'+(cnt!==1?'s':'')+'</span>'
+      + '<span class="tag '+(cnt>0?'tag-green':'tag-gray')+'">'+(cnt!==1?cnt+' sessões':cnt+' sessão')+'</span>'
       + '</div>';
   }).join('');
 
@@ -510,7 +556,7 @@ function renderDayView() {
       + '<div class="card">'
         + '<div class="section-header" style="margin-bottom:20px">'
           + '<div class="section-title">'+tituloData+'</div>'
-          + '<span class="tag '+(sessoesDia.length>0?'tag-blue':'tag-gray')+'">'+sessoesDia.length+' sessão'+(sessoesDia.length!==1?'s':'')+'</span>'
+          + '<span class="tag '+(sessoesDia.length>0?'tag-blue':'tag-gray')+'">'+(sessoesDia.length!==1?sessoesDia.length+' sessões':sessoesDia.length+' sessão')+'</span>'
         + '</div>'
         + '<div>'+slotsHtml+'</div>'
       + '</div>'

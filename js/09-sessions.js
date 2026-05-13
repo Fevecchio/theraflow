@@ -56,7 +56,7 @@ async function startSession() {
     const sfC = document.getElementById('sf-cid');
     if (sfA) sfA.textContent = sp.abordagem || '—';
     const _acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
-    const _isPro = _acc.plano === 'pro' || _acc.plano === 'clinic';
+    const _isPro = _acc.plano === 'pro' || _acc.plano === 'clinic' || _acc.plano === 'demo';
     if (sfS) sfS.textContent = _isPro
       ? `Sessão ${(sp.sessions||0)+1}`
       : `${(sp.sessions||0)+1} de 20 (trial)`;
@@ -521,6 +521,14 @@ function indexPostSession() {
   if (!noteText.trim()) {
     showToast('⚠ Adicione uma nota clínica antes de encerrar a sessão.');
     if (noteEl) noteEl.focus();
+    _sessionAlreadySaved = false;
+    return;
+  }
+  // Detecta placeholders não preenchidos (padrão [texto entre colchetes])
+  if (/\[[^\]]{3,}\]/.test(noteText)) {
+    _sessionAlreadySaved = false;
+    showToast('⚠ A nota ainda contém campos não preenchidos — revise os itens entre [ ].');
+    if (noteEl) noteEl.focus();
     return;
   }
   if (modal) modal.remove();
@@ -619,7 +627,8 @@ function showExercisePosSession() {
 
   const modal = document.createElement('div');
   modal.id = 'modal-exercise-pos';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  modal.addEventListener('click', function(e){ if(e.target===modal) fecharExercicioPos(); });
   modal.innerHTML = `
     <div style="background:#fff;border-radius:16px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.3)">
       <div style="padding:22px 28px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">

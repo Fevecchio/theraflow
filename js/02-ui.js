@@ -30,7 +30,9 @@ function closeSidebar() {
 function navigate(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
+  const _pageEl = document.getElementById('page-' + page);
+  if (!_pageEl) return;
+  _pageEl.classList.add('active');
   // Fecha sidebar no mobile ao navegar
   if (window.innerWidth <= 768) closeSidebar();
   // Ativa item correto na sidebar
@@ -43,7 +45,7 @@ function navigate(page) {
   // Mostra/oculta nota rápida FAB
   var fab = document.getElementById('quick-note-fab');
   if (fab) fab.style.display = ['dashboard','pacientes','prontuarios','briefing','supervisao','tarefas'].includes(page) ? 'flex' : 'none';
-  if (page === 'dashboard') { checkFirstPatientBanner(); atualizarDashboard(); setTimeout(verificarMarcos, 800); setTimeout(iniciarTour, 500); _startDashAutoRefresh(); }
+  if (page === 'dashboard') { checkFirstPatientBanner(); atualizarDashboard(); setTimeout(iniciarTour, 500); setTimeout(function(){ if (localStorage.getItem('tf_tour_done')) verificarMarcos(); }, 1200); _startDashAutoRefresh(); }
   else { _stopDashAutoRefresh(); }
   // Atualiza badges de nav
   _atualizarBadgeSupervisao();

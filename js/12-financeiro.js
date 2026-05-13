@@ -296,7 +296,14 @@ function renderFinInadimplencia() {
     html += '<div style="font-size:12px;color:var(--muted)">R$' + (parseFloat(c.value)||0).toFixed(0) + ' em aberto · ' + (c.date ? c.date.split('-').reverse().join('/') : '—') + '</div></div>';
     html += '</div></div>';
     html += '<div style="display:flex;flex-direction:column;gap:5px">';
-    if (wpp) html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppReminder(\'' + escHTML(c.patient||'') + '\')">📲 Lembrete</button>';
+    if (wpp) {
+      html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppCharge(\'' + escHTML(c.patient||'') + '\',' + (parseFloat(c.value)||0).toFixed(0) + ')">📲 Cobrar</button>';
+    } else if (p && p.email) {
+      html += '<a class="charge-btn charge-btn-wpp" href="mailto:' + escHTML(p.email) + '?subject=' + encodeURIComponent('Lembrete de pagamento') + '&body=' + encodeURIComponent('Olá ' + _firstName(c.patient||'') + ',\n\nPassando para lembrar sobre o pagamento de R$' + (parseFloat(c.value)||0).toFixed(0) + ' referente à sua sessão de psicoterapia.\n\nQualquer dúvida, estou à disposição.') + '" style="text-decoration:none">📧 Email</a>';
+    } else {
+      html += '<span style="font-size:11px;color:var(--muted);padding:4px 0">Sem contato</span>';
+    }
+    html += '<button class="charge-btn charge-btn-check" onclick="marcarPagoInad(' + c.id + ')">✓ Pago</button>';
     html += '</div></div>';
   });
   el.innerHTML = html;
@@ -424,6 +431,18 @@ function markAsPaid(btn) {
   btn.textContent = '✓ Marcado';
   btn.disabled = true;
   setTimeout(() => { item.style.opacity = '.5'; }, 1000);
+}
+
+function marcarPagoInad(chargeId) {
+  var charge = charges.find(function(c){ return String(c.id) === String(chargeId); });
+  if (!charge) return;
+  charge._prevStatus = charge.status;
+  charge.status = 'paid';
+  charge.paidDate = hojeISO();
+  salvarCharges();
+  renderFinInadimplencia();
+  atualizarStatsFinanceiro();
+  showToast('✓ Pagamento de ' + _firstName(charge.patient) + ' confirmado.');
 }
 
 function sendWppCharge(name, value) {
@@ -590,8 +609,14 @@ function lembreteInadimplentes() {
 
 function initFinanceiro() {
   _popularMesesFinanceiro();
-  renderCharges();
-  atualizarStatsFinanceiro();
+  var sel = document.getElementById('fin-month-select');
+  var mesAtual = sel ? sel.value : null;
+  if (mesAtual) {
+    filterFinMonth(mesAtual);
+  } else {
+    renderCharges();
+    atualizarStatsFinanceiro();
+  }
   // Atualiza label do botão de cobranças
   var pendentes = charges.filter(function(c){ return !c.deleted && (c.status==='pending'||c.status==='overdue'); }).length;
   var btnCobrar = document.getElementById('fin-btn-cobrar');
@@ -634,10 +659,11 @@ function atualizarStatsFinanceiro(mesFilter) {
   const receitaTotal = ativas.filter(c => c.status === 'paid').reduce((s, c) => s + c.value, 0);
   const aReceber    = ativas.filter(c => c.status === 'pending').reduce((s, c) => s + c.value, 0);
   const emAtraso    = ativas.filter(c => c.status === 'overdue').reduce((s, c) => s + c.value, 0);
+  const _fmtR = function(v) { return 'R$' + (v >= 1000 ? (v/1000).toFixed(1).replace('.',',')+'k' : Math.round(v).toLocaleString('pt-BR')); };
   const stats = document.querySelectorAll('#page-financeiro .stat-value');
-  if (stats[0]) countUp(stats[0], receitaTotal, 700);
-  if (stats[1]) countUp(stats[1], aReceber, 700);
-  if (stats[3]) countUp(stats[3], emAtraso, 700);
+  if (stats[0]) stats[0].textContent = _fmtR(receitaTotal);
+  if (stats[1]) stats[1].textContent = _fmtR(aReceber);
+  if (stats[3]) stats[3].textContent = _fmtR(emAtraso);
   // Tags de contagem
   var countPaid = ativas.filter(function(c){ return c.status==='paid'; }).length;
   var countPend = ativas.filter(function(c){ return c.status==='pending'; }).length;

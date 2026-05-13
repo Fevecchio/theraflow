@@ -1013,8 +1013,8 @@ function selecionarProntuario(i, el) {
     if (fields[0]) fields[0].innerHTML = `<label>CID principal</label><div style="font-size:14px;padding:9px 0">${p.cid !== '—' ? escHTML(p.cid) : 'Não informado'}</div>`;
     if (fields[1]) fields[1].innerHTML = `<label>Abordagem</label><div style="font-size:14px;padding:9px 0">${escHTML(p.abordagem || '—')}</div>`;
     if (fields[2]) fields[2].innerHTML = `<label>Frequência</label><div style="font-size:14px;padding:9px 0">—</div>`;
-    if (fields[3]) fields[3].innerHTML = `<label>Medicamentos</label><div style="font-size:14px;padding:9px 0">—</div>`;
-    if (fields[4]) fields[4].innerHTML = `<label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">${escHTML(p.notes || '—')}</div>`;
+    if (fields[3]) fields[3].innerHTML = `<label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">${escHTML(p.notes || '—')}</div>`;
+    if (fields[4]) fields[4].innerHTML = `<label>Medicamentos</label><div style="font-size:14px;padding:9px 0">—</div>`;
   }
 
   // ── Painel de evolução (sparkline de humor + stats)
@@ -1139,7 +1139,8 @@ function selecionarProntuario(i, el) {
           : a.presenca==='atrasou' ? '<span class="tag tag-amber" style="font-size:10px">Atrasou</span>'
           : nota ? '<span class="tag tag-green" style="font-size:10px">Nota indexada</span>'
           : '';
-        var numSessao = apptsPac.length - ai;
+        var _totalSessoesTl = (typeof p.sessions === 'number' && p.sessions > 0) ? p.sessions : apptsPac.length;
+        var numSessao = Math.max(1, _totalSessoesTl - ai);
         var dateBR = a.date.split('-').reverse().join('/');
         var moodHtml = '';
         if (p.moodHistory && p.moodHistory[apptsPac.length - ai - 1] !== undefined) {
@@ -1292,7 +1293,7 @@ function atualizarMetricasSupervisao() {
 
   // Hero
   const heroSub = document.querySelector('.sup-hero-sub');
-  if (heroSub) heroSub.textContent = `Análise baseada em ${totalSessoes} sessões realizadas · ${ativos.length} pacientes ativos`;
+  if (heroSub) heroSub.textContent = `Análise baseada em ${totalSessoes} ${totalSessoes !== 1 ? 'sessões' : 'sessão'} realizadas · ${ativos.length} ${ativos.length !== 1 ? 'pacientes' : 'paciente'} ${ativos.length !== 1 ? 'ativos' : 'ativo'}`;
 
   // Métricas
   const metCards = document.querySelectorAll('.sup-metric-value');
@@ -1302,6 +1303,24 @@ function atualizarMetricasSupervisao() {
   // Reflexões: conta a partir de localStorage (persistente)
   const reflCount = _loadReflections().length;
   if (metCards[3]) metCards[3].textContent = reflCount;
+  // Atualiza deltas dinamicamente (evita valores hardcoded no HTML)
+  const metDeltas = document.querySelectorAll('.sup-metric-delta');
+  if (metDeltas[0]) {
+    metDeltas[0].textContent = taxaEvolucao >= 60 ? 'Evolução saudável da carteira' : taxaEvolucao >= 30 ? 'Em progresso' : 'Poucos dados ainda';
+    metDeltas[0].className = 'sup-metric-delta' + (taxaEvolucao >= 60 ? ' up' : '');
+  }
+  if (metDeltas[1]) {
+    metDeltas[1].textContent = comAtencao > 0 ? '⚠ Atenção recomendada' : '✓ Sem alertas';
+    metDeltas[1].className = 'sup-metric-delta' + (comAtencao > 0 ? ' warn' : '');
+  }
+  if (metDeltas[2]) {
+    metDeltas[2].textContent = comAlerta > 0 ? 'Ver alertas abaixo' : '✓ Nenhum risco';
+    metDeltas[2].className = 'sup-metric-delta' + (comAlerta > 0 ? ' down' : '');
+  }
+  if (metDeltas[3]) {
+    metDeltas[3].textContent = reflCount > 0 ? 'Este mês' : 'Nenhuma ainda';
+    metDeltas[3].className = 'sup-metric-delta' + (reflCount > 0 ? ' up' : '');
+  }
 
   // Distribuição de estágios (Carteira)
   const iniciais    = patients.filter(p => p.sessions <= 4).length;
