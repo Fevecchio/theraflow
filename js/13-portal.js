@@ -993,7 +993,7 @@ function renderPatientDiario(p, idx) {
 
   var panelEsp = tabLabel
     ? '<div id="pac-diary-esp" style="display:none;padding:16px 18px">'
-        + (instrucao ? '<div style="background:var(--sage-light);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--sage);line-height:1.6">'+instrucao+'</div>' : '')
+        + (instrucao ? '<div style="background:#f4f7f5;border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:4px;font-size:12.5px;color:var(--ink-soft);line-height:1.6">'+instrucao+'</div>' : '')
         + formHtml.replace(/onclick="saveDiaryEsp\([^)]+\)"/g, 'onclick="pacSalvarDiario(\'esp\','+idx+')"')
         + '<div id="pac-diary-esp-list" style="display:flex;flex-direction:column;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"></div>'
       + '</div>'

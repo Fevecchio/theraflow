@@ -1087,23 +1087,46 @@ var DIARY_CONFIG = {
     tab: '🧠 Diário TCC',
     cor: 'var(--sage)',
     corLight: 'var(--sage-light)',
-    instrucao: '<strong>Como usar:</strong> Quando perceber uma emoção forte, pare e registre o que aconteceu. O importante é notar o padrão pensamento → emoção → comportamento.',
+    instrucao: '💡 Quando perceber uma emoção forte, pare e registre. O objetivo é reconhecer o padrão pensamento → emoção → comportamento.',
     html: function() {
-      return `<div style="display:flex;flex-direction:column;gap:12px">
-        <div><label class="diary-label">1. Situação</label>
-          <textarea id="esp-campo-1" placeholder="O que aconteceu? Onde estava, com quem, que horas?" rows="2" class="diary-ta"></textarea></div>
-        <div><label class="diary-label">2. Pensamento automático</label>
-          <textarea id="esp-campo-2" placeholder="O que passou pela sua cabeça naquele momento?" rows="2" class="diary-ta"></textarea></div>
-        <div><label class="diary-label">3. Emoção e intensidade</label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            ${['😰 Ansiedade','😢 Tristeza','😤 Raiva','😳 Vergonha','😨 Medo'].map(e=>`<button onclick="selectEmoTCC(this,'${e.split(' ')[1]}')" class="tcc-emocao-btn" style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s">${e}</button>`).join('')}
+      const stepBadge = (n, optional) => `<div style="width:22px;height:22px;border-radius:50%;background:${optional?'#e8f0eb':'var(--sage)'};color:${optional?'var(--sage)':'#fff'};font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${n}</div>`;
+      return `<div style="display:flex;flex-direction:column">
+        <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+            ${stepBadge(1,false)}
+            <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Situação</span>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>Intensidade</span><span id="tcc-intensidade-val">5/10</span></div>
-          <input type="range" min="1" max="10" value="5" style="-webkit-appearance:none;width:100%;height:5px;background:linear-gradient(90deg,#4a7c59 50%,#e8f0eb 50%);border-radius:10px;outline:none;" oninput="this.style.background='linear-gradient(90deg,#4a7c59 '+this.value*10+'%,#e8f0eb '+this.value*10+'%)';document.getElementById('tcc-intensidade-val').textContent=this.value+'/10'">
+          <textarea id="esp-campo-1" placeholder="O que aconteceu? Onde estava, com quem, que horas?" rows="3" class="diary-ta"></textarea>
         </div>
-        <div><label class="diary-label">4. Pensamento alternativo <span style="font-weight:400;text-transform:none">(opcional)</span></label>
-          <textarea id="esp-campo-3" placeholder="Existe uma forma diferente de ver essa situação?" rows="2" class="diary-ta"></textarea></div>
-        <div style="display:flex;justify-content:flex-end">
+        <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+            ${stepBadge(2,false)}
+            <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Pensamento automático</span>
+          </div>
+          <textarea id="esp-campo-2" placeholder="O que passou pela sua cabeça naquele momento?" rows="3" class="diary-ta"></textarea>
+        </div>
+        <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+            ${stepBadge(3,false)}
+            <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Emoção e intensidade</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px">
+            ${['😰 Ansiedade','😢 Tristeza','😤 Raiva','😳 Vergonha','😨 Medo'].map(e=>`<button onclick="selectEmoTCC(this,'${e.split(' ')[1]}')" class="tcc-emocao-btn" style="padding:9px 6px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:12.5px;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;line-height:1.4">${e}</button>`).join('')}
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--muted)">Intensidade</span>
+            <span id="tcc-intensidade-val" style="font-size:13px;font-weight:700;color:var(--sage)">5/10</span>
+          </div>
+          <input type="range" min="1" max="10" value="5" class="diary-slider" oninput="this.style.background='linear-gradient(90deg,var(--sage) '+this.value*10+'%,#e8f0eb '+this.value*10+'%)';document.getElementById('tcc-intensidade-val').textContent=this.value+'/10'">
+        </div>
+        <div style="padding:14px 0">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+            ${stepBadge(4,true)}
+            <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Pensamento alternativo <span style="font-weight:400;color:var(--muted);font-size:13px">(opcional)</span></span>
+          </div>
+          <textarea id="esp-campo-3" placeholder="Existe uma forma diferente de ver essa situação?" rows="3" class="diary-ta"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;padding-top:4px">
           <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('TCC')">💾 Salvar no diário</button>
         </div>
       </div>`;
