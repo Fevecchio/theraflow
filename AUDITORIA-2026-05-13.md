@@ -131,7 +131,7 @@ Pode referenciar paciente errado em condições de race.
 | ID | Status |
 |---|---|
 | A7 | ✅ Corrigido (commit b312cc7) |
-| A1 | ⏳ Pendente |
+| A1 | ✅ Corrigido (commit 5c98eae) |
 | C1 | ✅ Corrigido (commit b312cc7) |
 | C6 | ✅ Corrigido (commit b312cc7) |
 | A2 | ✅ Corrigido (commit b312cc7) |
@@ -159,9 +159,9 @@ Pode referenciar paciente errado em condições de race.
 | B7 | ✅ N/A — badge já oculta com 0 alertas; código correto |
 | E1 | ✅ Corrigido (commit 669225c) |
 | E2 | ✅ N/A — modal já tem click-outside handler (linha 648) |
-| E3 | ⏳ Pendente (cosmético, UX edge case) |
+| E3 | ✅ Corrigido (commit 5c98eae) |
 | E4 | ⏳ Pendente (cosmético, z-index já é 9999) |
 | F3 | ✅ Corrigido (commit b312cc7) |
 | G2 | ✅ N/A — auto-refresh só re-renderiza seção de sessões, não o dashboard todo |
-| G3 | ⏳ Pendente (cosmético, timeout demo) |
+| G3 | ✅ Corrigido (commit 5c98eae) |
 | G4 | ⏳ Pendente (cache fuso BRT — lógica parece correta, investigar em produção) |
