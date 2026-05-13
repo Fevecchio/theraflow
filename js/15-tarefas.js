@@ -229,7 +229,7 @@ function salvarNovaTarefa() {
     if (t) { t.title = titulo; t.patientName = paciente; t.dueDate = data; }
     showToast('Tarefa atualizada!');
   } else {
-    var newId = Date.now() + '-' + Math.random().toString(36).slice(2,5);
+    var newId = Date.now();
     tasks.push({ id: newId, title: titulo, patientName: paciente, dueDate: data, status: 'aberta', createdAt: hojeISO() });
     showToast('Tarefa criada!');
   }

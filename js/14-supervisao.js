@@ -396,7 +396,9 @@ function showAgendarModal(preData, preHora) {
     </div>
   `;
 
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); document.removeEventListener('keydown', _agendarEscHandler); } });
+  function _agendarEscHandler(e) { if (e.key === 'Escape') { var el = document.getElementById('modal-agendar'); if (el) el.remove(); document.removeEventListener('keydown', _agendarEscHandler); } }
+  document.addEventListener('keydown', _agendarEscHandler);
   document.body.appendChild(overlay);
 }
 
