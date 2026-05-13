@@ -149,17 +149,16 @@ function excluirPaciente(idx) {
   patients.splice(idx, 1);
   salvarPacientes();
 
-  // Remove e re-indexa appointments deste paciente
-  appointments = appointments.filter(function(a) { return a.patientIdx !== idx; });
+  // Remove e re-indexa appointments deste paciente (muta in-place para preservar referências)
+  var filteredAppts = appointments.filter(function(a) { return a.patientIdx !== idx; });
+  appointments.splice(0, appointments.length, ...filteredAppts);
   appointments.forEach(function(a) { if (a.patientIdx > idx) a.patientIdx--; });
-  localStorage.setItem('tf_appointments', JSON.stringify(appointments));
+  _salvarAppointments();
 
-  // Remove cobranças pelo nome do paciente
-  try {
-    var chgs = JSON.parse(localStorage.getItem('tf_charges') || '[]');
-    chgs = chgs.filter(function(c) { return c.patient !== p.name; });
-    localStorage.setItem('tf_charges', JSON.stringify(chgs));
-  } catch(e) {}
+  // Remove cobranças pelo nome do paciente (in-memory + localStorage + Supabase)
+  var filteredChgs = charges.filter(function(c) { return c.patient !== p.name; });
+  charges.splice(0, charges.length, ...filteredChgs);
+  salvarCharges();
 
   // Remove do Supabase (assíncrono, sem bloquear UI)
   if (p.id) {

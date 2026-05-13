@@ -412,10 +412,12 @@ document.addEventListener('DOMContentLoaded', function() {
     window._tfDemo = true;
     _tfPlanPro = true;
     _proceedToApp({ nome:'Dra. Ana Meireles', crp:'06/123456', email:'demo@theraflow.com.br', abordagem:'TCC', abordagemKey:'tcc', secundarias:['ACT','Humanista'], plano:'demo', sessoes_usadas:5 });
-    setTimeout(function() {
-      var b = document.getElementById('tf-demo-banner');
-      if (b) { b.style.display='flex'; document.body.style.paddingTop='40px'; var s=document.getElementById('main-sidebar'); if(s) s.style.top='40px'; }
-    }, 150);
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        var b = document.getElementById('tf-demo-banner');
+        if (b) { b.style.display='flex'; document.body.style.paddingTop='40px'; var s=document.getElementById('main-sidebar'); if(s) s.style.top='40px'; }
+      });
+    });
     document.querySelectorAll('.modal-overlay').forEach(function(m) {
       m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
     });

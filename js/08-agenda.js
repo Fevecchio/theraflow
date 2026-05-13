@@ -52,6 +52,8 @@ function _ofereceCobrancaPresenca(appt) {
   if (!valor) return; // sem valor configurado, silencioso
   // Toast com ação inline (aparece 1.5s após a nota rápida)
   setTimeout(function() {
+    var pg = document.getElementById('page-agenda');
+    if (!pg || !pg.classList.contains('active')) return;
     var diaFmt = hoje.split('-').reverse().join('/');
     var toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a2a1e;color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:12px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw';
