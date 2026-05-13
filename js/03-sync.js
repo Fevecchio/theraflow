@@ -161,10 +161,8 @@ async function _supaSync_appointments() {
       if (!user) return;
       const appts = JSON.parse(localStorage.getItem('tf_appointments') || '[]');
       const pats  = JSON.parse(localStorage.getItem('tf_patients') || '[]');
-      if (!appts.length) {
-        await supa.from('appointments').delete().eq('user_id', user.id);
-        return;
-      }
+      // Se lista local vazia, não deleta no Supabase — pode ser race condition na inicialização
+      if (!appts.length) return;
       const rows = appts.map(a => ({
         local_id: String(a.id),
         user_id: user.id,

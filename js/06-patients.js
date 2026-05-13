@@ -466,7 +466,8 @@ function salvarPacientes() {
 
 /* Sync de dados do paciente de volta para o Supabase (sessão do paciente) */
 async function _supaPatientSync() {
-  const p = _loggedPatientData || patients[0];
+  if (!_loggedPatientData) return; // Não executar no contexto do terapeuta
+  const p = _loggedPatientData;
   if (!p || !p.id) return;
   try {
     await supaPatient.from('patients').update({
@@ -484,7 +485,6 @@ async function _supaPatientSync() {
         mood: p.mood || null,
         fin: p.fin || null,
         forma_pagamento: p.forma_pagamento || null,
-        portalPassword: p.portalPassword || null,
         portalPasswordHash: p.portalPasswordHash || null,
         checkInStreak: p.checkInStreak || 0,
         lastCheckInDate: p.lastCheckInDate || null,
@@ -504,6 +504,25 @@ function carregarPacientes() {
   // Demo mode always uses fresh DEMO_PATIENTS — localStorage may have stale data with sessions:0
   if (window._tfDemo) {
     patients = JSON.parse(JSON.stringify(DEMO_PATIENTS));
+    // Corrige datas hardcoded (março) para serem relativas a hoje
+    var _dd = function(n) {
+      var d = new Date(); d.setDate(d.getDate() + n);
+      return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+    };
+    var _demoOff = [
+      {last:-7,  next:0},   // Camila: última semana, sessão hoje
+      {last:-22, next:2},   // Rafael: 3 semanas atrás, sessão depois de amanhã
+      {last:-16, next:3},   // Marcos: 2 semanas atrás, sessão em 3 dias
+      {last:-10, next:0},   // Juliana: semana passada, sessão hoje
+      {last:null,next:0},   // Lúcia: nova, avaliação hoje
+      {last:-20, next:2},   // Pedro: 3 semanas atrás, sessão depois de amanhã
+    ];
+    patients.forEach(function(p, i) {
+      var off = _demoOff[i];
+      if (!off) return;
+      if (off.last !== null) p.lastSession = _dd(off.last);
+      p.next = _dd(off.next);
+    });
     return;
   }
   try {
@@ -925,7 +944,7 @@ function selectPatient(i, el) {
         <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
         <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
           <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
-          <div style="display:flex;align-items:center;gap:6px">Senha: <strong id="pac-senha-display-${i}" data-real="${escHTML(p.portalPassword || _firstName(p.name).toLowerCase())}" data-visible="0">••••••</strong>
+          <div style="display:flex;align-items:center;gap:6px">Senha: <strong id="pac-senha-display-${i}" data-visible="0">••••••</strong>
             <button onclick="_toggleSenhaPortal(${i})" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px" title="Mostrar/ocultar senha">👁</button>
             <button onclick="redefinirSenhaPaciente(${i})" style="background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
           </div>
@@ -959,7 +978,8 @@ function _toggleSenhaPortal(i) {
     el.textContent = '••••••';
     el.dataset.visible = '0';
   } else {
-    el.textContent = el.dataset.real || '••••••';
+    var p = patients[i];
+    el.textContent = (p && (p.portalPassword || _firstName(p.name).toLowerCase())) || '••••••';
     el.dataset.visible = '1';
   }
 }
@@ -967,6 +987,7 @@ function _toggleSenhaPortal(i) {
 // ── SESSÃO / TIMER ──
 let timerInterval = null, sessionSeconds = 0;
 let currentSessionPatientIdx = 0;
+let currentSessionApptId = null; // ID do appointment que iniciou a sessão atual
 let currentPortalPatientIdx = 0;
 let currentPatientIdx = 0;
 let _editingExerciseId = null;

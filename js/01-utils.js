@@ -13,7 +13,7 @@ function showToast(msg, type) {
   toast.className = 'tf-toast';
   toast.innerHTML = `
     <span style="width:22px;height:22px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:#fff">${icon}</span>
-    <span style="flex:1;line-height:1.4">${msg}</span>
+    <span style="flex:1;line-height:1.4">${escHTML ? escHTML(msg) : msg}</span>
     <div class="tf-toast-bar" style="background:${color}40"></div>
   `;
   document.body.appendChild(toast);

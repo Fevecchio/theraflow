@@ -221,7 +221,7 @@ function preencherSelectPacientesTarefa(selectedName) {
 
 function salvarNovaTarefa() {
   var titulo = (document.getElementById('tarefa-titulo-input').value || '').trim();
-  if (!titulo) { document.getElementById('tarefa-titulo-input').style.borderColor='#e74c3c'; document.getElementById('tarefa-titulo-input').focus(); return; }
+  if (!titulo) { showToast('⚠ Informe o assunto da tarefa.'); document.getElementById('tarefa-titulo-input').style.borderColor='#e74c3c'; document.getElementById('tarefa-titulo-input').focus(); return; }
   var paciente = document.getElementById('tarefa-paciente-select').value;
   var data = document.getElementById('tarefa-data-input').value;
   if (editingTaskId !== null) {
@@ -229,7 +229,7 @@ function salvarNovaTarefa() {
     if (t) { t.title = titulo; t.patientName = paciente; t.dueDate = data; }
     showToast('Tarefa atualizada!');
   } else {
-    var newId = tasks.length > 0 ? Math.max.apply(null, tasks.map(function(t){ return t.id; })) + 1 : 1;
+    var newId = Date.now() + '-' + Math.random().toString(36).slice(2,5);
     tasks.push({ id: newId, title: titulo, patientName: paciente, dueDate: data, status: 'aberta', createdAt: hojeISO() });
     showToast('Tarefa criada!');
   }

@@ -217,7 +217,9 @@ function atualizarDashboard() {
   // ── Stat: notas — sessões desta semana sem nota
   const semNota = sessSemana > 0 ? Math.max(0, sessSemana - patients.reduce((acc,p)=>{
     return acc + (p.prontuarioNotes||[]).filter(n=>{
-      const nd = (n.date||'').split('/').reverse().join('-');
+      // Converte DD/MM (formato das notas) para YYYY-MM-DD para comparação ISO
+      const parts = (n.date||'').split('/');
+      const nd = parts.length >= 2 ? (parts[2] || new Date().getFullYear()) + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0') : '';
       return nd >= segIso && nd <= sexIso;
     }).length;
   },0)) : 0;

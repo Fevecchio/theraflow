@@ -104,26 +104,34 @@ function regenerarNotaSessao() {
   const note = document.getElementById('session-ai-note');
   if (!note) return;
   const sp = patients[currentSessionPatientIdx] || patients[0];
+  const nome = sp ? sp.name.split(' ')[0] : 'Paciente';
+  const abord = sp ? (sp.abordagem || 'terapêutica') : 'terapêutica';
+  const queixa = sp ? (sp.notes || '').replace(/\.$/, '').toLowerCase() : 'queixa principal';
   const variantes = [
-    `Paciente chegou com queixas de sobrecarga e autoexigência. Foram explorados padrões cognitivos disfuncionais com foco em reestruturação. Paciente demonstrou boa adesão ao processo e insight sobre os próprios mecanismos de defesa.`,
-    `Sessão focada em autoexigência e perfeccionismo. Paciente identificou crenças nucleares limitantes e demonstrou disposição para trabalhar o pensamento dicotômico. Exercício de registro de pensamentos proposto.`,
-    `Atendimento com bom vínculo terapêutico. Tema central: sobrecarga no trabalho e dificuldade em delegar. Técnica de questionamento socrático aplicada. Próxima sessão: revisar registro de pensamentos.`,
+    `${nome} chegou com evolução positiva no processo terapêutico. Abordagem ${abord} — foram explorados padrões relacionados a ${queixa}. Paciente demonstrou boa adesão e insight sobre os próprios mecanismos.`,
+    `Sessão com foco em ${queixa}. Paciente identificou padrões relevantes e demonstrou disposição para o trabalho de mudança. Intervenção ${abord} aplicada com boa receptividade.`,
+    `Atendimento com bom vínculo terapêutico. Tema central: ${queixa}. Técnicas de ${abord} aplicadas. Próxima sessão: revisar as estratégias combinadas hoje.`,
   ];
   const novo = variantes[Math.floor(Math.random() * variantes.length)];
   note.value = novo;
   showToast('✦ Nota regenerada pela IA');
 }
 
-const transcriptLines = [
-  { cls:'who-t', label:'Terapeuta', text:'Como você se sentiu esta semana? Conseguiu usar o diário?' },
-  { cls:'who-p', label:'Camila', text:'Usei quase todo dia. Percebi que fico ansiosa antes de apresentações no trabalho.', flag:false },
-  { cls:'who-t', label:'Terapeuta', text:'Que pensamentos aparecem antes dessas apresentações?' },
-  { cls:'who-p', label:'Camila', text:'Acho que vou travar, que vão me julgar, que não sei o suficiente… É muito intenso.', flag:true, flagLabel:'Crença nuclear' },
-  { cls:'who-t', label:'Terapeuta', text:'Você consegue identificar que distorção cognitiva pode ser isso?' },
-  { cls:'who-p', label:'Camila', text:'Leitura mental? Ou catastrofização? Aprendi sobre isso no diário.', flag:false },
-  { cls:'who-t', label:'Terapeuta', text:'Exato. E o que acontece quando você questiona esse pensamento?' },
-  { cls:'who-p', label:'Camila', text:'Fica mais leve. Mas na hora é difícil lembrar… acho que preciso de prática.', flag:true, flagLabel:'Marco terapêutico' },
-];
+function _getTranscriptLines() {
+  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const pLabel = sp ? sp.name.split(' ')[0] : 'Paciente';
+  return [
+    { cls:'who-t', label:'Terapeuta', text:'Como você se sentiu esta semana? Conseguiu usar as estratégias que combinamos?' },
+    { cls:'who-p', label:pLabel, text:'Tentei quase todo dia. Percebi padrões que não via antes.', flag:false },
+    { cls:'who-t', label:'Terapeuta', text:'Que pensamentos apareceram quando você tentou aplicar?' },
+    { cls:'who-p', label:pLabel, text:'Acho que ainda fico preso(a) na ruminação… é difícil sair desse ciclo.', flag:true, flagLabel:'Crença nuclear' },
+    { cls:'who-t', label:'Terapeuta', text:'Você consegue identificar o gatilho quando isso começa?' },
+    { cls:'who-p', label:pLabel, text:'Aprendi a perceber melhor. Quando percebo, já fico um pouco mais calmo(a).', flag:false },
+    { cls:'who-t', label:'Terapeuta', text:'E o que acontece quando você questiona esse pensamento?' },
+    { cls:'who-p', label:pLabel, text:'Fica mais leve. Mas na hora é difícil lembrar… acho que preciso de mais prática.', flag:true, flagLabel:'Marco terapêutico' },
+  ];
+}
+const transcriptLines = _getTranscriptLines();
 let transcriptMuted = false;
 
 // ── WHEREBY INTEGRATION ──────────────────────────────────────────────────────
@@ -550,22 +558,31 @@ function indexPostSession() {
   // Marca appointment de hoje como 'compareceu' automaticamente
   if (typeof appointments !== 'undefined' && sp) {
     var hojeIso2 = hojeISO();
-    var apptHoje = appointments.filter(function(a){
-      return a.patientIdx === currentSessionPatientIdx && a.date === hojeIso2 && a.status !== 'cancelada';
-    }).sort(function(a,b){ return a.time < b.time ? -1 : 1; })[0];
+    // Usa o apptId rastreado ao iniciar sessão se disponível; evita marcar sessão errada em dias com 2 agendamentos
+    var apptHoje = (typeof currentSessionApptId !== 'undefined' && currentSessionApptId)
+      ? appointments.find(function(a){ return String(a.id) === String(currentSessionApptId); })
+      : null;
+    if (!apptHoje) {
+      apptHoje = appointments.filter(function(a){
+        return a.patientIdx === currentSessionPatientIdx && a.date === hojeIso2 && a.status !== 'cancelada';
+      }).sort(function(a,b){ return a.time < b.time ? -1 : 1; })[0];
+    }
     if (apptHoje && !apptHoje.presenca) {
       apptHoje.presenca = 'compareceu';
       _salvarAppointments();
     }
+    currentSessionApptId = null;
   }
   // ── Auto-cria cobrança pendente com valor configurado no perfil ──
   if (sp) {
     try {
       var _profAcc = JSON.parse(localStorage.getItem('tf_account') || '{}');
       var _valorSessao = parseFloat(_profAcc.valor_sessao) || 0;
-      if (_valorSessao > 0) {
+      var _isoCharge = hojeISO();
+      // Evita cobrança duplicada se já existe uma para este paciente hoje
+      var _jaTemCobranca = charges.some(function(c){ return c.patient === sp.name && c.date === _isoCharge && !c.deleted; });
+      if (_valorSessao > 0 && !_jaTemCobranca) {
         var _hojeCharge = new Date();
-        var _isoCharge = hojeISO();
         var _diaCharge = String(_hojeCharge.getDate()).padStart(2,'0') + '/' + String(_hojeCharge.getMonth()+1).padStart(2,'0') + '/' + _hojeCharge.getFullYear();
         charges.push({
           id: Date.now() + '-' + Math.random().toString(36).slice(2,6),

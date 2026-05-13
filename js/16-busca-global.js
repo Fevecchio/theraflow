@@ -37,8 +37,8 @@ function globalSearchInput(q) {
   var tfTasks = [];
   try { tfTasks = JSON.parse(localStorage.getItem('tf_tasks') || '[]'); } catch(e) {}
   tfTasks.forEach(function(t) {
-    if (t.titulo && t.titulo.toLowerCase().includes(q)) {
-      results.push({ type:'tarefa', icon:'☑', label: t.titulo, sub: (t.patientName || '') + (t.dueDate ? ' · ' + t.dueDate : ''), score: 6, action: function(){ navigate('tarefas'); } });
+    if (t.title && t.title.toLowerCase().includes(q)) {
+      results.push({ type:'tarefa', icon:'☑', label: t.title, sub: (t.patientName || '') + (t.dueDate ? ' · ' + t.dueDate : ''), score: 6, action: function(){ navigate('tarefas'); } });
     }
   });
 
