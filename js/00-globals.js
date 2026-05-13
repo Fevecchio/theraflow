@@ -5,6 +5,7 @@ const _STRIPE_PK = 'pk_test_51TNCbIFY0RoCsYEc3dHRoo3rpeHRP6ucbwzq5NhYLJL3QyGgFvw
 let _tfPlanPro = false;
 let _tfTrialDismissed = false;
 let _loadingUserData = false;
+var profileAbordagem = 'tcc';
 
 async function assinarPro(btn) {
   tfTrack('upgrade_clicked');
@@ -133,7 +134,7 @@ async function _supaLoadUserData(userId) {
       const offlineChgs = localChgs.filter(c => c.id && !supaChgIds.has(String(c.id)));
       const mergedChgs = [...restoredChgs, ...offlineChgs];
       localStorage.setItem('tf_charges', JSON.stringify(mergedChgs));
-      try { if (typeof charges !== 'undefined') charges = mergedChgs; } catch(_) {}
+      try { if (typeof charges !== 'undefined') charges.splice(0, charges.length, ...mergedChgs); } catch(_) {}
       if (offlineChgs.length) _supaSync_charges().catch(() => {});
     }
     if (tsks && tsks.length > 0) {

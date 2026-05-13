@@ -303,9 +303,9 @@ function confirmarAgendamento() {
 
   function _executar() {
     var datas = [dataVal];
-    if (recVal === 'semanal')    { for(var w=1;w<=7;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*7); datas.push(localDateISO(nd)); } }
-    if (recVal === 'quinzenal')  { for(var w=1;w<=4;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*14); datas.push(localDateISO(nd)); } }
-    if (recVal === 'mensal')     { for(var w=1;w<=2;w++){ var nd=new Date(dataVal+'T12:00:00'); nd.setMonth(nd.getMonth()+w); datas.push(localDateISO(nd)); } }
+    if (recVal === 'semanal')    { for(let w=1;w<=7;w++){ const nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*7); datas.push(localDateISO(nd)); } }
+    if (recVal === 'quinzenal')  { for(let w=1;w<=4;w++){ const nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*14); datas.push(localDateISO(nd)); } }
+    if (recVal === 'mensal')     { for(let w=1;w<=2;w++){ const nd=new Date(dataVal+'T12:00:00'); nd.setMonth(nd.getMonth()+w); datas.push(localDateISO(nd)); } }
 
     datas.forEach(function(dt, i){
       appointments.push({
@@ -556,7 +556,7 @@ function renderDayView() {
     : pendentes.map(function(a){
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
           + '<span style="font-size:13px">'+escHTML(_firstName(a.patientName))+' · '+escHTML(a.date.split('-').reverse().slice(0,2).join('/'))+'</span>'
-          + '<button class="btn btn-secondary btn-sm" onclick="enviarLembreteAgenda(\''+escHTML(a.patientName)+'\')">📨 Lembrar</button>'
+          + '<button class="btn btn-secondary btn-sm" data-pname="'+escHTML(a.patientName)+'" onclick="enviarLembreteAgenda(this.dataset.pname)">📨 Lembrar</button>'
           + '</div>';
       }).join('');
 

@@ -351,7 +351,6 @@ function loginPaciente() {
       progress: raw.progress,
     });
 
-    _loggedPatientIdx = 0;
     _loggedPatientData = p;
 
     // Guarda cópia dos pacientes do terapeuta antes de substituir
@@ -359,6 +358,7 @@ function loginPaciente() {
 
     // Popula patients[] com os dados do paciente para que as funções do portal funcionem
     patients.splice(0, patients.length, p);
+    _loggedPatientIdx = 0;
     currentPortalPatientIdx = 0;
 
     document.getElementById('tf-patient-login-layer').classList.remove('open');
@@ -418,7 +418,7 @@ function pacEnviarSolicitacaoSessao(nomePaciente) {
   n = n.startsWith('55') ? n : '55' + n;
   var texto = 'Olá! Sou ' + nomePaciente + ', sua paciente pelo TheraFlow. 🌿\n\n'
     + 'Gostaria de solicitar o agendamento de uma nova sessão.'
-    + (msg ? '\n\n' + msg : '') + '\n\nObrigada!';
+    + (msg ? '\n\n' + msg : '') + '\n\nObrigado(a)!';
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(texto), '_blank');
   document.getElementById('pac-solicitar-form').style.display = 'none';
 }

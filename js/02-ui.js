@@ -94,8 +94,11 @@ function switchTab(el, tabId) {
   const tabsEl = el.closest('.tabs');
   tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  tabsEl.parentElement.querySelectorAll('[id^="tab-"]').forEach(panel => {
-    panel.style.display = panel.id === tabId ? '' : 'none';
+  const container = tabsEl.parentElement;
+  container.querySelectorAll('[id^="tab-"]').forEach(panel => {
+    if (panel.parentElement === container) {
+      panel.style.display = panel.id === tabId ? '' : 'none';
+    }
   });
 }
 

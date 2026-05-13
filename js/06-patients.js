@@ -598,9 +598,14 @@ function _recalcNextSessions() {
   var nowIso = hojeISO();
   // Constrói mapa patientIdx → próxima data
   var mapa = {};
+  var mapaKey = {};
   appointments.forEach(function(a) {
     if (a.status === 'cancelada' || a.date < nowIso) return;
-    if (!mapa[a.patientIdx] || a.date < mapa[a.patientIdx]) mapa[a.patientIdx] = a.date;
+    var key = a.date + 'T' + (a.time || '00:00');
+    if (!mapaKey[a.patientIdx] || key < mapaKey[a.patientIdx]) {
+      mapa[a.patientIdx] = a.date;
+      mapaKey[a.patientIdx] = key;
+    }
   });
   patients.forEach(function(p, i) {
     if (mapa[i]) {
@@ -620,7 +625,7 @@ function _recalcSessions() {
   if (typeof appointments === 'undefined') return;
   var contadores = {};
   appointments.forEach(function(a) {
-    if (a.presenca === 'compareceu' && a.patientIdx !== undefined) {
+    if (a.presenca === 'compareceu' && a.patientIdx !== undefined && a.patientIdx >= 0) {
       contadores[a.patientIdx] = (contadores[a.patientIdx] || 0) + 1;
     }
   });
@@ -728,11 +733,13 @@ function selectPatientFiltered(i, el) {
   selectPatient(i, el);
 }
 
+var _searchPatientsTimer = null;
 function searchPatients(val) {
   patientFilter = val;
   const clr = document.getElementById('patient-search-clear');
   if (clr) clr.style.display = val ? 'inline' : 'none';
-  renderPatients(val);
+  clearTimeout(_searchPatientsTimer);
+  _searchPatientsTimer = setTimeout(function(){ renderPatients(val); }, 150);
 }
 function filterPatientsByStatus(val) {
   patientStatusFilter = val;

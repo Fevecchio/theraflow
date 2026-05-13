@@ -582,8 +582,6 @@ const abordagemCalibration = {
   },
 };
 
-let profileAbordagem = 'tcc';
-
 function toggleApiKeyVisibility() {
   const inp = document.getElementById('perfil-api-key');
   const btn = document.getElementById('btn-toggle-apikey');
@@ -943,7 +941,7 @@ function renderPatientApp(idx, pacs) {
       + '<div class="patient-section-body" style="display:flex;align-items:center;gap:20px">'
         + '<div style="position:relative;flex-shrink:0"><svg width="80" height="80" viewBox="0 0 90 90"><circle cx="45" cy="45" r="38" fill="none" stroke="#e8f0eb" stroke-width="7"/><circle cx="45" cy="45" r="38" fill="none" stroke="var(--sage)" stroke-width="7" stroke-dasharray="238.76" stroke-dashoffset="'+offset+'" stroke-linecap="round"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:17px;font-weight:700;color:var(--ink)">'+pct+'%</div><div style="font-size:9px;color:var(--muted)">completo</div></div></div>'
         + '<div style="display:flex;flex-direction:column;gap:8px;flex:1">'
-          + '<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:var(--sage)"></div><span style="font-size:13px"><strong>'+p.sessions+'</strong> sessões realizadas</span></div>'
+          + '<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:var(--sage)"></div><span style="font-size:13px"><strong>'+p.sessions+'</strong> '+(p.sessions!==1?'sessões':'sessão')+' realizadas</span></div>'
           + '<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:var(--amber)"></div><span style="font-size:13px"><strong>'+exDone+'</strong> exercícios concluídos</span></div>'
           + '<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:var(--blue)"></div><span style="font-size:13px">Abordagem: <strong>'+escHTML(p.abordagem||'—')+'</strong></span></div>'
         + '</div>'

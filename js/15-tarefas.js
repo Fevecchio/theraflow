@@ -259,9 +259,8 @@ function renderDashTarefas() {
     else countEl.style.display='none';
   }
   if (exibir.length === 0) {
-    if (emptyEl) emptyEl.style.display='';
     container.innerHTML = '';
-    container.appendChild(emptyEl||document.createElement('div'));
+    if (emptyEl) { emptyEl.style.display=''; container.appendChild(emptyEl); }
     return;
   }
   if (emptyEl) emptyEl.style.display='none';
