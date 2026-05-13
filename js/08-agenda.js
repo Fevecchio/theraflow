@@ -2,8 +2,17 @@
 
 var appointments = [];
 var APPT_COLORS = ['appt-green','appt-blue','appt-amber','appt-purple'];
+var _demoAppointmentsLoaded = false;
 
 function carregarAppointments() {
+  // Demo mode: generate fresh appointments once per session (ignore stale localStorage cache)
+  if (window._tfDemo) {
+    if (!_demoAppointmentsLoaded) {
+      _gerarAppointmentsDemo();
+      _demoAppointmentsLoaded = true;
+    }
+    return;
+  }
   try { appointments = JSON.parse(localStorage.getItem('tf_appointments') || '[]'); } catch(e) { appointments = []; }
   if (appointments.length === 0) { _gerarAppointmentsDemo(); _salvarAppointments(); }
 }
