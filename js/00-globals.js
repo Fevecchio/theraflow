@@ -108,6 +108,12 @@ async function _supaLoadUserData(userId) {
         portalPassword: (p.metadata && p.metadata.portalPassword) || null,
         portalPasswordHash: (p.metadata && p.metadata.portalPasswordHash) || null,
       }));
+      // Garante campos visuais computados (initials, color, colorGrad)
+      const _colorPairs = [['#4a7c59','#6a9c79'],['#2c5f8a','#4a7fa8'],['#c97d2e','#e09d4e'],['#6a3d7a','#8a5d9a'],['#8b2252','#ab4272'],['#8b4513','#ab6533']];
+      restored.forEach(function(p, i) {
+        if (!p.initials && p.name) p.initials = p.name.trim().split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+        if (!p.color) { var cp = _colorPairs[i % _colorPairs.length]; p.color = cp[0]; p.colorGrad = 'linear-gradient(135deg,'+cp[0]+','+cp[1]+')'; }
+      });
       // Preserva pacientes criados offline (UUID local não existe no Supabase ainda)
       const offlinePats = localPats.filter(p => p.id && !supaPatIds.has(p.id));
       const mergedPats = [...restored, ...offlinePats];
