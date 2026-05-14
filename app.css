@@ -704,22 +704,24 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 
 /* ── BRIEFING ── */
 .briefing-hero {
-  background: var(--ink); border-radius: 20px; padding: 28px 32px;
+  background: linear-gradient(135deg, var(--sage-light) 0%, #ffffff 70%);
+  border: 1px solid rgba(74,124,89,.15);
+  border-radius: 20px; padding: 28px 32px;
   display: flex; align-items: center; gap: 20px; margin-bottom: 24px;
   position: relative; overflow: hidden;
 }
 .briefing-hero::before {
   content: ''; position: absolute; right: -60px; top: -60px;
   width: 240px; height: 240px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(90,62,138,.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(74,124,89,.08) 0%, transparent 70%);
   pointer-events: none;
 }
-.hero-av { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0; border: 2px solid rgba(255,255,255,.2); }
-.hero-name { font-family: 'Instrument Serif', serif; font-size: 22px; color: #fff; }
-.hero-sub { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.hero-av { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0; border: 2px solid rgba(74,124,89,.2); box-shadow: 0 4px 14px rgba(74,124,89,.2); }
+.hero-name { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--ink); }
+.hero-sub { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
 .hero-right { margin-left: auto; text-align: right; flex-shrink: 0; }
-.session-num { font-family: 'Instrument Serif', serif; font-size: 38px; color: #fff; line-height: 1; }
-.session-lbl { font-size: 11px; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .8px; margin-top: 2px; }
+.session-num { font-family: 'Instrument Serif', serif; font-size: 38px; color: var(--sage); line-height: 1; }
+.session-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 2px; }
 
 .ai-badge-inline { display: inline-flex; align-items: center; gap: 7px; background: var(--purple-light); color: var(--purple); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(90,62,138,.15); margin-bottom: 18px; }
 .ai-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--purple); animation: pulse 2s infinite; }
@@ -1560,25 +1562,28 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 
 /* ── PERFIL ── */
 .perfil-hero {
-  background: var(--ink); border-radius: 20px; padding: 32px 36px;
+  background: linear-gradient(135deg, var(--sage-light) 0%, #ffffff 70%);
+  border: 1px solid rgba(74,124,89,.15);
+  border-radius: 20px; padding: 32px 36px;
   display: flex; align-items: center; gap: 24px; margin-bottom: 28px;
   position: relative; overflow: hidden;
 }
 .perfil-hero::before {
   content: ''; position: absolute; right: -80px; top: -80px;
   width: 280px; height: 280px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(74,124,89,.25) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(74,124,89,.08) 0%, transparent 65%);
   pointer-events: none;
 }
 .perfil-avatar-lg {
-  width: 72px; height: 72px; border-radius: 50%; background: var(--sage);
+  width: 80px; height: 80px; border-radius: 50%; background: var(--sage);
   display: flex; align-items: center; justify-content: center;
-  font-size: 26px; font-weight: 700; color: #fff; flex-shrink: 0;
-  border: 3px solid rgba(255,255,255,.15);
+  font-size: 28px; font-weight: 700; color: #fff; flex-shrink: 0;
+  border: 3px solid rgba(74,124,89,.2);
+  box-shadow: 0 4px 20px rgba(74,124,89,.25);
 }
-.perfil-name { font-family: 'Instrument Serif', serif; font-size: 26px; color: #fff; }
-.perfil-meta { font-size: 13px; color: rgba(255,255,255,.5); margin-top: 4px; display: flex; gap: 16px; flex-wrap: wrap; }
-.perfil-crp { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.7); font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; margin-top: 10px; }
+.perfil-name { font-family: 'Instrument Serif', serif; font-size: 26px; color: var(--ink); }
+.perfil-meta { font-size: 13px; color: var(--muted); margin-top: 4px; display: flex; gap: 16px; flex-wrap: wrap; }
+.perfil-crp { display: inline-flex; align-items: center; gap: 6px; background: rgba(74,124,89,.08); border: 1px solid rgba(74,124,89,.18); color: var(--sage); font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; margin-top: 10px; }
 
 .perfil-section { margin-bottom: 20px; background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; }
 .perfil-section-title { font-size: 13px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }

@@ -703,7 +703,7 @@ function renderPatients(filter) {
       : '';
     return `<div class="list-item ${fi===0?'active':''}" onclick="selectPatientFiltered(${p._i},this)" style="animation:itemStagger .3s ease both;animation-delay:${fi*45}ms">
       <div style="display:flex;align-items:center;gap:14px">
-        <div class="patient-avatar" style="background:${p.colorGrad||p.color};color:#fff;width:52px;height:52px;font-size:17px;flex-shrink:0;border-radius:50%">${p.initials}</div>
+        <div class="patient-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'};color:#fff;width:52px;height:52px;font-size:17px;flex-shrink:0;border-radius:50%">${p.initials}</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
             <div style="font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(p.name)}</div>
@@ -854,7 +854,7 @@ function selectPatient(i, el) {
 
   document.getElementById('patient-detail').innerHTML = `
     <div class="detail-header">
-      <div class="detail-avatar" style="background:${p.color}">${p.initials}</div>
+      <div class="detail-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'}">${p.initials}</div>
       <div>
         <div class="detail-name">${escHTML(p.name)}</div>
         <div class="detail-meta">

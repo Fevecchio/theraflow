@@ -945,7 +945,7 @@ function buscarNotasProntuario(q) {
     var trecho = r.notas.length ? r.notas[0].text.substring(0,80) + '…' : '';
     return '<div class="list-item" onclick="selecionarProntuario('+r.i+',this)">'
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-        + '<div class="patient-avatar" style="background:'+r.p.color+';color:#fff;width:28px;height:28px;font-size:10px">'+r.p.initials+'</div>'
+        + '<div class="patient-avatar" style="background:'+(r.p.colorGrad||r.p.color||'#4a7c59')+';color:#fff;width:28px;height:28px;font-size:10px">'+r.p.initials+'</div>'
         + '<span style="font-weight:500;font-size:13.5px">'+escHTML(r.p.name)+'</span>'
         + (r.notas.length ? '<span style="margin-left:auto;font-size:11px;color:var(--sage);font-weight:600">'+r.notas.length+' nota'+(r.notas.length>1?'s':'')+'</span>' : '')
       + '</div>'
@@ -965,12 +965,16 @@ function renderListaProntuarios(destaque) {
       : p.portalNota && p.portalNota.trim()
         ? `<span class="tag tag-amber" style="margin-left:auto;font-size:10px">📝 Nota</span>`
         : fi === 0 ? `<span class="tag tag-amber" style="margin-left:auto;font-size:10px">Nova nota</span>` : '';
-    return `<div class="list-item ${fi===0?'active':''}" onclick="selecionarProntuario(${p._i},this)">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <div class="patient-avatar" style="background:${p.color};color:#fff;width:32px;height:32px;font-size:11px">${p.initials}</div>
-        <span style="font-weight:500;font-size:14px">${escHTML(p.name)}</span>${badge}
+    const avatarBg = p.colorGrad || p.color || '#4a7c59';
+    return `<div class="list-item ${fi===0?'active':''}" onclick="selecionarProntuario(${p._i},this)" style="animation:itemStagger .3s ease both;animation-delay:${fi*40}ms">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="patient-avatar" style="background:${avatarBg};color:#fff;width:52px;height:52px;font-size:17px;flex-shrink:0;border-radius:50%">${p.initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">${escHTML(p.name)}</div>
+          <div style="font-size:12px;color:var(--muted)">${escHTML(p.abordagem)} · Sessão ${p.sessions}</div>
+        </div>
+        <div style="flex-shrink:0">${badge}</div>
       </div>
-      <div style="font-size:12px;color:var(--muted)">Sessão ${p.sessions} · ${escHTML(p.lastSession)} · ${escHTML(p.abordagem)}</div>
     </div>`;
   }).join('');
   if (lista.length > 0) selecionarProntuario(lista[0]._i, list.querySelector('.list-item'));
@@ -998,7 +1002,7 @@ function selecionarProntuario(i, el) {
   const av = header.querySelector('.detail-avatar');
   const nm = header.querySelector('.detail-name');
   const mt = header.querySelector('.detail-meta');
-  if (av) { av.style.background = p.color; av.textContent = p.initials; }
+  if (av) { av.style.background = p.colorGrad || p.color || '#4a7c59'; av.textContent = p.initials; }
   if (nm) nm.textContent = p.name;
   if (mt) mt.innerHTML = `<span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span><span>📋 ${escHTML(p.abordagem)}</span><span>📍 ${p.cidade !== '—' ? escHTML(p.cidade) : '—'}</span>`;
 
@@ -1360,7 +1364,7 @@ function atualizarMetricasSupervisao() {
         const moodVal = p.mood !== null ? p.mood + '/10' : '—';
         const obs = p.alert || (p.status === 'Atenção' ? 'Status de atenção — revisar plano.' : 'Humor baixo — monitorar.');
         return `<tr>
-          <td><div class="patient-info"><div class="patient-avatar" style="background:${p.color};color:#fff">${p.initials}</div><div><div class="patient-name">${p.name}</div><div class="patient-meta">${p.abordagem}</div></div></div></td>
+          <td><div class="patient-info"><div class="patient-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'};color:#fff">${p.initials}</div><div><div class="patient-name">${p.name}</div><div class="patient-meta">${p.abordagem}</div></div></div></td>
           <td>Sessão ${p.sessions}</td>
           <td><span class="tag ${moodColor}">${moodVal}</span></td>
           <td style="font-size:13px;color:var(--ink-soft)">${obs.length > 60 ? obs.slice(0,60)+'…' : obs}</td>

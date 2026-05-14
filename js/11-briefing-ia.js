@@ -53,7 +53,7 @@ function initBriefing() {
   }
   const av = document.querySelector('.briefing-hero .hero-av');
   const nm = document.querySelector('.briefing-hero .hero-name');
-  if (av) { av.style.background = p.color; av.textContent = p.initials; }
+  if (av) { av.style.background = p.colorGrad || p.color || '#4a7c59'; av.textContent = p.initials; }
   if (nm) nm.textContent = p.name;
   const sub = document.querySelector('.briefing-hero .hero-sub');
   if (sub) sub.innerHTML = `<span>📋 ${escHTML(p.abordagem)} — ${p.cid !== '—' ? escHTML(p.cid) : 'em avaliação'}</span><span>🕐 Hoje</span><span>⏱ 50 min</span>`;

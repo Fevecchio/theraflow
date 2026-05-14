@@ -657,7 +657,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="page-title">Agenda</div>
       <div class="page-subtitle" id="agenda-subtitle">—</div>
     </div>
-    <div class="topbar-actions" style="flex-wrap:wrap;gap:8px">
+    <div class="topbar-actions" style="gap:8px">
 
       <!-- Modos de visualização -->
       <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">
@@ -666,21 +666,17 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <button id="agenda-btn-mes" onclick="agendaSetView('mes')" style="padding:6px 14px;border:none;border-left:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">Mês</button>
       </div>
 
-      <!-- Navegação -->
-      <button class="btn btn-secondary btn-sm" onclick="agendaNav(-1)">← Anterior</button>
-      <button class="btn btn-secondary btn-sm" onclick="agendaNav(0)">Hoje</button>
-      <button class="btn btn-secondary btn-sm" onclick="agendaNav(1)">Próximo →</button>
+      <!-- Navegação agrupada -->
+      <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <button onclick="agendaNav(-1)" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">←</button>
+        <button onclick="agendaNav(0)" style="padding:6px 12px;border:none;border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink);font-weight:600">Hoje</button>
+        <button onclick="agendaNav(1)" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">→</button>
+      </div>
 
-      <!-- Modo compacto -->
-      <button id="btn-agenda-compacto" class="btn btn-secondary btn-sm" onclick="toggleAgendaCompacto()" title="Alternar modo compacto">⊡ Compacto</button>
-
-      <!-- Exportar .ics -->
-      <button class="btn btn-secondary btn-sm" onclick="exportarAgendaICS()" title="Exportar agenda para Google Calendar / Apple Calendar">📅 Exportar .ics</button>
-
-      <!-- Sincronizar calendário -->
-      <button class="btn btn-secondary btn-sm" onclick="showCalendarSync()" style="display:flex;align-items:center;gap:5px">
-        🔗 Sincronizar agenda
-      </button>
+      <!-- Ações secundárias -->
+      <button id="btn-agenda-compacto" class="btn btn-secondary btn-sm" onclick="toggleAgendaCompacto()" title="Alternar modo compacto">⊡</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportarAgendaICS()" title="Exportar agenda (.ics)">📅</button>
+      <button class="btn btn-secondary btn-sm" onclick="showCalendarSync()" title="Sincronizar com Google Calendar">🔗</button>
 
       <button class="btn btn-primary" onclick="showAgendarModal()" style="display:flex;align-items:center;gap:6px;font-size:13px;padding:9px 20px;border-radius:10px;font-weight:700;letter-spacing:.2px;box-shadow:0 2px 8px rgba(74,124,89,.35)">
         <span style="font-size:18px;line-height:1">+</span> Nova sessão
@@ -1155,7 +1151,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div class="hero-av" style="background:#4a7c59">CR</div>
     <div>
       <div class="hero-name" id="briefing-hero-name">Camila Rocha</div>
-      <select id="briefing-patient-select" onchange="trocarPacienteBriefing(parseInt(this.value))" style="margin-top:5px;font-size:12px;border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:3px 8px;background:rgba(0,0,0,.25);color:#fff;cursor:pointer;max-width:220px"></select>
+      <select id="briefing-patient-select" onchange="trocarPacienteBriefing(parseInt(this.value))" style="margin-top:5px;font-size:12px;border:1px solid rgba(74,124,89,.2);border-radius:6px;padding:3px 8px;background:rgba(74,124,89,.06);color:var(--ink);cursor:pointer;max-width:220px"></select>
       <div class="hero-sub">
         <span>📋 TCC — Ansiedade</span>
         <span>🕐 Hoje às 09:00</span>
@@ -1272,21 +1268,25 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <!-- Stats -->
   <div class="grid-4" style="margin-bottom:24px">
     <div class="stat-card">
+      <span class="stat-icon">◈</span>
       <div class="stat-label">Receita realizada</div>
       <div class="stat-value">R$8.4k</div>
       <div class="stat-delta">↑ R$1.440 mensais + R$6.960 avulsos</div>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">◉</span>
       <div class="stat-label">A receber</div>
       <div class="stat-value" style="color:var(--amber)">R$450</div>
       <div class="stat-delta" style="color:var(--amber)">2 cobranças avulso pendentes</div>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">▦</span>
       <div class="stat-label">Planos mensais</div>
       <div class="stat-value" style="color:var(--blue)">2</div>
       <div class="stat-delta" style="color:var(--blue)">R$1.440/mês recorrente</div>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">◬</span>
       <div class="stat-label">Em atraso (+7 dias)</div>
       <div class="stat-value" style="color:var(--red)">R$400</div>
       <div class="stat-delta" style="color:var(--red)">2 sessões avulso · Pedro Alves</div>
@@ -1904,8 +1904,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="perfil-crp" id="perfil-hero-crp">🪪 CRP 06/123456 — ativo</div>
     </div>
     <div style="margin-left:auto;text-align:right;flex-shrink:0">
-      <div id="perfil-hero-pacientes" style="font-family:'Instrument Serif',serif;font-size:38px;color:#fff;line-height:1">0</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.8px;margin-top:2px">Pacientes ativos</div>
+      <div id="perfil-hero-pacientes" style="font-family:'Instrument Serif',serif;font-size:38px;color:var(--sage);line-height:1">0</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px">Pacientes ativos</div>
     </div>
   </div>
 
