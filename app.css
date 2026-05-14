@@ -1757,3 +1757,108 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 .task-inline-input { border: 1.5px solid var(--sage); border-radius: 6px; padding: 4px 8px; font-size: 13.5px; font-family: inherit; outline: none; background: #fff; color: var(--ink); }
 .task-inline-input[type=date] { font-size: 13px; }
 
+/* ═══════════════════════════════════
+   POLISH — Design system refinements
+═══════════════════════════════════ */
+
+/* Card section titles → Instrument Serif to match mockup card-title style */
+.card > .section-header > .section-title,
+.card > div > .section-header > .section-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 22px;
+  letter-spacing: -.01em;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* Insight items — 3-type color differentiation via nth-child */
+#dash-insights-list .insight-item { margin-bottom: 0; }
+#dash-insights-list .insight-item:nth-child(3n+1) {
+  background: var(--blue-light);
+  border-left-color: var(--blue);
+  color: var(--ink-soft);
+}
+#dash-insights-list .insight-item:nth-child(3n+2) {
+  background: var(--amber-light);
+  border-left-color: var(--amber);
+  color: var(--ink-soft);
+}
+#dash-insights-list .insight-item:nth-child(3n) {
+  background: var(--sage-50);
+  border-left-color: var(--sage);
+  color: var(--ink-soft);
+}
+
+/* Stat cards — icon box styling to match design */
+.stat-icon {
+  background: var(--sage-50);
+  color: var(--sage-800);
+  border-radius: 7px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  position: absolute; top: 18px; right: 18px;
+  border: none;
+}
+
+/* Appointment blocks — sharper left-accent border */
+.appt-block {
+  border-left-width: 3px;
+  border-left-style: solid;
+  box-shadow: none;
+}
+.appt-green  { background: var(--sage-50);   color: var(--sage-800);  border-left-color: var(--sage); }
+.appt-blue   { background: var(--blue-light); color: var(--blue);      border-left-color: var(--blue); }
+.appt-amber  { background: var(--amber-light);color: var(--amber);     border-left-color: var(--amber); }
+.appt-purple { background: var(--purple-light);color: var(--purple);   border-left-color: var(--purple); }
+
+/* Tag pills — match design tag size/weight */
+.tag { font-size: 10.5px; font-weight: 500; padding: 2px 8px; border-radius: 5px; letter-spacing: .02em; }
+
+/* Search bar — match design search-box style */
+.search-bar {
+  background: #fbfaf4;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  gap: 8px;
+  color: var(--muted);
+}
+.search-bar input { font-size: 13px; }
+.search-bar input::placeholder { color: var(--muted-2); }
+
+/* Tabs within cards — pill style */
+.tabs { border: none; margin-bottom: 0; }
+.tab { font-size: 13px; padding: 8px 16px; }
+
+/* Page subtitle in topbar */
+.page-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* List items (patient, note list) — subtle hover */
+.list-item:hover { background: #fbfaf4; }
+.list-item.active {
+  background: var(--sage-50);
+  border-left: 3px solid var(--sage);
+  border-color: var(--sage);
+}
+
+/* select elements — match btn style */
+select {
+  border-radius: 9px;
+  font-size: 13px;
+  padding: 7px 13px;
+  border-color: var(--border);
+  background: var(--white);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+}
+select:hover { border-color: #d8d3c2; }
+
