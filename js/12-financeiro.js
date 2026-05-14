@@ -1,5 +1,11 @@
 // 12-financeiro.js — Financeiro, cobranças, planos mensais, recibos, relatórios
 
+function abrirModalNovoPlano() {
+  const el = document.getElementById('fin-plano-data');
+  if (el) el.value = new Date().toLocaleDateString('pt-BR');
+  showModal('modal-novo-plano');
+}
+
 /* ── FINANCEIRO & COBRANÇAS ── */
 let charges = [];
 let currentFinMode = 'pre';
