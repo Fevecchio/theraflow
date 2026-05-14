@@ -564,8 +564,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="dash-hero-title" id="dash-greeting">Bom dia, Ana 👋</div>
       <div class="dash-hero-sub" id="dash-subtitle">Carregando…</div>
     </div>
-    <div style="display:flex;gap:10px;position:relative;z-index:1">
-      <button class="btn btn-sm" onclick="navigate('perfil')" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-family:inherit">⚙ Configurações</button>
+    <div class="dash-hero-actions">
+      <button class="btn btn-secondary btn-sm" onclick="navigate('perfil')">⚙ Configurações</button>
       <button class="btn btn-primary btn-sm" onclick="navigate('sessao')">▶ Iniciar sessão</button>
     </div>
   </div>
@@ -587,20 +587,20 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   </div>
 
   <div class="grid-4" id="dashboard-stats" style="margin-bottom:24px">
-    <div class="stat-card"><div class="stat-label">Pacientes ativos</div><div class="stat-value" id="stat-pacientes-ativos">—</div><div class="stat-delta" id="stat-pacientes-delta">carregando…</div></div>
-    <div class="stat-card"><div class="stat-label">Sessões esta semana</div><div class="stat-value" id="stat-sessoes-semana">—</div><div class="stat-delta" id="stat-sessoes-delta">calculando…</div></div>
-    <div class="stat-card" onclick="navigate('financeiro')" style="cursor:pointer"><div class="stat-label">Receita no mês</div><div class="stat-value" id="stat-receita-mes">—</div><div class="stat-delta" id="stat-receita-delta">calculando…</div></div>
-    <div class="stat-card"><div class="stat-label">Notas pendentes</div><div class="stat-value" id="stat-notas-pendentes">—</div><div class="stat-delta" id="stat-notas-delta">calculando…</div></div>
+    <div class="stat-card"><span class="stat-icon">⊙</span><div class="stat-label">Pacientes ativos</div><div class="stat-value" id="stat-pacientes-ativos">—</div><div class="stat-delta" id="stat-pacientes-delta">carregando…</div></div>
+    <div class="stat-card"><span class="stat-icon">▦</span><div class="stat-label">Sessões esta semana</div><div class="stat-value" id="stat-sessoes-semana">—</div><div class="stat-delta" id="stat-sessoes-delta">calculando…</div></div>
+    <div class="stat-card" onclick="navigate('financeiro')" style="cursor:pointer"><span class="stat-icon">◈</span><div class="stat-label">Receita no mês</div><div class="stat-value" id="stat-receita-mes">—</div><div class="stat-delta" id="stat-receita-delta">calculando…</div></div>
+    <div class="stat-card"><span class="stat-icon">≡</span><div class="stat-label">Notas pendentes</div><div class="stat-value" id="stat-notas-pendentes">—</div><div class="stat-delta" id="stat-notas-delta">calculando…</div></div>
   </div>
 
   <div class="grid-2">
     <div class="card">
       <div class="section-header">
-        <div class="section-title">Sessões de hoje</div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" id="btn-wpp-lembrete-dia" onclick="enviarLembretesSessoesDia()" title="Enviar lembrete via WhatsApp para todos os pacientes com sessão hoje" style="color:#25d366;border-color:rgba(37,211,102,.3)">💬 Hoje</button>
-          <button class="btn btn-ghost btn-sm" onclick="enviarLembretesAmanha()" title="Enviar lembrete D-1 para pacientes com sessão amanhã" style="color:#25d366;border-color:rgba(37,211,102,.3)">💬 Amanhã</button>
-          <button class="btn btn-ghost btn-sm" onclick="navigate('agenda')">Ver agenda →</button>
+        <div class="section-title">Sessões</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-sm" id="btn-wpp-lembrete-dia" onclick="enviarLembretesSessoesDia()" title="Enviar lembrete WhatsApp para sessões de hoje" style="background:rgba(37,211,102,.1);color:#1a8a46;border:1px solid rgba(37,211,102,.25);border-radius:20px;font-size:12px;padding:4px 12px">💬 Hoje</button>
+          <button class="btn btn-sm" onclick="enviarLembretesAmanha()" title="Enviar lembrete D-1 para sessões de amanhã" style="background:rgba(37,211,102,.1);color:#1a8a46;border:1px solid rgba(37,211,102,.25);border-radius:20px;font-size:12px;padding:4px 12px">💬 Amanhã</button>
+          <button class="btn btn-ghost btn-sm" onclick="navigate('agenda')" style="font-size:12px">Ver agenda →</button>
         </div>
       </div>
       <div id="dash-sessoes-hoje" style="display:flex;flex-direction:column;gap:10px">

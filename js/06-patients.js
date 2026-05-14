@@ -688,41 +688,33 @@ function renderPatients(filter) {
     }
     if (p.finStatus === 'overdue') _semAtencao = true;
     const alertDot = _semRisco
-      ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:1px" title="Alerta clínico — humor em queda ou baixo"></span>'
+      ? '<span style="width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0" title="Alerta clínico"></span>'
       : _semAtencao
-        ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:1px" title="Atenção recomendada"></span>'
+        ? '<span style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0" title="Atenção"></span>'
         : p.alert
-          ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:1px" title="' + escHTML(p.alert) + '"></span>'
+          ? '<span style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0" title="' + escHTML(p.alert) + '"></span>'
           : '';
-    const finBadge = p.finStatus === 'overdue'
-      ? `<span style="font-size:10px;background:var(--red-light);color:var(--red);padding:1px 6px;border-radius:4px;font-weight:600">Atrasado</span>`
+    const statusClass = p.status==='Ativa'?'tag-green':p.status==='Nova'?'tag-blue':p.status==='Atenção'?'tag-red':'tag-amber';
+    const nextShort = p.next ? p.next.replace(/(\d{2})\/(\d{2})(?:\/\d{4})?/, '$1/$2') : '—';
+    const finDot = p.finStatus === 'overdue'
+      ? '<span style="font-size:10px;color:var(--red)" title="Cobrança em atraso">●</span>'
       : p.finStatus === 'pending'
-      ? `<span style="font-size:10px;background:var(--amber-light);color:var(--amber);padding:1px 6px;border-radius:4px;font-weight:600">Pendente</span>`
+      ? '<span style="font-size:10px;color:var(--amber)" title="Cobrança pendente">●</span>'
       : '';
-    const moodDot = p.mood !== null ? `<span style="font-size:11px;color:${p.mood>=7?'#2e7d4f':p.mood>=5?'var(--amber)':'var(--red)'}" title="Humor ${p.mood}/10">${p.mood >= 7 ? '😊' : p.mood >= 5 ? '😐' : '😔'}</span>` : '';
     return `<div class="list-item ${fi===0?'active':''}" onclick="selectPatientFiltered(${p._i},this)" style="animation:itemStagger .3s ease both;animation-delay:${fi*45}ms">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div class="patient-avatar" style="background:${p.colorGrad||p.color};color:#fff;width:36px;height:36px;font-size:12px;flex-shrink:0">${p.initials}</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="patient-avatar" style="background:${p.colorGrad||p.color};color:#fff;width:52px;height:52px;font-size:17px;flex-shrink:0;border-radius:50%">${p.initials}</div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
-            ${alertDot}
-            <div class="patient-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(p.name)}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+            <div style="font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(p.name)}</div>
+            ${alertDot}${finDot}
           </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span class="patient-meta">${escHTML(p.abordagem)}</span>
-          </div>
+          <div style="font-size:12px;color:var(--muted)">${escHTML(p.abordagem)} · Sessão ${p.sessions}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-          <span class="tag ${p.status==='Ativa'?'tag-green':p.status==='Nova'?'tag-blue':p.status==='Atenção'?'tag-red':'tag-amber'}" style="font-size:10px">${p.status}</span>
-          <div style="display:flex;gap:4px;align-items:center">${moodDot}${finBadge}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          <span class="tag ${statusClass}" style="font-size:10px;padding:2px 8px">${p.status}</span>
+          <span style="font-size:11px;color:var(--sage);font-weight:500">Próx ${nextShort}</span>
         </div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid #f0f2f0">
-        <span style="font-size:11px;color:var(--muted)">Sessão ${p.sessions}</span>
-        <span style="font-size:11px;color:var(--muted)">·</span>
-        <span style="font-size:11px;color:var(--muted)">Última: ${p.lastSession}</span>
-        <span style="font-size:11px;color:var(--muted)">·</span>
-        <span style="font-size:11px;color:var(--sage);font-weight:500">Próxima: ${p.next}</span>
       </div>
     </div>`;
   }).join('');
