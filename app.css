@@ -384,7 +384,7 @@ body { background: var(--bg); color: var(--ink); min-height: 100vh; display: fle
 
 /* ── SIDEBAR ── */
 .sidebar {
-  width: 240px; min-height: 100vh; background: #ffffff;
+  width: 240px; min-height: 100vh; background: #f5f3ee;
   display: flex; flex-direction: column; flex-shrink: 0;
   position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
   border-right: 1px solid rgba(0,0,0,.07);
@@ -1391,33 +1391,29 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 
 /* ── SUPERVISÃO IA ── */
 .sup-hero {
-  background: linear-gradient(135deg, #2d1f4e 0%, #3d2a6b 50%, #4a2e7a 100%);
+  background: linear-gradient(135deg, var(--sage-light) 0%, #ffffff 70%);
+  border: 1px solid rgba(74,124,89,.15);
   border-radius: 20px; padding: 28px 32px; margin-bottom: 24px;
   display: flex; align-items: center; gap: 24px; position: relative; overflow: hidden;
 }
 .sup-hero::before {
   content: ''; position: absolute; right: -80px; top: -80px;
   width: 300px; height: 300px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(196,180,232,.15) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(74,124,89,.08) 0%, transparent 65%);
   pointer-events: none;
 }
-.sup-hero::after {
-  content: ''; position: absolute; left: 20%; bottom: -60px;
-  width: 180px; height: 180px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(90,62,138,.3) 0%, transparent 70%);
-  pointer-events: none;
-}
+.sup-hero::after { display: none; }
 .sup-hero-icon {
   width: 64px; height: 64px; border-radius: 16px;
-  background: rgba(255,255,255,.1); display: flex; align-items: center;
+  background: rgba(74,124,89,.1); display: flex; align-items: center;
   justify-content: center; font-size: 28px; flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,.15);
+  border: 1px solid rgba(74,124,89,.2);
 }
-.sup-hero-title { font-family: 'Instrument Serif', serif; font-size: 24px; color: #fff; }
-.sup-hero-sub { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 4px; line-height: 1.5; max-width: 480px; }
+.sup-hero-title { font-family: 'Instrument Serif', serif; font-size: 24px; color: var(--ink); }
+.sup-hero-sub { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.5; max-width: 480px; }
 .sup-hero-right { margin-left: auto; text-align: right; flex-shrink: 0; }
-.sup-streak { font-family: 'Instrument Serif', serif; font-size: 38px; color: #fff; line-height: 1; }
-.sup-streak-lbl { font-size: 11px; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .8px; margin-top: 2px; }
+.sup-streak { font-family: 'Instrument Serif', serif; font-size: 38px; color: var(--sage); line-height: 1; }
+.sup-streak-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 2px; }
 
 /* Onboarding toggle */
 .sup-onboarding {
