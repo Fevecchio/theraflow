@@ -363,6 +363,29 @@ function confirmarAgendamento() {
     if (agendaCurrentView === 'dia') renderDayView();
     else if (agendaCurrentView === 'semana') renderWeekView();
     else renderMonthView();
+
+    // Envio de emails via Resend (apenas se o paciente tiver email)
+    var _acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    var _tNome = _acc.nome || tfUserData?.nome || 'Seu terapeuta';
+    var _tCrp  = _acc.crp  || tfUserData?.crp  || '';
+    var _dataBR = datas[0].split('-').reverse().join('/');
+    var _emailData = {
+      terapeutaNome: _tNome, terapeutaCrp: _tCrp,
+      pacienteNome: p.name,
+      data: _dataBR, hora: horaVal, duracao: durVal,
+      sessionLink: p.sessionLink || ''
+    };
+
+    if (p.email) {
+      var _chkInvite   = document.getElementById('agendar-chk-invite');
+      var _chkReminder = document.getElementById('agendar-chk-reminder');
+      if (_chkInvite && _chkInvite.checked) {
+        _sendEmail('invite', p.email, _emailData);
+      }
+      if (_chkReminder && _chkReminder.checked) {
+        _sendEmail('reminder', p.email, _emailData);
+      }
+    }
   }
 
   function _processarAvisos(idx) {

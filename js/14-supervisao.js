@@ -373,13 +373,13 @@ function showAgendarModal(preData, preHora) {
             <div style="font-size:12px;font-weight:700;color:#4a7c59;margin-bottom:10px">📨 Notificações automáticas</div>
             <div style="display:flex;flex-direction:column;gap:8px">
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#555;cursor:pointer">
-                <input type="checkbox" checked style="accent-color:var(--sage)"> Enviar convite por email ao paciente (com link Whereby)
+                <input type="checkbox" id="agendar-chk-invite" checked style="accent-color:var(--sage)"> Enviar convite por email ao paciente (com link Whereby)
               </label>
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#555;cursor:pointer">
                 <input type="checkbox" checked style="accent-color:var(--sage)"> Adicionar ao Google Calendar / Outlook
               </label>
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#555;cursor:pointer">
-                <input type="checkbox" checked style="accent-color:var(--sage)"> Lembrete 24h antes (email ao paciente)
+                <input type="checkbox" id="agendar-chk-reminder" checked style="accent-color:var(--sage)"> Lembrete 24h antes (email ao paciente)
               </label>
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#555;cursor:pointer">
                 <input type="checkbox" style="accent-color:var(--sage)"> Enviar link pelo WhatsApp também

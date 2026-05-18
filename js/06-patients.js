@@ -318,6 +318,17 @@ async function compartilharAcessoPortal(i) {
     }
   }
 
+  // Envia email com credenciais do portal (se tiver email cadastrado)
+  if (p.email && typeof _sendEmail === 'function') {
+    var _accP = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    _sendEmail('portal', p.email, {
+      terapeutaNome: _accP.nome || (tfUserData && tfUserData.nome) || 'Seu terapeuta',
+      pacienteNome: p.name,
+      email: p.email,
+      senha: senha,
+      portalUrl: window.location.origin + window.location.pathname,
+    });
+  }
   _enviarWhatsAppAcesso(p, nome, senha);
 }
 

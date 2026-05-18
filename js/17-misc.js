@@ -261,6 +261,28 @@ let tIdx = 0;
 let sessionTranscriptLogged = [];
 let _transcriptActive = false; // flag para parar simulação ao navegar
 
+/* ── EMAIL via Resend (/api/send-email) ── */
+async function _sendEmail(template, to, data) {
+  try {
+    const authH = await _apiAuthHeader();
+    const r = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authH },
+      body: JSON.stringify({ template, to, data }),
+    });
+    const result = await r.json();
+    if (!r.ok) {
+      console.warn('[send-email]', template, '→', to, '|', result.error);
+    } else {
+      console.log('[send-email] ok:', template, '→', to);
+    }
+    return result;
+  } catch(e) {
+    console.warn('[send-email] fetch error:', e.message);
+    return null;
+  }
+}
+
 function stopTranscriptSimulation() { _transcriptActive = false; }
 
 function simulateTranscript() {
