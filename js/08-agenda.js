@@ -355,6 +355,10 @@ function confirmarAgendamento() {
     _salvarAppointments();
     tfTrack('session_scheduled', { recorrencia: recVal, occurrences: datas.length });
 
+    // Lê checkboxes ANTES de remover o modal (depois o elemento some do DOM)
+    var _enviarInvite   = !!(document.getElementById('agendar-chk-invite')?.checked);
+    var _enviarReminder = !!(document.getElementById('agendar-chk-reminder')?.checked);
+
     document.getElementById('modal-agendar')?.remove();
     var toastMsg = recVal !== 'nenhuma'
       ? '✅ ' + datas.length + ' sessões agendadas (' + recVal + ')!'
@@ -365,26 +369,19 @@ function confirmarAgendamento() {
     else renderMonthView();
 
     // Envio de emails via Resend (apenas se o paciente tiver email)
-    var _acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
-    var _tNome = _acc.nome || tfUserData?.nome || 'Seu terapeuta';
-    var _tCrp  = _acc.crp  || tfUserData?.crp  || '';
-    var _dataBR = datas[0].split('-').reverse().join('/');
-    var _emailData = {
-      terapeutaNome: _tNome, terapeutaCrp: _tCrp,
-      pacienteNome: p.name,
-      data: _dataBR, hora: horaVal, duracao: durVal,
-      sessionLink: p.sessionLink || ''
-    };
-
-    if (p.email) {
-      var _chkInvite   = document.getElementById('agendar-chk-invite');
-      var _chkReminder = document.getElementById('agendar-chk-reminder');
-      if (_chkInvite && _chkInvite.checked) {
-        _sendEmail('invite', p.email, _emailData);
-      }
-      if (_chkReminder && _chkReminder.checked) {
-        _sendEmail('reminder', p.email, _emailData);
-      }
+    if (p.email && typeof _sendEmail === 'function') {
+      var _acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+      var _tNome = _acc.nome || (typeof tfUserData !== 'undefined' && tfUserData?.nome) || 'Seu terapeuta';
+      var _tCrp  = _acc.crp  || (typeof tfUserData !== 'undefined' && tfUserData?.crp)  || '';
+      var _dataBR = datas[0].split('-').reverse().join('/');
+      var _emailData = {
+        terapeutaNome: _tNome, terapeutaCrp: _tCrp,
+        pacienteNome: p.name,
+        data: _dataBR, hora: horaVal, duracao: durVal,
+        sessionLink: p.sessionLink || ''
+      };
+      if (_enviarInvite)   _sendEmail('invite',   p.email, _emailData);
+      if (_enviarReminder) _sendEmail('reminder', p.email, _emailData);
     }
   }
 
