@@ -23,6 +23,8 @@ const ALLOWED_ORIGINS = [
 ];
 
 const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supabase.co';
+// Chave pública (anon/publishable) — já exposta no frontend, segura para usar aqui
+const SUPA_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_ovqMsOm88TvulTD4eYTp0w_gCXoFDSl';
 
 function setCors(res, origin) {
   const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
@@ -33,13 +35,11 @@ function setCors(res, origin) {
 }
 
 async function verifyCallerJWT(req) {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) return null;
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
   if (!token) return null;
   try {
     const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
-      headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${token}` },
+      headers: { 'apikey': SUPA_ANON_KEY, 'Authorization': `Bearer ${token}` },
     });
     if (!r.ok) return null;
     return await r.json();
