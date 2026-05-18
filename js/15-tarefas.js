@@ -9,7 +9,14 @@ var tarefasSort = { key: 'date', asc: true };
 var editingTaskId = null;
 
 function carregarTarefas() {
-  try { tasks = JSON.parse(localStorage.getItem('tf_tasks') || '[]'); } catch(e) { tasks = []; }
+  try {
+    tasks = JSON.parse(localStorage.getItem('tf_tasks') || '[]');
+    // Migração: normaliza tarefas antigas sem campo title
+    tasks = tasks.map(function(t) {
+      if (!t.title) return Object.assign({}, t, { title: t.text || t.desc || t.assunto || '(sem título)' });
+      return t;
+    });
+  } catch(e) { tasks = []; }
   // demo tasks se vazio
   if (tasks.length === 0) {
     var hoje = new Date();

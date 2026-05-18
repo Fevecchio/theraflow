@@ -787,17 +787,33 @@ function selectPatient(i, el) {
     }
     // Recalcula progresso clínico com dados reais
     p.progress = _calcProgress(p);
-    // Recalcula p.next a partir de appointments reais
+    // Recalcula p.next e p.lastSession a partir de appointments reais
     if (typeof appointments !== 'undefined') {
       var nowIso = hojeISO();
+      var _matchAppt = function(a) {
+        return a.status !== 'cancelada' && (a.patientIdx === i || a.patientName === p.name);
+      };
       var futurosP = appointments.filter(function(a){
-        return a.patientIdx === i && a.status !== 'cancelada' && a.date >= nowIso;
+        return _matchAppt(a) && a.date >= nowIso;
       }).sort(function(a,b){ return a.date < b.date ? -1 : 1; });
       if (futurosP.length) {
         var np = futurosP[0].date.split('-');
         p.next = np[2] + '/' + np[1] + '/' + np[0];
+      } else if (!p.next) {
+        p.next = '—';
+      }
+      var passadosP = appointments.filter(function(a){
+        return _matchAppt(a) && a.date < nowIso;
+      }).sort(function(a,b){ return a.date > b.date ? -1 : 1; });
+      if (passadosP.length) {
+        var lp = passadosP[0].date.split('-');
+        p.lastSession = lp[2] + '/' + lp[1] + '/' + lp[0];
+      } else if (!p.lastSession) {
+        p.lastSession = '—';
       }
     }
+    if (!p.next) p.next = '—';
+    if (!p.lastSession) p.lastSession = '—';
   })();
 
   const moodColor = p.mood >= 7 ? 'var(--sage)' : p.mood >= 5 ? 'var(--amber)' : 'var(--red)';
@@ -873,7 +889,7 @@ function selectPatient(i, el) {
           <span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span>
           <span>📍 ${escHTML(p.cidade)}</span>
           <span>📋 ${escHTML(p.abordagem)}</span>
-          <span>🗓 Próxima: ${p.next}</span>
+          <span>🗓 Próxima: ${p.next || '—'}</span>
           <span style="display:flex;align-items:center;gap:4px">
             ✉️ <a href="mailto:${p.email}" style="color:var(--sage);text-decoration:none;font-size:12px">${p.email}</a>
             <button onclick="event.stopPropagation();navigator.clipboard?.writeText('${p.email}');showToast('Email copiado!')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);padding:0 2px" title="Copiar email">⎘</button>
@@ -904,7 +920,7 @@ function selectPatient(i, el) {
       <div class="stat-card card-sm">
         <div class="stat-label">Sessões</div>
         <div style="font-family:'Instrument Serif',serif;font-size:26px;margin-top:4px">${p.sessions}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Última: ${p.lastSession}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Última: ${p.lastSession || '—'}</div>
       </div>
       <div class="stat-card card-sm">
         <div class="stat-label">CID</div>

@@ -102,6 +102,11 @@ async function startSession() {
   // Reseta contador de marcos
   const cnt = document.getElementById('transcript-count');
   if (cnt) cnt.textContent = '';
+  simulateTranscript();
+}
+
+function _iniciarTimerSessao() {
+  if (timerInterval !== null) return;
   timerInterval = setInterval(() => {
     sessionSeconds++;
     const m = String(Math.floor(sessionSeconds/60)).padStart(2,'0');
@@ -109,7 +114,6 @@ async function startSession() {
     const el = document.getElementById('session-timer');
     if(el) el.textContent = `${m}:${s}`;
   }, 1000);
-  simulateTranscript();
 }
 function regenerarNotaSessao() {
   const note = document.getElementById('session-ai-note');
@@ -179,6 +183,7 @@ function startWherebySession() {
   window.open(link.startsWith('http') ? link : 'https://' + link, '_blank');
   const badge = document.querySelector('.session-live-badge');
   if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO';
+  _iniciarTimerSessao();
 }
 
 function endWherebySession() {

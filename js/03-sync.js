@@ -182,13 +182,27 @@ async function _supaSync_appointments() {
       const { error } = await supa.from('appointments')
         .upsert(rows, { onConflict: 'user_id,local_id' });
       if (error) throw error;
-      // Remove linhas que foram excluídas localmente mas ainda estão no Supabase
+      // Remove linhas excluídas localmente — em batches para evitar URL longa (>50 IDs quebra PostgREST)
       const localIds = rows.map(r => r.local_id);
-      const { error: delError } = await supa.from('appointments')
-        .delete()
-        .eq('user_id', user.id)
-        .not('local_id', 'in', localIds);
-      if (delError) throw delError;
+      const BATCH = 40;
+      if (localIds.length <= BATCH) {
+        const { error: delError } = await supa.from('appointments')
+          .delete().eq('user_id', user.id).not('local_id', 'in', localIds);
+        if (delError) throw delError;
+      } else {
+        // Busca IDs remotos e deleta os que não existem localmente
+        const { data: remote, error: fetchErr } = await supa.from('appointments')
+          .select('local_id').eq('user_id', user.id);
+        if (fetchErr) throw fetchErr;
+        const localSet = new Set(localIds);
+        const toDelete = (remote || []).map(r => r.local_id).filter(id => !localSet.has(id));
+        for (let i = 0; i < toDelete.length; i += BATCH) {
+          const chunk = toDelete.slice(i, i + BATCH);
+          const { error: delErr } = await supa.from('appointments')
+            .delete().eq('user_id', user.id).in('local_id', chunk);
+          if (delErr) throw delErr;
+        }
+      }
     });
   } catch(e) {
     _syncErrorCount++;

@@ -1036,6 +1036,21 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   .task-table td::before { display: none; }
 }
 
+/* ── MOBILE GRIDS & LAYOUT ── */
+@media (max-width: 768px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .split  { grid-template-columns: 1fr; height: auto; }
+  .form-row { grid-template-columns: 1fr; }
+  .abordagens-grid { grid-template-columns: 1fr; }
+  .topbar { flex-wrap: wrap; gap: 10px; }
+  .topbar-actions { flex-wrap: wrap; gap: 6px; }
+  .topbar-actions .btn { font-size: 12px; padding: 6px 10px; }
+  .agenda-grid { grid-template-columns: 44px 1fr; }
+  .time-slot { padding-right: 8px; font-size: 11px; }
+  #tf-onboarding-layer .form-row { grid-template-columns: 1fr; }
+}
+
 /* ── MOBILE SESSION ── */
 @media (max-width: 768px) {
   .session-layout {

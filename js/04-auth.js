@@ -281,8 +281,11 @@ function loginPaciente() {
         if (pEmail !== email) return false;
         // Preferência: comparar hash (contas já migradas)
         if (p.portalPasswordHash) return p.portalPasswordHash === senhaHash;
-        // Fallback plaintext para contas antigas — migra na primeira entrada
-        return (p.portalPassword || '') !== '' && p.portalPassword === senha;
+        // Senha explícita salva — compara plaintext (migra para hash abaixo)
+        if (p.portalPassword) return p.portalPassword === senha;
+        // Sem senha definida: aceita primeiro nome em minúsculas como padrão
+        var defaultPwd = (p.name || '').split(' ')[0].toLowerCase();
+        return senha === defaultPwd;
       });
       // Migra automaticamente conta antiga para hash após login bem-sucedido
       if (idx !== -1 && !pacs[idx].portalPasswordHash) {
@@ -663,6 +666,7 @@ function pacSalvarNotaPreSessao(idx) {
   if (typeof patients !== 'undefined' && patients[idx]) patients[idx].portalNota = texto;
   var el = document.getElementById('pac-nota-saved');
   if (el) { el.style.display=''; setTimeout(function(){ el.style.display='none'; }, 2500); }
+  showToast('Nota salva! Sua terapeuta verá antes da sessão. ✓');
   try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
 }

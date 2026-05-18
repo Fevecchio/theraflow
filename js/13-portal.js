@@ -460,18 +460,31 @@ function saveDiaryTCC() {
   document.getElementById('diary-tcc-list').insertBefore(div, document.getElementById('diary-tcc-list').firstChild);
   ['tcc-situacao','tcc-pensamento','tcc-alternativo'].forEach(id => document.getElementById(id).value = '');
   document.querySelectorAll('.tcc-emocao-btn').forEach(b => { b.style.background='#fff'; b.style.color='var(--ink)'; b.style.borderColor='var(--border)'; });
+  // Persistir entrada TCC no paciente
+  var pTcc = patients[currentPortalPatientIdx];
+  if (pTcc) {
+    if (!pTcc.diary) pTcc.diary = [];
+    pTcc.diary.unshift({
+      date: dateStr,
+      text: sit,
+      tipo: 'tcc',
+      pensamento: pen,
+      emocao: tccEmocaoSelecionada,
+      intensidade: intVal,
+      alternativa: alt
+    });
+    salvarPacientes();
+  }
   tccEmocaoSelecionada = '';
   updateDiaryCount();
   showToast('Registro TCC salvo. 🧠');
 }
 
 function updateDiaryCount() {
-  const livreEl = document.getElementById('diary-livre-list');
-  const tccEl   = document.getElementById('diary-tcc-list');
-  const livreCount = livreEl ? livreEl.children.length : 0;
-  const tccCount   = tccEl   ? tccEl.children.length   : 0;
+  const p = patients[currentPortalPatientIdx];
+  const total = p ? (p.diary || []).length : 0;
   const el = document.getElementById('diary-count');
-  if (el) el.textContent = (livreCount + tccCount) + ' registros';
+  if (el) el.textContent = total + (total === 1 ? ' registro' : ' registros');
 }
 
 function proximaSessaoDate() {
