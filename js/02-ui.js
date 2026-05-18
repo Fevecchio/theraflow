@@ -28,6 +28,10 @@ function closeSidebar() {
 }
 
 function navigate(page) {
+  if (typeof stopTranscriptSimulation === 'function') stopTranscriptSimulation();
+  if (typeof timerInterval !== 'undefined' && timerInterval !== null && page !== 'sessao') {
+    clearInterval(timerInterval); timerInterval = null;
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const _pageEl = document.getElementById('page-' + page);

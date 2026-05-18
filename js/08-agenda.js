@@ -271,6 +271,26 @@ function confirmarAgendamento() {
 
   if (!sel || !data || !hora) { showToast('⚠ Erro ao abrir formulário de agendamento. Tente novamente.'); return; }
 
+  // Fluxo "Novo paciente": cria o paciente antes de agendar
+  if (sel.value === 'novo') {
+    var nomeNovo = (document.getElementById('novo-paciente-nome')?.value || '').trim();
+    var emailNovo = (document.getElementById('novo-paciente-email')?.value || '').trim();
+    if (!nomeNovo) { showToast('⚠ Informe o nome do novo paciente.'); document.getElementById('novo-paciente-nome')?.focus(); return; }
+    var _colorPairs = [['#4a7c59','#2a5238'],['#2c5f8a','#1a3d5c'],['#c97d2e','#9a5c1e'],['#6a3d7a','#3d1f52']];
+    var _pair = _colorPairs[patients.length % _colorPairs.length];
+    patients.push({
+      initials: nomeNovo.split(' ').map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase(),
+      color: _pair[0], colorGrad: 'linear-gradient(135deg,' + _pair[0] + ',' + _pair[1] + ')',
+      id: crypto.randomUUID(), name: nomeNovo, email: emailNovo, whatsapp: '',
+      abordagem: 'TCC', status: 'Nova', sessions: 0,
+      lastSession: '—', next: '—', progress: 0, mood: null,
+      fin: '—', finStatus: 'ok', alert: null, notes: '', exercises: []
+    });
+    salvarPacientes();
+    // Atualizar o select para refletir o novo paciente
+    sel.value = String(patients.length - 1);
+  }
+
   var pidx = parseInt(sel.value);
   if (isNaN(pidx) || pidx < 0 || pidx >= patients.length) { showToast('⚠ Selecione um paciente.'); return; }
 
@@ -438,6 +458,12 @@ function reagendarAppointment(id) {
           <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Novo horário</label>
           <input type="time" id="reagendar-hora" value="${appt.time}" style="width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box">
         </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Duração</label>
+          <select id="reagendar-duracao" style="width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit">
+            ${[30,45,50,60,90].map(function(v){ return '<option value="'+v+'"'+(v===(appt.duration||50)?' selected':'')+'>'+v+' minutos</option>'; }).join('')}
+          </select>
+        </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:20px">
         <button onclick="document.getElementById('modal-reagendar').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
@@ -454,9 +480,11 @@ function confirmarReagendamento(id) {
   var novaData = document.getElementById('reagendar-data')?.value;
   var novaHora = document.getElementById('reagendar-hora')?.value;
   if (!novaData || !novaHora) { showToast('⚠ Preencha data e horário.'); return; }
+  var novaDuracao = parseInt(document.getElementById('reagendar-duracao')?.value || appt.duration || 50);
   var dataAnterior = appt.date + ' ' + appt.time;
   appt.date = novaData;
   appt.time = novaHora;
+  appt.duration = novaDuracao;
   _salvarAppointments();
   document.getElementById('modal-reagendar')?.remove();
   if (agendaCurrentView === 'dia') renderDayView();

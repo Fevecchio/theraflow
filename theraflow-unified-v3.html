@@ -327,11 +327,13 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div><!-- fim ob-card-body -->
 
     <!-- FOOTER -->
-    <div class="ob-footer" style="justify-content:center;flex-direction:column;gap:10px;align-items:center">
-      <span class="ob-footer-left">Dúvidas? <a href="mailto:contato@theraflow.com.br" style="color:var(--sage);text-decoration:none;font-weight:500">contato@theraflow.com.br</a></span>
-      <button onclick="irParaLoginPaciente()" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);font-family:inherit;padding:0;transition:color .15s" onmouseover="this.style.color='var(--sage)'" onmouseout="this.style.color='var(--muted)'">
-        Você é paciente? Acesse seu portal →
-      </button>
+    <div class="ob-footer" style="justify-content:center;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:100%;border-top:1px solid var(--border);padding-top:16px">
+        <button onclick="irParaLoginPaciente()" style="width:100%;padding:11px 16px;background:#fff;border:1.5px solid var(--sage);border-radius:10px;color:var(--sage);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s" onmouseover="this.style.background='var(--sage-light)'" onmouseout="this.style.background='#fff'">
+          🌿 Sou paciente — Acessar meu portal
+        </button>
+      </div>
+      <span class="ob-footer-left" style="font-size:12px">Dúvidas? <a href="mailto:contato@theraflow.com.br" style="color:var(--sage);text-decoration:none;font-weight:500">contato@theraflow.com.br</a></span>
     </div>
 
   </div><!-- fim ob-card -->
@@ -796,9 +798,12 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
               <div class="video-avatar-large" id="session-prestate-avatar">CR</div>
               <div style="font-size:14px;margin-bottom:6px" id="session-prestate-name">Camila Rocha</div>
               <div style="font-size:12px;color:#4a7a5d;margin-bottom:20px">Sala criada · aguardando paciente</div>
-              <button onclick="startWherebySession()" class="btn btn-primary" style="gap:8px">
+              <button id="btn-entrar-sala" onclick="startWherebySession()" class="btn btn-primary" style="gap:8px">
                 ▶ Entrar na sala de vídeo
               </button>
+              <div id="session-no-link-warning" style="display:none;margin-top:8px;font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 10px">
+                Nenhum link configurado — edite a ficha do paciente para adicionar o link da sala.
+              </div>
               <div style="font-size:11px;color:#3a5a3d;margin-top:10px">
                 Powered by <strong>Whereby</strong> · sala expira ao encerrar sessão
               </div>
@@ -2059,6 +2064,26 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
       </div>
 
+      <!-- Segurança -->
+      <div class="perfil-section">
+        <div class="perfil-section-title">Segurança</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <label class="perfil-label">Senha atual</label>
+            <input type="password" id="perfil-senha-atual" class="perfil-input" placeholder="••••••••"/>
+          </div>
+          <div>
+            <label class="perfil-label">Nova senha</label>
+            <input type="password" id="perfil-senha-nova" class="perfil-input" placeholder="Mínimo 8 caracteres"/>
+          </div>
+          <div>
+            <label class="perfil-label">Confirmar nova senha</label>
+            <input type="password" id="perfil-senha-confirmar" class="perfil-input" placeholder="Repita a nova senha"/>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="atualizarSenha()" style="align-self:flex-start">Atualizar senha</button>
+        </div>
+      </div>
+
       <!-- Aparência -->
       <div class="perfil-section">
         <div class="perfil-section-title">Aparência</div>
@@ -2926,40 +2951,34 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
      ÁREA DO PACIENTE — LOGIN
 ════════════════════════════════════════ -->
 <div id="tf-patient-login-layer">
-  <div style="width:100%;max-width:420px">
+  <div class="pac-login-card">
 
-    <!-- Logo -->
-    <div style="text-align:center;margin-bottom:32px">
-      <div style="font-family:'Instrument Serif',serif;font-size:28px;color:var(--ink)">TheraFlow</div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px">Portal do Paciente</div>
+    <div class="pac-login-brand">
+      <div class="pac-login-logo">TheraFlow</div>
+      <div class="pac-login-sub">Portal do Paciente</div>
     </div>
 
-    <!-- Card -->
-    <div style="background:#fff;border-radius:16px;border:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.07);overflow:hidden">
-      <div style="background:var(--sage);padding:20px 28px">
-        <div style="font-size:18px;font-weight:600;color:#fff">Bem-vindo(a)</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:3px">Entre com seu email e a senha fornecida pelo seu terapeuta</div>
+    <div class="pac-login-box">
+      <div class="pac-login-title">Bem-vindo(a)</div>
+      <div class="pac-login-hint">Entre com o email e a senha fornecidos pelo seu terapeuta.</div>
+      <div class="form-group">
+        <label>Seu email</label>
+        <input class="form-input" id="pac-login-email" type="email" placeholder="seuemail@exemplo.com" onkeydown="if(event.key==='Enter')loginPaciente()"/>
       </div>
-      <div style="padding:28px">
-        <div class="form-group">
-          <label>Seu email</label>
-          <input class="form-input" id="pac-login-email" type="email" placeholder="seuemail@exemplo.com" onkeydown="if(event.key==='Enter')loginPaciente()"/>
-        </div>
-        <div class="form-group">
-          <label>Senha</label>
-          <input class="form-input" id="pac-login-senha" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginPaciente()"/>
-        </div>
-        <div id="pac-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:16px">
-          ⚠ Email ou senha incorretos. Verifique com seu terapeuta.
-        </div>
-        <button id="pac-login-btn" onclick="loginPaciente()" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background='#3a6b4a'" onmouseout="this.style.background='var(--sage)'">
-          Acessar meu portal →
+      <div class="form-group">
+        <label>Senha</label>
+        <input class="form-input" id="pac-login-senha" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginPaciente()"/>
+      </div>
+      <div id="pac-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:16px">
+        ⚠ Email ou senha incorretos. Verifique com seu terapeuta.
+      </div>
+      <button id="pac-login-btn" onclick="loginPaciente()" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background='#3a6b4a'" onmouseout="this.style.background='var(--sage)'">
+        Acessar meu portal →
+      </button>
+      <div style="text-align:center;margin-top:20px">
+        <button onclick="voltarLoginTerapeuta()" style="background:none;border:none;cursor:pointer;font-size:12.5px;color:var(--muted);font-family:inherit" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'">
+          ← Voltar ao acesso do terapeuta
         </button>
-        <div style="text-align:center;margin-top:20px">
-          <button onclick="voltarLoginTerapeuta()" style="background:none;border:none;cursor:pointer;font-size:12.5px;color:var(--muted);font-family:inherit" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'">
-            ← Voltar ao acesso do terapeuta
-          </button>
-        </div>
       </div>
     </div>
 

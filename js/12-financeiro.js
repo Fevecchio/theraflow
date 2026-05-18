@@ -830,13 +830,19 @@ function gerarReciboPDF(btn) {
   const chargeId = card ? parseInt(card.dataset.chargeId) : null;
   const c = chargeId != null ? charges.find(ch => ch.id === chargeId) : null;
 
-  const terapeuta = tfUserData || {};
+  // Fallback: carrega dados do terapeuta direto do localStorage se tfUserData estiver vazio
+  var _accFallback = {}; try { _accFallback = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+  const terapeuta = (tfUserData && tfUserData.nome) ? tfUserData : { nome: _accFallback.nome||'—', crp: _accFallback.crp||'—' };
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const num = String(Math.floor(Math.random()*900)+100);
+  // Número sequencial baseado no chargeId para rastreabilidade
+  var _reciboSeq = 0; try { _reciboSeq = parseInt(localStorage.getItem('tf_recibo_seq')||'0')||0; } catch(e){}
+  _reciboSeq++; try { localStorage.setItem('tf_recibo_seq', String(_reciboSeq)); } catch(e){}
+  const num = (chargeId != null ? String(chargeId).slice(-4).padStart(4,'0') : String(_reciboSeq).padStart(4,'0'));
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"/>
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"/>
 <title>Recibo — ${c ? escHTML(c.patient) : 'Sessão'}</title>
 <style>
   body{font-family:'Arial',sans-serif;max-width:580px;margin:40px auto;padding:0 24px;color:#1a1a1a;font-size:13px}

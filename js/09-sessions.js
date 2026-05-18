@@ -62,6 +62,17 @@ async function startSession() {
       : `${(sp.sessions||0)+1} de 20 (trial)`;
     if (sfC) sfC.textContent = sp.cid !== '—' ? sp.cid : '—';
   }
+  // Atualiza botão de vídeo conforme link do paciente
+  const _btnSala = document.getElementById('btn-entrar-sala');
+  const _warnSala = document.getElementById('session-no-link-warning');
+  if (_btnSala && _warnSala) {
+    const _hasLink = !!(sp && sp.sessionLink);
+    _btnSala.disabled = !_hasLink;
+    _btnSala.style.opacity = _hasLink ? '1' : '.45';
+    _btnSala.style.cursor  = _hasLink ? 'pointer' : 'not-allowed';
+    _btnSala.title = _hasLink ? '' : 'Configure o link da sala na ficha do paciente';
+    _warnSala.style.display = _hasLink ? 'none' : 'block';
+  }
   // Limpa anotações rápidas
   const qn = document.getElementById('session-quick-notes');
   if (qn) qn.value = '';
@@ -159,17 +170,15 @@ let transcriptMuted = false;
 // No protótipo, simulamos com uma sala de demonstração pública do Whereby:
 
 function startWherebySession() {
-  // Integração Whereby via API em desenvolvimento.
-  // Por enquanto, usa o link de sessão configurado na ficha do paciente.
   const sp = patients[currentSessionPatientIdx] || patients[0];
   const link = sp && sp.sessionLink;
-  if (link) {
-    window.open(link.startsWith('http') ? link : 'https://' + link, '_blank');
-    const badge = document.querySelector('.session-live-badge');
-    if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO';
-  } else {
+  if (!link) {
     showToast('⚠ Adicione o link da videochamada na ficha do paciente antes de iniciar.');
+    return;
   }
+  window.open(link.startsWith('http') ? link : 'https://' + link, '_blank');
+  const badge = document.querySelector('.session-live-badge');
+  if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO';
 }
 
 function endWherebySession() {

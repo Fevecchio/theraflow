@@ -259,18 +259,21 @@ function sendLinkWhatsApp(link) {
 
 let tIdx = 0;
 let sessionTranscriptLogged = [];
+let _transcriptActive = false; // flag para parar simulação ao navegar
+
+function stopTranscriptSimulation() { _transcriptActive = false; }
 
 function simulateTranscript() {
   const feed = document.getElementById('transcript-feed');
   if(!feed) return;
-  feed.innerHTML = ''; tIdx = 0; sessionTranscriptLogged = [];
+  feed.innerHTML = ''; tIdx = 0; sessionTranscriptLogged = []; _transcriptActive = true;
   // Atualiza labels de paciente no transcript com nome real
   const _stP = patients[currentSessionPatientIdx] || patients[0];
   const _stFirst = _stP ? _stP.name.split(' ')[0] : 'Paciente';
   transcriptLines.forEach(l => { if (l.cls === 'who-p') l.label = _stFirst; });
   const countEl = document.getElementById('transcript-count');
   const add = () => {
-    if(!document.getElementById('transcript-feed')) return;
+    if(!_transcriptActive || !document.getElementById('transcript-feed')) return;
     if(tIdx < transcriptLines.length) {
       const l = transcriptLines[tIdx];
       const d = document.createElement('div');
@@ -631,7 +634,7 @@ function saveProfile() {
 
   // ── Atualiza saudação no dashboard ──
   const dashTitle = document.querySelector('#page-dashboard .page-title');
-  if (dashTitle) dashTitle.textContent = saud + ', ' + firstName + ' 👋';
+  if (dashTitle) dashTitle.textContent = saud + ', ' + firstName;
 
   // ── Sincroniza tfUserData ──
   tfUserData.nome        = nome;
@@ -688,6 +691,38 @@ function saveProfile() {
   }
   salvarHorarios();
   showToast('✓ Perfil salvo. IA recalibrada para ' + abordLabel + apiMsg);
+}
+
+/* ── Alterar senha do terapeuta ── */
+async function atualizarSenha() {
+  var senhaAtual    = document.getElementById('perfil-senha-atual')?.value || '';
+  var senhaNova     = document.getElementById('perfil-senha-nova')?.value || '';
+  var senhaConfirma = document.getElementById('perfil-senha-confirmar')?.value || '';
+
+  if (!senhaAtual)    { showToast('⚠ Informe a senha atual.'); return; }
+  if (!senhaNova)     { showToast('⚠ Informe a nova senha.'); return; }
+  if (senhaNova.length < 8) { showToast('⚠ A nova senha deve ter pelo menos 8 caracteres.'); return; }
+  if (senhaNova !== senhaConfirma) { showToast('⚠ As senhas não coincidem.'); return; }
+
+  try {
+    // Re-autentica com a senha atual para confirmar identidade
+    var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+    var email = acc.email || (typeof tfUserData !== 'undefined' ? tfUserData.email : '');
+    if (email) {
+      var { error: signInErr } = await supa.auth.signInWithPassword({ email, password: senhaAtual });
+      if (signInErr) { showToast('⚠ Senha atual incorreta.'); return; }
+    }
+    var { error } = await supa.auth.updateUser({ password: senhaNova });
+    if (error) { showToast('⚠ Erro ao atualizar senha: ' + error.message); return; }
+    // Limpa campos
+    document.getElementById('perfil-senha-atual').value = '';
+    document.getElementById('perfil-senha-nova').value = '';
+    document.getElementById('perfil-senha-confirmar').value = '';
+    showToast('✓ Senha atualizada com sucesso!');
+  } catch(e) {
+    showToast('⚠ Erro inesperado. Tente novamente.');
+    console.warn('[TF] atualizarSenha:', e.message);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════

@@ -951,7 +951,9 @@ function selectPatient(i, el) {
             <button onclick="redefinirSenhaPaciente(${i})" style="background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
           </div>
           <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 Compartilhar acesso via WhatsApp</button>
-          <button onclick="revogarPortalPaciente(${i})" style="margin-top:4px;display:flex;align-items:center;gap:6px;background:none;border:1px solid rgba(220,38,38,.3);color:#dc2626;border-radius:7px;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">🚫 Desativar acesso ao portal</button>
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(220,38,38,.12);text-align:right">
+            <button onclick="revogarPortalPaciente(${i})" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">Desativar acesso ao portal</button>
+          </div>
           <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(44,95,138,.12)">
             <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:5px">🔗 Link da sala de sessão</div>
             <div style="display:flex;gap:6px;align-items:center">
