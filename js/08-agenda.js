@@ -287,8 +287,12 @@ function confirmarAgendamento() {
       fin: '—', finStatus: 'ok', alert: null, notes: '', exercises: []
     });
     salvarPacientes();
-    // Atualizar o select para refletir o novo paciente
-    sel.value = String(patients.length - 1);
+    // Adiciona opção ao select antes de selecionar (sem opção o browser ignora sel.value)
+    var _newIdx = String(patients.length - 1);
+    var _opt = document.createElement('option');
+    _opt.value = _newIdx; _opt.textContent = nomeNovo;
+    sel.appendChild(_opt);
+    sel.value = _newIdx;
   }
 
   var pidx = parseInt(sel.value);
