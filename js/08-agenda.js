@@ -13,7 +13,10 @@ function carregarAppointments() {
     }
     return;
   }
-  try { appointments = JSON.parse(localStorage.getItem('tf_appointments') || '[]'); } catch(e) { appointments = []; }
+  try {
+    appointments = JSON.parse(localStorage.getItem('tf_appointments') || '[]')
+      .map(function(a){ return Object.assign({}, a, { id: Number(a.id) }); });
+  } catch(e) { appointments = []; }
   if (appointments.length === 0) { _gerarAppointmentsDemo(); _salvarAppointments(); }
 }
 
@@ -541,10 +544,10 @@ function renderDayView() {
   if (iso === hoje) tituloData = 'Hoje — ' + diasNome[d.getDay()];
 
   var _hConfig = carregarHorarios();
-  var _hIni = _hConfig ? parseInt((_hConfig.inicio||'08:00').split(':')[0]) : 8;
-  var _hFim = _hConfig ? parseInt((_hConfig.fim||'18:00').split(':')[0]) : 18;
+  var _hTrabalhoIni = _hConfig ? parseInt((_hConfig.inicio||'08:00').split(':')[0]) : 8;
+  var _hTrabalhoFim = _hConfig ? parseInt((_hConfig.fim||'18:00').split(':')[0]) : 18;
   var horas = [];
-  for (var _hi = _hIni; _hi <= _hFim; _hi++) horas.push(_hi);
+  for (var _hi = 0; _hi <= 23; _hi++) horas.push(_hi);
   var sessoesDia = appointments.filter(function(a){ return a.date===iso && a.status!=='cancelada'; });
 
   // Mapa hora → agendamentos
@@ -591,8 +594,9 @@ function renderDayView() {
             + (presencaBadge ? '<div>'+presencaBadge+'</div>' : '')
             + '</div>';
         }).join('');
-    return '<div style="display:grid;grid-template-columns:56px 1fr;border-top:1px solid var(--border)">'
-      + '<div class="time-slot" style="padding:10px 8px;font-size:11px;color:var(--muted);display:flex;align-items:flex-start;padding-top:12px">'+horaStr+'</div>'
+    var _foraHorario = h < _hTrabalhoIni || h > _hTrabalhoFim;
+    return '<div style="display:grid;grid-template-columns:56px 1fr;border-top:1px solid var(--border);'+(_foraHorario?'background:var(--bg)':'background:#fff')+'">'
+      + '<div class="time-slot" style="padding:10px 8px;font-size:11px;color:var(--muted);display:flex;align-items:flex-start;padding-top:12px;opacity:'+(_foraHorario?'.5':'1')+'">'+horaStr+'</div>'
       + '<div class="appt-slot" style="padding:6px 8px;min-height:56px">'+slotContent+'</div>'
       + '</div>';
   }).join('');
@@ -656,10 +660,10 @@ function renderWeekView() {
   });
 
   var _hConfigW = carregarHorarios();
-  var _hIniW = _hConfigW ? parseInt((_hConfigW.inicio||'08:00').split(':')[0]) : 8;
-  var _hFimW = _hConfigW ? parseInt((_hConfigW.fim||'18:00').split(':')[0]) : 18;
+  var _hTrabalhoIniW = _hConfigW ? parseInt((_hConfigW.inicio||'08:00').split(':')[0]) : 8;
+  var _hTrabalhoFimW = _hConfigW ? parseInt((_hConfigW.fim||'18:00').split(':')[0]) : 18;
   var horas = [];
-  for (var _hiw = _hIniW; _hiw <= _hFimW; _hiw++) horas.push(_hiw);
+  for (var _hiw = 0; _hiw <= 23; _hiw++) horas.push(_hiw);
   var diasAbrev = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
 
   // Cabeçalho
@@ -680,13 +684,15 @@ function renderWeekView() {
 
   horas.forEach(function(h){
     var horaStr = String(h).padStart(2,'0')+':00';
-    gridHtml += '<div style="padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:10px">'+horaStr+'</div>';
+    var _foraLabelW = h < _hTrabalhoIniW || h > _hTrabalhoFimW;
+    gridHtml += '<div style="padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:10px;background:var(--bg);opacity:'+(_foraLabelW?'.4':'1')+'">'+horaStr+'</div>';
     dias.forEach(function(di, ci){
       var appts = appointments.filter(function(a){
         return a.date===di.iso && a.status!=='cancelada' && parseInt((a.time||'09:00').split(':')[0])===h;
       });
       var isLast = ci===4;
-      var bg = di.isHoje ? 'rgba(74,124,89,.04)' : '#fff';
+      var _foraHorarioW = h < _hTrabalhoIniW || h > _hTrabalhoFimW;
+      var bg = di.isHoje ? 'rgba(74,124,89,.04)' : (_foraHorarioW ? 'var(--bg)' : '#fff');
       var clickEmpty = 'onclick="showAgendarModal(\''+di.iso+'\',\''+horaStr+'\')"';
       var isBloq = isDiaBlockeado(di.iso);
       var bgFinal = isBloq ? 'var(--bg)' : bg;
