@@ -197,8 +197,10 @@ export default async function handler(req, res) {
   }
 
   try {
+    // RESEND_FROM: use noreply@theraflow.com.br após verificar o domínio na Resend
+    const fromAddr = process.env.RESEND_FROM || 'TheraFlow <onboarding@resend.dev>';
     const result = await resend.emails.send({
-      from: 'TheraFlow <noreply@theraflow.com.br>',
+      from: fromAddr,
       to,
       subject,
       html,
