@@ -397,7 +397,7 @@ document.addEventListener('click', function(e) {
 
 // ── PACIENTES ──
 const DEMO_PATIENTS = [
-  { initials:'CR', color:'#4a7c59', name:'Camila Rocha', email:'camila.rocha@gmail.com', whatsapp:'11987650001', age:28, cidade:'São Paulo, SP', abordagem:'TCC', cid:'F41.1 — TAG', status:'Ativa', sessions:12, lastSession:'24/03', next:'31/03', progress:60, mood:7, moodTrend:'up', fin:'Em dia', finStatus:'ok', alert:null,
+  { _isDemo:true, initials:'CR', color:'#4a7c59', name:'Camila Rocha', email:'camila.rocha@gmail.com', whatsapp:'11987650001', age:28, cidade:'São Paulo, SP', abordagem:'TCC', cid:'F41.1 — TAG', status:'Ativa', sessions:12, lastSession:'24/03', next:'31/03', progress:60, mood:7, moodTrend:'up', fin:'Em dia', finStatus:'ok', alert:null,
     notes:'Progresso em reestruturação cognitiva. Autoexigência como tema central. Dormindo melhor nas últimas 2 semanas.',
     moodHistory:[4,5,4,6,5,7,6,7,7,8,7,7],
     prontuarioNotes:[
@@ -409,7 +409,7 @@ const DEMO_PATIENTS = [
     ],
     exercises:[{id:1,title:'Diário de pensamentos',desc:'Registre 1 situação que gerou ansiedade, o pensamento automático e uma alternativa mais equilibrada.',tag:'tcc',done:true,concluidos:1,total:1},{id:2,title:'Relaxamento progressivo',desc:'Pratique a sequência de 10 minutos antes de dormir. Observe a diferença no sono.',tag:'relaxa',done:true,concluidos:1,total:1},{id:3,title:'Registro de humor diário',desc:'Preencha o check-in de humor no portal pelo menos 5 dias esta semana.',tag:'diario',done:false,concluidos:3,total:5},{id:4,title:'Exposição gradual — apresentação',desc:'Preparar 3 slides sobre qualquer tema e apresentar para uma pessoa de confiança.',tag:'exposicao',done:false,concluidos:0,total:1}]
   },
-  { initials:'RA', color:'#2c5f8a', name:'Rafael Andrade', email:'rafael.andrade@outlook.com', whatsapp:'11987650002', age:35, cidade:'Campinas, SP', abordagem:'Psicanálise', cid:'F32.1 — Depressão', status:'Atenção', sessions:7, lastSession:'21/03', next:'24/03', progress:35, mood:3, moodTrend:'down', fin:'Atrasado', finStatus:'overdue', alert:'Risco clínico · linguagem de desesperança nas últimas 2 sessões',
+  { _isDemo:true, initials:'RA', color:'#2c5f8a', name:'Rafael Andrade', email:'rafael.andrade@outlook.com', whatsapp:'11987650002', age:35, cidade:'Campinas, SP', abordagem:'Psicanálise', cid:'F32.1 — Depressão', status:'Atenção', sessions:7, lastSession:'21/03', next:'24/03', progress:35, mood:3, moodTrend:'down', fin:'Atrasado', finStatus:'overdue', alert:'Risco clínico · linguagem de desesperança nas últimas 2 sessões',
     notes:'Resistência ao processo. Explorar vínculo terapêutico. Avaliar risco na próxima sessão.',
     moodHistory:[5,4,5,4,3,4,3],
     prontuarioNotes:[
@@ -419,7 +419,7 @@ const DEMO_PATIENTS = [
     ],
     exercises:[]
   },
-  { initials:'MO', color:'#c97d2e', name:'Marcos Oliveira', email:'marcos.oliveira@gmail.com', whatsapp:'11987650003', age:42, cidade:'Santo André, SP', abordagem:'TCC', cid:'F51.0 — Insônia', status:'Ativa', sessions:5, lastSession:'20/03', next:'25/03', progress:25, mood:5, moodTrend:'stable', fin:'Pendente', finStatus:'pending', alert:null,
+  { _isDemo:true, initials:'MO', color:'#c97d2e', name:'Marcos Oliveira', email:'marcos.oliveira@gmail.com', whatsapp:'11987650003', age:42, cidade:'Santo André, SP', abordagem:'TCC', cid:'F51.0 — Insônia', status:'Ativa', sessions:5, lastSession:'20/03', next:'25/03', progress:25, mood:5, moodTrend:'stable', fin:'Pendente', finStatus:'pending', alert:null,
     notes:'Queixa de insônia e irritabilidade. Início promissor.',
     moodHistory:[4,5,5,5,5],
     prontuarioNotes:[
@@ -428,7 +428,7 @@ const DEMO_PATIENTS = [
     ],
     exercises:[]
   },
-  { initials:'JC', color:'#6a3d7a', name:'Juliana Costa', age:31, cidade:'São Paulo, SP', abordagem:'Sistêmica', cid:'F43.2 — Ajustamento', status:'Ativa', sessions:9, lastSession:'19/03', next:'26/03', progress:45, mood:7, moodTrend:'up', fin:'Em dia', finStatus:'ok', alert:null,
+  { _isDemo:true, initials:'JC', color:'#6a3d7a', name:'Juliana Costa', age:31, cidade:'São Paulo, SP', abordagem:'Sistêmica', cid:'F43.2 — Ajustamento', status:'Ativa', sessions:9, lastSession:'19/03', next:'26/03', progress:45, mood:7, moodTrend:'up', fin:'Em dia', finStatus:'ok', alert:null,
     notes:'Padrões relacionais com família de origem. Boa evolução — considerar reduzir frequência.',
     moodHistory:[5,5,6,6,7,6,7,7,7],
     prontuarioNotes:[
@@ -438,11 +438,11 @@ const DEMO_PATIENTS = [
     ],
     exercises:[]
   },
-  { initials:'LF', color:'#8b2252', name:'Lúcia Fernandes', email:'lucia.fernandes@gmail.com', whatsapp:'11987650004', age:24, cidade:'São Bernardo, SP', abordagem:'—', cid:'—', status:'Nova', sessions:0, lastSession:'—', next:'24/03', progress:0, mood:null, moodTrend:null, fin:'—', finStatus:'ok', alert:null,
+  { _isDemo:true, initials:'LF', color:'#8b2252', name:'Lúcia Fernandes', email:'lucia.fernandes@gmail.com', whatsapp:'11987650004', age:24, cidade:'São Bernardo, SP', abordagem:'—', cid:'—', status:'Nova', sessions:0, lastSession:'—', next:'24/03', progress:0, mood:null, moodTrend:null, fin:'—', finStatus:'ok', alert:null,
     notes:'Avaliação inicial agendada. Encaminhada por psiquiatra.',
     moodHistory:[], prontuarioNotes:[], exercises:[]
   },
-  { initials:'PA', color:'#8b4513', name:'Pedro Alves', email:'pedro.alves@gmail.com', whatsapp:'11987650005', age:29, cidade:'Guarulhos, SP', abordagem:'TCC', cid:'F40.1 — Fobia social', status:'Ativa', sessions:3, lastSession:'17/03', next:'27/03', progress:15, mood:5, moodTrend:'stable', fin:'Atrasado', finStatus:'overdue', alert:null,
+  { _isDemo:true, initials:'PA', color:'#8b4513', name:'Pedro Alves', email:'pedro.alves@gmail.com', whatsapp:'11987650005', age:29, cidade:'Guarulhos, SP', abordagem:'TCC', cid:'F40.1 — Fobia social', status:'Ativa', sessions:3, lastSession:'17/03', next:'27/03', progress:15, mood:5, moodTrend:'stable', fin:'Atrasado', finStatus:'overdue', alert:null,
     notes:'Dificuldade de exposição em situações sociais. Comprometimento com as tarefas de casa inconsistente.',
     moodHistory:[4,5,5],
     prontuarioNotes:[
@@ -543,7 +543,9 @@ function carregarPacientes() {
     if (raw) {
       const saved = JSON.parse(raw);
       if (Array.isArray(saved) && saved.length > 0) {
-        patients = saved;
+        // Remove demo patients que possam ter sido salvos acidentalmente em versões anteriores
+        const clean = saved.filter(function(p) { return !p._isDemo; });
+        patients = clean.length > 0 ? clean : saved;
         return;
       }
     }

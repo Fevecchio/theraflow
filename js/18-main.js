@@ -167,8 +167,8 @@ function aplicarDadosNoApp() {
   var dmToggle = document.getElementById('toggle-dark-mode');
   if (dmToggle) dmToggle.checked = isDark;
 
-  var nome        = tfUserData.nome        || 'Ana Meireles';
-  var crp         = tfUserData.crp         || '06/123456';
+  var nome        = tfUserData.nome        || '';
+  var crp         = tfUserData.crp         || '';
   var email       = tfUserData.email       || '';
   var abordagem   = tfUserData.abordagem   || 'TCC';
   var secundarias = Array.isArray(tfUserData.secundarias) ? tfUserData.secundarias : [];
@@ -195,7 +195,7 @@ function aplicarDadosNoApp() {
 
   // ── 2. DASHBOARD ──
   var dashTitle = document.getElementById('dash-greeting');
-  if (dashTitle) dashTitle.textContent = saud + ', ' + firstName + ' 👋';
+  if (dashTitle) dashTitle.textContent = saud + ', ' + firstName;
 
   // ── 3. PERFIL — hero ──
   var heroNome   = document.getElementById('perfil-hero-nome');

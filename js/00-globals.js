@@ -71,9 +71,12 @@ async function _supaLoadUserData(userId) {
     if (profile) {
       const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
       const plano = profile.plano || 'trial';
-      if (plano === 'pro' || plano === 'clinic') _tfPlanPro = true;
+      if (plano === 'pro' || plano === 'clinic') {
+        _tfPlanPro = true;
+        if (typeof atualizarTrialUI === 'function') atualizarTrialUI();
+      }
       const nomeFromDB = profile.nome && !profile.nome.includes('@') ? profile.nome : null;
-      localStorage.setItem('tf_account', JSON.stringify({
+      const mergedAcc = {
         ...acc,
         nome: nomeFromDB || acc.nome || '',
         crp: profile.crp || acc.crp || '',
@@ -84,7 +87,16 @@ async function _supaLoadUserData(userId) {
         supa_id: userId,
         referral_count: profile.referral_count || 0,
         referral_rewarded: profile.referral_rewarded || false,
-      }));
+      };
+      localStorage.setItem('tf_account', JSON.stringify(mergedAcc));
+      // Atualiza tfUserData e re-aplica UI com dados reais do Supabase
+      if (typeof tfUserData !== 'undefined') {
+        tfUserData.nome        = mergedAcc.nome;
+        tfUserData.crp         = mergedAcc.crp;
+        tfUserData.email       = mergedAcc.email;
+        tfUserData.abordagem   = mergedAcc.abordagem;
+      }
+      if (typeof aplicarDadosNoApp === 'function') aplicarDadosNoApp();
     }
     if (pats && pats.length > 0) {
       const localPats = JSON.parse(localStorage.getItem('tf_patients') || '[]');

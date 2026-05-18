@@ -41,7 +41,7 @@ async function _supaSync_patients() {
     await _syncRace(async function() {
       const { data: { user } } = await supa.auth.getUser();
       if (!user) return;
-      const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+      const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]').filter(p => !p._isDemo);
       if (!pats.length) return;
       const rows = pats.map(p => ({
         id: p.id || undefined,
