@@ -371,17 +371,28 @@ function confirmarAgendamento() {
     // Envio de emails via Resend (apenas se o paciente tiver email)
     if (p.email && typeof _sendEmail === 'function') {
       var _acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
-      var _tNome = _acc.nome || (typeof tfUserData !== 'undefined' && tfUserData?.nome) || 'Seu terapeuta';
+      var _tNome = _acc.nome || (typeof tfUserData !== 'undefined' && tfUserData?.nome) || '';
       var _tCrp  = _acc.crp  || (typeof tfUserData !== 'undefined' && tfUserData?.crp)  || '';
+      if (!_tNome) showToast('⚠ Adicione seu nome no Perfil para aparecer corretamente nos emails');
       var _dataBR = datas[0].split('-').reverse().join('/');
       var _emailData = {
-        terapeutaNome: _tNome, terapeutaCrp: _tCrp,
+        terapeutaNome: _tNome || 'Seu terapeuta', terapeutaCrp: _tCrp,
         pacienteNome: p.name,
         data: _dataBR, hora: horaVal, duracao: durVal,
-        sessionLink: p.sessionLink || ''
+        sessionLink: p.sessionLink || '',
+        sessionDateISO: datas[0]
       };
       if (_enviarInvite)   _sendEmail('invite',   p.email, _emailData);
-      if (_enviarReminder) _sendEmail('reminder', p.email, _emailData);
+      if (_enviarReminder) {
+        // Verifica se sessão é em mais de 24h — senão lembrete não faz sentido
+        var _sessionDt = new Date(datas[0] + 'T' + horaVal + ':00');
+        var _reminderDt = new Date(_sessionDt.getTime() - 24*60*60*1000);
+        if (_reminderDt > new Date()) {
+          _sendEmail('reminder', p.email, _emailData);
+        } else {
+          showToast('ℹ Sessão em menos de 24h — lembrete não enviado');
+        }
+      }
     }
   }
 

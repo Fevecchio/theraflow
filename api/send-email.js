@@ -181,7 +181,7 @@ export default async function handler(req, res) {
 
   const resend = new Resend(RESEND_KEY);
 
-  let subject, html;
+  let subject, html, scheduledAt = null;
 
   if (template === 'invite') {
     subject = `Sessão confirmada — ${data?.data || ''} às ${data?.hora || ''}`;
@@ -189,6 +189,19 @@ export default async function handler(req, res) {
   } else if (template === 'reminder') {
     subject = `Lembrete: sua sessão é amanhã às ${data?.hora || ''}`;
     html = tmplReminder(data || {});
+    // Agendar para 24h antes da sessão (Resend scheduledAt)
+    if (data?.sessionDateISO && data?.hora) {
+      const sessionDt = new Date(`${data.sessionDateISO}T${data.hora}:00`);
+      const reminderDt = new Date(sessionDt.getTime() - 24 * 60 * 60 * 1000);
+      if (reminderDt > new Date()) {
+        scheduledAt = reminderDt.toISOString();
+        console.log('[send-email] Lembrete agendado para:', scheduledAt);
+      } else {
+        // Sessão já em menos de 24h — não faz sentido enviar lembrete "amanhã"
+        console.log('[send-email] Sessão em menos de 24h, lembrete não enviado');
+        return res.status(200).json({ ok: true, skipped: true, reason: 'session_within_24h' });
+      }
+    }
   } else if (template === 'portal') {
     subject = `${data?.terapeutaNome || 'Seu terapeuta'} ativou seu portal TheraFlow`;
     html = tmplPortal(data || {});
@@ -199,20 +212,18 @@ export default async function handler(req, res) {
   try {
     // RESEND_FROM: use noreply@theraflow.com.br após verificar o domínio na Resend
     const fromAddr = process.env.RESEND_FROM || 'TheraFlow <onboarding@resend.dev>';
-    const result = await resend.emails.send({
-      from: fromAddr,
-      to,
-      subject,
-      html,
-    });
+    const emailPayload = { from: fromAddr, to, subject, html };
+    if (scheduledAt) emailPayload.scheduledAt = scheduledAt;
+    const result = await resend.emails.send(emailPayload);
 
     if (result.error) {
       console.error('[send-email] Resend error:', result.error);
       return res.status(502).json({ error: result.error.message });
     }
 
-    console.log('[send-email] Enviado:', template, '→', to, '| id:', result.data?.id);
-    return res.status(200).json({ ok: true, id: result.data?.id });
+    const logSuffix = scheduledAt ? ` | agendado: ${scheduledAt}` : '';
+    console.log('[send-email] Enviado:', template, '→', to, '| id:', result.data?.id, logSuffix);
+    return res.status(200).json({ ok: true, id: result.data?.id, scheduledAt });
   } catch(e) {
     console.error('[send-email] Exceção:', e.message);
     return res.status(500).json({ error: e.message });
