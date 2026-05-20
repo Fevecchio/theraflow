@@ -1489,15 +1489,19 @@ function renderTrajetoriaPortal(p, idx) {
         + '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusBg+';color:'+statusColor+';font-weight:600">' + statusLabel + '</span>'
       + '</div>'
       + (milestone ? '<div style="font-size:13px;font-weight:700;color:var(--sage);margin-bottom:8px">'+milestone.icon+' '+escHTML(milestone.label)+'</div>' : '')
-      + (resumo ? '<div style="background:var(--sage-light);border:1px solid rgba(74,124,89,.2);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink-soft);line-height:1.6;font-style:italic;margin-bottom:8px">&#8220;'+escHTML(resumo)+'&#8221;<div style="font-size:10px;color:var(--sage);margin-top:5px;font-style:normal;font-weight:600">— sua terapeuta</div></div>' : '')
-      + '<div style="margin-top:4px">'
-        + '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">Meu insight desta sessão:</div>'
-        + '<textarea id="insight-'+escHTML(String(a.id))+'" placeholder="O que quero lembrar desta sessão…" '
-        + 'style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:48px;background:#fafaf8;color:var(--ink);line-height:1.5;box-sizing:border-box" '
+      + (resumo
+          ? '<div class="traj-resumo-ia">'
+              + '<div class="traj-resumo-label">✨ O que abordamos</div>'
+              + '<div class="traj-resumo-text">'+escHTML(resumo)+'</div>'
+            + '</div>'
+          : '')
+      + '<div class="traj-insight-wrap">'
+        + '<div class="traj-insight-label">💭 O que fica pra mim desta sessão</div>'
+        + '<textarea id="insight-'+escHTML(String(a.id))+'" class="traj-insight-ta" placeholder="Escreva algo que ficou desta sessão…" '
         + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
         + escHTML(insight)
         + '</textarea>'
-        + '<button onclick="pacSalvarInsight('+idx+',\''+escHTML(String(a.id))+'\')" style="margin-top:5px;background:none;border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:4px 12px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">Salvar ✓</button>'
+        + '<button onclick="pacSalvarInsight('+idx+',\''+escHTML(String(a.id))+'\')" class="traj-insight-btn">Salvar ✓</button>'
       + '</div>'
       + '</div>';
   }).join('');

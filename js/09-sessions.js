@@ -342,6 +342,21 @@ function showPostSessionFlow() {
           </div>
         </div>
 
+        <!-- Resumo para o paciente (IA) -->
+        <div style="padding:0 24px 14px" id="pos-sess-resumo-wrap">
+          <div style="background:linear-gradient(135deg,#f0f7f3 0%,#fafafa 100%);border:1px solid rgba(74,124,89,.2);border-radius:10px;padding:12px 14px">
+            <div style="font-size:10.5px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;display:flex;align-items:center;gap:7px">
+              ✨ Resumo para o paciente
+              <span id="pos-sess-resumo-loader" style="font-size:10px;font-weight:400;color:#aaa;font-style:italic;text-transform:none;letter-spacing:0">— gerando com IA…</span>
+            </div>
+            <textarea id="pos-sess-resumo-text" disabled rows="3"
+              placeholder="Aguardando geração…"
+              style="width:100%;border:1.5px solid #d1e7d9;border-radius:8px;padding:9px 11px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;resize:none;background:#f9fcfa;color:#333;line-height:1.6;box-sizing:border-box"
+            ></textarea>
+            <div style="font-size:10.5px;color:#aaa;margin-top:4px">Aparece em "Minha jornada" no portal do paciente. Edite antes de salvar se quiser.</div>
+          </div>
+        </div>
+
         <!-- Ações -->
         <div style="padding:12px 24px 20px;display:flex;gap:8px;border-top:1px solid #f0f0f0">
           <button onclick="editPostNote()" id="btn-edit-note" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555;white-space:nowrap;font-family:inherit">
@@ -423,6 +438,23 @@ function showPostSessionFlow() {
       if (noteEl && noteEl.tagName !== 'TEXTAREA') {
         noteEl.innerHTML = _gerarNotaEstrutural();
       }
+      // Gera resumo para o portal do paciente via IA
+      var _spForResumo = patients[currentSessionPatientIdx] || patients[0];
+      var _noteTextForResumo = noteEl ? (noteEl.tagName === 'TEXTAREA' ? noteEl.value : noteEl.textContent) : '';
+      _gerarResumoPortalIA(_spForResumo, _noteTextForResumo).then(function(resumo) {
+        var loaderEl = document.getElementById('pos-sess-resumo-loader');
+        var taEl = document.getElementById('pos-sess-resumo-text');
+        if (!taEl) return;
+        if (resumo) {
+          taEl.value = resumo;
+          taEl.disabled = false;
+          if (loaderEl) loaderEl.textContent = '— editável';
+        } else {
+          if (loaderEl) loaderEl.textContent = '— não disponível';
+          taEl.placeholder = 'Não foi possível gerar. Escreva manualmente se quiser.';
+          taEl.disabled = false;
+        }
+      });
     }
   }, 7600);
 }
@@ -464,6 +496,31 @@ function _gerarNotaEstrutural() {
       '<strong>Próximo passo:</strong> Questão a manter em aberto para próxima sessão.';
   }
   return notasHtml + '<div style="font-size:12px;color:#888;margin-bottom:8px">Sessão ' + sessaoNum + ' · ' + hoje + ' · ' + (sp ? sp.abordagem : 'Psicologia Clínica') + '</div>' + corpo;
+}
+
+async function _gerarResumoPortalIA(sp, noteText) {
+  if (!noteText || !noteText.trim()) return null;
+  var plainNote = noteText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 900);
+  var metas = (sp.metas || []).filter(function(m){ return m.texto; }).slice(0, 3).map(function(m){ return m.texto; }).join('; ');
+  var system = 'Você é um assistente que transforma notas clínicas de psicologia em resumos acessíveis para o próprio paciente ler. Nunca use jargão clínico. Seja caloroso, direto e encorajador. Máximo 3 frases curtas. Responda em português brasileiro.';
+  var user = 'Abordagem: ' + (sp.abordagem || 'Psicologia Clínica') + '.'
+    + (metas ? ' Objetivos terapêuticos: ' + metas + '.' : '')
+    + ' Sessão ' + (sp.sessions || 1) + '.\n'
+    + 'Nota clínica: ' + plainNote + '\n'
+    + 'Escreva um breve resumo desta sessão para o paciente ler no app. Use "você" ao se referir ao paciente. Não mencione diagnósticos nem termos clínicos.';
+  try {
+    var res = await fetchWithTimeout('/api/briefing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
+      body: JSON.stringify({ systemPrompt: system, userPrompt: user, patientData: sp })
+    }, 20000);
+    if (!res.ok) return null;
+    var data = await res.json();
+    return (data.content || '').trim() || null;
+  } catch(e) {
+    console.warn('[ResumoPortalIA]', e.message);
+    return null;
+  }
 }
 
 function baixarTranscricao() {
@@ -540,6 +597,9 @@ function indexPostSession() {
   // Captura nota: tenta modal primeiro, depois card da sessão
   const noteEl = document.getElementById('post-note-text') || document.getElementById('session-ai-note');
   const noteText = noteEl ? (noteEl.tagName === 'TEXTAREA' ? noteEl.value : noteEl.textContent.trim()) : '';
+  // Captura resumo do paciente gerado pela IA (editável antes de salvar)
+  const resumoEl = document.getElementById('pos-sess-resumo-text');
+  const resumoText = resumoEl ? resumoEl.value.trim() : '';
   if (!noteText.trim()) {
     showToast('⚠ Adicione uma nota clínica antes de encerrar a sessão.');
     if (noteEl) noteEl.focus();
@@ -583,7 +643,13 @@ function indexPostSession() {
     }
     if (apptHoje && !apptHoje.presenca) {
       apptHoje.presenca = 'compareceu';
+    }
+    if (apptHoje && resumoText && !apptHoje.resumoParaPaciente) {
+      apptHoje.resumoParaPaciente = resumoText;
+    }
+    if (apptHoje) {
       _salvarAppointments();
+      _supaSync_appointments().catch(function(){});
     }
     currentSessionApptId = null;
   }

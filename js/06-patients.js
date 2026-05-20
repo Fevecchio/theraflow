@@ -1064,7 +1064,10 @@ function renderTrajetoriaTerapeuta(i) {
       + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
       + escHTML(resumo)
       + '</textarea>'
-      + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;white-space:nowrap">Salvar</button>'
+      + '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
+      + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Salvar</button>'
+      + '<button onclick="regenerarResumoIA(' + i + ',\'' + escHTML(a.id) + '\')" style="background:#fff;border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">✨ IA</button>'
+      + '</div>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -1098,6 +1101,39 @@ function salvarResumoParaPaciente(patientIdx, apptId) {
     salvarPacientes();
   }
   showToast(texto ? '✓ Resumo salvo — visível na jornada do paciente' : '✓ Resumo removido');
+}
+
+async function regenerarResumoIA(patientIdx, apptId) {
+  var btn = document.querySelector('button[onclick="regenerarResumoIA(' + patientIdx + ',\'' + apptId + '\')"]');
+  var ta  = document.getElementById('resumo-pac-' + apptId);
+  if (!ta) return;
+  var p    = patients[patientIdx];
+  var appt = appointments.find(function(a) { return String(a.id) === String(apptId); });
+  if (!p || !appt) return;
+
+  // Nota clínica da mesma data do appointment
+  var nota = (p.prontuarioNotes || []).find(function(n) { return n.date === appt.date; });
+  var noteText = nota ? (nota.content || nota.text || '') : '';
+
+  if (!noteText.trim()) {
+    showToast('⚠ Nenhuma nota clínica encontrada para esta data.');
+    return;
+  }
+
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  ta.style.opacity = '.5';
+
+  var resumo = await _gerarResumoPortalIA(p, noteText);
+
+  if (btn) { btn.textContent = '✨ IA'; btn.disabled = false; }
+  ta.style.opacity = '1';
+
+  if (resumo) {
+    ta.value = resumo;
+    showToast('✨ Resumo gerado — revise e clique Salvar');
+  } else {
+    showToast('⚠ Não foi possível gerar o resumo. Tente novamente.');
+  }
 }
 
 function renderChatTerapeuta(i, msgs) {
