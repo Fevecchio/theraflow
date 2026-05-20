@@ -3,6 +3,7 @@
 /* ── SYNC STATUS UI ── */
 var _syncErrorCount = 0;
 var _sessionAlreadySaved = false;
+var _pendingResumoApptId = null;
 var _syncPatientsTimer = null;
 function _setSyncStatus(state) {
   var icon = document.getElementById('sync-status-icon');

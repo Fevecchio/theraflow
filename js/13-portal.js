@@ -1050,7 +1050,7 @@ function renderPatientApp(idx, pacs) {
     + '<div style="padding:0 16px 14px">' + badgesHtml + '</div>'
     + (metas.length > 0 ? '<div style="padding:0 16px 14px"><div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">🎯 Minhas metas</div></div><div class="patient-section-body" id="pac-metas-list">'+metasHtml+'</div></div></div>' : '')
     + (matsHtml ? '<div style="padding:0 16px 14px">' + matsHtml + '</div>' : '')
-    + '<div style="padding:0 16px 14px">' + renderTrajetoriaPortal(p, idx) + '</div>'
+    + '<div id="pac-traj-wrap" style="padding:0 16px 14px">' + renderTrajetoriaPortal(p, idx) + '</div>'
     + (anamnesePortalHtml ? '<div style="padding:0 16px 14px">' + anamnesePortalHtml + '</div>' : '')
     + '<div style="padding:0 16px 14px">' + notifHtml + '</div>'
   + '</div>'  /* /pac-tab-me */
@@ -1580,6 +1580,16 @@ function pacNavTo(tab) {
     if (el)  el.style.display  = (t === tab) ? '' : 'none';
     if (btn) btn.classList[t === tab ? 'add' : 'remove']('active');
   });
+  // Ao navegar para Perfil, re-renderiza trajetória para mostrar resumos recém-salvos
+  if (tab === 'me') {
+    var _trajWrap = document.getElementById('pac-traj-wrap');
+    if (_trajWrap) {
+      var _srcPacs = typeof patients !== 'undefined' ? patients : [];
+      var _pMe = _loggedPatientData || (_srcPacs.length > 0 ? _srcPacs[_loggedPatientIdx != null ? _loggedPatientIdx : 0] : null);
+      var _idxMe = _loggedPatientIdx != null ? _loggedPatientIdx : 0;
+      if (_pMe) _trajWrap.innerHTML = renderTrajetoriaPortal(_pMe, _idxMe);
+    }
+  }
   // Ao voltar para Home, marca mensagens da terapeuta como lidas
   if (tab === 'home' && _loggedPatientData && _loggedPatientData.id) {
     var pid = _loggedPatientData.id;

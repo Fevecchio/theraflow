@@ -444,15 +444,36 @@ function showPostSessionFlow() {
       _gerarResumoPortalIA(_spForResumo, _noteTextForResumo).then(function(resumo) {
         var loaderEl = document.getElementById('pos-sess-resumo-loader');
         var taEl = document.getElementById('pos-sess-resumo-text');
-        if (!taEl) return;
-        if (resumo) {
-          taEl.value = resumo;
-          taEl.disabled = false;
-          if (loaderEl) loaderEl.textContent = '— editável';
-        } else {
-          if (loaderEl) loaderEl.textContent = '— não disponível';
-          taEl.placeholder = 'Não foi possível gerar. Escreva manualmente se quiser.';
-          taEl.disabled = false;
+        // Atualiza textarea se o modal ainda estiver aberto
+        if (taEl) {
+          if (resumo) {
+            taEl.value = resumo;
+            taEl.disabled = false;
+            if (loaderEl) loaderEl.textContent = '— editável';
+          } else {
+            if (loaderEl) loaderEl.textContent = '— não disponível';
+            taEl.placeholder = 'Não foi possível gerar. Escreva manualmente se quiser.';
+            taEl.disabled = false;
+          }
+        }
+        // Salva no appointment independente do estado do modal (resolve race condition)
+        if (resumo && _pendingResumoApptId) {
+          var _apptAsync = (typeof appointments !== 'undefined' ? appointments : [])
+            .find(function(a) { return String(a.id) === _pendingResumoApptId; });
+          if (_apptAsync) {
+            _apptAsync.resumoParaPaciente = resumo;
+            _salvarAppointments();
+            var _spAsync = patients[currentSessionPatientIdx];
+            if (_spAsync) {
+              if (!_spAsync.appointments) _spAsync.appointments = [];
+              var _saIdx = _spAsync.appointments.findIndex(function(a) { return String(a.id) === _pendingResumoApptId; });
+              if (_saIdx >= 0) _spAsync.appointments[_saIdx].resumoParaPaciente = resumo;
+              else _spAsync.appointments.push({ id: _apptAsync.id, date: _apptAsync.date, presenca: 'compareceu', resumoParaPaciente: resumo });
+              salvarPacientes();
+              _supaSync_patients().catch(function(){});
+            }
+          }
+          _pendingResumoApptId = null;
         }
       });
     }
@@ -657,6 +678,8 @@ function indexPostSession() {
     }
     if (!apptHoje.presenca) apptHoje.presenca = 'compareceu';
     if (resumoText) apptHoje.resumoParaPaciente = resumoText;
+    // Registra ID para o .then() assíncrono da IA salvar o resumo mesmo após o modal fechar
+    if (!resumoText) _pendingResumoApptId = String(apptHoje.id);
     _salvarAppointments();
     // Espelha no objeto do paciente → chega ao portal via patients.metadata mesmo sem RLS em appointments
     if (!sp.appointments) sp.appointments = [];

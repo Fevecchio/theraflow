@@ -1072,7 +1072,8 @@ function renderTrajetoriaTerapeuta(i) {
       + '</div>';
   }).join('');
 
-  return '<details style="margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden">'
+  var _hasResumo = passados.some(function(a) { return a.resumoParaPaciente; });
+  return '<details ' + (_hasResumo ? 'open ' : '') + 'style="margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden">'
     + '<summary style="padding:12px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;list-style:none;display:flex;align-items:center;gap:6px;background:var(--bg)">'
     + '📅 Trajetória — resumos para o paciente</summary>'
     + '<div style="padding:0 14px 4px">'
