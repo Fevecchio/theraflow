@@ -164,10 +164,15 @@ function atualizarDashboard() {
   if (greeting) {
     var _hora = agora.getHours();
     var _saudacao = _hora < 12 ? 'Bom dia' : _hora < 18 ? 'Boa tarde' : 'Boa noite';
-    var _nomeRawG = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome : '';
+    var _nomeRawG = '';
+    if (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) {
+      _nomeRawG = tfUserData.nome;
+    } else {
+      try { var _acc = JSON.parse(localStorage.getItem('tf_account') || '{}'); _nomeRawG = _acc.nome || ''; } catch(e){}
+    }
     var _nomePartsG = _nomeRawG.split(' ').filter(function(w){ return !/^(Dr|Dra|Prof|Profa|Me)\.?$/i.test(w); });
     var _nomeT = _nomePartsG[0] ? ', ' + _nomePartsG[0] : '';
-    greeting.textContent = _saudacao + _nomeT + ' 👋';
+    greeting.textContent = _saudacao + _nomeT;
   }
 
   const subtitle = document.getElementById('dash-subtitle');

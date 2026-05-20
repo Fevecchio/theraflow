@@ -715,13 +715,18 @@ function renderPatients(filter) {
       : p.finStatus === 'pending'
       ? '<span style="font-size:10px;color:var(--amber)" title="Cobrança pendente">●</span>'
       : '';
+    var _msgUnread = p.id ? _countUnread(p.id, 'therapist') : 0;
+    var msgBadgeHtml = p.id ? '<span id="pac-msg-badge-'+p.id+'" style="'
+      + (_msgUnread > 0 ? '' : 'display:none;')
+      + 'background:var(--sage);color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;min-width:14px;text-align:center;line-height:14px">'
+      + (_msgUnread || 0) + '</span>' : '';
     return `<div class="list-item ${fi===0?'active':''}" onclick="selectPatientFiltered(${p._i},this)" style="animation:itemStagger .3s ease both;animation-delay:${fi*45}ms">
       <div style="display:flex;align-items:center;gap:14px">
         <div class="patient-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'};color:#fff;width:52px;height:52px;font-size:17px;flex-shrink:0;border-radius:50%">${_inits}</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
             <div style="font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(p.name)}</div>
-            ${alertDot}${finDot}
+            ${alertDot}${finDot}${msgBadgeHtml}
           </div>
           <div style="font-size:12px;color:var(--muted)">${escHTML(p.abordagem)} · Sessão ${p.sessions}</div>
         </div>
@@ -961,6 +966,8 @@ function selectPatient(i, el) {
 
     ${taskBlock}
 
+    ${renderTrajetoriaTerapeuta(i)}
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('prontuarios')">≡ Ver prontuário</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('financeiro')">◈ Ver financeiro</button>
@@ -970,6 +977,10 @@ function selectPatient(i, el) {
       </button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="currentPortalPatientIdx=${i};navigate('portal')">♡ Portal do paciente</button>
     </div>
+    <div id="pac-chat-section-${i}" style="margin-top:16px">
+      ${renderChatTerapeuta(i, _msgCache[p.id] || [])}
+    </div>
+
     <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
       <div style="background:var(--blue-light);border:1px solid rgba(44,95,138,.15);border-radius:10px;padding:12px 14px;margin-bottom:10px">
         <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
@@ -1002,6 +1013,145 @@ function selectPatient(i, el) {
         ✕ Excluir paciente
       </button>
     </div>`;
+
+  // Após renderizar o painel, carrega mensagens e inicia poll
+  (function() {
+    var _pId = p.id;
+    if (!_pId) return;
+    _supaFetchMessages(_pId, supa).then(function(msgs) {
+      var sec = document.getElementById('pac-chat-section-' + i);
+      if (sec) sec.innerHTML = renderChatTerapeuta(i, msgs);
+      var badge = document.getElementById('pac-msg-badge-' + _pId);
+      var cnt = _countUnread(_pId, 'therapist');
+      if (badge) { badge.style.display = cnt > 0 ? 'inline-flex' : 'none'; badge.textContent = cnt; }
+    });
+    _startMsgPoll(_pId, function(msgs) {
+      var sec = document.getElementById('pac-chat-section-' + i);
+      if (sec) sec.innerHTML = renderChatTerapeuta(i, msgs);
+      var badge = document.getElementById('pac-msg-badge-' + _pId);
+      var cnt = _countUnread(_pId, 'therapist');
+      if (badge) { badge.style.display = cnt > 0 ? 'inline-flex' : 'none'; badge.textContent = cnt; }
+    });
+    _supaMarkRead(_pId, 'patient', supa).catch(function(){});
+  })();
+}
+
+function renderTrajetoriaTerapeuta(i) {
+  var p = patients[i];
+  if (!p) return '';
+  // Filtra appointments passados deste paciente, ordem DESC
+  var hojeIso2 = hojeISO();
+  var passados = appointments.filter(function(a) {
+    return (a.patientIdx === i || a.patientName === p.name) && a.date <= hojeIso2 && a.presenca;
+  }).sort(function(a, b) { return b.date.localeCompare(a.date); });
+  if (!passados.length) return '';
+
+  var rows = passados.slice(0, 10).map(function(a, ai) {
+    var dateObj = new Date(a.date + 'T12:00');
+    var dateStr = dateObj.toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short'});
+    var statusColor = a.presenca === 'compareceu' ? 'var(--sage)' : a.presenca === 'faltou' ? 'var(--red)' : 'var(--amber)';
+    var statusLabel = a.presenca === 'compareceu' ? 'Compareceu' : a.presenca === 'faltou' ? 'Faltou' : 'Cancelou';
+    var resumo = a.resumoParaPaciente || '';
+    return '<div style="border-bottom:1px solid var(--border);padding:10px 0">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      + '<span style="font-size:12px;font-weight:600;color:var(--ink)">' + dateStr + '</span>'
+      + '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:' + (a.presenca==='compareceu'?'#e8f5ee':a.presenca==='faltou'?'#fdecea':'#fff8e6') + ';color:' + statusColor + '">' + statusLabel + '</span>'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">Resumo para o paciente (opcional):</div>'
+      + '<div style="display:flex;gap:6px;align-items:flex-start">'
+      + '<textarea id="resumo-pac-' + a.id + '" placeholder="Escreva um resumo acessível desta sessão para o paciente ver na jornada…" '
+      + 'style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:#fafaf8;color:var(--ink);line-height:1.5" '
+      + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
+      + escHTML(resumo)
+      + '</textarea>'
+      + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;white-space:nowrap">Salvar</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  return '<details style="margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden">'
+    + '<summary style="padding:12px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;list-style:none;display:flex;align-items:center;gap:6px;background:var(--bg)">'
+    + '📅 Trajetória — resumos para o paciente</summary>'
+    + '<div style="padding:0 14px 4px">'
+    + rows
+    + (passados.length > 10 ? '<div style="font-size:11px;color:var(--muted);padding:8px 0;text-align:center">Exibindo últimas 10 sessões</div>' : '')
+    + '</div>'
+    + '</details>';
+}
+
+function salvarResumoParaPaciente(patientIdx, apptId) {
+  var ta = document.getElementById('resumo-pac-' + apptId);
+  if (!ta) return;
+  var texto = ta.value.trim();
+  // Atualiza no array global de appointments
+  var appt = appointments.find(function(a) { return String(a.id) === String(apptId); });
+  if (appt) {
+    appt.resumoParaPaciente = texto;
+    _salvarAppointments();
+    _supaSync_appointments().catch(function(){});
+  }
+  // Atualiza no metadata do paciente (para sync via _supaSync_patients)
+  var p = patients[patientIdx];
+  if (p && p.appointments) {
+    var pa = p.appointments.find(function(a) { return String(a.id) === String(apptId); });
+    if (pa) pa.resumoParaPaciente = texto;
+    salvarPacientes();
+  }
+  showToast(texto ? '✓ Resumo salvo — visível na jornada do paciente' : '✓ Resumo removido');
+}
+
+function renderChatTerapeuta(i, msgs) {
+  var p = patients[i];
+  if (!p) return '';
+  var unread = _countUnread(p.id, 'therapist');
+  var _firstName2 = function(n) { return n ? n.split(' ')[0] : ''; };
+  var thread = (msgs || []).map(function(m) {
+    var isT = m.sender_role === 'therapist';
+    var ts = m.created_at ? new Date(m.created_at).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    return '<div style="display:flex;flex-direction:column;align-items:'+(isT?'flex-end':'flex-start')+';gap:2px">'
+      + '<div class="chat-bubble '+(isT?'chat-bubble-therapist':'chat-bubble-patient')+'">'+escHTML(m.body)+'</div>'
+      + '<span class="chat-ts" style="'+(isT?'text-align:right':'')+'">'+ts+(isT?'':(!m.read_at?' · não lida':''))+'</span>'
+      + '</div>';
+  }).join('');
+  if (!thread) thread = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0">Nenhuma mensagem ainda. Envie uma dica ou lembrete para '+escHTML(_firstName2(p.name))+'.</div>';
+
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Mensagens</div>'
+    + (unread > 0 ? '<span style="background:var(--sage);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:2px 7px">'+unread+' nova'+(unread>1?'s':'')+'</span>' : '')
+    + '</div>'
+    + '<div class="chat-thread" id="chat-thread-t-'+i+'">'+thread+'</div>'
+    + '<div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">'
+    + '<input id="chat-input-t-'+i+'" type="text" placeholder="Envie uma mensagem para '+escHTML(_firstName2(p.name))+'…" '
+    + 'style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none" '
+    + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'" '
+    + 'onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();terapeutaEnviarMensagem('+i+')}">'
+    + '<button onclick="terapeutaEnviarMensagem('+i+')" style="background:var(--sage);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Enviar</button>'
+    + '</div>'
+    + '</div>';
+}
+
+async function terapeutaEnviarMensagem(i) {
+  var p = patients[i];
+  if (!p || !p.id) return;
+  var input = document.getElementById('chat-input-t-' + i);
+  if (!input) return;
+  var body = input.value.trim();
+  if (!body) return;
+  input.value = '';
+  input.disabled = true;
+  var msgs = await _supaSendMessage(p.id, 'therapist', body, supa);
+  input.disabled = false;
+  if (msgs) {
+    var sec = document.getElementById('pac-chat-section-' + i);
+    if (sec) sec.innerHTML = renderChatTerapeuta(i, msgs);
+    // scroll ao fim
+    var thread = document.getElementById('chat-thread-t-' + i);
+    if (thread) thread.scrollTop = thread.scrollHeight;
+  } else {
+    showToast('⚠ Falha ao enviar mensagem. Verifique sua conexão.');
+    input.value = body;
+  }
 }
 
 function _toggleSenhaPortal(i) {

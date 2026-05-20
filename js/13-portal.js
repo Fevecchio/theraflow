@@ -977,11 +977,8 @@ function renderPatientApp(idx, pacs) {
     + '<button onclick="pacEmergencia()" style="margin-top:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.8);padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;width:100%;justify-content:center">🆘 Preciso de apoio agora</button>'
   + '</div></div>'
 
-    // Message v2
-  + '<div style="margin:0 16px 14px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)">'
-    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-family:\'Instrument Serif\',serif;flex-shrink:0">' + _therapistInitial + '</div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">' + escHTML(_therapistFirst) + '</div><div style="font-size:10px;color:var(--muted)">deixou uma mensagem</div></div><div style="margin-left:auto;font-size:10px;color:var(--muted)">hoje</div></div>'
-    + '<div style="font-size:13px;color:#4a5568;line-height:1.6;font-style:italic">&#8220;' + escHTML(msgTexto) + '&#8221;</div>'
-  + '</div>'
+    // Chat com a terapeuta
+  + '<div id="pac-chat-block" style="margin:0 16px 14px"></div>'
 
     // Dica da semana (visível na tab Home)
   + '<div style="margin:0 16px 14px;background:var(--sage-50);border:1px solid rgba(74,124,89,.18);border-radius:16px;padding:14px 16px">'
@@ -1053,20 +1050,7 @@ function renderPatientApp(idx, pacs) {
     + '<div style="padding:0 16px 14px">' + badgesHtml + '</div>'
     + (metas.length > 0 ? '<div style="padding:0 16px 14px"><div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">🎯 Minhas metas</div></div><div class="patient-section-body" id="pac-metas-list">'+metasHtml+'</div></div></div>' : '')
     + (matsHtml ? '<div style="padding:0 16px 14px">' + matsHtml + '</div>' : '')
-    + '<div style="padding:0 16px 14px"><div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">📖 Histórico de sessões</div></div><div class="patient-section-body">'
-      + (function() {
-          var notas = (p.prontuarioNotes || []).slice().reverse().slice(0, 5);
-          if (notas.length === 0) return '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">Suas notas de sessão aparecerão aqui.</div>';
-          return notas.map(function(n, ni) {
-            var resumo = (n.text || '').slice(0, 120) + ((n.text||'').length > 120 ? '…' : '');
-            var id = 'pac-hist-'+ni;
-            return '<div style="border-bottom:1px solid var(--border);padding:12px 0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:7px;height:7px;border-radius:50%;background:var(--sage);flex-shrink:0"></div><span style="font-size:12px;font-weight:600;color:var(--ink)">'+escHTML(n.date||'—')+'</span></div>'
-              + '<div id="'+id+'-resumo" style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(resumo)+'</div>'
-              + ((n.text||'').length > 120 ? '<div id="'+id+'-full" style="display:none;font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(n.text)+'</div><button onclick="var r=document.getElementById(\''+id+'-resumo\'),f=document.getElementById(\''+id+'-full\'),b=this;if(f.style.display===\'none\'){f.style.display=\'block\';r.style.display=\'none\';b.textContent=\'ver menos\';}else{f.style.display=\'none\';r.style.display=\'block\';b.textContent=\'ler mais\';}" style="background:none;border:none;color:var(--sage);font-size:12px;cursor:pointer;padding:4px 0;font-family:inherit;font-weight:500">ler mais</button>' : '')
-            + '</div>';
-          }).join('');
-        })()
-    + '</div></div></div>'
+    + '<div style="padding:0 16px 14px">' + renderTrajetoriaPortal(p, idx) + '</div>'
     + (anamnesePortalHtml ? '<div style="padding:0 16px 14px">' + anamnesePortalHtml + '</div>' : '')
     + '<div style="padding:0 16px 14px">' + notifHtml + '</div>'
   + '</div>'  /* /pac-tab-me */
@@ -1075,8 +1059,11 @@ function renderPatientApp(idx, pacs) {
   /* ══ BOTTOM NAV ══ */
   + '<div class="pac-bottom-nav">'
     + [['home','Início',_navIconHome],['ex','Exercícios',_navIconEx],['diary','Diário',_navIconDiary],['me','Perfil',_navIconMe]].map(function(t){
+        var isHome = t[0] === 'home';
         return '<button class="pac-nav-btn'+(t[0]==='home'?' active':'')+'" id="pac-nav-'+t[0]+'" onclick="pacNavTo(\''+t[0]+'\')">'
-          + '<div class="pac-nav-icon">'+t[2]+'</div><span>'+t[1]+'</span></button>';
+          + '<div class="pac-nav-icon" style="position:relative">'+t[2]
+          + (isHome ? '<span id="pac-msg-dot" style="display:none;position:absolute;top:-3px;right:-4px;width:8px;height:8px;border-radius:50%;background:#e53e3e;border:1.5px solid #fff"></span>' : '')
+          + '</div><span>'+t[1]+'</span></button>';
       }).join('')
   + '</div>';
 
@@ -1084,6 +1071,97 @@ function renderPatientApp(idx, pacs) {
   setTimeout(function(){ _renderDiarioExistente(p); }, 0);
   // Agenda notificação se configurada
   setTimeout(function(){ _checkNotifPortal(p); }, 0);
+  // Carrega chat e inicia poll
+  setTimeout(function(){ _pacInitChat(idx, p); }, 0);
+}
+
+function _pacRenderChatBlock(p, msgs, idx) {
+  var _fname = (p.name||'').split(' ')[0];
+  var _tFirst = (_loggedPatientData && _loggedPatientData._therapistNome)
+    ? (_loggedPatientData._therapistNome||'').split(' ')[0]
+    : 'sua terapeuta';
+  var _tInit = _tFirst.charAt(0).toUpperCase();
+  var unread = (msgs||[]).filter(function(m){ return m.sender_role==='therapist' && !m.read_at; }).length;
+  var thread = (msgs||[]).map(function(m) {
+    var isT = m.sender_role === 'therapist';
+    var ts = m.created_at ? new Date(m.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    return '<div style="display:flex;flex-direction:column;align-items:'+(isT?'flex-start':'flex-end')+';gap:2px">'
+      + '<div class="chat-bubble '+(isT?'chat-bubble-therapist':'chat-bubble-patient')+'">'+escHTML(m.body)+'</div>'
+      + '<span class="chat-ts">'+ts+'</span>'
+      + '</div>';
+  }).join('');
+  if (!thread) thread = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px 0">Nenhuma mensagem ainda.<br>'+escHTML(_tFirst)+' pode te enviar dicas e lembretes aqui.</div>';
+
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+    + '<div style="width:28px;height:28px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-family:\'Instrument Serif\',serif;flex-shrink:0">'+_tInit+'</div>'
+    + '<div><div style="font-size:12px;font-weight:600;color:var(--ink)">'+escHTML(_tFirst)+'</div><div style="font-size:10px;color:var(--muted)">mensagens entre sessões</div></div>'
+    + (unread > 0 ? '<span style="margin-left:auto;background:var(--sage);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:2px 7px">'+unread+' nova'+(unread>1?'s':'')+'</span>' : '')
+    + '</div>'
+    + '<div class="chat-thread" id="pac-chat-thread">'+thread+'</div>'
+    + '<div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">'
+    + '<input id="pac-chat-input" type="text" placeholder="Escreva para '+escHTML(_tFirst)+'…" '
+    + 'style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none;background:#fafaf8;color:var(--ink)" '
+    + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'" '
+    + 'onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();pacEnviarMensagem('+idx+')}">'
+    + '<button onclick="pacEnviarMensagem('+idx+')" style="background:var(--sage);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Enviar</button>'
+    + '</div>'
+    + '</div>';
+}
+
+function _pacInitChat(idx, p) {
+  if (!p || !p.id) return;
+  var block = document.getElementById('pac-chat-block');
+  if (!block) return;
+  var msgs = _msgCache[p.id] || [];
+  block.innerHTML = _pacRenderChatBlock(p, msgs, idx);
+  _supaFetchMessages(p.id, supaPatient).then(function(msgs) {
+    if (!document.getElementById('pac-chat-block')) return;
+    block.innerHTML = _pacRenderChatBlock(p, msgs, idx);
+    var thread = document.getElementById('pac-chat-thread');
+    if (thread) thread.scrollTop = thread.scrollHeight;
+    _pacUpdateMsgDot(p.id);
+    _supaMarkRead(p.id, 'therapist', supaPatient).catch(function(){});
+  });
+  _startMsgPoll(p.id, function(msgs) {
+    var b = document.getElementById('pac-chat-block');
+    if (!b) { _stopMsgPoll(); return; }
+    b.innerHTML = _pacRenderChatBlock(p, msgs, idx);
+    var thread = document.getElementById('pac-chat-thread');
+    if (thread) thread.scrollTop = thread.scrollHeight;
+    _pacUpdateMsgDot(p.id);
+  });
+}
+
+function _pacUpdateMsgDot(patientId) {
+  var dot = document.getElementById('pac-msg-dot');
+  if (!dot) return;
+  var unread = ((_msgCache[patientId]||[]).filter(function(m){ return m.sender_role==='therapist' && !m.read_at; })).length;
+  dot.style.display = unread > 0 ? 'block' : 'none';
+}
+
+async function pacEnviarMensagem(idx) {
+  var src = typeof patients !== 'undefined' ? patients : [];
+  var p = _loggedPatientData || src[idx];
+  if (!p || !p.id) return;
+  var input = document.getElementById('pac-chat-input');
+  if (!input) return;
+  var body = input.value.trim();
+  if (!body) return;
+  input.value = '';
+  input.disabled = true;
+  var msgs = await _supaSendMessage(p.id, 'patient', body, supaPatient);
+  input.disabled = false;
+  if (msgs) {
+    var block = document.getElementById('pac-chat-block');
+    if (block) block.innerHTML = _pacRenderChatBlock(p, msgs, idx);
+    var thread = document.getElementById('pac-chat-thread');
+    if (thread) thread.scrollTop = thread.scrollHeight;
+  } else {
+    showToast('⚠ Falha ao enviar. Verifique sua conexão.');
+    input.value = body;
+  }
+  input.focus();
 }
 
 function renderPatientDiario(p, idx) {
@@ -1336,6 +1414,129 @@ function _renderDiarioExistente(p) {
   });
 }
 
+function renderTrajetoriaPortal(p, idx) {
+  var appts = (p.appointments || []).filter(function(a) {
+    return a.presenca && a.date;
+  }).sort(function(a, b) { return b.date.localeCompare(a.date); });
+
+  if (!appts.length) {
+    return '<div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">📅 Minha jornada</div></div>'
+      + '<div class="patient-section-body"><div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">Suas sessões aparecerão aqui.</div></div></div>';
+  }
+
+  // Monta índice de moodNotes por data para join
+  var moodByDate = {};
+  (p.moodNotes || []).forEach(function(mn) {
+    if (!mn.date) return;
+    // Normaliza DD/MM/YYYY → YYYY-MM-DD
+    var d = mn.date;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+      var pts = d.split('/'); d = pts[2] + '-' + pts[1] + '-' + pts[0];
+    } else if (/^\d{2}\/\d{2}$/.test(d)) {
+      d = new Date().getFullYear() + '-' + d.split('/')[1] + '-' + d.split('/')[0];
+    }
+    moodByDate[d] = mn.val;
+  });
+
+  // Calcula marcos (data da 1ª sessão)
+  var ordenadoAsc = appts.slice().sort(function(a,b){ return a.date.localeCompare(b.date); });
+  var _sessionCount = 0;
+  var _first = ordenadoAsc[0];
+  var _firstDate = _first ? new Date(_first.date + 'T12:00') : null;
+
+  var _isMilestone = function(appt) {
+    var cnt = appt._trajCount;
+    if (cnt === 1) return { icon:'🌱', label:'Primeira sessão!' };
+    if (cnt === 5) return { icon:'🌿', label:'5 sessões!' };
+    if (cnt === 10) return { icon:'🌳', label:'10 sessões!' };
+    if (cnt === 20) return { icon:'🏅', label:'20 sessões!' };
+    if (_firstDate) {
+      var dias = Math.round((new Date(appt.date+'T12:00') - _firstDate) / 86400000);
+      if (dias >= 180 && dias < 220) return { icon:'🎉', label:'6 meses de terapia!' };
+      if (dias >= 90 && dias < 120 && cnt < 20) return { icon:'✨', label:'3 meses de terapia!' };
+      if (dias >= 30 && dias < 45 && cnt < 10) return { icon:'🌟', label:'1 mês de terapia!' };
+    }
+    return null;
+  };
+
+  // Atribui contador crescente (em ordem asc) para usar nos marcos
+  var countMap = {};
+  var sc = 0;
+  ordenadoAsc.forEach(function(a) { if (a.presenca === 'compareceu') { sc++; countMap[a.id] = sc; } });
+
+  var _filterState = 'all'; // só pré-renderização, filtro é aplicado via JS
+
+  var cards = appts.map(function(a) {
+    a._trajCount = countMap[a.id] || 0;
+    var milestone = a.presenca === 'compareceu' ? _isMilestone(a) : null;
+    var dateObj = new Date(a.date + 'T12:00');
+    var dateStr = dateObj.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+    var statusColor = a.presenca === 'compareceu' ? 'var(--sage)' : a.presenca === 'faltou' ? 'var(--red)' : 'var(--amber)';
+    var statusLabel = a.presenca === 'compareceu' ? 'Compareceu' : a.presenca === 'faltou' ? 'Faltou' : 'Cancelou';
+    var statusBg = a.presenca === 'compareceu' ? '#e8f5ee' : a.presenca === 'faltou' ? '#fdecea' : '#fff8e6';
+    var mood = moodByDate[a.date];
+    var moodHtml = mood ? '<span style="font-size:11px;color:var(--muted);margin-left:6px">Humor: <strong style="color:var(--sage)">' + mood + '/10</strong></span>' : '';
+    var resumo = a.resumoParaPaciente || '';
+    var insight = a.meuInsight || '';
+
+    return '<div class="traj-entry'+(milestone?' traj-milestone':'')+'" data-presenca="'+a.presenca+'" data-date="'+a.date+'" data-id="'+escHTML(String(a.id))+'">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+        + '<div style="font-size:12px;color:var(--muted);flex:1">' + dateStr + moodHtml + '</div>'
+        + '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusBg+';color:'+statusColor+';font-weight:600">' + statusLabel + '</span>'
+      + '</div>'
+      + (milestone ? '<div style="font-size:13px;font-weight:700;color:var(--sage);margin-bottom:8px">'+milestone.icon+' '+escHTML(milestone.label)+'</div>' : '')
+      + (resumo ? '<div style="background:var(--sage-light);border:1px solid rgba(74,124,89,.2);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink-soft);line-height:1.6;font-style:italic;margin-bottom:8px">&#8220;'+escHTML(resumo)+'&#8221;<div style="font-size:10px;color:var(--sage);margin-top:5px;font-style:normal;font-weight:600">— sua terapeuta</div></div>' : '')
+      + '<div style="margin-top:4px">'
+        + '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">Meu insight desta sessão:</div>'
+        + '<textarea id="insight-'+escHTML(String(a.id))+'" placeholder="O que quero lembrar desta sessão…" '
+        + 'style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:48px;background:#fafaf8;color:var(--ink);line-height:1.5;box-sizing:border-box" '
+        + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
+        + escHTML(insight)
+        + '</textarea>'
+        + '<button onclick="pacSalvarInsight('+idx+',\''+escHTML(String(a.id))+'\')" style="margin-top:5px;background:none;border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:4px 12px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">Salvar ✓</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  return '<div class="patient-section-card">'
+    + '<div class="patient-section-header"><div class="patient-section-title">📅 Minha jornada</div></div>'
+    + '<div style="padding:0 16px 8px;display:flex;gap:6px;flex-wrap:wrap">'
+    + '<button class="traj-filter-btn active" onclick="pacTrajFilter(\'all\',this)">Tudo</button>'
+    + '<button class="traj-filter-btn" onclick="pacTrajFilter(\'milestones\',this)">Marcos</button>'
+    + '<button class="traj-filter-btn" onclick="pacTrajFilter(\'month\',this)">Este mês</button>'
+    + '</div>'
+    + '<div class="patient-section-body" id="pac-traj-list">' + cards + '</div>'
+    + '</div>';
+}
+
+function pacTrajFilter(tipo, btn) {
+  document.querySelectorAll('.traj-filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  var entries = document.querySelectorAll('#pac-traj-list .traj-entry');
+  var hoje = new Date();
+  var mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0');
+  entries.forEach(function(el) {
+    var show = true;
+    if (tipo === 'milestones') show = el.classList.contains('traj-milestone');
+    if (tipo === 'month') show = (el.dataset.date || '').startsWith(mesAtual);
+    el.style.display = show ? '' : 'none';
+  });
+}
+
+async function pacSalvarInsight(pidx, apptId) {
+  var src = typeof patients !== 'undefined' ? patients : [];
+  var p = _loggedPatientData || src[pidx];
+  if (!p) return;
+  var ta = document.getElementById('insight-' + apptId);
+  if (!ta) return;
+  var texto = ta.value.trim();
+  var appt = (p.appointments || []).find(function(a) { return String(a.id) === String(apptId); });
+  if (appt) appt.meuInsight = texto;
+  if (_loggedPatientData) _loggedPatientData = p;
+  salvarPacientes();
+  showToast(texto ? '✓ Insight salvo!' : '✓ Insight removido');
+}
+
 function pacNavTo(tab) {
   var tabs = ['home','ex','diary','me'];
   tabs.forEach(function(t) {
@@ -1344,4 +1545,11 @@ function pacNavTo(tab) {
     if (el)  el.style.display  = (t === tab) ? '' : 'none';
     if (btn) btn.classList[t === tab ? 'add' : 'remove']('active');
   });
+  // Ao voltar para Home, marca mensagens da terapeuta como lidas
+  if (tab === 'home' && _loggedPatientData && _loggedPatientData.id) {
+    var pid = _loggedPatientData.id;
+    _supaMarkRead(pid, 'therapist', supaPatient).then(function() {
+      _pacUpdateMsgDot(pid);
+    }).catch(function(){});
+  }
 }

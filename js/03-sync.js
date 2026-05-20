@@ -23,6 +23,87 @@ function _setSyncStatus(state) {
 window.addEventListener('offline', function() { _setSyncStatus('error'); });
 window.addEventListener('online',  function() { _setSyncStatus('ok'); });
 
+/* ── MENSAGENS ── */
+var _msgPollTimer = null;
+var _msgCache = {};      // { [patientId]: Message[] }
+var _unreadCount = {};   // { [patientId]: number }
+
+async function _supaFetchMessages(patientId, client) {
+  if (!patientId) return [];
+  try {
+    var { data, error } = await client
+      .from('messages')
+      .select('id,sender_role,body,read_at,created_at')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: true })
+      .limit(60);
+    if (error) throw error;
+    _msgCache[patientId] = data || [];
+    return _msgCache[patientId];
+  } catch(e) {
+    console.warn('[msg] fetch falhou:', e.message);
+    return _msgCache[patientId] || [];
+  }
+}
+
+async function _supaSendMessage(patientId, senderRole, body, client) {
+  if (!patientId || !body) return false;
+  try {
+    var { error } = await client
+      .from('messages')
+      .insert({ patient_id: patientId, sender_role: senderRole, body: body.trim() });
+    if (error) throw error;
+    var msgs = await _supaFetchMessages(patientId, client);
+    return msgs;
+  } catch(e) {
+    console.warn('[msg] send falhou:', e.message);
+    return false;
+  }
+}
+
+async function _supaMarkRead(patientId, otherSenderRole, client) {
+  if (!patientId) return;
+  try {
+    await client
+      .from('messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('patient_id', patientId)
+      .eq('sender_role', otherSenderRole)
+      .is('read_at', null);
+    // Atualiza cache local
+    var cached = _msgCache[patientId] || [];
+    cached.forEach(function(m) {
+      if (m.sender_role === otherSenderRole && !m.read_at) {
+        m.read_at = new Date().toISOString();
+      }
+    });
+    _unreadCount[patientId] = 0;
+  } catch(e) {
+    console.warn('[msg] markRead falhou:', e.message);
+  }
+}
+
+function _countUnread(patientId, myRole) {
+  var msgs = _msgCache[patientId] || [];
+  return msgs.filter(function(m) { return m.sender_role !== myRole && !m.read_at; }).length;
+}
+
+function _startMsgPoll(patientId, callbackFn, intervalMs) {
+  _stopMsgPoll();
+  if (!patientId) return;
+  var ms = intervalMs || 30000;
+  _msgPollTimer = setInterval(function() {
+    var client = _loggedPatientData ? supaPatient : supa;
+    _supaFetchMessages(patientId, client).then(function(msgs) {
+      if (typeof callbackFn === 'function') callbackFn(msgs);
+    });
+  }, ms);
+}
+
+function _stopMsgPoll() {
+  if (_msgPollTimer) { clearInterval(_msgPollTimer); _msgPollTimer = null; }
+}
+
 /* Timeout de 12 s para qualquer operação de sync — evita congelamento da UI */
 const _SYNC_TIMEOUT_MS = 12000;
 function _syncRace(fn) {

@@ -1994,3 +1994,17 @@ select:hover { border-color: #d8d3c2; }
 /* ── Barra de jornada (Sua jornada) ── */
 .pac-week-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow); }
 
+/* ── Chat assíncrono ── */
+.chat-thread { display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding:4px 0; scroll-behavior:smooth; }
+.chat-bubble { max-width:82%; padding:9px 13px; border-radius:14px; font-size:13px; line-height:1.5; word-break:break-word; }
+.chat-bubble-therapist { background:var(--sage-light); color:var(--ink); border-bottom-left-radius:4px; align-self:flex-start; }
+.chat-bubble-patient   { background:var(--sage); color:#fff; border-bottom-right-radius:4px; align-self:flex-end; }
+.chat-ts { font-size:10px; color:var(--muted); }
+
+/* ── Trajetória terapêutica ── */
+.traj-entry { background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px 15px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+.traj-milestone { border-color:rgba(201,125,46,.4); background:linear-gradient(135deg,#fffbf0 0%,#fff 60%); }
+.traj-filter-btn { border:1px solid var(--border); border-radius:20px; padding:5px 13px; font-size:12px; background:none; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; }
+.traj-filter-btn.active { background:var(--sage); color:#fff; border-color:var(--sage); }
+.traj-filter-btn:hover:not(.active) { background:var(--sage-light); border-color:var(--sage-100); color:var(--sage); }
+
