@@ -257,7 +257,10 @@ async function _supaSync_appointments() {
         recorrencia: a.recorrencia || null,
         presenca: a.presenca || null,
         color: a.color || null,
-        metadata: {},
+        metadata: {
+          resumoParaPaciente: a.resumoParaPaciente || null,
+          meuInsight: a.meuInsight || null,
+        },
       }));
       // Upsert: nenhuma janela de perda — dados existentes são preservados até confirmação
       const { error } = await supa.from('appointments')

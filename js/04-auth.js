@@ -354,6 +354,27 @@ function loginPaciente() {
       progress: raw.progress,
     });
 
+    // Carrega appointments do paciente para a "Minha jornada"
+    var apptRes = await supaPatient
+      .from('appointments')
+      .select('local_id,date,time,presenca,status,metadata')
+      .eq('patient_id', raw.id)
+      .order('date', { ascending: false })
+      .limit(60);
+    if (apptRes.data && apptRes.data.length) {
+      p.appointments = apptRes.data.map(function(a) {
+        return {
+          id: a.local_id,
+          date: a.date,
+          time: a.time,
+          presenca: a.presenca,
+          status: a.status,
+          resumoParaPaciente: (a.metadata || {}).resumoParaPaciente || null,
+          meuInsight: (a.metadata || {}).meuInsight || null,
+        };
+      });
+    }
+
     _loggedPatientData = p;
 
     // Guarda cópia dos pacientes do terapeuta antes de substituir

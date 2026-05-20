@@ -1415,10 +1415,16 @@ function _renderDiarioExistente(p) {
 }
 
 function renderTrajetoriaPortal(p, idx) {
-  // Prefer global appointments array (available in therapist preview context)
-  var sourceAppts = (typeof appointments !== 'undefined' && appointments.length)
-    ? appointments.filter(function(a) { return a.patientIdx === idx || a.patientName === p.name; })
-    : (p.appointments || []);
+  // Prefer p.appointments when populated (patient remote login loads from Supabase)
+  // Fall back to global appointments array (therapist same-browser context)
+  var sourceAppts;
+  if (p.appointments && p.appointments.length) {
+    sourceAppts = p.appointments;
+  } else if (typeof appointments !== 'undefined' && appointments.length) {
+    sourceAppts = appointments.filter(function(a) { return a.patientIdx === idx || a.patientName === p.name; });
+  } else {
+    sourceAppts = [];
+  }
   var appts = sourceAppts.filter(function(a) {
     return a.presenca && a.date;
   }).sort(function(a, b) { return b.date.localeCompare(a.date); });
@@ -1538,10 +1544,33 @@ async function pacSalvarInsight(pidx, apptId) {
   var ta = document.getElementById('insight-' + apptId);
   if (!ta) return;
   var texto = ta.value.trim();
+
+  // Atualiza no array global de appointments (contexto do terapeuta / mesmo navegador)
+  if (typeof appointments !== 'undefined') {
+    var globalAppt = appointments.find(function(a) { return String(a.id) === String(apptId); });
+    if (globalAppt) {
+      globalAppt.meuInsight = texto;
+      _salvarAppointments();
+      _supaSync_appointments().catch(function(){});
+    }
+  }
+
+  // Atualiza em p.appointments (contexto do paciente remoto)
   var appt = (p.appointments || []).find(function(a) { return String(a.id) === String(apptId); });
-  if (appt) appt.meuInsight = texto;
-  if (_loggedPatientData) _loggedPatientData = p;
-  salvarPacientes();
+  if (appt) {
+    appt.meuInsight = texto;
+    // Persiste via Supabase usando cliente do paciente
+    if (typeof supaPatient !== 'undefined' && p.id) {
+      supaPatient.from('appointments')
+        .update({ metadata: { resumoParaPaciente: appt.resumoParaPaciente || null, meuInsight: texto } })
+        .eq('patient_id', p.id)
+        .eq('local_id', String(apptId))
+        .then(function(){})
+        .catch(function(){});
+    }
+  }
+
+  if (_loggedPatientData) _loggedPatientData.appointments = p.appointments;
   showToast(texto ? '✓ Insight salvo!' : '✓ Insight removido');
 }
 

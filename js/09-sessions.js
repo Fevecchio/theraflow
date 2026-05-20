@@ -641,16 +641,24 @@ function indexPostSession() {
         return a.patientIdx === currentSessionPatientIdx && a.date === hojeIso2 && a.status !== 'cancelada';
       }).sort(function(a,b){ return a.time < b.time ? -1 : 1; })[0];
     }
-    if (apptHoje && !apptHoje.presenca) {
-      apptHoje.presenca = 'compareceu';
+    // Se não há appointment formal, cria registro mínimo para a jornada aparecer no portal
+    if (!apptHoje) {
+      apptHoje = {
+        id: 'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2,5),
+        patientIdx: currentSessionPatientIdx,
+        patientName: sp.name,
+        date: hojeIso2,
+        time: null,
+        status: 'realizada',
+        presenca: 'compareceu',
+        color: null,
+      };
+      appointments.push(apptHoje);
     }
-    if (apptHoje && resumoText && !apptHoje.resumoParaPaciente) {
-      apptHoje.resumoParaPaciente = resumoText;
-    }
-    if (apptHoje) {
-      _salvarAppointments();
-      _supaSync_appointments().catch(function(){});
-    }
+    if (!apptHoje.presenca) apptHoje.presenca = 'compareceu';
+    if (resumoText) apptHoje.resumoParaPaciente = resumoText;
+    _salvarAppointments();
+    _supaSync_appointments().catch(function(){});
     currentSessionApptId = null;
   }
   // ── Auto-cria cobrança pendente com valor configurado no perfil ──
