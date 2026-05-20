@@ -1415,15 +1415,13 @@ function _renderDiarioExistente(p) {
 }
 
 function renderTrajetoriaPortal(p, idx) {
-  // Prefer p.appointments when populated (patient remote login loads from Supabase)
-  // Fall back to global appointments array (therapist same-browser context)
+  // Prefer global appointments array (therapist context — complete history)
+  // Fall back to p.appointments (patient remote login — loaded from Supabase)
   var sourceAppts;
-  if (p.appointments && p.appointments.length) {
-    sourceAppts = p.appointments;
-  } else if (typeof appointments !== 'undefined' && appointments.length) {
+  if (typeof appointments !== 'undefined' && appointments.length) {
     sourceAppts = appointments.filter(function(a) { return a.patientIdx === idx || a.patientName === p.name; });
   } else {
-    sourceAppts = [];
+    sourceAppts = (p.appointments || []);
   }
   var appts = sourceAppts.filter(function(a) {
     return a.presenca && a.date;

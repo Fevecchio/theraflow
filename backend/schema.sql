@@ -581,6 +581,28 @@ create policy if not exists "patients: update pelo proprio paciente"
     )
   );
 
+-- Paciente pode visualizar suas próprias consultas (necessário para "Minha jornada")
+create policy "appointments: paciente visualiza"
+  on public.appointments for select
+  using (
+    exists (
+      select 1 from public.patient_users pu
+      where pu.patient_id = appointments.patient_id
+        and pu.auth_user_id = auth.uid()
+    )
+  );
+
+-- Paciente pode salvar seu insight (update metadata)
+create policy "appointments: paciente salva insight"
+  on public.appointments for update
+  using (
+    exists (
+      select 1 from public.patient_users pu
+      where pu.patient_id = appointments.patient_id
+        and pu.auth_user_id = auth.uid()
+    )
+  );
+
 -- ============================================================
 -- FIM DO SCHEMA
 -- ============================================================

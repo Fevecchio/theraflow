@@ -1112,7 +1112,11 @@ async function regenerarResumoIA(patientIdx, apptId) {
   if (!p || !appt) return;
 
   // Nota clínica da mesma data do appointment
-  var nota = (p.prontuarioNotes || []).find(function(n) { return n.date === appt.date; });
+  // prontuarioNotes.date está em DD/MM; appt.date está em YYYY-MM-DD → normalizar
+  var apptDateDDMM = appt.date
+    ? (appt.date.split('-')[2] + '/' + appt.date.split('-')[1])
+    : '';
+  var nota = (p.prontuarioNotes || []).find(function(n) { return n.date === apptDateDDMM; });
   var noteText = nota ? (nota.content || nota.text || '') : '';
 
   if (!noteText.trim()) {

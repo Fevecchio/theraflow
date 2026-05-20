@@ -658,7 +658,14 @@ function indexPostSession() {
     if (!apptHoje.presenca) apptHoje.presenca = 'compareceu';
     if (resumoText) apptHoje.resumoParaPaciente = resumoText;
     _salvarAppointments();
-    _supaSync_appointments().catch(function(){});
+    // Espelha no objeto do paciente → chega ao portal via patients.metadata mesmo sem RLS em appointments
+    if (!sp.appointments) sp.appointments = [];
+    var _spApptIdx = sp.appointments.findIndex(function(a){ return String(a.id) === String(apptHoje.id); });
+    var _spApptEntry = { id: apptHoje.id, date: apptHoje.date, presenca: 'compareceu', resumoParaPaciente: resumoText || null };
+    if (_spApptIdx >= 0) sp.appointments[_spApptIdx] = _spApptEntry;
+    else sp.appointments.push(_spApptEntry);
+    salvarPacientes();
+    _supaSync_patients().catch(function(){});
     currentSessionApptId = null;
   }
   // ── Auto-cria cobrança pendente com valor configurado no perfil ──
