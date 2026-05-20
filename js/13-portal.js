@@ -1415,7 +1415,11 @@ function _renderDiarioExistente(p) {
 }
 
 function renderTrajetoriaPortal(p, idx) {
-  var appts = (p.appointments || []).filter(function(a) {
+  // Prefer global appointments array (available in therapist preview context)
+  var sourceAppts = (typeof appointments !== 'undefined' && appointments.length)
+    ? appointments.filter(function(a) { return a.patientIdx === idx || a.patientName === p.name; })
+    : (p.appointments || []);
+  var appts = sourceAppts.filter(function(a) {
     return a.presenca && a.date;
   }).sort(function(a, b) { return b.date.localeCompare(a.date); });
 
