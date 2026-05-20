@@ -1076,6 +1076,10 @@ function initPortal() {
   renderDicaPortal();
   renderMetasPortal();
   updatePortalCountdown();
+  var _jornadaWrap = document.getElementById('portal-jornada-wrap');
+  if (_jornadaWrap && typeof renderTrajetoriaPortal === 'function') {
+    _jornadaWrap.innerHTML = renderTrajetoriaPortal(p, currentPortalPatientIdx);
+  }
   clearInterval(_portalCountdownInterval);
   _portalCountdownInterval = setInterval(updatePortalCountdown, 60000);
 

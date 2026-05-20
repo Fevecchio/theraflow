@@ -176,6 +176,7 @@ async function _supaLoadUserData(userId) {
       const supaApptIds = new Set(appts.map(a => String(a.local_id)));
       const patsArr = JSON.parse(localStorage.getItem('tf_patients') || '[]');
       const restoredAppts = appts.map(a => ({
+        ...(a.metadata || {}),
         id: a.local_id,
         patientIdx: patsArr.findIndex(p => p.id === a.patient_id),
         patientName: a.patient_name,
