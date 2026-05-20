@@ -953,29 +953,31 @@ function renderPatientApp(idx, pacs) {
   /* ══ TAB HOME ══ */
   '<div id="pac-tab-home" class="pac-tab-content">'
 
-    // Greeting
-  + '<div class="pac-greeting-row">'
-    + '<div><div class="pac-greeting-name">Olá, ' + escHTML(firstName) + ' <span style="font-family:\'DM Sans\',sans-serif">🍃</span></div><div class="pac-greeting-date">' + _dateLabel + '</div></div>'
-    + (_streak > 0 ? '<div class="pac-streak-pill"><span style="font-size:16px">🔥</span><span>' + _streak + '</span><span>' + (_streak===1?'dia':'dias') + '</span></div>' : '')
-  + '</div>'
-
-    // Session hero
-  + '<div style="margin:0 16px 14px"><div class="pac-session-hero">'
-    + '<div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.07)"></div>'
-    + '<div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.75;text-transform:uppercase;margin-bottom:5px">Próxima sessão</div>'
-    + '<div style="font-family:\'Instrument Serif\',serif;font-size:20px;line-height:1.2;margin-bottom:12px">' + (proximaStr ? escHTML(proximaStr) : 'Nenhuma sessão agendada') + '</div>'
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      + (proximaStr
-          ? (sessionLink
-              ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.45);color:#fff;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:inline-flex;align-items:center;gap:7px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.15)">▶ Entrar na sessão</a>'
-              : '<button disabled style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.5);border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;cursor:not-allowed;font-family:\'DM Sans\',sans-serif;display:inline-flex;align-items:center;gap:7px" title="Seu terapeuta ainda não configurou o link da sala">▶ Entrar na sessão</button>')
-          : '')
-      + '<div id="pac-solicitar-wrap"><button onclick="pacToggleSolicitarSessao()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.9);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:\'DM Sans\',sans-serif">' + (proximaStr ? 'Remarcar' : '📅 Solicitar sessão') + '</button>'
-        + '<div id="pac-solicitar-form" style="display:none;margin-top:10px;background:rgba(255,255,255,.15);border-radius:10px;padding:12px"><textarea id="pac-solicitar-msg" placeholder="Horários de preferência…" style="width:100%;min-height:56px;border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;outline:none;background:rgba(255,255,255,.2);color:inherit;line-height:1.5;box-sizing:border-box"></textarea><button onclick="pacEnviarSolicitacaoSessao(\'' + escHTML(p.name) + '\')" style="margin-top:8px;width:100%;padding:10px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.5);color:inherit;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Enviar via WhatsApp</button></div>'
+    // Banner (greeting + próxima sessão — reutiliza classes portal-banner)
+  + '<div class="portal-banner" style="margin:0 16px 20px;border-radius:16px">'
+    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
+      + '<div>'
+        + '<div class="portal-greeting">Olá, ' + escHTML(firstName) + ' 🌿</div>'
+        + '<div class="portal-sub">' + _dateLabel + '</div>'
       + '</div>'
+      + (_streak > 0 ? '<div class="pac-streak-pill"><span style="font-size:16px">🔥</span><span>' + _streak + '</span><span>' + (_streak===1?'dia':'dias') + '</span></div>' : '')
     + '</div>'
-    + '<button onclick="pacEmergencia()" style="margin-top:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.8);padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;width:100%;justify-content:center">🆘 Preciso de apoio agora</button>'
-  + '</div></div>'
+    + '<div class="portal-next-session" style="margin-top:14px">'
+      + '<span>🗓</span>'
+      + (proximaStr
+          ? '<span>Próxima sessão: <strong>' + escHTML(proximaStr) + '</strong></span>'
+          : '<span style="color:var(--muted)">Próxima sessão não agendada</span>')
+    + '</div>'
+    + (proximaStr && sessionLink
+        ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;margin-top:12px;background:var(--sage);color:#fff;font-weight:700;font-size:13.5px;padding:10px 20px;border-radius:10px;text-decoration:none;transition:opacity .15s">▶ Entrar na sessão</a>'
+        : '')
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'
+      + '<div id="pac-solicitar-wrap"><button onclick="pacToggleSolicitarSessao()" style="background:transparent;border:1px solid rgba(74,124,89,.3);color:var(--sage);border-radius:8px;padding:7px 14px;font-size:12.5px;cursor:pointer;font-family:inherit">' + (proximaStr ? '📅 Remarcar' : '📅 Solicitar sessão') + '</button>'
+        + '<div id="pac-solicitar-form" style="display:none;margin-top:10px;background:var(--sage-50);border-radius:10px;border:1px solid rgba(74,124,89,.15);padding:12px"><textarea id="pac-solicitar-msg" placeholder="Horários de preferência…" style="width:100%;min-height:56px;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;outline:none;background:#fff;color:var(--ink);line-height:1.5;box-sizing:border-box"></textarea><button onclick="pacEnviarSolicitacaoSessao(\'' + escHTML(p.name) + '\')" style="margin-top:8px;width:100%;padding:10px;background:var(--sage);border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Enviar via WhatsApp</button></div>'
+      + '</div>'
+      + '<button onclick="pacEmergencia()" style="background:transparent;border:1px solid rgba(192,57,43,.2);color:#c0392b;border-radius:8px;padding:7px 14px;font-size:12.5px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px">🆘 Preciso de apoio</button>'
+    + '</div>'
+  + '</div>'
 
     // Chat com a terapeuta
   + '<div id="pac-chat-block" style="margin:0 16px 14px"></div>'
