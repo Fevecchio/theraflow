@@ -301,6 +301,42 @@ function loginPaciente() {
         _verificarTermosPortal(pacs[idx].id || 'local-' + idx, function(){ renderPatientApp(idx, pacs); });
         return;
       }
+
+      // Fallback Supabase RPC — funciona em aba anônima / sem localStorage
+      try {
+        var rpcResult = await supaPatient.rpc('portal_patient_login', { p_email: email, p_hash: senhaHash });
+        if (rpcResult.data) {
+          var raw = rpcResult.data;
+          var meta = raw.metadata || {};
+          var pRpc = Object.assign({}, meta, {
+            id: raw.id, name: raw.name, email: raw.email,
+            whatsapp: raw.phone, age: raw.age, cidade: raw.cidade,
+            abordagem: raw.abordagem, cid: raw.cid, notes: raw.notes,
+            status: raw.status, sessions: raw.sessions_count,
+            valorSessao: raw.valor_sessao, progress: raw.progress,
+          });
+          // Carrega appointments
+          var apptRes = await supaPatient.from('appointments')
+            .select('local_id,date,time,presenca,status,metadata')
+            .eq('patient_id', raw.id).order('date', { ascending: false }).limit(60);
+          if (apptRes.data && apptRes.data.length) {
+            pRpc.appointments = apptRes.data.map(function(a) {
+              return Object.assign({}, (a.metadata || {}), {
+                id: a.local_id, date: a.date, time: a.time,
+                presenca: a.presenca, status: a.status,
+              });
+            });
+          }
+          var pacsRpc = [pRpc];
+          _loggedPatientIdx = 0;
+          _loggedPatientData = pRpc;
+          document.getElementById('tf-patient-login-layer').classList.remove('open');
+          document.getElementById('tf-patient-app-layer').classList.add('open');
+          _verificarTermosPortal(pRpc.id, function(){ renderPatientApp(0, pacsRpc); });
+          return;
+        }
+      } catch(_rpcErr) {}
+
       errEl.textContent = '⚠ Email ou senha incorretos. Verifique com seu terapeuta.';
       errEl.style.display = '';
       document.getElementById('pac-login-senha').value = '';
