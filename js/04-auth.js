@@ -600,6 +600,7 @@ function pacEmergencia() {
     + (wppTerapeuta
         ? '<a href="https://wa.me/'+wppTerapeuta+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box">💬 Chamar minha terapeuta no WhatsApp</a>'
         : '<div style="text-align:center;font-size:13px;color:var(--muted);padding:8px 0">Entre em contato com sua terapeuta se precisar de apoio imediato.</div>')
+    + '<div id="pac-chat-block" style="display:none;margin-top:16px"></div>'
     + '</div>';
   document.body.appendChild(overlay);
   setTimeout(function(){ pacToggleRespiracao(); }, 600);
@@ -634,7 +635,7 @@ function pacIniciarRespiracao() {
     { label:'Expire…',   dur:4, cls:'contracting' },
     { label:'Segure…',   dur:4, cls:'contracting' },
   ];
-  var fi = 0, ct = fases[0].dur;
+  var fi = 0, ct = fases[0].dur, _cycles = 0;
   function aplicar() {
     var f = fases[fi];
     var ring = document.getElementById('emg-breath-ring');
@@ -651,7 +652,11 @@ function pacIniciarRespiracao() {
     ct--;
     var ctr = document.getElementById('emg-breath-counter');
     if (ctr) ctr.textContent = ct;
-    if (ct <= 0) { fi = (fi+1)%fases.length; aplicar(); }
+    if (ct <= 0) {
+      fi = (fi+1)%fases.length;
+      if (fi === 0) { _cycles++; if (_cycles === 1) _revealEmgChat(); }
+      aplicar();
+    }
   }, 1000);
 }
 
@@ -660,6 +665,16 @@ function pacPararRespiracao() {
   if (_breathInterval) { clearInterval(_breathInterval); _breathInterval = null; }
   var ring = document.getElementById('emg-breath-ring');
   if (ring) ring.className = 'breath-ring';
+  _revealEmgChat();
+}
+
+function _revealEmgChat() {
+  var chatWrap = document.getElementById('pac-chat-block');
+  if (!chatWrap || chatWrap.style.display !== 'none') return;
+  chatWrap.style.display = '';
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData && typeof _pacInitChat === 'function') {
+    _pacInitChat(_loggedPatientIdx, _loggedPatientData);
+  }
 }
 
 // ─── MATERIAIS ───────────────────────────────────────────────────────

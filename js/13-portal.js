@@ -979,9 +979,6 @@ function renderPatientApp(idx, pacs) {
     + (_streak > 0 ? '<div class="pac-streak-pill" style="margin-left:auto"><span style="font-size:15px">🔥</span><span>' + _streak + '</span><span>' + (_streak===1?'dia':'dias') + '</span></div>' : '')
   + '</div>'
 
-    // Chat com a terapeuta
-  + '<div id="pac-chat-block" style="margin:0 16px 14px"></div>'
-
     // Dica da semana (visível na tab Home)
   + '<div style="margin:0 16px 14px;background:var(--sage-50);border:1px solid rgba(74,124,89,.18);border-radius:16px;padding:14px 16px">'
     + '<div style="font-size:10.5px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">💡 Dica da semana</div>'
@@ -1073,8 +1070,7 @@ function renderPatientApp(idx, pacs) {
   setTimeout(function(){ _renderDiarioExistente(p); }, 0);
   // Agenda notificação se configurada
   setTimeout(function(){ _checkNotifPortal(p); }, 0);
-  // Carrega chat e inicia poll
-  setTimeout(function(){ _pacInitChat(idx, p); }, 0);
+  // Chat carregado apenas via fluxo "Preciso de apoio" (pacEmergencia)
 }
 
 function _pacRenderChatBlock(p, msgs, idx) {
