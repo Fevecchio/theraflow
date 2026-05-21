@@ -1169,9 +1169,70 @@ function renderPatientDiario(p, idx) {
   var instrucao = config ? config.instrucao : null;
   var formHtml  = config ? config.html() : '';
 
+  // ── Gráfico de linha do humor ──
+  var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
+  var panelHumor = '<div id="pac-diary-humor" style="display:none;padding:16px 18px">';
+  if (mh.length < 2) {
+    panelHumor += '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px">Registre seu humor pelo menos 2 vezes para ver o gráfico.</div>';
+  } else {
+    var W = 290, H = 120, pad = 12;
+    var stepX = (W - pad*2) / (mh.length - 1);
+    var moodLabels = ['','😢','','😕','','😐','','🙂','','','😄'];
+    var dayLabels = ['D','S','T','Q','Q','S','S'];
+    var today = new Date();
+    var pts = mh.map(function(v, i) {
+      var x = pad + i * stepX;
+      var y = H - pad - ((v - 1) / 9) * (H - pad * 2);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    var areaBase = H - pad;
+    var firstPt = (pad).toFixed(1) + ',' + (H - pad - ((mh[0]-1)/9)*(H-pad*2)).toFixed(1);
+    var lastPt  = (pad + (mh.length-1)*stepX).toFixed(1) + ',' + (H - pad - ((mh[mh.length-1]-1)/9)*(H-pad*2)).toFixed(1);
+    var areaPath = 'M'+firstPt+' '+mh.slice(1).map(function(v,i){
+      var x = pad + (i+1)*stepX; var y = H - pad - ((v-1)/9)*(H-pad*2);
+      return 'L'+x.toFixed(1)+','+y.toFixed(1);
+    }).join(' ')+' L'+lastPt.split(',')[0]+','+areaBase+' L'+pad+','+areaBase+' Z';
+    var circles = mh.map(function(v,i){
+      var x = pad + i*stepX; var y = H - pad - ((v-1)/9)*(H-pad*2);
+      var col = v<=2?'#c0392b':v<=4?'#c97d2e':v<=6?'#dbb94e':v<=8?'#8fb89c':'#4a7c59';
+      return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" fill="'+col+'" stroke="#fff" stroke-width="1.5"><title>'+v+'/10</title></circle>';
+    }).join('');
+    var refLines = [3,5,7].map(function(v){
+      var y = (H - pad - ((v-1)/9)*(H-pad*2)).toFixed(1);
+      return '<line x1="'+pad+'" y1="'+y+'" x2="'+(W-pad)+'" y2="'+y+'" stroke="#e8e4d8" stroke-dasharray="3,3" stroke-width="1"/>'
+        + '<text x="'+(W-pad+3)+'" y="'+(parseFloat(y)+4)+'" font-size="9" fill="#bbb">'+v+'</text>';
+    }).join('');
+    var avg = (mh.reduce(function(s,v){return s+v;},0)/mh.length).toFixed(1);
+    var trend = mh[mh.length-1] - mh[0];
+    var trendTxt = trend > 0.5 ? '↑ Em alta' : trend < -0.5 ? '↓ Em queda' : '→ Estável';
+    var trendCol = trend > 0.5 ? '#4a7c59' : trend < -0.5 ? '#c0392b' : '#c97d2e';
+    var xLabels = mh.map(function(_,i){
+      var d = new Date(today); d.setDate(d.getDate() - (mh.length - 1 - i));
+      return '<text x="'+(pad + i*stepX).toFixed(1)+'" y="'+(H+4)+'" font-size="9" fill="#aaa" text-anchor="middle">'+dayLabels[d.getDay()]+'</text>';
+    }).join('');
+    panelHumor += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--ink)">Últimos '+mh.length+' registros</div>'
+      + '<div style="display:flex;gap:12px;font-size:12px">'
+        + '<span style="color:var(--muted)">Média: <strong style="color:var(--ink)">'+avg+'</strong></span>'
+        + '<span style="color:'+trendCol+';font-weight:600">'+trendTxt+'</span>'
+      + '</div>'
+    + '</div>'
+    + '<svg viewBox="0 0 '+(W+20)+' '+(H+12)+'" style="width:100%;height:auto;overflow:visible">'
+      + refLines
+      + '<path d="'+areaPath+'" fill="rgba(74,124,89,.07)"/>'
+      + '<polyline points="'+pts+'" fill="none" stroke="#4a7c59" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>'
+      + circles + xLabels
+    + '</svg>'
+    + '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)">'
+      + '<span>'+moodLabels[1]+'  Muito mal</span><span>Muito bem  '+moodLabels[10]+'</span>'
+    + '</div>';
+  }
+  panelHumor += '</div>';
+
   var tabs = '<div style="display:flex;border-bottom:1px solid var(--border);background:#fafbfa">'
     + '<button id="pac-diary-tab-livre" onclick="pacSwitchDiary(\'livre\')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:#fff;color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit">✏️ Registro livre</button>'
     + (tabLabel ? '<button id="pac-diary-tab-esp" onclick="pacSwitchDiary(\'esp\')" style="flex:1;padding:10px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">'+tabLabel+'</button>' : '')
+    + '<button id="pac-diary-tab-humor" onclick="pacSwitchDiary(\'humor\')" style="flex:1;padding:10px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">📈 Humor</button>'
     + '</div>';
 
   var panelLivre = '<div id="pac-diary-livre" style="padding:16px 18px">'
@@ -1190,26 +1251,25 @@ function renderPatientDiario(p, idx) {
 
   return '<div class="patient-section-card">'
     + '<div class="patient-section-header"><div class="patient-section-title">📓 Diário da semana</div></div>'
-    + tabs + panelLivre + panelEsp
+    + tabs + panelLivre + panelEsp + panelHumor
     + '</div>';
 }
 
 function pacSwitchDiary(tab) {
-  var livre = document.getElementById('pac-diary-livre');
-  var esp   = document.getElementById('pac-diary-esp');
-  var tabLivre = document.getElementById('pac-diary-tab-livre');
-  var tabEsp   = document.getElementById('pac-diary-tab-esp');
-  if (tab === 'livre') {
-    if (livre) livre.style.display = '';
-    if (esp)   esp.style.display   = 'none';
-    if (tabLivre) { tabLivre.style.background='#fff'; tabLivre.style.color='var(--sage)'; tabLivre.style.borderBottom='2px solid var(--sage)'; tabLivre.style.fontWeight='600'; }
-    if (tabEsp)   { tabEsp.style.background='transparent'; tabEsp.style.color='var(--muted)'; tabEsp.style.borderBottom='2px solid transparent'; tabEsp.style.fontWeight='500'; }
-  } else {
-    if (livre) livre.style.display = 'none';
-    if (esp)   esp.style.display   = '';
-    if (tabEsp)   { tabEsp.style.background='#fff'; tabEsp.style.color='var(--sage)'; tabEsp.style.borderBottom='2px solid var(--sage)'; tabEsp.style.fontWeight='600'; }
-    if (tabLivre) { tabLivre.style.background='transparent'; tabLivre.style.color='var(--muted)'; tabLivre.style.borderBottom='2px solid transparent'; tabLivre.style.fontWeight='500'; }
-  }
+  var panels = { livre: 'pac-diary-livre', esp: 'pac-diary-esp', humor: 'pac-diary-humor' };
+  var tabBtns = { livre: 'pac-diary-tab-livre', esp: 'pac-diary-tab-esp', humor: 'pac-diary-tab-humor' };
+  Object.keys(panels).forEach(function(k) {
+    var p = document.getElementById(panels[k]);
+    var b = document.getElementById(tabBtns[k]);
+    var active = k === tab;
+    if (p) p.style.display = active ? '' : 'none';
+    if (b) {
+      b.style.background = active ? '#fff' : 'transparent';
+      b.style.color = active ? 'var(--sage)' : 'var(--muted)';
+      b.style.borderBottom = active ? '2px solid var(--sage)' : '2px solid transparent';
+      b.style.fontWeight = active ? '600' : '500';
+    }
+  });
 }
 
 function pacSelectMood(val, el) {
