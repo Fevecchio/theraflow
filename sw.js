@@ -1,7 +1,5 @@
-const CACHE = 'tf-v3';
+const CACHE = 'tf-v4';
 const APP_SHELL = [
-  '/app',
-  '/theraflow-unified-v3.html',
   '/manifest.json',
 ];
 
@@ -32,16 +30,20 @@ self.addEventListener('fetch', e => {
     url.hostname.includes('posthog.com')
   ) return;
 
-  // App shell (.html): cache-first, atualiza em background
-  if (APP_SHELL.includes(url.pathname) || url.pathname.endsWith('.html')) {
+  // HTML e assets JS/CSS: network-first (garante código sempre atualizado)
+  if (
+    url.pathname.endsWith('.html') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css')
+  ) {
     e.respondWith(
-      caches.open(CACHE).then(async cache => {
-        const cached = await cache.match(e.request);
-        const fetchPromise = fetch(e.request)
-          .then(res => { cache.put(e.request, res.clone()); return res; })
-          .catch(() => null);
-        return cached || await fetchPromise;
-      })
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
     );
     return;
   }
