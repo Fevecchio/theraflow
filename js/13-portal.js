@@ -1416,7 +1416,7 @@ function _renderDiarioExistente(p) {
   });
 }
 
-function renderTrajetoriaPortal(p, idx) {
+function renderTrajetoriaPortal(p, idx, readonly) {
   // Prefer global appointments array (therapist context — complete history)
   // Fall back to p.appointments (patient remote login — loaded from Supabase)
   var sourceAppts;
@@ -1503,11 +1503,15 @@ function renderTrajetoriaPortal(p, idx) {
           : '')
       + '<div class="traj-insight-wrap">'
         + '<div class="traj-insight-label">💭 O que fica pra mim desta sessão</div>'
-        + '<textarea id="insight-'+escHTML(String(a.id))+'" class="traj-insight-ta" placeholder="Escreva algo que ficou desta sessão…" '
-        + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
-        + escHTML(insight)
-        + '</textarea>'
-        + '<button onclick="pacSalvarInsight('+idx+',\''+escHTML(String(a.id))+'\')" class="traj-insight-btn">Salvar ✓</button>'
+        + (readonly
+          ? '<div style="font-size:13px;color:var(--muted);font-style:italic;padding:8px 0">'
+              + (insight ? escHTML(insight) : 'Nenhum registro ainda.')
+              + '</div>'
+          : '<textarea id="insight-'+escHTML(String(a.id))+'" class="traj-insight-ta" placeholder="Escreva algo que ficou desta sessão…" '
+              + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
+              + escHTML(insight)
+              + '</textarea>'
+              + '<button onclick="pacSalvarInsight('+idx+',\''+escHTML(String(a.id))+'\')" class="traj-insight-btn">Salvar ✓</button>')
       + '</div>'
       + '</div>';
   }).join('');
