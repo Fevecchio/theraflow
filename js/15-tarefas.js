@@ -13,7 +13,7 @@ function carregarTarefas() {
     tasks = JSON.parse(localStorage.getItem('tf_tasks') || '[]');
     // Migração: normaliza tarefas antigas sem campo title
     tasks = tasks.map(function(t) {
-      if (!t.title) return Object.assign({}, t, { title: t.text || t.desc || t.assunto || '(sem título)' });
+      if (!t.title) return Object.assign({}, t, { title: t.titulo || t.text || t.desc || t.assunto || '(sem título)' });
       return t;
     });
   } catch(e) { tasks = []; }
@@ -233,11 +233,11 @@ function salvarNovaTarefa() {
   var data = document.getElementById('tarefa-data-input').value;
   if (editingTaskId !== null) {
     var t = tasks.find(function(x){ return x.id===editingTaskId; });
-    if (t) { t.title = titulo; t.patientName = paciente; t.dueDate = data; }
+    if (t) { t.title = titulo; t.titulo = titulo; t.patientName = paciente; t.dueDate = data; }
     showToast('Tarefa atualizada!');
   } else {
     var newId = Date.now();
-    tasks.push({ id: newId, title: titulo, patientName: paciente, dueDate: data, status: 'aberta', createdAt: hojeISO() });
+    tasks.push({ id: newId, title: titulo, titulo: titulo, patientName: paciente, dueDate: data, status: 'aberta', createdAt: hojeISO() });
     showToast('Tarefa criada!');
   }
   editingTaskId = null;
@@ -305,7 +305,7 @@ function tarefaEditInline(el, id, field) {
       t.dueDate = val;
     } else {
       if (!val) { input.style.borderColor='#e74c3c'; input.focus(); return; }
-      t.title = val;
+      t.title = val; t.titulo = val;
     }
     salvarTarefas();
     renderTarefas();

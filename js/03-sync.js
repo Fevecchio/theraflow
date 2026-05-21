@@ -155,6 +155,7 @@ async function _supaSync_patients() {
           fin: p.fin || null,
           forma_pagamento: p.forma_pagamento || null,
           portalPasswordHash: p.portalPasswordHash || null,
+          portalPassword: p.portalPassword || null,
           anamnese: p.anamnese || null,
           portalAnamneseAtiva: p.portalAnamneseAtiva || false,
         },
@@ -220,7 +221,7 @@ async function _supaSync_tasks() {
       const rows = tsks.map(t => ({
         local_id: String(t.id || ''),
         user_id: user.id,
-        titulo: t.titulo || '',
+        titulo: t.titulo || t.title || '',
         status: t.status || 'aberta',
         prioridade: t.prioridade || 'media',
         due_date: t.dueDate || null,
