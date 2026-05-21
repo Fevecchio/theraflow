@@ -6,6 +6,8 @@ let _tfPlanPro = false;
 let _tfTrialDismissed = false;
 let _loadingUserData = false;
 var profileAbordagem = 'tcc';
+// IDs gerados localmente nesta sessão (ainda não confirmados no Supabase)
+var _newLocalPatientIds = new Set();
 
 async function assinarPro(btn) {
   tfTrack('upgrade_clicked');
@@ -126,8 +128,9 @@ async function _supaLoadUserData(userId) {
         if (!p.initials && p.name) p.initials = p.name.trim().split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
         if (!p.color) { var cp = _colorPairs[i % _colorPairs.length]; p.color = cp[0]; p.colorGrad = 'linear-gradient(135deg,'+cp[0]+','+cp[1]+')'; }
       });
-      // Preserva pacientes criados offline (UUID local não existe no Supabase ainda)
-      const offlinePats = localPats.filter(p => p.id && !supaPatIds.has(p.id));
+      // Preserva APENAS pacientes criados nesta sessão que ainda não foram sincronizados
+      // (evita resurreição de pacientes deletados do Supabase)
+      const offlinePats = localPats.filter(p => !p._isDemo && _newLocalPatientIds.has(p.id));
       const mergedPats = [...restored, ...offlinePats];
       localStorage.setItem('tf_patients', JSON.stringify(mergedPats));
       try { if (typeof patients !== 'undefined') patients.splice(0, patients.length, ...mergedPats); } catch(_) {}

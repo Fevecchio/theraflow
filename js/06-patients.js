@@ -67,9 +67,10 @@ function criarPaciente() {
   const pair = colorPairs[patients.length % colorPairs.length];
   const color = pair[0];
   const colorGrad = `linear-gradient(135deg,${pair[0]},${pair[1]})`;
+  const _newPatId = crypto.randomUUID();
   patients.push({
     initials, color, colorGrad,
-    id: crypto.randomUUID(),
+    id: _newPatId,
     name: d.nome, email: d.email, whatsapp: d.whatsapp,
     nascimento: d.nascimento, age: d.age, cidade: d.cidade,
     abordagem: d.abordagem, cid: d.cid,
@@ -79,6 +80,7 @@ function criarPaciente() {
     fin: '—', finStatus: 'ok', alert: null,
     notes: d.notes, exercises: []
   });
+  _newLocalPatientIds.add(_newPatId);
   salvarPacientes();
   limparModalPaciente();
   closeModal('modal-novo-paciente');
