@@ -953,29 +953,37 @@ function renderPatientApp(idx, pacs) {
   /* ══ TAB HOME ══ */
   '<div id="pac-tab-home" class="pac-tab-content">'
 
-    // Hero banner — full-width, dark green (continuação do header)
-  + '<div style="background:linear-gradient(160deg,#2e5c3f 0%,var(--sage) 100%);color:#fff;padding:20px 20px 28px;margin-bottom:0">'
-    + '<div style="font-family:\'Instrument Serif\',serif;font-size:30px;line-height:1.15;margin-bottom:4px">Olá, ' + escHTML(firstName) + ' 🌿</div>'
-    + '<div style="font-size:13px;opacity:.8;margin-bottom:18px">' + _dateLabel + '</div>'
-    + '<div style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:13px 16px">'
-      + '<div style="display:flex;align-items:center;gap:8px;font-size:13.5px">'
-        + '<span>🗓</span>'
-        + (proximaStr
-            ? '<span>Próxima sessão: <strong>' + escHTML(proximaStr) + '</strong></span>'
-            : '<span style="opacity:.85">Próxima sessão não agendada</span>')
-        + (_streak > 0 ? '<span style="margin-left:auto;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px;font-size:12px">🔥 ' + _streak + (_streak===1?' dia':' dias') + '</span>' : '')
-      + '</div>'
-      + (sessionLink && proximaStr
-          ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;background:#fff;color:var(--sage);font-weight:700;font-size:13px;padding:8px 18px;border-radius:10px;text-decoration:none">▶ Entrar na sessão</a>'
-          : '')
+    // Saudação — fundo claro, como design de referência
+  + '<div style="padding:20px 20px 14px;display:flex;justify-content:space-between;align-items:flex-start">'
+    + '<div>'
+      + '<div style="font-family:\'Instrument Serif\',serif;font-size:26px;color:var(--ink);line-height:1.1">Olá, ' + escHTML(firstName) + ' 🌿</div>'
+      + '<div style="font-size:13px;color:var(--muted);margin-top:3px">' + _dateLabel + '</div>'
     + '</div>'
-    // Ações inline no banner
-    + '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'
+    + (_streak > 0
+        ? '<div style="display:flex;align-items:center;gap:5px;background:#fff8ec;border:1px solid rgba(201,125,46,.25);border-radius:20px;padding:6px 12px;margin-top:4px;flex-shrink:0">'
+            + '<span style="font-size:16px">🔥</span>'
+            + '<span style="font-size:13px;font-weight:700;color:#b86e1a">' + _streak + '</span>'
+            + '<span style="font-size:11px;color:#b86e1a;opacity:.8">' + (_streak===1?'dia':'dias') + '</span>'
+          + '</div>'
+        : '')
+  + '</div>'
+
+    // Card verde da sessão — com margens e bordas arredondadas
+  + '<div style="margin:0 16px 16px;background:linear-gradient(135deg,#3a6347,var(--sage));border-radius:20px;padding:18px 20px;color:#fff;position:relative;overflow:hidden">'
+    + '<div style="position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none"></div>'
+    + '<div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.75;text-transform:uppercase;margin-bottom:6px">Próxima sessão</div>'
+    + (proximaStr
+        ? '<div style="font-family:\'Instrument Serif\',serif;font-size:22px;line-height:1.2;margin-bottom:12px">' + escHTML(proximaStr) + '</div>'
+        : '<div style="font-size:15px;opacity:.75;margin-bottom:12px">Nenhuma sessão agendada</div>')
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+      + (sessionLink && proximaStr
+          ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-block">▶ Entrar na sessão</a>'
+          : '')
       + '<div id="pac-solicitar-wrap">'
-        + '<button onclick="pacToggleSolicitarSessao()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit">' + (proximaStr ? '📅 Remarcar' : '📅 Solicitar sessão') + '</button>'
+        + '<button onclick="pacToggleSolicitarSessao()" style="background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.9);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit">' + (proximaStr ? 'Remarcar' : '📅 Solicitar sessão') + '</button>'
         + '<div id="pac-solicitar-form" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);border-radius:10px;padding:12px"><textarea id="pac-solicitar-msg" placeholder="Horários de preferência…" style="width:100%;min-height:56px;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;outline:none;background:rgba(255,255,255,.15);color:#fff;line-height:1.5;box-sizing:border-box"></textarea><button onclick="pacEnviarSolicitacaoSessao(\'' + escHTML(p.name) + '\')" style="margin-top:8px;width:100%;padding:10px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Enviar via WhatsApp</button></div>'
       + '</div>'
-      + '<button onclick="pacEmergencia()" style="background:rgba(220,80,60,.25);border:1px solid rgba(255,160,150,.4);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🆘 Preciso de apoio</button>'
+      + '<button onclick="pacEmergencia()" style="background:rgba(220,80,60,.22);border:1px solid rgba(255,160,150,.4);color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🆘 Preciso de apoio</button>'
     + '</div>'
   + '</div>'
 
