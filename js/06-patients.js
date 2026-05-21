@@ -304,7 +304,7 @@ async function compartilharAcessoPortal(i) {
         // Re-ativa portal caso tenha sido revogado anteriormente
         var _acc2 = JSON.parse(localStorage.getItem('tf_account') || '{}');
         if (_acc2.supa_id) {
-          await supa.from('patient_users').update({ portal_active: true }).eq('patient_id', p.id).eq('therapist_id', _acc2.supa_id).catch(() => {});
+          await supa.from('patient_users').update({ portal_active: true }).eq('patient_id', p.id).eq('therapist_id', _acc2.supa_id).then(() => {}, () => {});
         }
         p.portalRevogado = false;
         salvarPacientes();
