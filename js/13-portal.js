@@ -987,34 +987,25 @@ function renderPatientApp(idx, pacs) {
     + '</div>'
   + '</div>'
 
-    // Dica da semana (visível na tab Home)
-  + '<div style="margin:0 16px 14px;background:var(--sage-50);border:1px solid rgba(74,124,89,.18);border-radius:16px;padding:14px 16px">'
-    + '<div style="font-size:10.5px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">💡 Dica da semana</div>'
-    + '<div style="font-size:13px;color:#4a5568;line-height:1.6;font-style:italic">&#8220;' + escHTML(dica) + '&#8221;</div>'
-    + '<div style="font-size:11px;color:var(--muted);margin-top:5px">— ' + escHTML(_therapistFirst) + '</div>'
+    // Mensagem da terapeuta
+  + '<div style="margin:0 16px 14px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3a6347,var(--sage));display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700;flex-shrink:0">' + _therapistInitial + '</div>'
+      + '<div><div style="font-size:12px;font-weight:600;color:var(--ink)">' + escHTML(_therapistFirst) + '</div><div style="font-size:10px;color:var(--muted)">deixou uma mensagem</div></div>'
+      + '<div style="margin-left:auto;font-size:10px;color:var(--muted)">hoje</div>'
+    + '</div>'
+    + '<div style="font-size:13px;color:#4a5568;line-height:1.6;font-style:italic">&#8220;' + escHTML(msgTexto) + '&#8221;</div>'
   + '</div>'
 
     // Check-in
   + '<div style="margin:0 16px 14px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 16px;box-shadow:var(--shadow)">'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><div style="background:var(--sage-50);width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px">😊</div><div><div style="font-family:\'Instrument Serif\',serif;font-size:16px;color:var(--ink)">Como você está hoje?</div><div style="font-size:11px;color:var(--muted)">Check-in diário · 30 seg</div></div></div>'
-    + (function() {
-        var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; }).slice(-12);
-        if (mh.length < 2) return '';
-        var W = 220, H = 48, pad = 6;
-        var stepX = (W - pad*2) / (mh.length - 1);
-        var pts = mh.map(function(v, i) { var x = pad + i * stepX; var y = H - pad - ((v-1)/9)*(H-pad*2); return x.toFixed(1)+','+y.toFixed(1); }).join(' ');
-        var trend = mh[mh.length-1] - mh[0];
-        var cor = trend > 0.5 ? '#4a7c59' : trend < -0.5 ? '#c0392b' : '#c97d2e';
-        var ultimo = mh[mh.length-1];
-        return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;background:var(--bg);border-radius:10px;padding:10px 12px"><svg width="'+W+'" height="'+H+'" style="flex-shrink:0"><polyline points="'+pts+'" fill="none" stroke="'+cor+'" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg><div style="flex-shrink:0;text-align:center"><div style="font-size:22px;font-weight:700;color:'+cor+'">'+ultimo+'</div><div style="font-size:10px;color:var(--muted)">último</div></div></div>';
-      })()
-    + moodInsights
     + '<div style="display:flex;gap:8px;justify-content:space-between;margin-bottom:14px" id="pac-mood-emojis">'
       + [['😢','1'],['😕','3'],['😐','5'],['🙂','7'],['😄','10']].map(function(e){
           return '<div style="flex:1;aspect-ratio:1;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s" onclick="pacSelectMood('+e[1]+',this)"><span style="font-size:22px;line-height:1;transition:transform .15s;filter:grayscale(50%)" class="pac-mood-em">'+e[0]+'</span></div>';
         }).join('')
     + '</div>'
-    + '<input type="range" id="pac-mood-slider" min="1" max="10" value="5" style="-webkit-appearance:none;width:100%;height:6px;background:linear-gradient(90deg,var(--sage) 50%,#e8f0eb 50%);border-radius:10px;outline:none;margin-bottom:12px" oninput="pacMoodSliderInput(this.value)"/>'
+    + '<input type="range" id="pac-mood-slider" min="1" max="10" value="5" style="display:none" oninput="pacMoodSliderInput(this.value)"/>'
     + '<input id="pac-mood-note" type="text" placeholder="O que está passando pela sua cabeça? (opcional)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none;background:#fafaf8;color:var(--ink);box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'
     + '<button onclick="pacSalvarMood('+idx+')" style="width:100%;margin-top:12px;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.2px">Registrar humor</button>'
     + '<div id="pac-mood-saved" style="display:none;text-align:center;color:var(--sage);font-size:13px;font-weight:600;margin-top:10px">✓ Registrado! Sua terapeuta verá na próxima sessão.</div>'
