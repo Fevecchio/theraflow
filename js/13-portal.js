@@ -1237,7 +1237,7 @@ function renderPatientDiario(p, idx) {
       + circles + xLabels
     + '</svg>'
     + '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)">'
-      + '<span>'+moodLabels[1]+'  Muito mal</span><span>Muito bem  '+moodLabels[10]+'</span>'
+      + '<span>😢  Muito mal</span><span>Muito bem  😄</span>'
     + '</div>';
   }
   panelHumor += '</div>';
