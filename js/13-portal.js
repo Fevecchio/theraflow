@@ -306,13 +306,15 @@ function renderMoodHistory() {
   const days = ['D','S','T','Q','Q','S','S'];
   const today = new Date();
   const W = 280, H = 70, PAD = 10;
-  const validVals = data.filter(function(v){ return v !== null && v !== undefined; });
+  const validEntries = data.filter(function(v){ return v !== null && v !== undefined; });
+  const validVals = validEntries.map(function(e){ return _normMoodVal(e); });
   const avg = validVals.length ? (validVals.reduce(function(s,v){ return s+v; },0)/validVals.length).toFixed(1) : '—';
 
   // Pontos SVG
   var points = [];
-  data.forEach(function(val, i) {
-    if (val === null || val === undefined) return;
+  data.forEach(function(entry, i) {
+    if (entry === null || entry === undefined) return;
+    var val = _normMoodVal(entry);
     var x = PAD + (i / 13) * (W - PAD*2);
     var y = H - PAD - ((val / 10) * (H - PAD*2));
     points.push({ x: x, y: y, val: val, i: i });
@@ -368,6 +370,15 @@ function getMoodColor(val) {
   if (val <= 5) return '#dbb94e';
   if (val <= 7) return '#8fb89c';
   return '#4a7c59';
+}
+
+function _normMoodVal(entry) {
+  return typeof entry === 'object' ? (entry.value || 0) : (entry || 0);
+}
+function _normMoodEmoji(entry) {
+  if (typeof entry === 'object' && entry.emoji) return entry.emoji;
+  var v = _normMoodVal(entry);
+  return v <= 2 ? '😢' : v <= 4 ? '😕' : v <= 6 ? '😐' : v <= 8 ? '🙂' : '😄';
 }
 
 function updateExerciseCounter() {
@@ -928,14 +939,12 @@ function renderPatientApp(idx, pacs) {
 
   // ── Perfil: topo + ring ──
   var _initials = (firstName.charAt(0) + ((p.name||'').split(' ')[1]||'').charAt(0)).toUpperCase();
-  var _circ = 263.89;
   var _profileTopHtml =
-    // Avatar row (left-aligned, like Claude Design)
-    '<div style="display:flex;align-items:center;gap:14px;padding:24px 16px 16px">'
-      + '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--sage-700),var(--sage));display:flex;align-items:center;justify-content:center;font-family:\'Instrument Serif\',serif;font-size:24px;color:#fff;flex-shrink:0;box-shadow:0 4px 16px rgba(74,124,89,.3)">' + _initials + '</div>'
-      + '<div><div style="font-family:\'Instrument Serif\',serif;font-size:22px;color:var(--ink);line-height:1.2">' + escHTML(p.name) + '</div>'
-        + '<div style="font-size:12px;color:var(--muted);margin-top:3px">' + escHTML(p.abordagem||'—') + ' · com ' + escHTML(_therapistFirst) + '</div>'
-      + '</div>'
+    // Avatar centralizado
+    '<div style="padding:22px 20px 14px;text-align:center">'
+      + '<div style="width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,var(--sage-700),var(--sage));display:flex;align-items:center;justify-content:center;font-family:\'Instrument Serif\',serif;font-size:26px;color:#fff;margin:0 auto 9px;box-shadow:0 4px 16px rgba(74,124,89,.3)">' + _initials + '</div>'
+      + '<div style="font-family:\'Instrument Serif\',serif;font-size:20px;color:var(--ink)">' + escHTML(p.name) + '</div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-top:2px">' + escHTML(p.abordagem||'—') + ' · com ' + escHTML(_therapistFirst) + '</div>'
     + '</div>'
     // Ring + stats
     + '<div style="display:flex;align-items:center;gap:20px;padding:0 16px;margin-bottom:16px">'
@@ -1170,40 +1179,44 @@ function renderPatientDiario(p, idx) {
   var formHtml  = config ? config.html() : '';
 
   // ── Gráfico de linha do humor ──
-  var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
+  var _rawMh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
+  var mh = _rawMh.map(function(e){ return typeof e === 'object' ? e : { value: e, emoji: null }; });
   var panelHumor = '<div id="pac-diary-humor" style="display:none;padding:16px 18px">';
   if (mh.length < 2) {
     panelHumor += '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px">Registre seu humor pelo menos 2 vezes para ver o gráfico.</div>';
   } else {
     var W = 290, H = 120, pad = 12;
     var stepX = (W - pad*2) / (mh.length - 1);
-    var moodLabels = ['','😢','','😕','','😐','','🙂','','','😄'];
     var dayLabels = ['D','S','T','Q','Q','S','S'];
     var today = new Date();
-    var pts = mh.map(function(v, i) {
+    var pts = mh.map(function(e, i) {
+      var v = _normMoodVal(e);
       var x = pad + i * stepX;
       var y = H - pad - ((v - 1) / 9) * (H - pad * 2);
       return x.toFixed(1) + ',' + y.toFixed(1);
     }).join(' ');
     var areaBase = H - pad;
-    var firstPt = (pad).toFixed(1) + ',' + (H - pad - ((mh[0]-1)/9)*(H-pad*2)).toFixed(1);
-    var lastPt  = (pad + (mh.length-1)*stepX).toFixed(1) + ',' + (H - pad - ((mh[mh.length-1]-1)/9)*(H-pad*2)).toFixed(1);
-    var areaPath = 'M'+firstPt+' '+mh.slice(1).map(function(v,i){
+    var fv = _normMoodVal(mh[0]), lv = _normMoodVal(mh[mh.length-1]);
+    var firstPt = pad.toFixed(1) + ',' + (H - pad - ((fv-1)/9)*(H-pad*2)).toFixed(1);
+    var lastPt  = (pad + (mh.length-1)*stepX).toFixed(1) + ',' + (H - pad - ((lv-1)/9)*(H-pad*2)).toFixed(1);
+    var areaPath = 'M'+firstPt+' '+mh.slice(1).map(function(e,i){
+      var v = _normMoodVal(e);
       var x = pad + (i+1)*stepX; var y = H - pad - ((v-1)/9)*(H-pad*2);
       return 'L'+x.toFixed(1)+','+y.toFixed(1);
     }).join(' ')+' L'+lastPt.split(',')[0]+','+areaBase+' L'+pad+','+areaBase+' Z';
-    var circles = mh.map(function(v,i){
+    var circles = mh.map(function(e,i){
+      var v = _normMoodVal(e);
+      var emoji = _normMoodEmoji(e);
       var x = pad + i*stepX; var y = H - pad - ((v-1)/9)*(H-pad*2);
-      var col = v<=2?'#c0392b':v<=4?'#c97d2e':v<=6?'#dbb94e':v<=8?'#8fb89c':'#4a7c59';
-      return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" fill="'+col+'" stroke="#fff" stroke-width="1.5"><title>'+v+'/10</title></circle>';
+      return '<text x="'+x.toFixed(1)+'" y="'+(parseFloat(y.toFixed(1))+5)+'" font-size="14" text-anchor="middle" style="user-select:none"><title>'+v+'/10</title>'+emoji+'</text>';
     }).join('');
     var refLines = [3,5,7].map(function(v){
       var y = (H - pad - ((v-1)/9)*(H-pad*2)).toFixed(1);
       return '<line x1="'+pad+'" y1="'+y+'" x2="'+(W-pad)+'" y2="'+y+'" stroke="#e8e4d8" stroke-dasharray="3,3" stroke-width="1"/>'
         + '<text x="'+(W-pad+3)+'" y="'+(parseFloat(y)+4)+'" font-size="9" fill="#bbb">'+v+'</text>';
     }).join('');
-    var avg = (mh.reduce(function(s,v){return s+v;},0)/mh.length).toFixed(1);
-    var trend = mh[mh.length-1] - mh[0];
+    var avg = (mh.reduce(function(s,e){return s+_normMoodVal(e);},0)/mh.length).toFixed(1);
+    var trend = lv - fv;
     var trendTxt = trend > 0.5 ? '↑ Em alta' : trend < -0.5 ? '↓ Em queda' : '→ Estável';
     var trendCol = trend > 0.5 ? '#4a7c59' : trend < -0.5 ? '#c0392b' : '#c97d2e';
     var xLabels = mh.map(function(_,i){
@@ -1272,10 +1285,11 @@ function pacSwitchDiary(tab) {
   });
 }
 
+var _pacSelectedMoodEmoji = '😐';
 function pacSelectMood(val, el) {
   document.querySelectorAll('.pac-mood-em').forEach(function(e){ e.style.transform='scale(1)'; e.style.filter='grayscale(60%)'; });
   var em = el.querySelector('.pac-mood-em');
-  if (em) { em.style.transform='scale(1.3)'; em.style.filter='none'; }
+  if (em) { em.style.transform='scale(1.3)'; em.style.filter='none'; _pacSelectedMoodEmoji = em.textContent.trim() || '😐'; }
   var slider = document.getElementById('pac-mood-slider');
   if (slider) { slider.value = val; pacMoodSliderInput(val); }
 }
@@ -1302,13 +1316,14 @@ function pacSalvarMood(idx) {
 
     // Fix 2: atualiza moodHistory (que alimenta o sparkline)
     if (!p.moodHistory) p.moodHistory = [];
-    p.moodHistory.push(val);
+    p.moodHistory.push({ value: val, emoji: _pacSelectedMoodEmoji || '😐', date: dataStr });
     if (p.moodHistory.length > 12) p.moodHistory = p.moodHistory.slice(-12);
 
     p.mood = val;
+    var _lastMv = _normMoodVal(p.moodHistory[p.moodHistory.length-1]);
+    var _prevMv = _normMoodVal(p.moodHistory[p.moodHistory.length-2]);
     p.moodTrend = p.moodHistory.length >= 2
-      ? (p.moodHistory[p.moodHistory.length-1] > p.moodHistory[p.moodHistory.length-2] ? 'up'
-        : p.moodHistory[p.moodHistory.length-1] < p.moodHistory[p.moodHistory.length-2] ? 'down' : 'stable')
+      ? (_lastMv > _prevMv ? 'up' : _lastMv < _prevMv ? 'down' : 'stable')
       : 'stable';
     p._moodLastDate = (typeof hojeISO === 'function') ? hojeISO() : dataStr;
     // Streak de check-in

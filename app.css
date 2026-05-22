@@ -1955,14 +1955,14 @@ select:hover { border-color: #d8d3c2; }
 .pac-week-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow); }
 
 /* Exercise cards v2 */
-.pac-ex-card-v2 { background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 12px 12px 10px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); }
-.pac-ex-card-v2.done { opacity:.6; }
-.pac-ex-icon { width:40px; height:40px; border-radius:10px; background:var(--sage-50); border:1px solid var(--sage-100); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .15s; }
+.pac-ex-card-v2 { background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:13px 14px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); }
+.pac-ex-card-v2.done { border-color:var(--sage-100); opacity:.65; }
+.pac-ex-icon { width:42px; height:42px; border-radius:11px; background:var(--sage-50); border:1px solid var(--sage-100); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .15s; }
 .pac-ex-icon.done { background:var(--sage); border-color:var(--sage-700); }
 .pac-ex-time { font-size:11px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:4px; }
-.pac-ex-btn { background:var(--sage-50); border:1px solid var(--sage-100); color:var(--sage); border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0; transition:background .15s; }
-.pac-ex-btn:hover { background:var(--sage-100); }
-.pac-ex-btn.done { background:var(--bg); border-color:var(--border); color:var(--muted); cursor:default; }
+.pac-ex-btn { background:var(--sage); border:none; color:#fff; border-radius:9px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0; transition:background .15s; }
+.pac-ex-btn:hover { background:var(--sage-700); }
+.pac-ex-btn.done { background:var(--sage-50); border:1px solid var(--sage-100); color:var(--sage); cursor:default; }
 
 /* Bottom navigation */
 .pac-bottom-nav { position:sticky; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border); display:flex; z-index:20; box-shadow:0 -1px 8px rgba(20,30,25,.06); }
