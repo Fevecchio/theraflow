@@ -633,18 +633,15 @@ function loadApiKeyToForm() {
 
 // ── App do paciente (visão paciente) ──
 /* ── APP DO PACIENTE (área do paciente) ── */
-function renderPatientApp(idx, pacs, targetEl) {
+function renderPatientApp(idx, pacs) {
   var src = pacs && pacs.length ? pacs : (typeof patients !== 'undefined' ? patients : []);
   var p = src[idx];
   if (!p) return;
 
   var firstName = (p.name || 'Paciente').split(' ')[0];
-  if (!targetEl) {
-    var _nameEl = document.getElementById('pac-app-name');
-    if (_nameEl) _nameEl.textContent = firstName;
-  }
+  document.getElementById('pac-app-name').textContent = firstName;
 
-  var body = targetEl || document.getElementById('pac-app-body');
+  var body = document.getElementById('pac-app-body');
   if (!body) return;
 
   // Próxima sessão

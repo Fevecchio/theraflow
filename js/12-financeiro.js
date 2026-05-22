@@ -1038,32 +1038,57 @@ function initPortal() {
 
   const p = patients[currentPortalPatientIdx] || patients[0];
   if (!p) return;
+  // Atualiza progresso com dados reais antes de renderizar
   p.progress = _calcProgress(p);
+  const firstName = _firstName(p.name);
 
-  // Labels de contexto
+  // Greeting e labels
+  const greeting = document.getElementById('portal-greeting');
+  if (greeting) greeting.textContent = `Olá, ${firstName} 🌿`;
+
   const modeLabel = document.getElementById('portal-mode-label');
   if (modeLabel) modeLabel.textContent = `Gerenciando portal de ${p.name}`;
+
   const subtitle = document.getElementById('portal-subtitle');
   if (subtitle) subtitle.textContent = `Prévia do portal de ${p.name} — o que ele(a) vê entre as sessões`;
 
-  // Nome no header do preview
-  const previewName = document.getElementById('pac-preview-name');
-  if (previewName) previewName.textContent = _firstName(p.name);
+  // Progresso dinâmico
+  const pct = p.progress || 0;
+  const ringFill = document.getElementById('portal-ring-fill');
+  const ringPct  = document.getElementById('portal-ring-pct');
+  if (ringFill) ringFill.setAttribute('stroke-dashoffset', (238.76 * (1 - pct / 100)).toFixed(2));
+  if (ringPct)  ringPct.textContent = pct + '%';
 
-  // Limpar timer antigo
-  clearInterval(_portalCountdownInterval);
+  const exDone = (p.exercises || []).filter(e => e.done).length;
+  const statS = document.getElementById('portal-stat-sessoes');
+  const statE = document.getElementById('portal-stat-exercicios');
+  const statC = document.getElementById('portal-stat-checkins');
+  if (statS) statS.textContent = (p.sessions || 0) + ' sessões';
+  if (statE) statE.textContent = exDone + ' exercício' + (exDone !== 1 ? 's' : '');
+  if (statC) statC.textContent = (p.mood !== null && p.mood !== undefined ? '✓ ativo' : '—');
 
-  // Ferramentas editáveis (mensagem, dica, metas)
+  // Exercícios, countdown, mood, conteúdo editável
+  renderExercises();
+  renderMoodHistory();
+  renderDiarioPortal(p);
+  renderDiarioLivre(p);
   renderMensagemPortal();
   renderDicaPortal();
   renderMetasPortal();
-
-  // Renderizar o patient app idêntico ao que o paciente vê
-  const previewBody = document.getElementById('pac-portal-preview-body');
-  if (previewBody && typeof renderPatientApp === 'function') {
-    _loggedPatientIdx = currentPortalPatientIdx;
-    renderPatientApp(currentPortalPatientIdx, patients, previewBody);
+  updatePortalCountdown();
+  var _jornadaWrap = document.getElementById('portal-jornada-wrap');
+  if (_jornadaWrap && typeof renderTrajetoriaPortal === 'function') {
+    _jornadaWrap.innerHTML = renderTrajetoriaPortal(p, currentPortalPatientIdx, true);
   }
+  clearInterval(_portalCountdownInterval);
+  _portalCountdownInterval = setInterval(updatePortalCountdown, 60000);
+
+  // Nome do terapeuta nos registros
+  const nomeT = (tfUserData?.nome || '').split(' ')[0] || 'sua terapeuta';
+  document.querySelectorAll('.therapist-label-first').forEach(el => {
+    el.textContent = `✓ ${nomeT} verá na sessão`;
+  });
+  atualizarProximaSessaoPortal();
 }
 
 function switchPortalPatient(idx) {
