@@ -1974,6 +1974,10 @@ select:hover { border-color: #d8d3c2; }
 /* Centralização no desktop */
 #pac-app-body { max-width: 560px; margin: 0 auto; }
 
+/* Abas do diário (Registro livre / aba esp / Humor) */
+.pac-diary-sub-tab { padding: 10px 6px; font-size: 13px; white-space: nowrap; }
+@media (max-width: 420px) { .pac-diary-sub-tab { font-size: 11px; padding: 9px 4px; } }
+
 /* Emoji do check-in */
 .pac-mood-em { font-size: 24px; line-height: 1; display: inline-block; transition: transform .2s; }
 .pac-mood-selected .pac-mood-em { transform: scale(1.3); }

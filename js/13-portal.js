@@ -1243,9 +1243,9 @@ function renderPatientDiario(p, idx) {
   panelHumor += '</div>';
 
   var tabs = '<div style="display:flex;border-bottom:1px solid var(--border);background:#fafbfa">'
-    + '<button id="pac-diary-tab-livre" onclick="pacSwitchDiary(\'livre\')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:#fff;color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit">✏️ Registro livre</button>'
-    + (tabLabel ? '<button id="pac-diary-tab-esp" onclick="pacSwitchDiary(\'esp\')" style="flex:1;padding:10px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">'+tabLabel+'</button>' : '')
-    + '<button id="pac-diary-tab-humor" onclick="pacSwitchDiary(\'humor\')" style="flex:1;padding:10px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">📈 Humor</button>'
+    + '<button id="pac-diary-tab-livre" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'livre\')" style="flex:1;font-weight:600;border:none;background:#fff;color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit">✏️ Registro livre</button>'
+    + (tabLabel ? '<button id="pac-diary-tab-esp" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'esp\')" style="flex:1;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">'+tabLabel+'</button>' : '')
+    + '<button id="pac-diary-tab-humor" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'humor\')" style="flex:1;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">📈 Humor</button>'
     + '</div>';
 
   var panelLivre = '<div id="pac-diary-livre" style="padding:16px 18px">'
