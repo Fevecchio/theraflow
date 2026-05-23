@@ -636,6 +636,7 @@ function pacEmergencia() {
     + (wppTerapeuta
         ? '<a href="https://wa.me/'+wppTerapeuta+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box">💬 Chamar minha terapeuta no WhatsApp</a>'
         : '<div style="text-align:center;font-size:13px;color:var(--muted);padding:8px 0">Entre em contato com sua terapeuta se precisar de apoio imediato.</div>')
+    + '<button onclick="_revealEmgChat()" style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:#fff;border:1.5px solid var(--sage);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--sage)">💬 Conversar no chat</button>'
     + '<div id="pac-chat-block" style="display:none;margin-top:16px"></div>'
     + '</div>';
   document.body.appendChild(overlay);
