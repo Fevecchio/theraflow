@@ -754,7 +754,7 @@ function renderPatientApp(idx, pacs) {
           + '<div id="pac-mood-saved" style="display:none;font-size:12px;color:var(--sage);font-weight:600">✓ Registrado!</div>'
         + '</div>'
         + '<div id="pac-quick-note-wrap" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px"><div style="font-size:12.5px;color:var(--muted);margin-bottom:7px">Quer adicionar uma nota rápida?</div><textarea id="pac-quick-note-text" placeholder="Uma palavra, uma frase…" style="width:100%;min-height:58px;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:7px"><button onclick="document.getElementById(\'pac-quick-note-wrap\').style.display=\'none\'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:5px 8px;font-family:inherit">Pular</button><button onclick="pacSalvarNotaRapida(' + idx + ')" class="btn btn-primary btn-sm">Salvar nota</button></div></div>'
-        + '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">Últimos 14 dias</div><div class="mood-history" id="mood-history-chart"></div></div>'
+        + '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"><div class="mood-history" id="pac-mood-history-chart"></div></div>'
       + '</div>'
       + diarioHtml
     + '</div>'
@@ -768,7 +768,14 @@ function renderPatientApp(idx, pacs) {
   + '</div>';
 
   setTimeout(function(){ _renderDiarioExistente(p); }, 0);
-  setTimeout(function(){ renderMoodHistory(); }, 0);
+  setTimeout(function(){
+    renderMoodHistory();
+    // renderMoodHistory() usa getElementById e pega o do portal do terapeuta (primeiro na DOM)
+    // Copia o resultado para o container exclusivo do portal do paciente
+    var src = document.getElementById('mood-history-chart');
+    var dst = document.getElementById('pac-mood-history-chart');
+    if (src && dst) dst.innerHTML = src.innerHTML;
+  }, 0);
   setTimeout(function(){ _checkNotifPortal(p); }, 0);
 }
 
