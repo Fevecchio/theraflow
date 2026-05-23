@@ -310,21 +310,22 @@ function renderMoodHistory() {
   const validVals = validEntries.map(function(e){ return _normMoodVal(e); });
   const avg = validVals.length ? (validVals.reduce(function(s,v){ return s+v; },0)/validVals.length).toFixed(1) : '—';
 
-  // Pontos SVG
+  // Pontos SVG — usa data.length-1 como divisor para espalhar pela largura toda
+  var maxIdx = Math.max(data.length - 1, 1);
   var points = [];
   data.forEach(function(entry, i) {
     if (entry === null || entry === undefined) return;
     var val = _normMoodVal(entry);
-    var x = PAD + (i / 13) * (W - PAD*2);
+    var x = PAD + (i / maxIdx) * (W - PAD*2);
     var y = H - PAD - ((val / 10) * (H - PAD*2));
-    points.push({ x: x, y: y, val: val, i: i });
+    points.push({ x: x, y: y, val: val, i: i, entry: entry });
   });
 
   // Linha de tendência
-  var polyline = points.map(function(pt){ return pt.x + ',' + pt.y; }).join(' ');
+  var polyline = points.map(function(pt){ return pt.x.toFixed(1) + ',' + pt.y.toFixed(1); }).join(' ');
   // Área de preenchimento
   var areaPath = points.length >= 2
-    ? 'M'+points[0].x+','+points[0].y+' '+points.slice(1).map(function(pt){ return 'L'+pt.x+','+pt.y; }).join(' ')+'L'+points[points.length-1].x+','+(H-PAD)+' L'+points[0].x+','+(H-PAD)+' Z'
+    ? 'M'+points[0].x.toFixed(1)+','+points[0].y.toFixed(1)+' '+points.slice(1).map(function(pt){ return 'L'+pt.x.toFixed(1)+','+pt.y.toFixed(1); }).join(' ')+'L'+points[points.length-1].x.toFixed(1)+','+(H-PAD)+' L'+points[0].x.toFixed(1)+','+(H-PAD)+' Z'
     : '';
 
   // Labels de dia (a cada 2)
@@ -335,10 +336,10 @@ function renderMoodHistory() {
     return '<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">'+lbl+'</div>';
   }).join('');
 
-  // Tooltip pontos SVG
+  // Emojis nos pontos (igual ao gráfico do diário de humor)
   var circlesHtml = points.map(function(pt){
-    var col = getMoodColor(pt.val);
-    return '<circle cx="'+pt.x+'" cy="'+pt.y+'" r="3" fill="'+col+'" stroke="#fff" stroke-width="1.5"><title>'+pt.val+'/10</title></circle>';
+    var emoji = _normMoodEmoji(pt.entry);
+    return '<text x="'+pt.x.toFixed(1)+'" y="'+(pt.y+5).toFixed(1)+'" font-size="13" text-anchor="middle" style="user-select:none"><title>'+pt.val+'/10</title>'+emoji+'</text>';
   }).join('');
 
   // Referências horizontais
@@ -351,7 +352,7 @@ function renderMoodHistory() {
   chart.innerHTML =
     '<div style="width:100%">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-      + '<span style="font-size:12px;color:var(--muted)">Últimos 14 dias</span>'
+      + '<span style="font-size:12px;color:var(--muted)">' + (data.length < 14 ? 'Últimos ' + data.length + ' registros' : 'Últimos 14 dias') + '</span>'
       + (validVals.length ? '<span style="font-size:12px;font-weight:600;color:'+getMoodColor(parseFloat(avg))+'">Média: '+avg+'/10</span>' : '<span style="font-size:12px;color:var(--muted)">Sem registros</span>')
     + '</div>'
     + '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:70px;overflow:visible">'
