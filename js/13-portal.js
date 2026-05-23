@@ -748,7 +748,10 @@ function renderPatientApp(idx, pacs) {
               + '</div>';
             }).join('')
         + '</div>'
-        + '<input type="range" id="pac-mood-slider" min="1" max="10" value="5" style="display:none" oninput="pacMoodSliderInput(this.value)"/>'
+        + '<div class="mood-slider-wrap">'
+          + '<input type="range" id="pac-mood-slider" min="1" max="10" value="5" class="mood-slider" oninput="pacMoodSliderInput(this.value)"/>'
+          + '<div class="mood-scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>'
+        + '</div>'
         + '<textarea class="mood-note-input" id="pac-mood-note" placeholder="O que está passando pela sua cabeça? (opcional)" rows="2"></textarea>'
         + '<div style="display:flex;gap:8px;margin-top:12px;align-items:center">'
           + '<button class="btn btn-primary" onclick="pacSalvarMood(' + idx + ')">Registrar humor</button>'
@@ -1010,8 +1013,7 @@ function pacSelectMood(val, el) {
 }
 
 function pacMoodSliderInput(val) {
-  var slider = document.getElementById('pac-mood-slider');
-  if (slider) slider.style.background = 'linear-gradient(90deg,var(--sage) '+val*10+'%,#e8f0eb '+val*10+'%)';
+  // gradiente arco-íris gerenciado pelo CSS .mood-slider — sem override aqui
 }
 
 function pacSalvarMood(idx) {
