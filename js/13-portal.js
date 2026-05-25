@@ -297,7 +297,8 @@ function saveMoodCheckin() {
 
 function renderMoodHistory() {
   const chart = document.getElementById('mood-history-chart');
-  if (!chart) return;
+  const chartPac = document.getElementById('pac-mood-history-chart');
+  if (!chart && !chartPac) return;
   const p = patients[currentPortalPatientIdx] || patients[0];
   // Usa moodHistory do paciente se disponível, senão usa o array global
   const rawHistory = (p && p.moodHistory && p.moodHistory.length > 0) ? p.moodHistory : moodHistory;
@@ -349,7 +350,7 @@ function renderMoodHistory() {
       + '<text x="'+(W-PAD+2)+'" y="'+(y+3)+'" font-size="8" fill="#bbb">'+v+'</text>';
   }).join('');
 
-  chart.innerHTML =
+  var _chartHtml =
     '<div style="width:100%">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
       + '<span style="font-size:12px;color:var(--muted)">' + (data.length < 14 ? 'Últimos ' + data.length + ' registros' : 'Últimos 14 dias') + '</span>'
@@ -363,6 +364,8 @@ function renderMoodHistory() {
     + '</svg>'
     + '<div style="display:flex;margin-top:4px">'+labelsHtml+'</div>'
     + '</div>';
+  if (chart) chart.innerHTML = _chartHtml;
+  if (chartPac) chartPac.innerHTML = _chartHtml;
 }
 
 function getMoodColor(val) {
@@ -921,16 +924,26 @@ function renderPatientApp(idx, pacs) {
     + '<div style="font-size:13px;color:#4a5568;line-height:1.6;font-style:italic">&#8220;' + escHTML(msgTexto) + '&#8221;</div>'
   + '</div>'
   + '<div style="margin:0 16px 14px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 16px;box-shadow:var(--shadow)">'
-    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><div style="background:var(--sage-50);width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px">😊</div><div><div style="font-family:\'Instrument Serif\',serif;font-size:16px;color:var(--ink)">Como você está hoje?</div><div style="font-size:11px;color:var(--muted)">Check-in diário · 30 seg</div></div></div>'
-    + '<div style="display:flex;gap:8px;justify-content:space-between;margin-bottom:14px" id="pac-mood-emojis">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      + '<div style="font-size:15px;font-weight:600;color:var(--ink)">Check-in de humor</div>'
+      + '<span style="background:var(--sage-50);color:var(--sage);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid var(--sage-100)">Diário</span>'
+    + '</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:14px">Como você está neste momento?</div>'
+    + '<div style="display:flex;gap:6px;justify-content:space-between;margin-bottom:14px" id="pac-mood-emojis">'
       + [['😢','1'],['😕','3'],['😐','5'],['🙂','7'],['😄','10']].map(function(e){
-          return '<div style="flex:1;aspect-ratio:1;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s" onclick="pacSelectMood('+e[1]+',this)"><span style="font-size:22px;line-height:1;transition:transform .15s;filter:grayscale(50%)" class="pac-mood-em">'+e[0]+'</span></div>';
+          return '<div style="flex:1;aspect-ratio:1;border-radius:50%;border:2px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s" onclick="pacSelectMood('+e[1]+',this)"><span style="font-size:22px;line-height:1;transition:transform .15s;filter:grayscale(50%)" class="pac-mood-em">'+e[0]+'</span></div>';
         }).join('')
     + '</div>'
     + '<div class="mood-slider-wrap"><input type="range" id="pac-mood-slider" min="1" max="10" value="5" class="mood-slider" oninput="pacMoodSliderInput(this.value)"/><div class="mood-scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div>'
     + '<input id="pac-mood-note" type="text" placeholder="O que está passando pela sua cabeça? (opcional)" style="width:100%;margin-top:10px;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none;background:#fafaf8;color:var(--ink);box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'
-    + '<button onclick="pacSalvarMood('+idx+')" style="width:100%;margin-top:12px;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.2px">Registrar humor</button>'
-    + '<div id="pac-mood-saved" style="display:none;text-align:center;color:var(--sage);font-size:13px;font-weight:600;margin-top:10px">✓ Registrado! Sua terapeuta verá na próxima sessão.</div>'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-top:12px">'
+      + '<button onclick="pacSalvarMood('+idx+')" style="padding:11px 20px;background:var(--sage);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Registrar humor</button>'
+      + '<div id="pac-mood-saved" style="font-size:11px;color:var(--muted)"></div>'
+    + '</div>'
+    + '<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'
+      + '<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Últimos 14 dias</div>'
+      + '<div id="pac-mood-history-chart" class="mood-history"></div>'
+    + '</div>'
     + '<div id="pac-quick-note-wrap" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px"><div style="font-size:12.5px;color:var(--muted);margin-bottom:7px">Quer adicionar uma nota rápida?</div><textarea id="pac-quick-note-text" placeholder="Uma palavra, uma frase… qualquer coisa." style="width:100%;min-height:58px;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:7px"><button onclick="document.getElementById(\'pac-quick-note-wrap\').style.display=\'none\'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:5px 8px;font-family:inherit">Pular</button><button onclick="pacSalvarNotaRapida('+idx+')" class="btn btn-primary btn-sm">Salvar nota</button></div></div>'
   + '</div>'
   + '<div style="padding:0 16px;margin-bottom:14px"><div class="pac-section-title-row"><div class="pac-section-title-serif">Para hoje</div><span style="font-size:11px;color:var(--muted)">'+exDone+' de '+exercicios.length+' feitos</span></div>'
@@ -984,6 +997,7 @@ function renderPatientApp(idx, pacs) {
 
   setTimeout(function(){ _renderDiarioExistente(p); }, 0);
   setTimeout(function(){ _checkNotifPortal(p); }, 0);
+  setTimeout(function(){ renderMoodHistory(); }, 0);
 }
 
 function pacIncrementarEx(pidx, exId) {
@@ -1274,7 +1288,12 @@ function pacSalvarMood(idx) {
   if (noteEl) noteEl.value = '';
 
   var savedEl = document.getElementById('pac-mood-saved');
-  if (savedEl) { savedEl.style.display = ''; setTimeout(function(){ var e = document.getElementById('pac-mood-saved'); if (e) e.style.display = 'none'; }, 3000); }
+  if (savedEl) {
+    var _now = new Date();
+    var _hh = String(_now.getHours()).padStart(2,'0');
+    var _mm = String(_now.getMinutes()).padStart(2,'0');
+    savedEl.textContent = 'Último registro: hoje às ' + _hh + ':' + _mm;
+  }
   var qnWrap = document.getElementById('pac-quick-note-wrap');
   if (qnWrap) { qnWrap.style.display = ''; }
   try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
