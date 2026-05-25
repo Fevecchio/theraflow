@@ -1,4 +1,4 @@
-﻿// 13-portal.js — Portal do paciente (visão terapeuta + visão paciente)
+// 13-portal.js — Portal do paciente (visão terapeuta + visão paciente)
 
 /* ── PORTAL DO PACIENTE — LÓGICA ── */
 // ── DICA DA SEMANA ──
@@ -646,140 +646,343 @@ function renderPatientApp(idx, pacs) {
   var body = document.getElementById('pac-app-body');
   if (!body) return;
 
-  // Expande para layout de 2 colunas
-  body.style.maxWidth = '1200px';
-  body.style.paddingBottom = '40px';
+  // Mobile: largura natural
+  body.style.maxWidth = '';
+  body.style.paddingBottom = '';
 
   // Sincroniza índice para funções que usam currentPortalPatientIdx
   if (typeof currentPortalPatientIdx !== 'undefined') currentPortalPatientIdx = idx;
 
+  // Próxima sessão
+  var proximaStr = p.next && p.next !== '—' ? p.next : null;
+  var sessionLink = p.sessionLink || null;
+
+  // Mensagem do terapeuta
+  var msgTexto = p.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos. 🌿';
+
+  // Exercícios
+  var exercicios = p.exercises || [];
+
+  // Metas
+  var metas = p.portalMetas || [];
+  var metasHtml = metas.length === 0
+    ? '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0">Nenhuma meta definida ainda.</div>'
+    : metas.map(function(m) {
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
+          + '<input type="checkbox"'+(m.done?' checked':'')+' onchange="pacToggleMeta('+idx+','+m.id+',this,\''+escHTML(p.name)+'\')" style="width:17px;height:17px;accent-color:var(--sage);cursor:pointer;flex-shrink:0"/>'
+          + '<span style="font-size:13.5px;'+(m.done?'text-decoration:line-through;color:var(--muted)':'color:var(--ink)')+'">'+escHTML(m.text)+'</span>'
+          + '</div>';
+      }).join('');
+
+  // Dica
+  var dica = p.portalDica || 'Quando perceber um pensamento catastrófico, tente se perguntar: "Qual a evidência real de que isso vai acontecer?"';
+
+  // Progresso
+  var pct = p.progress || 0;
+  var exDone = exercicios.filter(function(e){ return e.done || (e.concluidos||0) >= (e.total||1); }).length;
+
+  // Diário — abordagem adaptada
+  var diarioHtml = renderPatientDiario(p, idx);
+
+  // Trajetória
+  var jornadaHtml = renderTrajetoriaPortal(p, idx);
+
+  // ── Streak ──
+  var _streak = p.checkInStreak || 0;
+  var _today = new Date();
+  var _dayLabels = ['D','S','T','Q','Q','S','S'];
+  var _weekDots = '';
+  for (var _d = 6; _d >= 0; _d--) {
+    var _dd = new Date(_today); _dd.setDate(_dd.getDate() - _d);
+    var _filled = _streak > 0 && _d < _streak;
+    var _isToday = _d === 0;
+    _weekDots += '<div style="display:flex;flex-direction:column;align-items:center;gap:3px">'
+      + '<div style="width:8px;height:8px;border-radius:50%;background:' + (_filled ? '#c97d2e' : 'var(--border)') + (_isToday ? ';outline:2px solid var(--sage-100);outline-offset:1px' : '') + '"></div>'
+      + '<div style="font-size:9px;color:' + (_isToday ? 'var(--ink)' : 'var(--muted)') + '">' + _dayLabels[_dd.getDay()] + '</div>'
+    + '</div>';
+  }
+  var streakHtml = '<div class="streak-week-card">'
+    + '<div class="streak-week-left">'
+      + (_streak > 0
+          ? '<span style="font-size:22px;line-height:1">🔥</span>'
+            + '<span class="streak-num">' + _streak + '</span>'
+            + '<span class="streak-label">' + (_streak === 1 ? 'dia seguido' : 'dias seguidos') + '</span>'
+          : '<span style="font-size:18px">✨</span><span class="streak-label" style="margin-left:6px">Comece hoje!</span>')
+    + '</div>'
+    + '<div class="streak-week-dots">' + _weekDots + '</div>'
+  + '</div>';
+
+  // ── Conquistas ──
+  var badgesHtml = '<div class="patient-section-card">'
+    + '<div class="patient-section-header"><div class="patient-section-title">🏅 Minhas conquistas</div></div>'
+    + '<div class="patient-section-body"><div class="badges-grid">'
+      + BADGES_DEF.map(function(b){
+          var earned = b.cond(p);
+          return '<div class="badge-card '+(earned?'earned':'locked')+'">'
+            + '<div style="font-size:26px;line-height:1">'+b.icon+'</div>'
+            + '<div style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:2px">'+b.name+'</div>'
+            + '<div style="font-size:10px;color:var(--muted)">'+b.desc+'</div>'
+          + '</div>';
+        }).join('')
+    + '</div></div></div>';
+
+  // ── Materiais ──
+  var mats = p.materials || [];
+  var readMats = p.readMaterials || [];
+  var matsHtml = mats.length === 0 ? '' : '<div class="patient-section-card">'
+    + '<div class="patient-section-header"><div class="patient-section-title">📚 Materiais da sua terapeuta <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">'+readMats.length+'/'+mats.length+' lidos</span></div></div>'
+    + '<div class="patient-section-body" style="display:flex;flex-direction:column;gap:10px">'
+      + mats.map(function(m){
+          var lido = readMats.indexOf(m.id) >= 0;
+          var tIcon = m.tipo==='livro'?'📖':m.tipo==='artigo'?'📄':m.tipo==='video'?'🎬':m.tipo==='podcast'?'🎙':'🔗';
+          return '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">'
+            + '<div style="font-size:22px;line-height:1;flex-shrink:0;margin-top:1px">'+tIcon+'</div>'
+            + '<div style="flex:1;min-width:0">'
+              + (m.url ? '<a href="'+escHTML(m.url)+'" target="_blank" rel="noopener" style="font-size:13.5px;font-weight:500;color:var(--sage);text-decoration:none;'+(lido?'opacity:.55;text-decoration:line-through':'')+'">'+escHTML(m.titulo)+'</a>'
+                       : '<div style="font-size:13.5px;font-weight:500;color:var(--ink);'+(lido?'opacity:.55;text-decoration:line-through':'')+'">'+escHTML(m.titulo)+'</div>')
+              + (m.desc ? '<div style="font-size:12px;color:var(--muted);margin-top:3px">'+escHTML(m.desc)+'</div>' : '')
+              + '<div style="margin-top:6px"><button onclick="pacMarcarMaterialLido('+idx+','+m.id+')" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid '+(lido?'var(--sage)':'var(--border)')+';background:'+(lido?'#eaf6f0':'transparent')+';color:'+(lido?'var(--sage)':'var(--muted)')+';cursor:pointer;font-family:inherit">'+(lido?'✓ Lido':'Marcar como lido')+'</button></div>'
+            + '</div>'
+          + '</div>';
+        }).join('')
+    + '</div></div>';
+
+  // ── Técnica do dia ──
+  var tecnica = _getTecnicaDia(p.abordagem || 'default');
+  var tecnicaHtml = '<div style="background:linear-gradient(135deg,#edf7f1,#f4fbf7);border:1px solid rgba(74,124,89,.2);border-radius:14px;padding:18px 20px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚡ Técnica do dia</div>'
+    + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px">'+tecnica.icone+' '+escHTML(tecnica.titulo)+'</div>'
+    + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">'+escHTML(tecnica.instrucao)+'</div>'
+  + '</div>';
+
+  // ── Nota pré-sessão ──
+  var notaPreHtml = '<div class="patient-section-card">'
+    + '<div class="patient-section-header"><div class="patient-section-title">💬 Nota para a próxima sessão</div></div>'
+    + '<div class="patient-section-body">'
+      + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">O que você quer lembrar de trazer para a próxima sessão? Sua terapeuta verá antes de vocês se encontrarem.</div>'
+      + '<textarea id="pac-nota-pre-text" placeholder="Escreva aqui…" style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'+escHTML(p.portalNota||'')+'</textarea>'
+      + '<div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:8px">'
+        + '<div id="pac-nota-saved" style="display:none;font-size:12px;color:var(--sage);font-weight:600">✓ Salvo!</div>'
+        + '<button onclick="pacSalvarNotaPreSessao('+idx+')" class="btn btn-primary btn-sm">Salvar nota</button>'
+      + '</div>'
+    + '</div>'
+  + '</div>';
+
+  // ── Notificações ──
+  var notifPermStatus = (typeof Notification !== 'undefined') ? Notification.permission : 'not-supported';
+  var notifHora = p.portalNotifHour || '20';
+  var notifHtml = '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px">'
+    + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">🔔 Lembrete de check-in diário</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      + '<select id="pac-notif-hora" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff">'
+        + [7,8,9,12,18,19,20,21,22].map(function(h){ return '<option value="'+h+'"'+(h===parseInt(notifHora)?' selected':'')+'>'+h+'h</option>'; }).join('')
+      + '</select>'
+      + '<button onclick="pacAtivarNotificacoes('+idx+')" class="btn btn-secondary btn-sm">Ativar lembrete</button>'
+      + '<div id="pac-notif-status" style="font-size:12px;color:var(--muted);flex:1">'
+        + (notifPermStatus === 'granted' ? '✓ Notificações ativas' : 'Receba um toque diário para registrar seu humor')
+      + '</div>'
+    + '</div>'
+  + '</div>';
+
+  // ── Anamnese ──
+  var anamnesePortalHtml = '';
+  if (p.portalAnamneseAtiva) {
+    var _ana = p.anamnese || {};
+    anamnesePortalHtml = '<div class="patient-section-card" id="pac-anamnese-secao">'
+      + '<div class="patient-section-header"><div class="patient-section-title">📋 Formulário de anamnese</div></div>'
+      + '<div class="patient-section-body">'
+        + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.6">Sua terapeuta precisa de algumas informações. Preencha com calma — tudo é confidencial.</div>'
+        + '<div class="form-group" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">O que te traz para a terapia?</label><textarea id="pac-ana-queixa" rows="3" placeholder="Descreva com suas palavras…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.queixaPrincipal||'') + '</textarea></div>'
+        + '<div class="form-group" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Há quanto tempo você sente isso?</label><input id="pac-ana-inicio" type="text" placeholder="Ex: alguns meses…" value="' + escHTML(_ana.inicioSintomas||'') + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/></div>'
+        + '<div class="form-group" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">O que você espera alcançar?</label><textarea id="pac-ana-objetivos" rows="2" placeholder="Seus objetivos…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.objetivosTerapia||'') + '</textarea></div>'
+        + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="pac-ana-terapia-ant"' + (_ana.terapiaAnterior?' checked':'') + ' style="accent-color:var(--sage);width:16px;height:16px"/> Já fiz terapia antes</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="pac-ana-psiquiatra"' + (_ana.psiquiatra?' checked':'') + ' style="accent-color:var(--sage);width:16px;height:16px"/> Acompanho psiquiatra atualmente</label></div>'
+        + '<button onclick="pacSalvarAnamnese(' + idx + ')" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Enviar para minha terapeuta</button>'
+      + '</div>'
+    + '</div>';
+  }
+
+  // ── Helpers visuais ──
   var _daysLong = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
   var _monthsLong = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   var _tnow = new Date();
   var _dateLabel = _daysLong[_tnow.getDay()] + ', ' + _tnow.getDate() + ' de ' + _monthsLong[_tnow.getMonth()];
-
   var _therapistName = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome
     : ((typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistNome) ? _loggedPatientData._therapistNome : 'Ana');
   var _therapistFirst = _therapistName.split(' ')[0];
   var _therapistInitial = _therapistFirst.charAt(0).toUpperCase();
+  var _tagEmojis = { tcc:'📓', relaxa:'🧘', diario:'📊', exposicao:'🎯', mindfulness:'🌱', outro:'💡' };
+  var _navIconHome  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>';
+  var _navIconEx    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="3" height="10" rx="1"/><rect x="19" y="7" width="3" height="10" rx="1"/><path d="M5 12h14"/></svg>';
+  var _navIconDiary = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>';
+  var _navIconMe    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
 
-  var proximaStr = p.next && p.next !== '—' ? p.next : null;
-  var sessionLink = p.sessionLink || null;
-  var _streak = p.checkInStreak || 0;
-  var exercicios = p.exercises || [];
-  var metas = p.portalMetas || [];
-  var msgTexto = p.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos. 🌿';
-  var pct = p.progress || 0;
-  var exDone = exercicios.filter(function(e){ return e.done || (e.concluidos||0) >= (e.total||1); }).length;
-
-  var diarioHtml = renderPatientDiario(p, idx);
-  var jornadaHtml = renderTrajetoriaPortal(p, idx);
-
-  // Exercícios — layout do terapeuta mas ações do paciente (sem editar/excluir)
-  var exListHtml = exercicios.length === 0
-    ? '<div style="text-align:center;padding:24px 16px;color:var(--muted);font-size:13px">Nenhum exercício atribuído ainda.</div>'
+  // ── Lista de exercícios melhorada ──
+  var _exPct = exercicios.length > 0 ? Math.round(exDone / exercicios.length * 100) : 0;
+  var _exListHtml = exercicios.length === 0
+    ? '<div style="color:var(--muted);font-size:13px;text-align:center;padding:32px 16px">Nenhum exercício atribuído ainda.</div>'
     : exercicios.map(function(ex) {
+        var _em = _tagEmojis[ex.tag] || '📋';
+        var _done = ex.done || (ex.concluidos || 0) >= (ex.total || 1);
         var total = ex.total || 1, conc = ex.concluidos || 0;
-        var pctEx = Math.min(100, Math.round(conc / total * 100));
-        var _done = ex.done || conc >= total;
-        var prazoStr = '', prazoColor = 'var(--muted)';
-        if (ex.prazo) {
-          var diasR = Math.ceil((new Date(ex.prazo) - new Date()) / 86400000);
-          if (diasR < 0) { prazoStr = '⚠ Prazo vencido'; prazoColor = 'var(--red)'; }
-          else if (diasR === 0) { prazoStr = '⏰ Vence hoje'; prazoColor = 'var(--amber)'; }
-          else { prazoStr = '📅 ' + diasR + 'd restantes'; }
-        }
-        var progressBar = total > 1
-          ? '<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px"><span>' + conc + '/' + total + ' realizados</span><span>' + pctEx + '%</span></div><div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pctEx + '%;background:' + (pctEx >= 100 ? 'var(--sage)' : 'var(--amber)') + ';border-radius:3px;transition:width .4s"></div></div></div>'
-          : '';
-        return '<div class="exercise-item ' + (_done ? 'completed' : '') + '">'
-          + '<div class="exercise-check" onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" style="cursor:pointer">✓</div>'
-          + '<div style="flex:1">'
-            + '<div class="exercise-title">' + escHTML(ex.title) + '</div>'
-            + '<div class="exercise-meta">' + escHTML(ex.desc) + '</div>'
-            + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">'
-              + '<span class="exercise-tag ' + tagClass(ex.tag) + '">' + tagLabel(ex.tag) + '</span>'
-              + (prazoStr ? '<span style="font-size:11px;color:' + prazoColor + '">' + prazoStr + '</span>' : '')
-            + '</div>'
-            + progressBar
+        var pctEx = total > 1 ? Math.min(100, Math.round(conc / total * 100)) : 0;
+        var prazoStr = '';
+        if (ex.prazo) { var diasR = Math.ceil((new Date(ex.prazo) - new Date()) / 86400000); prazoStr = diasR < 0 ? ' · <span style="color:var(--red)">⚠ Vencido</span>' : diasR === 0 ? ' · <span style="color:var(--amber)">⏰ Hoje</span>' : ' · ' + diasR + 'd'; }
+        return '<div class="pac-ex-card-v2' + (_done ? ' done' : '') + '">'
+          + '<div class="pac-ex-icon' + (_done ? ' done' : '') + '" data-tag="' + (ex.tag||'outro') + '" onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" style="cursor:pointer">'
+            + (_done ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>' : '<span style="font-size:20px">' + _em + '</span>')
           + '</div>'
-          + (total > 1 && !_done ? '<button onclick="pacIncrementarEx(' + idx + ',' + ex.id + ')" title="Marcar realização" style="background:var(--sage-light);border:1px solid var(--sage);border-radius:6px;cursor:pointer;font-size:11px;padding:2px 7px;color:var(--sage);font-weight:600;flex-shrink:0">+1</button>' : '')
-          + '</div>';
+          + '<div style="flex:1;min-width:0">'
+            + '<div style="font-size:14px;font-weight:' + (_done ? '400' : '500') + ';color:' + (_done ? 'var(--muted)' : 'var(--ink)') + ';text-decoration:' + (_done ? 'line-through' : 'none') + '">' + escHTML(ex.title) + '</div>'
+            + '<div class="pac-ex-time"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ' + escHTML((ex.desc || '').slice(0,40)) + prazoStr + '</div>'
+            + (total > 1 ? '<div style="margin-top:5px;height:4px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:' + pctEx + '%;height:100%;background:' + (pctEx >= 100 ? 'var(--sage)' : 'var(--amber)') + ';border-radius:3px"></div></div>' : '')
+          + '</div>'
+          + (total > 1 && !_done ? '<button onclick="pacIncrementarEx(' + idx + ',' + ex.id + ')" style="background:var(--sage-50);border:1px solid var(--sage-100);border-radius:6px;cursor:pointer;font-size:11px;padding:4px 8px;color:var(--sage);font-weight:600;margin-right:6px;flex-shrink:0">+1</button>' : '')
+          + '<button onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" class="pac-ex-btn' + (_done ? ' done' : '') + '">' + (_done ? 'Feito ✓' : 'Iniciar') + '</button>'
+        + '</div>';
       }).join('');
 
-  var metasHtml = metas.length === 0
-    ? '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0">Nenhuma meta definida ainda.</div>'
-    : metas.map(function(m) {
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:' + (m.done?'var(--sage-light)':'var(--bg)') + ';border:1px solid ' + (m.done?'rgba(74,124,89,.2)':'var(--border)') + ';">'
-          + '<input type="checkbox"' + (m.done?' checked':'') + ' onchange="pacToggleMeta(' + idx + ',' + m.id + ',this,\'' + escHTML(p.name) + '\')" style="width:16px;height:16px;accent-color:var(--sage);cursor:pointer;flex-shrink:0"/>'
-          + '<span style="flex:1;font-size:13.5px;' + (m.done?'text-decoration:line-through;color:var(--muted)':'color:var(--ink)') + '">' + escHTML(m.text) + '</span>'
-          + '</div>';
+  // ── "Para hoje" (top 2 exercícios) ──
+  var _topExHtml = exercicios.slice(0,2).length === 0
+    ? '<div style="font-size:13px;color:var(--muted);text-align:center;padding:16px 0">Nenhum exercício atribuído ainda.</div>'
+    : exercicios.slice(0,2).map(function(ex) {
+        var _em = _tagEmojis[ex.tag] || '📋';
+        var _done = ex.done || (ex.concluidos || 0) >= (ex.total || 1);
+        return '<div class="pac-ex-card-v2' + (_done ? ' done' : '') + '" style="margin-bottom:10px">'
+          + '<div class="pac-ex-icon' + (_done ? ' done' : '') + '" data-tag="' + (ex.tag||'outro') + '" onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" style="cursor:pointer">'
+            + (_done ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>' : '<span style="font-size:20px">' + _em + '</span>')
+          + '</div>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:' + (_done ? '400' : '500') + ';color:' + (_done ? 'var(--muted)' : 'var(--ink)') + ';text-decoration:' + (_done ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHTML(ex.title) + '</div>'
+            + '<div class="pac-ex-time"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ' + escHTML((ex.desc || '—').slice(0,35)) + '</div></div>'
+          + '<button onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" class="pac-ex-btn' + (_done ? ' done' : '') + '">' + (_done ? 'Feito ✓' : 'Iniciar') + '</button>'
+        + '</div>';
       }).join('');
 
-  var ringOffset = (238.76 * (1 - pct / 100)).toFixed(2);
+  // ── Progresso da jornada ──
+  var _weekProgressHtml = '<div class="pac-week-card">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      + '<div class="pac-section-title-serif">Sua jornada</div>'
+      + '<span style="font-size:11px;color:var(--muted)">Sessão ' + (p.sessions||0) + ' de ' + (p.totalSessions || 12) + '</span>'
+    + '</div>'
+    + '<div style="height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin-bottom:8px">'
+      + '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,var(--sage-700),var(--sage));border-radius:4px;transition:width .6s ease"></div>'
+    + '</div>'
+    + '<div style="font-size:12px;color:var(--muted)">' + pct + '% concluído · continue assim! 🌱</div>'
+    + '</div>';
+
+  // ── Perfil: topo + ring ──
+  var _initials = (firstName.charAt(0) + ((p.name||'').split(' ')[1]||'').charAt(0)).toUpperCase();
+  var _profileTopHtml =
+    '<div style="display:flex;align-items:center;gap:14px;padding:24px 16px 16px">'
+      + '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--sage-700),var(--sage));display:flex;align-items:center;justify-content:center;font-family:\'Instrument Serif\',serif;font-size:24px;color:#fff;flex-shrink:0;box-shadow:0 4px 16px rgba(74,124,89,.3)">' + _initials + '</div>'
+      + '<div><div style="font-family:\'Instrument Serif\',serif;font-size:22px;color:var(--ink);line-height:1.2">' + escHTML(p.name) + '</div>'
+        + '<div style="font-size:12px;color:var(--muted);margin-top:3px">' + escHTML(p.abordagem||'—') + ' · com ' + escHTML(_therapistFirst) + '</div>'
+      + '</div>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:20px;padding:0 16px;margin-bottom:16px">'
+      + '<div style="position:relative;flex-shrink:0"><svg width="96" height="96" style="transform:rotate(-90deg)"><circle cx="48" cy="48" r="40" fill="none" stroke="var(--border)" stroke-width="7"/><circle cx="48" cy="48" r="40" fill="none" stroke="var(--sage)" stroke-width="7" stroke-dasharray="251.33" stroke-dashoffset="' + (251.33*(1-pct/100)).toFixed(2) + '" stroke-linecap="round" style="transition:stroke-dashoffset .6s"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-family:\'Instrument Serif\',serif;font-size:19px;color:var(--ink)">' + pct + '%</div><div style="font-size:9px;color:var(--muted);letter-spacing:.3px">jornada</div></div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;flex:1">'
+        + [['🗓','Sessões',p.sessions+'/'+(p.totalSessions||12)],['🔥','Streak',_streak+' dia'+(_streak===1?'':'s')],['😊','Check-ins',(p.moodHistory||[]).length+''],['✅','Exercícios',exDone+' feitos']].map(function(s){
+            return '<div><div style="font-size:14px;font-weight:700;color:var(--ink)">' + s[2] + '</div><div style="font-size:10px;color:var(--muted)">' + s[0] + ' ' + s[1] + '</div></div>';
+          }).join('')
+      + '</div>'
+    + '</div>';
 
   body.innerHTML =
-  '<div class="portal-banner">'
-    + '<div class="portal-greeting">Olá, ' + escHTML(firstName) + ' 🌿'
-      + (_streak > 0 ? ' <span style="font-size:14px;font-weight:700;color:#b86e1a">· 🔥 ' + _streak + '</span>' : '')
+
+  /* ══ TAB HOME ══ */
+  '<div id="pac-tab-home" class="pac-tab-content">'
+  + '<div style="padding:20px 20px 14px;display:flex;justify-content:space-between;align-items:flex-start">'
+    + '<div>'
+      + '<div style="font-family:\'Instrument Serif\',serif;font-size:26px;color:var(--ink);line-height:1.1">Olá, ' + escHTML(firstName) + ' 🌿</div>'
+      + '<div style="font-size:13px;color:var(--muted);margin-top:3px">' + _dateLabel + '</div>'
     + '</div>'
-    + '<div class="portal-sub">' + _dateLabel + '</div>'
-    + '<div class="portal-next-session"><span>🗓</span><span id="portal-next-session-label">Próxima sessão: <strong>' + (proximaStr ? escHTML(proximaStr) : '—') + '</strong></span></div>'
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'
-      + (sessionLink && proximaStr ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" class="btn btn-primary btn-sm">▶ Entrar na sessão</a>' : '')
-      + '<button onclick="pacToggleSolicitarSessao()" class="btn btn-sm" style="background:rgba(74,124,89,.1);border:1px solid rgba(74,124,89,.22);color:var(--sage)">📅 ' + (proximaStr ? 'Remarcar' : 'Solicitar sessão') + '</button>'
-      + '<button onclick="pacEmergencia()" class="btn btn-sm" style="background:rgba(220,80,60,.06);border:1px solid rgba(220,80,60,.18);color:#c0392b">🆘 Preciso de apoio</button>'
-    + '</div>'
-    + '<div id="pac-solicitar-form" style="display:none;margin-top:10px;padding:12px;background:rgba(74,124,89,.05);border-radius:10px;border:1px solid rgba(74,124,89,.12)">'
-      + '<textarea id="pac-solicitar-msg" placeholder="Horários de preferência ou observações (opcional)…" style="width:100%;min-height:64px;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"></textarea>'
-      + '<button onclick="pacEnviarSolicitacaoSessao(\'' + escHTML(p.name) + '\')" class="btn btn-primary btn-sm" style="margin-top:8px;width:100%">📲 Enviar via WhatsApp</button>'
+    + (_streak > 0
+        ? '<div style="display:flex;align-items:center;gap:5px;background:#fff8ec;border:1px solid rgba(201,125,46,.25);border-radius:20px;padding:6px 12px;margin-top:4px;flex-shrink:0">'
+            + '<span style="font-size:16px">🔥</span>'
+            + '<span style="font-size:13px;font-weight:700;color:#b86e1a">' + _streak + '</span>'
+            + '<span style="font-size:11px;color:#b86e1a;opacity:.8">' + (_streak===1?'dia':'dias') + '</span>'
+          + '</div>'
+        : '')
+  + '</div>'
+  + '<div style="margin:0 16px 16px;background:linear-gradient(135deg,#3a6347,var(--sage));border-radius:20px;padding:18px 20px;color:#fff;position:relative;overflow:hidden">'
+    + '<div style="position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none"></div>'
+    + '<div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.75;text-transform:uppercase;margin-bottom:6px">Próxima sessão</div>'
+    + (proximaStr
+        ? '<div style="font-family:\'Instrument Serif\',serif;font-size:22px;line-height:1.2;margin-bottom:12px">' + escHTML(proximaStr) + '</div>'
+        : '<div style="font-size:15px;opacity:.75;margin-bottom:12px">Nenhuma sessão agendada</div>')
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+      + (sessionLink && proximaStr ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-block">▶ Entrar na sessão</a>' : '')
+      + '<div id="pac-solicitar-wrap"><button onclick="pacToggleSolicitarSessao()" style="background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.9);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit">' + (proximaStr ? 'Remarcar' : '📅 Solicitar sessão') + '</button><div id="pac-solicitar-form" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);border-radius:10px;padding:12px"><textarea id="pac-solicitar-msg" placeholder="Horários de preferência…" style="width:100%;min-height:56px;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;outline:none;background:rgba(255,255,255,.15);color:#fff;line-height:1.5;box-sizing:border-box"></textarea><button onclick="pacEnviarSolicitacaoSessao(\'' + escHTML(p.name) + '\')" style="margin-top:8px;width:100%;padding:10px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Enviar via WhatsApp</button></div></div>'
+      + '<button onclick="pacEmergencia()" style="background:rgba(220,80,60,.22);border:1px solid rgba(255,160,150,.4);color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🆘 Preciso de apoio</button>'
     + '</div>'
   + '</div>'
-  + '<div class="portal-grid">'
-    + '<div style="display:flex;flex-direction:column;gap:20px">'
-      + '<div class="card mood-card">'
-        + '<div class="section-header" style="margin-bottom:0"><div class="section-title">Check-in de humor</div><span class="tag tag-green" style="font-size:11px">Diário</span></div>'
-        + '<div style="font-size:13px;color:var(--muted);margin-top:4px;margin-bottom:4px">Como você está neste momento?</div>'
-        + '<div class="mood-emoji-row" id="pac-mood-emojis">'
-          + [['😢','1','Muito mal'],['😟','3','Mal'],['😐','5','Neutro'],['🙂','7','Bem'],['😄','10','Muito bem']].map(function(e){
-              return '<div style="text-align:center;cursor:pointer" onclick="pacSelectMood(' + e[1] + ',this)">'
-                + '<div class="mood-emoji"><span class="pac-mood-em">' + e[0] + '</span></div>'
-                + '<div class="mood-emoji-label">' + e[2] + '</div>'
-              + '</div>';
-            }).join('')
-        + '</div>'
-        + '<div class="mood-slider-wrap">'
-          + '<input type="range" id="pac-mood-slider" min="1" max="10" value="5" class="mood-slider" oninput="pacMoodSliderInput(this.value)"/>'
-          + '<div class="mood-scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>'
-        + '</div>'
-        + '<textarea class="mood-note-input" id="pac-mood-note" placeholder="O que está passando pela sua cabeça? (opcional)" rows="2"></textarea>'
-        + '<div style="display:flex;gap:8px;margin-top:12px;align-items:center">'
-          + '<button class="btn btn-primary" onclick="pacSalvarMood(' + idx + ')">Registrar humor</button>'
-          + '<div id="pac-mood-saved" style="display:none;font-size:12px;color:var(--sage);font-weight:600">✓ Registrado!</div>'
-        + '</div>'
-        + '<div id="pac-quick-note-wrap" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px"><div style="font-size:12.5px;color:var(--muted);margin-bottom:7px">Quer adicionar uma nota rápida?</div><textarea id="pac-quick-note-text" placeholder="Uma palavra, uma frase…" style="width:100%;min-height:58px;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:7px"><button onclick="document.getElementById(\'pac-quick-note-wrap\').style.display=\'none\'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:5px 8px;font-family:inherit">Pular</button><button onclick="pacSalvarNotaRapida(' + idx + ')" class="btn btn-primary btn-sm">Salvar nota</button></div></div>'
-        + '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"><div class="mood-history" id="pac-mood-history-chart"></div></div>'
-      + '</div>'
-      + diarioHtml
+  + '<div style="margin:0 16px 14px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3a6347,var(--sage));display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700;flex-shrink:0">' + _therapistInitial + '</div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">' + escHTML(_therapistFirst) + '</div><div style="font-size:10px;color:var(--muted)">deixou uma mensagem</div></div><div style="margin-left:auto;font-size:10px;color:var(--muted)">hoje</div></div>'
+    + '<div style="font-size:13px;color:#4a5568;line-height:1.6;font-style:italic">&#8220;' + escHTML(msgTexto) + '&#8221;</div>'
+  + '</div>'
+  + '<div style="margin:0 16px 14px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 16px;box-shadow:var(--shadow)">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><div style="background:var(--sage-50);width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px">😊</div><div><div style="font-family:\'Instrument Serif\',serif;font-size:16px;color:var(--ink)">Como você está hoje?</div><div style="font-size:11px;color:var(--muted)">Check-in diário · 30 seg</div></div></div>'
+    + '<div style="display:flex;gap:8px;justify-content:space-between;margin-bottom:14px" id="pac-mood-emojis">'
+      + [['😢','1'],['😕','3'],['😐','5'],['🙂','7'],['😄','10']].map(function(e){
+          return '<div style="flex:1;aspect-ratio:1;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s" onclick="pacSelectMood('+e[1]+',this)"><span style="font-size:22px;line-height:1;transition:transform .15s;filter:grayscale(50%)" class="pac-mood-em">'+e[0]+'</span></div>';
+        }).join('')
     + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:20px">'
-      + '<div id="pac-traj-wrap">' + jornadaHtml + '</div>'
-      + '<div class="card"><div class="section-header" style="margin-bottom:14px"><div class="section-title">Exercícios entre sessões</div><span style="font-size:13px;color:var(--muted)">' + exDone + ' de ' + exercicios.length + ' concluídos</span></div><div id="pac-ex-list">' + exListHtml + '</div></div>'
-      + '<div class="card"><div class="section-title" style="margin-bottom:16px">Meu progresso</div><div class="progress-ring-wrap"><div class="progress-ring"><svg width="90" height="90" viewBox="0 0 90 90"><circle cx="45" cy="45" r="38" fill="none" stroke="#e8f0eb" stroke-width="6"/><circle id="portal-ring-fill" cx="45" cy="45" r="38" fill="none" stroke="#4a7c59" stroke-width="6" stroke-dasharray="238.76" stroke-dashoffset="' + ringOffset + '" stroke-linecap="round"/></svg><div class="progress-ring-text"><div class="progress-ring-num">' + pct + '%</div><div class="progress-ring-lbl">completo</div></div></div><div class="progress-stats"><div class="progress-stat-row"><div class="progress-dot" style="background:var(--sage)"></div><span style="font-weight:500" id="portal-stat-sessoes">' + (p.sessions||0) + '</span><span style="color:var(--muted)">sessões realizadas</span></div><div class="progress-stat-row"><div class="progress-dot" style="background:var(--amber)"></div><span style="font-weight:500" id="portal-stat-exercicios">' + exDone + '</span><span style="color:var(--muted)">exercícios concluídos</span></div><div class="progress-stat-row"><div class="progress-dot" style="background:var(--blue)"></div><span style="font-weight:500" id="portal-stat-checkins">' + ((p.moodHistory||[]).length) + '</span><span style="color:var(--muted)">check-ins de humor</span></div></div></div></div>'
-      + (metas.length > 0 ? '<div class="card"><div class="section-title" style="margin-bottom:14px">🎯 Metas terapêuticas</div><div id="pac-metas-list" style="display:flex;flex-direction:column;gap:8px">' + metasHtml + '</div></div>' : '')
-      + '<div class="card"><div style="font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3a6347,var(--sage));display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700;flex-shrink:0">' + _therapistInitial + '</div>' + escHTML(_therapistFirst) + ' deixou uma mensagem</div><div style="font-size:13px;color:#4a5568;line-height:1.6;font-style:italic;padding:10px 14px;background:var(--bg);border-radius:8px;border-left:3px solid var(--sage)">&#8220;' + escHTML(msgTexto) + '&#8221;</div></div>'
-    + '</div>'
+    + '<div class="mood-slider-wrap"><input type="range" id="pac-mood-slider" min="1" max="10" value="5" class="mood-slider" oninput="pacMoodSliderInput(this.value)"/><div class="mood-scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div>'
+    + '<input id="pac-mood-note" type="text" placeholder="O que está passando pela sua cabeça? (opcional)" style="width:100%;margin-top:10px;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none;background:#fafaf8;color:var(--ink);box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'
+    + '<button onclick="pacSalvarMood('+idx+')" style="width:100%;margin-top:12px;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.2px">Registrar humor</button>'
+    + '<div id="pac-mood-saved" style="display:none;text-align:center;color:var(--sage);font-size:13px;font-weight:600;margin-top:10px">✓ Registrado! Sua terapeuta verá na próxima sessão.</div>'
+    + '<div id="pac-quick-note-wrap" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px"><div style="font-size:12.5px;color:var(--muted);margin-bottom:7px">Quer adicionar uma nota rápida?</div><textarea id="pac-quick-note-text" placeholder="Uma palavra, uma frase… qualquer coisa." style="width:100%;min-height:58px;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:7px"><button onclick="document.getElementById(\'pac-quick-note-wrap\').style.display=\'none\'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:5px 8px;font-family:inherit">Pular</button><button onclick="pacSalvarNotaRapida('+idx+')" class="btn btn-primary btn-sm">Salvar nota</button></div></div>'
+  + '</div>'
+  + '<div style="padding:0 16px;margin-bottom:14px"><div class="pac-section-title-row"><div class="pac-section-title-serif">Para hoje</div><span style="font-size:11px;color:var(--muted)">'+exDone+' de '+exercicios.length+' feitos</span></div>'
+    + _topExHtml
+    + (exercicios.length > 2 ? '<button onclick="pacNavTo(\'ex\')" style="width:100%;margin-top:4px;background:none;border:1px solid var(--border);border-radius:10px;padding:9px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit">Ver todos os exercícios →</button>' : '')
+  + '</div>'
+  + '<div style="padding:0 16px;margin-bottom:20px">' + _weekProgressHtml + '</div>'
+  + '</div>'  /* /pac-tab-home */
+
+
+  /* ══ TAB EXERCÍCIOS ══ */
+  + '<div id="pac-tab-ex" class="pac-tab-content" style="display:none">'
+    + '<div style="padding:20px 16px 14px"><div style="font-family:\'Instrument Serif\',serif;font-size:24px;color:var(--ink)">Exercícios</div><div style="font-size:13px;color:var(--muted);margin-top:3px">Recomendados por ' + escHTML(_therapistFirst) + ' · esta semana</div></div>'
+    + (exercicios.length > 0 ? '<div style="padding:0 16px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--muted)">'+exDone+' de '+exercicios.length+' concluídos</span><span style="font-size:12px;font-weight:600;color:var(--sage)">'+_exPct+'%</span></div><div style="height:5px;border-radius:3px;background:var(--border);overflow:hidden"><div style="width:'+_exPct+'%;height:100%;background:var(--sage);border-radius:3px"></div></div></div>' : '')
+    + '<div id="pac-ex-list" style="padding:0 16px;display:flex;flex-direction:column;gap:10px">' + _exListHtml + '</div>'
+    + '<div style="padding:14px 16px 0"><div style="background:var(--sage-50);border:1px solid var(--sage-100);border-radius:16px;padding:14px 16px"><div style="font-size:11px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">💡 Dica da semana</div><div style="font-size:13px;color:#4a5568;line-height:1.6;font-style:italic">&#8220;'+escHTML(dica)+'&#8221;</div><div style="font-size:11px;color:var(--muted);margin-top:6px">— '+escHTML(_therapistFirst)+'</div></div></div>'
+    + '<div style="padding:14px 16px 0">' + tecnicaHtml + '</div>'
+  + '</div>'  /* /pac-tab-ex */
+
+
+  /* ══ TAB DIÁRIO ══ */
+  + '<div id="pac-tab-diary" class="pac-tab-content" style="display:none">'
+    + '<div style="padding:20px 16px 14px"><div style="font-family:\'Instrument Serif\',serif;font-size:24px;color:var(--ink)">Diário</div><div style="font-size:13px;color:var(--muted);margin-top:3px">Espaço seguro · apenas você e sua terapeuta</div></div>'
+    + '<div style="padding:0 16px 14px">' + diarioHtml + '</div>'
+    + '<div style="padding:0 16px 14px">' + notaPreHtml + '</div>'
+  + '</div>'  /* /pac-tab-diary */
+
+
+  /* ══ TAB PERFIL ══ */
+  + '<div id="pac-tab-me" class="pac-tab-content" style="display:none">'
+    + _profileTopHtml
+    + '<div style="padding:0 16px 14px">' + badgesHtml + '</div>'
+    + (metas.length > 0 ? '<div style="padding:0 16px 14px"><div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">🎯 Minhas metas</div></div><div class="patient-section-body" id="pac-metas-list">'+metasHtml+'</div></div></div>' : '')
+    + (matsHtml ? '<div style="padding:0 16px 14px">' + matsHtml + '</div>' : '')
+    + '<div id="pac-traj-wrap" style="padding:0 16px 14px">' + jornadaHtml + '</div>'
+    + (anamnesePortalHtml ? '<div style="padding:0 16px 14px">' + anamnesePortalHtml + '</div>' : '')
+    + '<div style="padding:0 16px 14px">' + notifHtml + '</div>'
+  + '</div>'  /* /pac-tab-me */
+
+
+  /* ══ BOTTOM NAV ══ */
+  + '<div class="pac-bottom-nav">'
+    + [['home','Início',_navIconHome],['ex','Exercícios',_navIconEx],['diary','Diário',_navIconDiary],['me','Perfil',_navIconMe]].map(function(t){
+        var isHome = t[0] === 'home';
+        return '<button class="pac-nav-btn'+(t[0]==='home'?' active':'')+'" id="pac-nav-'+t[0]+'" onclick="pacNavTo(\''+t[0]+'\')">'
+          + '<div class="pac-nav-icon" style="position:relative">'+t[2]
+          + (isHome ? '<span id="pac-msg-dot" style="display:none;position:absolute;top:-3px;right:-4px;width:8px;height:8px;border-radius:50%;background:#e53e3e;border:1.5px solid #fff"></span>' : '')
+          + '</div><span>'+t[1]+'</span></button>';
+      }).join('')
   + '</div>';
 
   setTimeout(function(){ _renderDiarioExistente(p); }, 0);
-  setTimeout(function(){
-    renderMoodHistory();
-    // renderMoodHistory() usa getElementById e pega o do portal do terapeuta (primeiro na DOM)
-    // Copia o resultado para o container exclusivo do portal do paciente
-    var src = document.getElementById('mood-history-chart');
-    var dst = document.getElementById('pac-mood-history-chart');
-    if (src && dst) dst.innerHTML = src.innerHTML;
-  }, 0);
   setTimeout(function(){ _checkNotifPortal(p); }, 0);
 }
 
