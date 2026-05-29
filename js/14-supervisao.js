@@ -1240,6 +1240,9 @@ function salvarMaterial() {
   salvarPacientes();
   closeModal('modal-material');
   renderMateriaisProntuario(_materialPatientIdx);
+  if (typeof currentPatientTab !== 'undefined' && currentPatientTab === 'ficha') {
+    renderPatientFicha(_materialPatientIdx);
+  }
   showToast('Material adicionado!');
 }
 

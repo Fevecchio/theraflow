@@ -773,8 +773,8 @@ function selectPatientTab(tabName) {
   });
   var i = currentPatientIdx;
   if (tabName === 'overview')          renderPatientOverview(i);
-  else if (tabName === 'notas')        _renderTabPlaceholder('notas');
-  else if (tabName === 'ficha')        _renderTabPlaceholder('ficha');
+  else if (tabName === 'notas')        renderPatientNotas(i);
+  else if (tabName === 'ficha')        renderPatientFicha(i);
   else if (tabName === 'intervencoes') _renderTabPlaceholder('intervencoes');
   else if (tabName === 'briefing')     _renderTabPlaceholder('briefing');
   else if (tabName === 'portal')       _renderTabPlaceholder('portal');
@@ -1002,6 +1002,191 @@ function renderPatientOverview(i) {
       </button>
     </div>
   `;
+}
+
+function renderPatientNotas(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var p = patients[i];
+  if (!p) return;
+
+  // ── Notas clínicas ──
+  var notasHtml = '<div style="display:flex;flex-direction:column;gap:12px">';
+
+  if (p.portalNota && p.portalNota.trim()) {
+    notasHtml += '<div style="background:#fffbec;border:1.5px solid #f0d060;border-radius:12px;padding:14px 16px">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+      + '<span style="font-size:16px">📝</span>'
+      + '<span style="font-size:11px;font-weight:700;color:#c97d2e;text-transform:uppercase;letter-spacing:.5px">Nota pré-sessão do paciente</span>'
+      + '<button onclick="if(confirm(\'Limpar nota?\')){ patients['+i+'].portalNota=\'\'; localStorage.setItem(\'tf_patients\',JSON.stringify(patients)); this.parentElement.parentElement.remove(); }" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:4px">× Limpar</button>'
+      + '</div>'
+      + '<div style="font-size:14px;color:var(--ink);line-height:1.7;font-style:italic">"' + escHTML(p.portalNota.trim()) + '"</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:8px">Escrita pelo paciente no portal antes da sessão</div>'
+      + '</div>';
+  }
+
+  if (p.prontuarioNotes && p.prontuarioNotes.length > 0) {
+    p.prontuarioNotes.slice().reverse().forEach(function(n, ni) {
+      notasHtml += '<div class="card card-sm" style="border-left:3px solid var(--sage)">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
+        + '<span style="font-weight:500">Sessão ' + (p.sessions - ni) + ' — ' + escHTML(n.date) + '</span>'
+        + '<span class="tag tag-green">Indexada</span>'
+        + '</div>'
+        + '<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">' + escHTML(n.text) + '</p>'
+        + '</div>';
+    });
+  } else if (!p.portalNota) {
+    notasHtml += '<div style="padding:20px 0;color:var(--muted);font-size:13px;font-style:italic;text-align:center">Nenhuma nota clínica registrada ainda.</div>';
+  }
+  notasHtml += '</div>';
+
+  // ── Linha do tempo ──
+  var apptsPac = (typeof appointments !== 'undefined' ? appointments : [])
+    .filter(function(a){ return a.patientIdx === i; })
+    .sort(function(a, b){ return (a.date + a.time) < (b.date + b.time) ? 1 : -1; });
+  var notasIdx = (p.prontuarioNotes || []).reduce(function(m, n){ m[n.date] = n; return m; }, {});
+  var timelineHtml;
+
+  if (!apptsPac.length) {
+    timelineHtml = '<div style="padding:20px 0;color:var(--muted);font-size:13px;font-style:italic;text-align:center">Nenhum agendamento registrado ainda.</div>';
+  } else {
+    var eventos = apptsPac.map(function(a, ai) {
+      var nota = notasIdx[a.date.split('-').reverse().join('/')];
+      var presencaLabel = a.presenca === 'faltou' ? 'Falta' : a.presenca === 'atrasou' ? 'Atrasou' : '';
+      var statusLabel = a.status === 'cancelada' ? 'Cancelada' : (presencaLabel || 'Realizada');
+      var dotColor = a.status === 'cancelada' ? 'var(--muted)' : a.presenca === 'faltou' ? 'var(--red)' : a.presenca === 'atrasou' ? 'var(--amber)' : 'var(--sage)';
+      var tagHtml = a.status === 'cancelada'
+        ? '<span class="tag tag-gray" style="font-size:10px">Cancelada</span>'
+        : a.presenca === 'faltou' ? '<span class="tag tag-red" style="font-size:10px">Faltou</span>'
+        : a.presenca === 'atrasou' ? '<span class="tag tag-amber" style="font-size:10px">Atrasou</span>'
+        : nota ? '<span class="tag tag-green" style="font-size:10px">Nota indexada</span>' : '';
+      var _tot = (typeof p.sessions === 'number' && p.sessions > 0) ? p.sessions : apptsPac.length;
+      var numSessao = Math.max(1, _tot - ai);
+      var dateBR = a.date.split('-').reverse().join('/');
+      var moodHtml = '';
+      if (p.moodHistory && p.moodHistory[apptsPac.length - ai - 1] !== undefined) {
+        var mv = p.moodHistory[apptsPac.length - ai - 1];
+        var mc = mv <= 3 ? 'var(--red)' : mv <= 6 ? 'var(--amber)' : 'var(--sage)';
+        moodHtml = ' <span style="font-size:11px;color:' + mc + '">● ' + mv + '/10</span>';
+      }
+      return '<div class="tl-item"><div class="tl-line"><div class="tl-dot" style="background:' + dotColor + '"></div>' + (ai < apptsPac.length - 1 ? '<div class="tl-bar"></div>' : '') + '</div>'
+        + '<div class="tl-content"><div class="tl-date">' + dateBR + ' · Sessão ' + numSessao + ' · ' + escHTML(a.time) + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="tl-title">' + escHTML(statusLabel) + moodHtml + '</div>' + tagHtml + '</div>'
+        + (nota ? '<div class="tl-body">' + escHTML(nota.text.substring(0, 200)) + (nota.text.length > 200 ? '…' : '') + '</div>' : '')
+        + (a.motivoCancelamento ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">Motivo: ' + escHTML(a.motivoCancelamento) + '</div>' : '')
+        + '</div></div>';
+    });
+    timelineHtml = '<div class="timeline">' + eventos.join('') + '</div>';
+  }
+
+  content.innerHTML = '<div class="divider"></div>'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Notas clínicas</div>'
+    + notasHtml
+    + '<div style="margin-top:24px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Linha do tempo</div>'
+    + timelineHtml;
+}
+
+function renderPatientFicha(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var p = patients[i];
+  if (!p) return;
+
+  // ── Evolução (sparkline) ──
+  var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
+  var sparkHtml = '';
+  if (mh.length >= 2) {
+    var pts = mh.slice(-12);
+    var W = 200, H = 44, pad = 5;
+    var stepX = (W - pad * 2) / (pts.length - 1);
+    var coords = pts.map(function(v, ii) {
+      return (pad + ii * stepX).toFixed(1) + ',' + (H - pad - ((v - 1) / 9) * (H - pad * 2)).toFixed(1);
+    }).join(' ');
+    var trend = pts[pts.length - 1] - pts[0];
+    var cor = trend > 0.5 ? '#4a7c59' : trend < -0.5 ? '#c0392b' : '#c97d2e';
+    sparkHtml = '<div style="display:flex;align-items:center;gap:10px;margin-top:6px">'
+      + '<svg width="' + W + '" height="' + H + '" style="flex-shrink:0"><polyline points="' + coords + '" fill="none" stroke="' + cor + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+      + '<div style="flex-shrink:0;text-align:center"><div style="font-size:20px;font-weight:700;color:' + cor + '">' + pts[pts.length - 1] + '</div><div style="font-size:10px;color:var(--muted)">/10</div></div>'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + (trend > 0.5 ? '↗ Melhora' : trend < -0.5 ? '↘ Queda' : '→ Estável') + ' — últimas ' + pts.length + ' sessões</div>';
+  } else {
+    sparkHtml = '<div style="font-size:12px;color:var(--muted);font-style:italic">Humor não registrado ainda.</div>';
+  }
+  var totalSessoes = p.sessions || 0;
+  var prog = p.progress || 0;
+  var apptsPac2 = (typeof appointments !== 'undefined' ? appointments : []).filter(function(a){ return a.patientIdx === i && a.presenca; });
+  var compareceu2 = apptsPac2.filter(function(a){ return a.presenca === 'compareceu'; }).length;
+  var taxaPresenca = apptsPac2.length ? Math.round(compareceu2 / apptsPac2.length * 100) : null;
+  var evolucaoHtml = '<div style="margin:0 0 20px;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Evolução do paciente</div>'
+    + '<div style="display:flex;gap:12px;margin-bottom:10px">'
+    + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">' + totalSessoes + '</div><div style="font-size:10px;color:var(--muted)">Sessões</div></div>'
+    + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--sage)">' + prog + '%</div><div style="font-size:10px;color:var(--muted)">Progresso</div></div>'
+    + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">' + (mh.length ? mh[mh.length - 1] : '—') + '</div><div style="font-size:10px;color:var(--muted)">Humor atual</div></div>'
+    + (taxaPresenca !== null ? '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:' + (taxaPresenca >= 80 ? 'var(--sage)' : taxaPresenca >= 60 ? 'var(--amber)' : 'var(--red)') + '">' + taxaPresenca + '%</div><div style="font-size:10px;color:var(--muted)">Presença</div></div>' : '')
+    + '</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Histórico de humor (últimas sessões)</div>'
+    + sparkHtml
+    + '</div>';
+
+  // ── Materiais ──
+  _materialPatientIdx = i;
+  var mats = p.materials || [];
+  var matsHtml;
+  if (mats.length === 0) {
+    matsHtml = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Nenhum material adicionado ainda.</div>';
+  } else {
+    matsHtml = mats.map(function(m) {
+      var icon = (typeof MATERIAL_ICONS !== 'undefined' ? MATERIAL_ICONS[m.tipo] : null) || '📎';
+      var tituloHtml = m.url
+        ? '<a href="' + escHTML(m.url) + '" target="_blank" rel="noopener">' + escHTML(m.titulo) + '</a>'
+        : escHTML(m.titulo);
+      var descHtml = m.desc ? '<div class="material-desc">' + escHTML(m.desc) + '</div>' : '';
+      var labelMap = (typeof MATERIAL_LABELS !== 'undefined' ? MATERIAL_LABELS : {});
+      var tag = '<span style="font-size:10.5px;background:#f0f2f0;color:var(--muted);padding:2px 7px;border-radius:10px;font-weight:500">' + escHTML(labelMap[m.tipo] || m.tipo) + '</span>';
+      return '<div class="material-card">'
+        + '<div class="material-icon ' + m.tipo + '">' + icon + '</div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div class="material-title" style="display:flex;align-items:center;gap:8px">' + tituloHtml + tag + '</div>'
+        + descHtml
+        + '<div class="material-date">' + escHTML(m.date) + '</div>'
+        + '</div>'
+        + '<div class="material-actions">'
+        + (m.url ? '<a href="' + escHTML(m.url) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none">↗ Abrir</a>' : '')
+        + '<button class="task-delete" onclick="_excluirMaterialFicha(' + i + ',' + m.id + ')" title="Excluir">✕</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  content.innerHTML = '<div class="divider"></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'
+    + '<div>'
+    + '<div class="form-group"><label>CID principal</label><div style="font-size:14px;padding:9px 0">' + (p.cid && p.cid !== '—' ? escHTML(p.cid) : 'Não informado') + '</div></div>'
+    + '<div class="form-group"><label>Abordagem</label><div style="font-size:14px;padding:9px 0">' + escHTML(p.abordagem || '—') + '</div></div>'
+    + '<div class="form-group"><label>Frequência</label><div style="font-size:14px;padding:9px 0">—</div></div>'
+    + '</div>'
+    + '<div>'
+    + '<div class="form-group"><label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">' + escHTML(p.notes || '—') + '</div></div>'
+    + '<div class="form-group"><label>Medicamentos</label><div style="font-size:14px;padding:9px 0">—</div></div>'
+    + '</div>'
+    + '</div>'
+    + evolucaoHtml
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Materiais</div>'
+    + '<button class="btn btn-primary btn-sm" onclick="abrirModalMaterial()">+ Adicionar</button>'
+    + '</div>'
+    + '<div id="ptab-materiais-list">' + matsHtml + '</div>';
+}
+
+function _excluirMaterialFicha(pidx, mid) {
+  if (!confirm('Remover este material?')) return;
+  var p = patients[pidx];
+  if (!p || !p.materials) return;
+  p.materials = p.materials.filter(function(m){ return m.id !== mid; });
+  salvarPacientes();
+  renderPatientFicha(pidx);
+  showToast('Material removido.');
 }
 
 function selectPatient(i, el) {
