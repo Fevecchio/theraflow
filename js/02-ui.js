@@ -39,11 +39,7 @@ function navigate(page) {
     setTimeout(function(){ if (typeof selectPatientTab === 'function') selectPatientTab('briefing'); }, 120);
     return;
   }
-  if (page === 'portal') {
-    navigate('pacientes');
-    setTimeout(function(){ if (typeof selectPatientTab === 'function') selectPatientTab('portal'); }, 120);
-    return;
-  }
+
   if (typeof stopTranscriptSimulation === 'function') stopTranscriptSimulation();
   if (typeof timerInterval !== 'undefined' && timerInterval !== null && page !== 'sessao') {
     clearInterval(timerInterval); timerInterval = null;

@@ -777,7 +777,6 @@ function selectPatientTab(tabName) {
   else if (tabName === 'ficha')        renderPatientFicha(i);
   else if (tabName === 'intervencoes') renderPatientIntervencoes(i);
   else if (tabName === 'briefing')     renderPatientBriefing(i);
-  else if (tabName === 'portal')       renderPatientPortalPreview(i);
 }
 
 function _renderTabPlaceholder(tabName) {
@@ -797,7 +796,7 @@ function renderPatientDetailShell(i) {
   var tabDefs = [
     ['overview','Visão Geral'],['notas','Notas & Timeline'],
     ['ficha','Ficha Clínica'],['intervencoes','Intervenções'],
-    ['briefing','Briefing IA'],['portal','Portal']
+    ['briefing','Briefing IA']
   ];
   var tabBarHtml = '<div class="patient-tab-bar" id="ptab-bar">'
     + tabDefs.map(function(td){
@@ -963,7 +962,7 @@ function renderPatientOverview(i) {
       <button class="btn btn-secondary btn-sm" style="justify-content:center;background:#e8faf0;border-color:rgba(37,211,102,.3);color:#075E54" onclick="enviarWhatsappLembrete(${i})">
         📲 WhatsApp lembrete
       </button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('portal')">♡ Portal do paciente</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('portal')">♡ Portal do paciente</button>
     </div>
     <div id="pac-chat-section-${i}" style="margin-top:16px">
       ${renderChatTerapeuta(i, _msgCache[p.id] || [])}
