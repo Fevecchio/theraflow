@@ -772,11 +772,12 @@ function selectPatientTab(tabName) {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
   var i = currentPatientIdx;
-  if (tabName === 'overview')          renderPatientOverview(i);
-  else if (tabName === 'notas')        renderPatientNotas(i);
-  else if (tabName === 'ficha')        renderPatientFicha(i);
-  else if (tabName === 'intervencoes') renderPatientIntervencoes(i);
-  else if (tabName === 'briefing')     renderPatientBriefing(i);
+  if (tabName === 'overview')      renderPatientOverview(i);
+  else if (tabName === 'notas')    renderPatientNotas(i);
+  else if (tabName === 'ficha')    renderPatientFicha(i);
+  else if (tabName === 'plano')    renderPatientPlano(i);
+  else if (tabName === 'anamnese') renderPatientAnamnese(i);
+  else if (tabName === 'briefing') renderPatientBriefing(i);
 }
 
 function _renderTabPlaceholder(tabName) {
@@ -795,8 +796,8 @@ function renderPatientDetailShell(i) {
   var initials = p.initials || (p.name ? p.name.trim().split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase() : '?');
   var tabDefs = [
     ['overview','Visão Geral'],['notas','Notas & Timeline'],
-    ['ficha','Ficha Clínica'],['intervencoes','Intervenções'],
-    ['briefing','Briefing IA']
+    ['ficha','Ficha Clínica'],['plano','Plano'],
+    ['anamnese','Anamnese'],['briefing','Briefing IA']
   ];
   var tabBarHtml = '<div class="patient-tab-bar" id="ptab-bar">'
     + tabDefs.map(function(td){
@@ -1176,6 +1177,25 @@ function renderPatientFicha(i) {
     + '<button class="btn btn-primary btn-sm" onclick="abrirModalMaterial()">+ Adicionar</button>'
     + '</div>'
     + '<div id="ptab-materiais-list">' + matsHtml + '</div>';
+}
+
+function renderPatientPlano(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  content.innerHTML = '<div class="divider"></div>'
+    + '<div id="tab-plano-content" style="display:flex;flex-direction:column;gap:16px"></div>';
+  currentPatientIdx = i;
+  if (typeof renderPlanoProntuario === 'function') renderPlanoProntuario(i);
+}
+
+function renderPatientAnamnese(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var src = document.getElementById('tab-anamnese');
+  if (!src) return;
+  _currentProntuarioIdx = i;
+  content.innerHTML = '<div class="divider"></div>' + src.innerHTML;
+  if (typeof _popularAnamnese === 'function') _popularAnamnese(i);
 }
 
 function _excluirMaterialFicha(pidx, mid) {
