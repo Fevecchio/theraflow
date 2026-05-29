@@ -218,6 +218,9 @@ function salvarExercicio() {
   closeModal('modal-exercicio');
   _editingExerciseId = null;
   renderExercises();
+  if (typeof currentPatientTab !== 'undefined' && currentPatientTab === 'intervencoes') {
+    renderPatientIntervencoes(currentPortalPatientIdx);
+  }
 }
 
 function excluirExercicio(exerciseId) {

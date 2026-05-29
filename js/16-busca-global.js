@@ -253,15 +253,6 @@ document.addEventListener('keydown', function(e) {
     return;
   }
   if (isInput) return;
-  // ? — mostrar atalhos
-  if (e.key === '?') { mostrarAtalhos(); return; }
-  // G + letra — navegação
-  if (e.key === 'g') { _atalhoGPending = true; setTimeout(function(){ _atalhoGPending = false; }, 1000); return; }
-  if (_atalhoGPending) {
-    _atalhoGPending = false;
-    var navMap = { 'd': 'dashboard', 'p': 'pacientes', 'a': 'agenda', 's': 'sessao', 'f': 'financeiro', 'b': 'briefing', 'v': 'supervisao', 'r': 'prontuarios', 't': 'tarefas', 'e': 'perfil' };
-    if (navMap[e.key]) { navigate(navMap[e.key]); return; }
-  }
   // N — novo paciente (em pacientes) ou nova sessão (em agenda) ou nova cobrança (em financeiro)
   if (e.key === 'n') {
     var activePage = document.querySelector('.page.active');
@@ -284,46 +275,6 @@ document.addEventListener('keydown', function(e) {
     if (ap3 && ap3.id === 'page-financeiro') { lembreteInadimplentes(); return; }
   }
 });
-var _atalhoGPending = false;
-
-function mostrarAtalhos() {
-  var existing = document.getElementById('modal-atalhos');
-  if (existing) { showModal('modal-atalhos'); return; }
-  var div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.id = 'modal-atalhos';
-  div.innerHTML = '<div class="modal" style="max-width:520px">' +
-    '<div class="modal-title">Atalhos de teclado</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:13px">' +
-    _atalhoLinha('Ctrl+K / ⌘K','Busca global') +
-    _atalhoLinha('?','Ver atalhos') +
-    _atalhoLinha('Esc','Fechar modal / busca') +
-    _atalhoLinha('G → D','Dashboard') +
-    _atalhoLinha('G → P','Pacientes') +
-    _atalhoLinha('G → A','Agenda') +
-    _atalhoLinha('G → S','Sessão ao vivo') +
-    _atalhoLinha('G → F','Financeiro') +
-    _atalhoLinha('G → B','Briefing IA') +
-    _atalhoLinha('G → V','Supervisão IA') +
-    _atalhoLinha('G → R','Prontuários') +
-    _atalhoLinha('G → T','Tarefas') +
-    _atalhoLinha('G → E','Perfil') +
-    _atalhoLinha('N (em Pacientes)','Novo paciente') +
-    _atalhoLinha('N (em Agenda)','Nova sessão') +
-    _atalhoLinha('N (em Financeiro)','Nova cobrança') +
-    _atalhoLinha('/ (em Prontuários)','Buscar nas notas') +
-    _atalhoLinha('I (em Financeiro)','Inadimplentes') +
-    '</div>' +
-    '<div class="modal-actions"><button class="btn btn-primary" onclick="closeModal(\'modal-atalhos\')">Fechar</button></div>' +
-    '</div>';
-  document.body.appendChild(div);
-  showModal('modal-atalhos');
-}
-function _atalhoLinha(key, desc) {
-  return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">' +
-    '<kbd style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-family:monospace;font-size:12px;color:var(--ink-soft);white-space:nowrap">' + key + '</kbd>' +
-    '<span style="color:var(--ink-soft)">' + desc + '</span></div>';
-}
 
 // ── DOCUMENTOS LEGAIS ────────────────────────────────────────
 const LEGAL_DOCS = {

@@ -775,9 +775,9 @@ function selectPatientTab(tabName) {
   if (tabName === 'overview')          renderPatientOverview(i);
   else if (tabName === 'notas')        renderPatientNotas(i);
   else if (tabName === 'ficha')        renderPatientFicha(i);
-  else if (tabName === 'intervencoes') _renderTabPlaceholder('intervencoes');
-  else if (tabName === 'briefing')     _renderTabPlaceholder('briefing');
-  else if (tabName === 'portal')       _renderTabPlaceholder('portal');
+  else if (tabName === 'intervencoes') renderPatientIntervencoes(i);
+  else if (tabName === 'briefing')     renderPatientBriefing(i);
+  else if (tabName === 'portal')       renderPatientPortalPreview(i);
 }
 
 function _renderTabPlaceholder(tabName) {
@@ -1187,6 +1187,296 @@ function _excluirMaterialFicha(pidx, mid) {
   salvarPacientes();
   renderPatientFicha(pidx);
   showToast('Material removido.');
+}
+
+// ── Sprint 3: Intervenções ──────────────────────────────────────────────────
+
+function renderPatientIntervencoes(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var p = patients[i];
+  if (!p) return;
+  currentPortalPatientIdx = i;
+
+  // Exercícios
+  var exercises = p.exercises || [];
+  var exHtml;
+  if (exercises.length === 0) {
+    exHtml = '<div style="text-align:center;padding:32px 16px;color:var(--muted)">'
+      + '<div style="font-size:32px;margin-bottom:8px">📋</div>'
+      + '<div style="font-size:13px;margin-bottom:12px">Nenhum exercício atribuído ainda.</div>'
+      + '<button class="btn btn-primary btn-sm" onclick="abrirModalExercicio()">+ Adicionar primeiro exercício</button>'
+      + '</div>';
+  } else {
+    exHtml = exercises.map(function(ex) {
+      var total = ex.total || 1;
+      var concluidos = ex.concluidos || 0;
+      var pct = Math.min(100, Math.round(concluidos / total * 100));
+      var prazoStr = '', prazoColor = 'var(--muted)';
+      if (ex.prazo) {
+        var dias = Math.ceil((new Date(ex.prazo) - new Date()) / 86400000);
+        if (dias < 0) { prazoStr = '⚠ Prazo vencido'; prazoColor = 'var(--red)'; }
+        else if (dias === 0) { prazoStr = '⏰ Vence hoje'; prazoColor = 'var(--amber)'; }
+        else prazoStr = '📅 ' + dias + 'd restantes';
+      }
+      var progressBar = total > 1
+        ? '<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px"><span>' + concluidos + '/' + total + ' realizados</span><span>' + pct + '%</span></div>'
+        + '<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + (pct >= 100 ? 'var(--sage)' : 'var(--amber)') + ';border-radius:3px;transition:width .4s"></div></div></div>'
+        : '';
+      return '<div class="exercise-item ' + (ex.done || pct >= 100 ? 'completed' : '') + '">'
+        + '<div class="exercise-check" onclick="_inTabToggleEx(' + i + ',' + ex.id + ')" style="cursor:pointer">✓</div>'
+        + '<div style="flex:1">'
+        + '<div class="exercise-title">' + escHTML(ex.title) + '</div>'
+        + '<div class="exercise-meta">' + escHTML(ex.desc) + '</div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">'
+        + '<span class="exercise-tag ' + (typeof tagClass === 'function' ? tagClass(ex.tag) : ex.tag) + '">' + (typeof tagLabel === 'function' ? tagLabel(ex.tag) : ex.tag) + '</span>'
+        + (prazoStr ? '<span style="font-size:11px;color:' + prazoColor + '">' + prazoStr + '</span>' : '')
+        + '</div>' + progressBar + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:4px;margin-left:8px;flex-shrink:0">'
+        + (total > 1 && pct < 100 ? '<button onclick="_inTabIncrEx(' + i + ',' + ex.id + ')" style="background:var(--sage-light);border:1px solid var(--sage);border-radius:6px;cursor:pointer;font-size:11px;padding:2px 7px;color:var(--sage);font-weight:600">+1</button>' : '')
+        + '<button onclick="abrirModalExercicio(' + ex.id + ')" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)">✎</button>'
+        + '<button onclick="_inTabDeleteEx(' + i + ',' + ex.id + ')" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)">✕</button>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  // Materiais inline
+  _materialPatientIdx = i;
+  var mats = p.materials || [];
+  var matsHtml = mats.length === 0
+    ? '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Nenhum material adicionado ainda.</div>'
+    : mats.map(function(m) {
+        var icon = (typeof MATERIAL_ICONS !== 'undefined' ? MATERIAL_ICONS[m.tipo] : null) || '📎';
+        var tituloHtml = m.url ? '<a href="' + escHTML(m.url) + '" target="_blank" rel="noopener">' + escHTML(m.titulo) + '</a>' : escHTML(m.titulo);
+        var labelMap = typeof MATERIAL_LABELS !== 'undefined' ? MATERIAL_LABELS : {};
+        var tag = '<span style="font-size:10.5px;background:#f0f2f0;color:var(--muted);padding:2px 7px;border-radius:10px;font-weight:500">' + escHTML(labelMap[m.tipo] || m.tipo) + '</span>';
+        return '<div class="material-card">'
+          + '<div class="material-icon ' + m.tipo + '">' + icon + '</div>'
+          + '<div style="flex:1;min-width:0"><div class="material-title" style="display:flex;align-items:center;gap:8px">' + tituloHtml + tag + '</div>'
+          + (m.desc ? '<div class="material-desc">' + escHTML(m.desc) + '</div>' : '')
+          + '<div class="material-date">' + escHTML(m.date) + '</div></div>'
+          + '<div class="material-actions">'
+          + (m.url ? '<a href="' + escHTML(m.url) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none">↗ Abrir</a>' : '')
+          + '<button class="task-delete" onclick="_excluirMaterialFicha(' + i + ',' + m.id + ');renderPatientIntervencoes(' + i + ')" title="Excluir">✕</button>'
+          + '</div></div>';
+      }).join('');
+
+  content.innerHTML = '<div class="divider"></div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Exercícios · ' + exercises.length + '</div>'
+    + '<button class="btn btn-primary btn-sm" onclick="abrirModalExercicio()">+ Adicionar</button>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">' + exHtml + '</div>'
+    + '<div style="padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Materiais · ' + mats.length + '</div>'
+    + '<button class="btn btn-primary btn-sm" onclick="abrirModalMaterial()">+ Adicionar</button>'
+    + '</div>'
+    + '<div>' + matsHtml + '</div>';
+}
+
+function _inTabToggleEx(pidx, exerciseId) {
+  var p = patients[pidx];
+  if (!p || !p.exercises) return;
+  var ex = p.exercises.find(function(e){ return e.id === exerciseId; });
+  if (ex) { ex.done = !ex.done; salvarPacientes(); }
+  renderPatientIntervencoes(pidx);
+}
+
+function _inTabIncrEx(pidx, exerciseId) {
+  var p = patients[pidx];
+  if (!p || !p.exercises) return;
+  var ex = p.exercises.find(function(e){ return e.id === exerciseId; });
+  if (!ex) return;
+  ex.concluidos = Math.min((ex.concluidos || 0) + 1, ex.total || 1);
+  if (ex.concluidos >= (ex.total || 1)) { ex.done = true; showToast('🎉 Exercício concluído!'); }
+  else showToast('✓ ' + ex.concluidos + '/' + ex.total + ' realizados');
+  salvarPacientes();
+  renderPatientIntervencoes(pidx);
+}
+
+function _inTabDeleteEx(pidx, exerciseId) {
+  if (!confirm('Remover exercício?')) return;
+  var p = patients[pidx];
+  if (!p || !p.exercises) return;
+  p.exercises = p.exercises.filter(function(e){ return e.id !== exerciseId; });
+  salvarPacientes();
+  renderPatientIntervencoes(pidx);
+  showToast('Exercício removido.');
+}
+
+// ── Sprint 3: Briefing IA ───────────────────────────────────────────────────
+
+function renderPatientBriefing(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var p = patients[i];
+  if (!p) return;
+  currentBriefingPatientIdx = i;
+
+  var key = p.id || p.name;
+  var cache = typeof _getBriefingCache === 'function' ? _getBriefingCache(key) : null;
+  var initials = p.initials || (p.name ? p.name.trim().split(' ').map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase() : '?');
+
+  var bodyHtml;
+  if (cache) {
+    var ts = new Date(cache.generatedAt);
+    var tsStr = String(ts.getHours()).padStart(2,'0') + ':' + String(ts.getMinutes()).padStart(2,'0');
+    var unchanged = typeof _briefingCacheUnchanged === 'function' ? _briefingCacheUnchanged(cache, p) : true;
+    bodyHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:var(--sage-light);border-radius:8px;border:1px solid rgba(74,124,89,.15)">'
+      + '<span style="font-size:18px">✦</span>'
+      + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--sage)">Cache de hoje às ' + tsStr + '</div>'
+      + '<div style="font-size:11px;color:var(--muted)">' + (p.sessions||0) + ' sessões · ' + (unchanged ? 'sem alterações' : 'há novas informações') + '</div></div>'
+      + '<div style="display:flex;gap:6px">'
+      + '<button class="btn btn-secondary btn-sm" onclick="_openBriefingPage(' + i + ')">↗ Abrir completo</button>'
+      + (!unchanged ? '<button class="btn btn-primary btn-sm" onclick="_openBriefingPage(' + i + ',true)">↻ Regenerar</button>' : '')
+      + '</div></div>'
+      + '<div id="ptab-b-cache-content" style="font-size:13px;color:var(--ink-soft)">'
+      + _renderBriefingCacheInline(cache.content)
+      + '</div>';
+  } else {
+    bodyHtml = '<div style="text-align:center;padding:32px 20px">'
+      + '<div style="width:56px;height:56px;border-radius:50%;background:' + (p.colorGrad||p.color||'#4a7c59') + ';display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:20px;font-weight:700;color:#fff">' + initials + '</div>'
+      + '<div style="font-size:15px;font-weight:600;margin-bottom:4px">' + escHTML(p.name) + '</div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">' + escHTML(p.abordagem) + ' · ' + (p.sessions||0) + ' sessões</div>'
+      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto">Analisa notas, temas recorrentes e evolução clínica para sugerir o foco da próxima sessão.</div>'
+      + '<button class="btn btn-purple" onclick="_openBriefingPage(' + i + ')" style="font-size:13.5px;padding:10px 24px">✦ Gerar Briefing IA</button>'
+      + '</div>';
+  }
+
+  content.innerHTML = '<div class="divider"></div>'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Briefing IA</div>'
+    + '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">IA</span>'
+    + '</div>'
+    + bodyHtml;
+}
+
+function _renderBriefingCacheInline(text) {
+  if (!text || text.length < 60) return '<div style="font-style:italic;color:var(--muted)">Conteúdo indisponível.</div>';
+  var defs = [
+    { key:'FOCO RECOMENDADO', icon:'🎯', color:'var(--sage)' },
+    { key:'PADRÃO IDENTIFICADO', icon:'🔁', color:'var(--purple)' },
+    { key:'EVOLUÇÃO', icon:'📈', color:'#2563eb' },
+    { key:'PONTO DE ATENÇÃO', icon:'⚠', color:'var(--red)' },
+    { key:'PERGUNTAS SUGERIDAS', icon:'💡', color:'var(--amber)' }
+  ];
+  var html = '';
+  defs.forEach(function(d) {
+    var re = new RegExp(d.key + '[:\\s]*([\\s\\S]*?)(?=' + defs.map(function(x){ return x.key; }).join('|') + '|$)', 'i');
+    var m = text.match(re);
+    if (m && m[1] && m[1].trim()) {
+      html += '<div style="margin-bottom:12px;padding:12px 14px;border-radius:10px;background:var(--bg);border-left:3px solid ' + d.color + '">'
+        + '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">' + d.icon + ' ' + d.key + '</div>'
+        + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(m[1].trim()) + '</div>'
+        + '</div>';
+    }
+  });
+  return html || '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(text.substring(0, 400)) + (text.length > 400 ? '…' : '') + '</div>';
+}
+
+function _openBriefingPage(i, forceRegen) {
+  currentBriefingPatientIdx = i;
+  if (forceRegen) _briefingForceRefresh = true;
+  document.querySelectorAll('.page').forEach(function(pg){ pg.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var pageEl = document.getElementById('page-briefing');
+  if (pageEl) pageEl.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n) {
+    if ((n.getAttribute('onclick') || '').includes("'briefing'")) n.classList.add('active');
+  });
+  try { localStorage.setItem('tf_current_page', 'briefing'); } catch(e) {}
+  if (typeof initBriefing === 'function') initBriefing();
+}
+
+// ── Sprint 3: Portal preview ────────────────────────────────────────────────
+
+function renderPatientPortalPreview(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var p = patients[i];
+  if (!p) return;
+
+  var exercises = p.exercises || [];
+  var exDone = exercises.filter(function(e){ return e.done || (e.concluidos||0) >= (e.total||1); }).length;
+
+  var exPreviewHtml = exercises.length === 0
+    ? '<div style="color:var(--muted);font-size:12px;font-style:italic">Nenhum exercício atribuído.</div>'
+    : exercises.slice(0, 4).map(function(ex) {
+        var done = ex.done || (ex.concluidos||0) >= (ex.total||1);
+        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">'
+          + '<div style="width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (done ? 'var(--sage)' : 'var(--border)') + ';background:' + (done ? 'var(--sage)' : '#fff') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+          + (done ? '<span style="color:#fff;font-size:10px">✓</span>' : '')
+          + '</div>'
+          + '<span style="font-size:13px;color:' + (done ? 'var(--muted)' : 'var(--ink)') + ';' + (done ? 'text-decoration:line-through' : '') + '">' + escHTML(ex.title) + '</span>'
+          + '</div>';
+      }).join('')
+    + (exercises.length > 4 ? '<div style="font-size:11px;color:var(--muted);padding-top:6px">+ ' + (exercises.length - 4) + ' mais</div>' : '');
+
+  var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
+  var lastMood = mh.length ? mh[mh.length - 1] : null;
+  var moodColor = lastMood !== null ? (lastMood >= 7 ? 'var(--sage)' : lastMood >= 5 ? 'var(--amber)' : 'var(--red)') : 'var(--muted)';
+
+  var diarioEntries = (p.portalDiario || []).slice(-3).reverse();
+  var diarioHtml = diarioEntries.length === 0
+    ? '<div style="color:var(--muted);font-size:12px;font-style:italic">Nenhuma entrada no diário ainda.</div>'
+    : diarioEntries.map(function(d) {
+        return '<div style="padding:8px 0;border-bottom:1px solid var(--border)">'
+          + '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
+          + '<span style="font-size:11px;color:var(--muted)">' + escHTML(d.date || '') + '</span>'
+          + '<span style="font-size:13px">' + (d.emoji || '') + '</span>'
+          + '</div>'
+          + '<div style="font-size:12.5px;color:var(--ink-soft);line-height:1.5">' + escHTML((d.text || d.content || '').substring(0, 120)) + '</div>'
+          + '</div>';
+      }).join('');
+
+  var msgTexto = p.portalMensagem || 'Nenhuma mensagem do terapeuta definida.';
+  var sessionLink = p.sessionLink || null;
+
+  content.innerHTML = '<div class="divider"></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">O que o paciente vê</div>'
+    + '<button class="btn btn-secondary btn-sm" onclick="selectPatientTab(\'overview\');setTimeout(function(){var sec=document.querySelector(\'[onclick*=\\"compartilharAcessoPortal\\"]\');if(sec)sec.scrollIntoView({behavior:\'smooth\'})},100)">🔗 Compartilhar acesso</button>'
+    + '</div>'
+
+    // Session & message
+    + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Próxima sessão</div>'
+    + (p.next && p.next !== '—'
+        ? '<div style="font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:6px">📅 ' + escHTML(p.next) + '</div>'
+        : '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">Não agendada</div>')
+    + (sessionLink
+        ? '<div style="font-size:12px;color:var(--sage)">🔗 Link da sala ativo</div>'
+        : '<div style="font-size:12px;color:var(--muted)">Sem link de sala configurado</div>')
+    + '</div>'
+
+    // Therapist message
+    + '<div style="background:var(--sage-light);border:1px solid rgba(74,124,89,.15);border-radius:12px;padding:14px;margin-bottom:14px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Mensagem do terapeuta</div>'
+    + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;font-style:italic">"' + escHTML(msgTexto) + '"</div>'
+    + '</div>'
+
+    // Exercises preview
+    + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Exercícios</div>'
+    + '<span style="font-size:12px;color:var(--sage);font-weight:600">' + exDone + '/' + exercises.length + ' concluídos</span>'
+    + '</div>'
+    + exPreviewHtml
+    + '</div>'
+
+    // Mood
+    + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Último humor registrado</div>'
+    + (lastMood !== null
+        ? '<div style="display:flex;align-items:center;gap:10px"><div style="font-size:28px;font-weight:700;color:' + moodColor + '">' + lastMood + '<span style="font-size:14px;color:var(--muted)">/10</span></div><div style="font-size:12px;color:var(--muted)">' + (lastMood >= 7 ? 'Bem' : lastMood >= 5 ? 'Regular' : 'Difícil') + '</div></div>'
+        : '<div style="color:var(--muted);font-size:12px;font-style:italic">Nenhum registro de humor ainda.</div>')
+    + '</div>'
+
+    // Diary
+    + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Diário recente</div>'
+    + diarioHtml
+    + '</div>';
 }
 
 function selectPatient(i, el) {

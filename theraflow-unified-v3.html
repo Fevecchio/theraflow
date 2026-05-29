@@ -483,21 +483,10 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <button class="nav-item" onclick="navigate('sessao')">
       <span class="icon">▶</span> Sessão ao vivo
     </button>
-    <button class="nav-item" onclick="navigate('prontuarios')">
-      <span class="icon">≡</span> Prontuários
-    </button>
-    <button class="nav-item" id="nav-briefing-btn" onclick="navigate('briefing')" style="border:1px solid rgba(90,62,138,.35);background:rgba(90,62,138,.12);color:#c4b4e8;">
-      <span class="icon">✦</span> Briefing pré-sessão
-      <span class="nav-ai-tag">IA</span>
-    </button>
 
     <div class="nav-section">Clínica</div>
     <button class="nav-item" onclick="navigate('financeiro')">
       <span class="icon">◈</span> Financeiro
-    </button>
-    <button class="nav-item" onclick="navigate('portal')">
-      <span class="icon">♡</span> Portal do Paciente
-      <span id="nav-portal-badge" class="nav-badge-purple" style="display:none">●</span>
     </button>
 
     <!-- DESENVOLVIMENTO PROFISSIONAL -->
@@ -549,15 +538,6 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     " onmouseover="this.style.background='rgba(74,124,89,.18)';this.style.color='#c8e6c9'"
        onmouseout="this.style.background='rgba(74,124,89,.08)';this.style.color='#8fb89c'">
       <span style="font-size:13px">🎁</span> Indicar um colega
-    </button>
-    <button onclick="mostrarAtalhos()" style="
-      display:flex;align-items:center;gap:8px;width:100%;margin-top:2px;
-      padding:8px 12px;border-radius:8px;border:none;background:transparent;
-      color:#6a7a6d;font-size:11.5px;cursor:pointer;
-      font-family:inherit;transition:all .15s;text-align:left;
-    " onmouseover="this.style.background='rgba(255,255,255,.06)';this.style.color='#8fb89c'"
-       onmouseout="this.style.background='transparent';this.style.color='#6a7a6d'">
-      <kbd style="background:rgba(255,255,255,.08);border-radius:3px;padding:1px 5px;font-family:monospace;font-size:11px;color:#8fb89c">?</kbd> Atalhos de teclado
     </button>
     <button onclick="sairDaConta()" style="
       display:flex;align-items:center;gap:8px;width:100%;margin-top:2px;
