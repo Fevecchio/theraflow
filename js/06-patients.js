@@ -765,6 +765,245 @@ function filterPatientsByAbordagem(val) {
   renderPatients();
 }
 
+// ── PATIENT DETAIL TABS ──
+function selectPatientTab(tabName) {
+  currentPatientTab = tabName;
+  document.querySelectorAll('#ptab-bar .ptab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  var i = currentPatientIdx;
+  if (tabName === 'overview')          renderPatientOverview(i);
+  else if (tabName === 'notas')        _renderTabPlaceholder('notas');
+  else if (tabName === 'ficha')        _renderTabPlaceholder('ficha');
+  else if (tabName === 'intervencoes') _renderTabPlaceholder('intervencoes');
+  else if (tabName === 'briefing')     _renderTabPlaceholder('briefing');
+  else if (tabName === 'portal')       _renderTabPlaceholder('portal');
+}
+
+function _renderTabPlaceholder(tabName) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var labels = { notas:'Notas & Timeline', ficha:'Ficha Clínica', intervencoes:'Intervenções', briefing:'Briefing IA', portal:'Portal' };
+  content.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--muted)">'
+    + '<div style="font-size:28px;margin-bottom:12px">⚙</div>'
+    + '<div style="font-size:14px;font-weight:600;margin-bottom:6px">' + (labels[tabName]||tabName) + '</div>'
+    + '<div style="font-size:13px">Em implementação — aguarde os próximos sprints</div></div>';
+}
+
+function renderPatientDetailShell(i) {
+  var p = patients[i];
+  if (!p) return;
+  var initials = p.initials || (p.name ? p.name.trim().split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase() : '?');
+  var tabDefs = [
+    ['overview','Visão Geral'],['notas','Notas & Timeline'],
+    ['ficha','Ficha Clínica'],['intervencoes','Intervenções'],
+    ['briefing','Briefing IA'],['portal','Portal']
+  ];
+  var tabBarHtml = '<div class="patient-tab-bar" id="ptab-bar">'
+    + tabDefs.map(function(td){
+        return '<button class="ptab'+(currentPatientTab===td[0]?' active':'')+'" data-tab="'+td[0]+'" onclick="selectPatientTab(\''+td[0]+'\')">'+td[1]+'</button>';
+      }).join('')
+    + '</div>';
+
+  document.getElementById('patient-detail').innerHTML = `
+    <div class="detail-header">
+      <div class="detail-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'}">${initials}</div>
+      <div>
+        <div class="detail-name">${escHTML(p.name)}</div>
+        <div class="detail-meta">
+          <span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span>
+          <span>📍 ${escHTML(p.cidade)}</span>
+          <span>📋 ${escHTML(p.abordagem)}</span>
+          <span>🗓 Próxima: ${p.next || '—'}</span>
+          <span style="display:flex;align-items:center;gap:4px">
+            ✉️ <a href="mailto:${p.email}" style="color:var(--sage);text-decoration:none;font-size:12px">${p.email}</a>
+            <button onclick="event.stopPropagation();navigator.clipboard?.writeText('${p.email}');showToast('Email copiado!')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);padding:0 2px" title="Copiar email">⎘</button>
+          </span>
+        </div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+        <div class="status-dropdown-wrap" id="status-wrap-${i}">
+          <span class="tag ${p.status==='Ativa'?'tag-green':p.status==='Nova'?'tag-blue':p.status==='Atenção'?'tag-red':'tag-amber'} status-tag-btn" onclick="toggleStatusDropdown(${i})" title="Clique para alterar status">${p.status}</span>
+          <div class="status-dropdown-menu" id="status-menu-${i}">
+            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Ativa')"><span class="dot" style="background:#4a7c59"></span><div><strong>Ativa</strong><span class="desc">Em acompanhamento regular</span></div></div>
+            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Nova')"><span class="dot" style="background:#2c5f8a"></span><div><strong>Nova</strong><span class="desc">Avaliação inicial pendente</span></div></div>
+            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Atenção')"><span class="dot" style="background:#c0392b"></span><div><strong>Atenção</strong><span class="desc">Falta, crise ou alerta clínico</span></div></div>
+            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Pausa')"><span class="dot" style="background:#c97d2e"></span><div><strong>Pausa</strong><span class="desc">Tratamento suspenso temporariamente</span></div></div>
+            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Inativa')"><span class="dot" style="background:#8a9490"></span><div><strong>Inativa</strong><span class="desc">Alta ou abandono</span></div></div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="showEditarPaciente(${i})" title="Editar dados do paciente">✎ Editar</button>
+        <button class="btn btn-purple btn-sm" onclick="selectPatientTab('briefing')">✦ Briefing IA</button>
+        <button class="btn btn-primary btn-sm" onclick="currentSessionPatientIdx=${i};navigate('sessao')">▶ Sessão</button>
+      </div>
+    </div>
+  ` + tabBarHtml + '<div id="patient-detail-tab-content" class="ptab-content"></div>';
+}
+
+function renderPatientOverview(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var p = patients[i];
+  if (!p) return;
+
+  const moodColor = p.mood >= 7 ? 'var(--sage)' : p.mood >= 5 ? 'var(--amber)' : 'var(--red)';
+  const moodTrendIcon = p.moodTrend === 'up' ? '↑' : p.moodTrend === 'down' ? '↓' : '→';
+  const moodTrendColor = p.moodTrend === 'up' ? 'var(--sage)' : p.moodTrend === 'down' ? 'var(--red)' : 'var(--muted)';
+  const alertBlock = p.alert ? `
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;background:var(--amber-light);border-radius:10px;border-left:3px solid var(--amber);margin-bottom:16px">
+      <span style="font-size:16px">⚠</span>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Supervisão IA</div>
+        <div style="font-size:13px;color:var(--ink-soft)">${p.alert}</div>
+      </div>
+      <button onclick="navigate('supervisao')" style="margin-left:auto;flex-shrink:0;background:none;border:1px solid var(--amber);color:var(--amber);padding:4px 10px;border-radius:6px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap">Ver análise →</button>
+    </div>` : '';
+  var moodSparkline = '';
+  if (p.moodHistory && p.moodHistory.length >= 3) {
+    var mh = p.moodHistory.slice(-10).filter(function(v){ return v !== null && v !== undefined; });
+    if (mh.length >= 2) {
+      var spW = 60, spH = 24;
+      var spPts = mh.map(function(v, ii){ return { x: (ii/(mh.length-1))*spW, y: spH - (v/10)*spH }; });
+      var spLine = spPts.map(function(pt, ii){ return (ii===0?'M':'L')+pt.x.toFixed(1)+','+pt.y.toFixed(1); }).join(' ');
+      moodSparkline = '<svg viewBox="0 0 '+spW+' '+spH+'" style="width:60px;height:24px;margin-left:auto" preserveAspectRatio="none">'
+        + '<path d="'+spLine+'" fill="none" stroke="'+moodColor+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+        + '<circle cx="'+spPts[spPts.length-1].x.toFixed(1)+'" cy="'+spPts[spPts.length-1].y.toFixed(1)+'" r="2.5" fill="'+moodColor+'"/>'
+        + '</svg>';
+    }
+  }
+  const moodBlock = p.mood !== null ? `
+    <div class="stat-card card-sm" style="display:flex;align-items:center;gap:12px">
+      <div style="flex:1">
+        <div class="stat-label">Humor (portal)</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:26px;color:${moodColor};margin-top:4px">${p.mood}<span style="font-size:14px;color:var(--muted)">/10</span></div>
+        <div style="font-size:11px;color:${moodTrendColor};margin-top:2px">${moodTrendIcon} ${p.moodTrend==='up'?'Melhorando':p.moodTrend==='down'?'Em queda':'Estável'}</div>
+      </div>
+      ${moodSparkline}
+    </div>` : `<div class="stat-card card-sm"><div class="stat-label">Humor</div><div style="font-size:13px;color:var(--muted);margin-top:8px">Sem registro no portal</div></div>`;
+  const finBlock = `
+    <div class="stat-card card-sm">
+      <div class="stat-label">Financeiro</div>
+      <div style="margin-top:6px">
+        <span class="tag ${p.finStatus==='ok'?'tag-green':p.finStatus==='overdue'?'tag-red':'tag-amber'}">${p.fin}</span>
+      </div>
+    </div>`;
+  const tarefasPaciente = (typeof tasks !== 'undefined' ? tasks : []).filter(function(t){ return t.status==='aberta' && t.patientName===p.name; });
+  const taskBlock = tarefasPaciente.length === 0 ? '' : `
+    <div style="margin-bottom:16px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Tarefas abertas · ${tarefasPaciente.length}</div>
+        <button onclick="abrirModalNovaTarefaPaciente('${p.name.replace(/'/g,"\\'")}','${i}')" style="background:none;border:none;color:var(--sage);font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;padding:0">+ Adicionar</button>
+      </div>
+      ${tarefasPaciente.map(function(t){
+        var dtObj = formatarDataTarefa(t.dueDate);
+        var dtText = typeof dtObj==='object'?dtObj.text:dtObj;
+        var dtCls  = typeof dtObj==='object'?dtObj.cls:'';
+        var dateLabel = t.dueDate ? ' <span style="font-size:11px;color:'+(dtCls==='overdue'?'var(--red)':dtCls==='today'?'var(--amber)':'var(--muted)')+'">· '+dtText+'</span>' : '';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
+          +'<button onclick="toggleTarefa('+t.id+');selectPatient('+i+')" style="flex-shrink:0;padding:3px 9px;border-radius:20px;border:1.5px solid var(--sage);background:var(--sage-light);color:var(--sage);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background=\'var(--sage)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--sage-light)\';this.style.color=\'var(--sage)\'">✓</button>'
+          +'<span style="flex:1;font-size:13px;color:var(--ink-soft)">'+escHTML(t.title)+dateLabel+'</span>'
+          +'<button onclick="editarTarefa('+t.id+')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:5px" title="Editar">✏</button>'
+          +'</div>';
+      }).join('')}
+    </div>`;
+
+  content.innerHTML = `
+    <div class="divider"></div>
+    ${alertBlock}
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div class="stat-card card-sm">
+        <div class="stat-label">Sessões</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:26px;margin-top:4px">${p.sessions}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Última: ${p.lastSession || '—'}</div>
+      </div>
+      <div class="stat-card card-sm">
+        <div class="stat-label">CID</div>
+        <div style="font-size:13px;font-weight:500;margin-top:8px;line-height:1.4">${escHTML(p.cid)}</div>
+      </div>
+      ${moodBlock}
+      ${finBlock}
+    </div>
+
+    <div style="margin-bottom:20px">` +
+    (function(){
+      var pidx = i;
+      var sessoesPac = appointments.filter(function(a){ return a.patientIdx===pidx; });
+      var compareceu = sessoesPac.filter(function(a){ return a.presenca==='compareceu'; }).length;
+      var faltou = sessoesPac.filter(function(a){ return a.presenca==='faltou'; }).length;
+      var total = sessoesPac.filter(function(a){ return a.presenca; }).length;
+      if (total < 2) return '';
+      var taxa = Math.round(compareceu/total*100);
+      var taxaCor = taxa>=80?'var(--sage)':taxa>=60?'var(--amber)':'var(--red)';
+      return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">' +
+        '<div style="flex:1;font-size:12px;color:var(--muted)">Taxa de presença</div>' +
+        '<div style="font-weight:700;color:'+taxaCor+'">'+taxa+'%</div>' +
+        '<div style="font-size:11px;color:var(--muted)">'+compareceu+'✓ '+faltou+'✗ de '+total+' registradas</div></div>';
+    })() +
+    `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:12px;color:var(--muted);font-weight:500">Progresso do plano terapêutico</div>
+        <div style="font-size:12px;font-weight:600;color:${p.progress>=60?'var(--sage)':p.progress>=30?'var(--amber)':'var(--muted)'}">${p.progress}%</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${p.progress}%;transition:width .6s"></div></div>
+    </div>
+
+    <div class="card card-sm" style="background:var(--bg);margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Última observação clínica</div>
+      <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7;font-style:italic">"${escHTML(p.notes)}"</div>
+    </div>
+
+    ${taskBlock}
+
+    ${renderTrajetoriaTerapeuta(i)}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('notas')">≡ Notas & Timeline</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('financeiro')">◈ Ver financeiro</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarExtratoPaciente(${i})">📄 Extrato PDF</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center;background:#e8faf0;border-color:rgba(37,211,102,.3);color:#075E54" onclick="enviarWhatsappLembrete(${i})">
+        📲 WhatsApp lembrete
+      </button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('portal')">♡ Portal do paciente</button>
+    </div>
+    <div id="pac-chat-section-${i}" style="margin-top:16px">
+      ${renderChatTerapeuta(i, _msgCache[p.id] || [])}
+    </div>
+
+    <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="background:var(--blue-light);border:1px solid rgba(44,95,138,.15);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
+          <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
+          <div style="display:flex;align-items:center;gap:6px">Senha: <strong id="pac-senha-display-${i}" data-visible="0">••••••</strong>
+            <button onclick="_toggleSenhaPortal(${i})" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px" title="Mostrar/ocultar senha">👁</button>
+            <button onclick="redefinirSenhaPaciente(${i})" style="background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
+          </div>
+          <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 Compartilhar acesso via WhatsApp</button>
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(220,38,38,.12);text-align:right">
+            <button onclick="revogarPortalPaciente(${i})" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">Desativar acesso ao portal</button>
+          </div>
+          <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(44,95,138,.12)">
+            <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:5px">🔗 Link da sala de sessão</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input id="pac-session-link-${i}" type="url" placeholder="Cole o link da videochamada aqui"
+                value="${escHTML(p.sessionLink||'')}"
+                style="flex:1;font-size:12px;padding:5px 8px;border:1px solid rgba(44,95,138,.25);border-radius:7px;font-family:inherit;color:var(--ink);background:#fff;outline:none"
+                onkeydown="if(event.key==='Enter')salvarSessionLink(${i})"
+              />
+              <button onclick="salvarSessionLink(${i})" style="background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Salvar</button>
+              ${p.sessionLink ? `<button onclick="limparSessionLink(${i})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);border-radius:7px;font-size:11px;padding:5px 8px;cursor:pointer;font-family:inherit">✕</button>` : ''}
+            </div>
+            ${p.sessionLink ? `<div style="font-size:11px;color:var(--sage);margin-top:4px">✓ Link ativo — visível para o paciente no portal</div>` : `<div style="font-size:11px;color:var(--ink-soft);opacity:.7;margin-top:4px">Sem link — paciente verá mensagem de aguardo</div>`}
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-sm" style="color:var(--red);border-color:rgba(192,57,43,.25);background:var(--red-light);justify-content:center;width:100%" onclick="excluirPaciente(${i})">
+        ✕ Excluir paciente
+      </button>
+    </div>
+  `;
+}
+
 function selectPatient(i, el) {
   if (i < 0 || i >= patients.length) return;
   currentPatientIdx = i;
@@ -825,196 +1064,9 @@ function selectPatient(i, el) {
     if (!p.lastSession) p.lastSession = '—';
   })();
 
-  const moodColor = p.mood >= 7 ? 'var(--sage)' : p.mood >= 5 ? 'var(--amber)' : 'var(--red)';
-  const moodTrendIcon = p.moodTrend === 'up' ? '↑' : p.moodTrend === 'down' ? '↓' : '→';
-  const moodTrendColor = p.moodTrend === 'up' ? 'var(--sage)' : p.moodTrend === 'down' ? 'var(--red)' : 'var(--muted)';
-  const alertBlock = p.alert ? `
-    <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;background:var(--amber-light);border-radius:10px;border-left:3px solid var(--amber);margin-bottom:16px">
-      <span style="font-size:16px">⚠</span>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Supervisão IA</div>
-        <div style="font-size:13px;color:var(--ink-soft)">${p.alert}</div>
-      </div>
-      <button onclick="navigate('supervisao')" style="margin-left:auto;flex-shrink:0;background:none;border:1px solid var(--amber);color:var(--amber);padding:4px 10px;border-radius:6px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap">Ver análise →</button>
-    </div>` : '';
-  // Mini gráfico de linha de humor
-  var moodSparkline = '';
-  if (p.moodHistory && p.moodHistory.length >= 3) {
-    var mh = p.moodHistory.slice(-10).filter(function(v){ return v !== null && v !== undefined; });
-    if (mh.length >= 2) {
-      var spW = 60, spH = 24;
-      var spPts = mh.map(function(v, ii){ return { x: (ii/(mh.length-1))*spW, y: spH - (v/10)*spH }; });
-      var spLine = spPts.map(function(pt, ii){ return (ii===0?'M':'L')+pt.x.toFixed(1)+','+pt.y.toFixed(1); }).join(' ');
-      moodSparkline = '<svg viewBox="0 0 '+spW+' '+spH+'" style="width:60px;height:24px;margin-left:auto" preserveAspectRatio="none">'
-        + '<path d="'+spLine+'" fill="none" stroke="'+moodColor+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
-        + '<circle cx="'+spPts[spPts.length-1].x.toFixed(1)+'" cy="'+spPts[spPts.length-1].y.toFixed(1)+'" r="2.5" fill="'+moodColor+'"/>'
-        + '</svg>';
-    }
-  }
-  const moodBlock = p.mood !== null ? `
-    <div class="stat-card card-sm" style="display:flex;align-items:center;gap:12px">
-      <div style="flex:1">
-        <div class="stat-label">Humor (portal)</div>
-        <div style="font-family:'Instrument Serif',serif;font-size:26px;color:${moodColor};margin-top:4px">${p.mood}<span style="font-size:14px;color:var(--muted)">/10</span></div>
-        <div style="font-size:11px;color:${moodTrendColor};margin-top:2px">${moodTrendIcon} ${p.moodTrend==='up'?'Melhorando':p.moodTrend==='down'?'Em queda':'Estável'}</div>
-      </div>
-      ${moodSparkline}
-    </div>` : `<div class="stat-card card-sm"><div class="stat-label">Humor</div><div style="font-size:13px;color:var(--muted);margin-top:8px">Sem registro no portal</div></div>`;
-  const finBlock = `
-    <div class="stat-card card-sm">
-      <div class="stat-label">Financeiro</div>
-      <div style="margin-top:6px">
-        <span class="tag ${p.finStatus==='ok'?'tag-green':p.finStatus==='overdue'?'tag-red':'tag-amber'}">${p.fin}</span>
-      </div>
-    </div>`;
-
-  // Tarefas abertas deste paciente
-  const tarefasPaciente = (typeof tasks !== 'undefined' ? tasks : []).filter(function(t){ return t.status==='aberta' && t.patientName===p.name; });
-  const taskBlock = tarefasPaciente.length === 0 ? '' : `
-    <div style="margin-bottom:16px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Tarefas abertas · ${tarefasPaciente.length}</div>
-        <button onclick="abrirModalNovaTarefaPaciente('${p.name.replace(/'/g,"\\'")}','${i}')" style="background:none;border:none;color:var(--sage);font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;padding:0">+ Adicionar</button>
-      </div>
-      ${tarefasPaciente.map(function(t){
-        var dtObj = formatarDataTarefa(t.dueDate);
-        var dtText = typeof dtObj==='object'?dtObj.text:dtObj;
-        var dtCls  = typeof dtObj==='object'?dtObj.cls:'';
-        var dateLabel = t.dueDate ? ' <span style="font-size:11px;color:'+(dtCls==='overdue'?'var(--red)':dtCls==='today'?'var(--amber)':'var(--muted)')+'">· '+dtText+'</span>' : '';
-        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
-          +'<button onclick="toggleTarefa('+t.id+');selectPatient('+i+')" style="flex-shrink:0;padding:3px 9px;border-radius:20px;border:1.5px solid var(--sage);background:var(--sage-light);color:var(--sage);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background=\'var(--sage)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--sage-light)\';this.style.color=\'var(--sage)\'">✓</button>'
-          +'<span style="flex:1;font-size:13px;color:var(--ink-soft)">'+escHTML(t.title)+dateLabel+'</span>'
-          +'<button onclick="editarTarefa('+t.id+')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:5px" title="Editar">✏</button>'
-          +'</div>';
-      }).join('')}
-    </div>`;
-
-  document.getElementById('patient-detail').innerHTML = `
-    <div class="detail-header">
-      <div class="detail-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'}">${p.initials||(p.name?p.name.trim().split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase():'?')}</div>
-      <div>
-        <div class="detail-name">${escHTML(p.name)}</div>
-        <div class="detail-meta">
-          <span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span>
-          <span>📍 ${escHTML(p.cidade)}</span>
-          <span>📋 ${escHTML(p.abordagem)}</span>
-          <span>🗓 Próxima: ${p.next || '—'}</span>
-          <span style="display:flex;align-items:center;gap:4px">
-            ✉️ <a href="mailto:${p.email}" style="color:var(--sage);text-decoration:none;font-size:12px">${p.email}</a>
-            <button onclick="event.stopPropagation();navigator.clipboard?.writeText('${p.email}');showToast('Email copiado!')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);padding:0 2px" title="Copiar email">⎘</button>
-          </span>
-        </div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-        <div class="status-dropdown-wrap" id="status-wrap-${i}">
-          <span class="tag ${p.status==='Ativa'?'tag-green':p.status==='Nova'?'tag-blue':p.status==='Atenção'?'tag-red':'tag-amber'} status-tag-btn" onclick="toggleStatusDropdown(${i})" title="Clique para alterar status">${p.status}</span>
-          <div class="status-dropdown-menu" id="status-menu-${i}">
-            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Ativa')"><span class="dot" style="background:#4a7c59"></span><div><strong>Ativa</strong><span class="desc">Em acompanhamento regular</span></div></div>
-            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Nova')"><span class="dot" style="background:#2c5f8a"></span><div><strong>Nova</strong><span class="desc">Avaliação inicial pendente</span></div></div>
-            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Atenção')"><span class="dot" style="background:#c0392b"></span><div><strong>Atenção</strong><span class="desc">Falta, crise ou alerta clínico</span></div></div>
-            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Pausa')"><span class="dot" style="background:#c97d2e"></span><div><strong>Pausa</strong><span class="desc">Tratamento suspenso temporariamente</span></div></div>
-            <div class="status-dropdown-item" onclick="alterarStatus(${i},'Inativa')"><span class="dot" style="background:#8a9490"></span><div><strong>Inativa</strong><span class="desc">Alta ou abandono</span></div></div>
-          </div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="showEditarPaciente(${i})" title="Editar dados do paciente">✎ Editar</button>
-        <button class="btn btn-purple btn-sm" onclick="currentBriefingPatientIdx=${i};navigate('briefing')">✦ Briefing IA</button>
-        <button class="btn btn-primary btn-sm" onclick="currentSessionPatientIdx=${i};navigate('sessao')">▶ Sessão</button>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-    ${alertBlock}
-
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-      <div class="stat-card card-sm">
-        <div class="stat-label">Sessões</div>
-        <div style="font-family:'Instrument Serif',serif;font-size:26px;margin-top:4px">${p.sessions}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Última: ${p.lastSession || '—'}</div>
-      </div>
-      <div class="stat-card card-sm">
-        <div class="stat-label">CID</div>
-        <div style="font-size:13px;font-weight:500;margin-top:8px;line-height:1.4">${escHTML(p.cid)}</div>
-      </div>
-      ${moodBlock}
-      ${finBlock}
-    </div>
-
-    <div style="margin-bottom:20px">` +
-    (function(){
-      var pidx = i;
-      var sessoesPac = appointments.filter(function(a){ return a.patientIdx===pidx; });
-      var compareceu = sessoesPac.filter(function(a){ return a.presenca==='compareceu'; }).length;
-      var faltou = sessoesPac.filter(function(a){ return a.presenca==='faltou'; }).length;
-      var total = sessoesPac.filter(function(a){ return a.presenca; }).length;
-      if (total < 2) return '';
-      var taxa = Math.round(compareceu/total*100);
-      var taxaCor = taxa>=80?'var(--sage)':taxa>=60?'var(--amber)':'var(--red)';
-      return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">' +
-        '<div style="flex:1;font-size:12px;color:var(--muted)">Taxa de presença</div>' +
-        '<div style="font-weight:700;color:'+taxaCor+'">'+taxa+'%</div>' +
-        '<div style="font-size:11px;color:var(--muted)">'+compareceu+'✓ '+faltou+'✗ de '+total+' registradas</div></div>';
-    })() +
-    `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="font-size:12px;color:var(--muted);font-weight:500">Progresso do plano terapêutico</div>
-        <div style="font-size:12px;font-weight:600;color:${p.progress>=60?'var(--sage)':p.progress>=30?'var(--amber)':'var(--muted)'}">${p.progress}%</div>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${p.progress}%;transition:width .6s"></div></div>
-    </div>
-
-    <div class="card card-sm" style="background:var(--bg);margin-bottom:16px">
-      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Última observação clínica</div>
-      <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7;font-style:italic">"${escHTML(p.notes)}"</div>
-    </div>
-
-    ${taskBlock}
-
-    ${renderTrajetoriaTerapeuta(i)}
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('prontuarios')">≡ Ver prontuário</button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('financeiro')">◈ Ver financeiro</button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarExtratoPaciente(${i})">📄 Extrato PDF</button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center;background:#e8faf0;border-color:rgba(37,211,102,.3);color:#075E54" onclick="enviarWhatsappLembrete(${i})">
-        📲 WhatsApp lembrete
-      </button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="currentPortalPatientIdx=${i};navigate('portal')">♡ Portal do paciente</button>
-    </div>
-    <div id="pac-chat-section-${i}" style="margin-top:16px">
-      ${renderChatTerapeuta(i, _msgCache[p.id] || [])}
-    </div>
-
-    <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
-      <div style="background:var(--blue-light);border:1px solid rgba(44,95,138,.15);border-radius:10px;padding:12px 14px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
-        <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
-          <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
-          <div style="display:flex;align-items:center;gap:6px">Senha: <strong id="pac-senha-display-${i}" data-visible="0">••••••</strong>
-            <button onclick="_toggleSenhaPortal(${i})" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px" title="Mostrar/ocultar senha">👁</button>
-            <button onclick="redefinirSenhaPaciente(${i})" style="background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
-          </div>
-          <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 Compartilhar acesso via WhatsApp</button>
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(220,38,38,.12);text-align:right">
-            <button onclick="revogarPortalPaciente(${i})" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">Desativar acesso ao portal</button>
-          </div>
-          <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(44,95,138,.12)">
-            <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:5px">🔗 Link da sala de sessão</div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <input id="pac-session-link-${i}" type="url" placeholder="Cole o link da videochamada aqui"
-                value="${escHTML(p.sessionLink||'')}"
-                style="flex:1;font-size:12px;padding:5px 8px;border:1px solid rgba(44,95,138,.25);border-radius:7px;font-family:inherit;color:var(--ink);background:#fff;outline:none"
-                onkeydown="if(event.key==='Enter')salvarSessionLink(${i})"
-              />
-              <button onclick="salvarSessionLink(${i})" style="background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Salvar</button>
-              ${p.sessionLink ? `<button onclick="limparSessionLink(${i})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);border-radius:7px;font-size:11px;padding:5px 8px;cursor:pointer;font-family:inherit">✕</button>` : ''}
-            </div>
-            ${p.sessionLink ? `<div style="font-size:11px;color:var(--sage);margin-top:4px">✓ Link ativo — visível para o paciente no portal</div>` : `<div style="font-size:11px;color:var(--ink-soft);opacity:.7;margin-top:4px">Sem link — paciente verá mensagem de aguardo</div>`}
-          </div>
-        </div>
-      </div>
-      <button class="btn btn-sm" style="color:var(--red);border-color:rgba(192,57,43,.25);background:var(--red-light);justify-content:center;width:100%" onclick="excluirPaciente(${i})">
-        ✕ Excluir paciente
-      </button>
-    </div>`;
+  // Renderiza shell (cabeçalho + barra de abas) e preenche aba ativa
+  renderPatientDetailShell(i);
+  selectPatientTab(currentPatientTab);
 
   // Após renderizar o painel, carrega mensagens e inicia poll
   (function() {
@@ -1216,4 +1268,5 @@ let currentSessionPatientIdx = 0;
 let currentSessionApptId = null; // ID do appointment que iniciou a sessão atual
 let currentPortalPatientIdx = 0;
 let currentPatientIdx = 0;
+let currentPatientTab = 'overview';
 let _editingExerciseId = null;

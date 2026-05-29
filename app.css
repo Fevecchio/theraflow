@@ -509,7 +509,15 @@ tr:last-child td { border-bottom: none; }
 /* ── SPLIT PANELS ── */
 .split { display: grid; grid-template-columns: 340px 1fr; gap: 20px; height: calc(100vh - 160px); }
 .panel-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.panel-detail { overflow-y: auto; }
+.panel-detail { overflow-y: auto; display: flex; flex-direction: column; }
+
+/* ── PATIENT DETAIL TABS ── */
+.patient-tab-bar { display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); flex-shrink: 0; margin: 4px -20px 0; padding: 0 20px; }
+.patient-tab-bar::-webkit-scrollbar { display: none; }
+.ptab { padding: 8px 14px; font-size: 12.5px; font-weight: 500; color: var(--muted); cursor: pointer; border: none; background: transparent; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
+.ptab:hover { color: var(--ink); }
+.ptab.active { color: var(--sage); border-bottom-color: var(--sage); font-weight: 600; }
+.ptab-content { flex: 1; overflow-y: auto; }
 .list-item { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; cursor: pointer; transition: all .15s; box-shadow: var(--shadow); }
 .list-item:hover { border-color: #d8d3c2; background: #fbfaf4; }
 .list-item.active { border-color: var(--sage); border-left: 3px solid var(--sage); padding-left: 14px; background: var(--sage-50); }
