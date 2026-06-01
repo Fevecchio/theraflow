@@ -524,8 +524,9 @@ function showPostSessionFlow() {
           _gerarNotaClinicaIA(patients[currentSessionPatientIdx] || patients[0], _sessionNote).then(function(notaIA) {
             var el = document.getElementById('post-note-text');
             if (notaIA && el && el.tagName !== 'TEXTAREA') {
-              el.style.whiteSpace = 'pre-wrap';
-              el.textContent = notaIA;
+              el.innerHTML =
+                '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:8px 12px;margin-bottom:14px;border-radius:0 8px 8px 0;font-size:12px;color:#92400e;white-space:pre-wrap"><strong>📝 Suas notas da sessão:</strong>\n' + escHTML(_sessionNote.substring(0, 600)) + '</span>' +
+                '<div style="white-space:pre-wrap;font-size:13px;color:#333;line-height:1.6">' + escHTML(notaIA) + '</div>';
             } else {
               var loader = document.getElementById('_note-ia-loader');
               if (loader) loader.remove();
