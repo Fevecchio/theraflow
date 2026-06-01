@@ -99,10 +99,8 @@ async function startSession() {
       _noteEl.value = _tpl;
     }
   }
-  // Reseta contador de marcos
-  const cnt = document.getElementById('transcript-count');
-  if (cnt) cnt.textContent = '';
-  simulateTranscript();
+  // Preenche painel de contexto clínico
+  _renderSessionContext(sp);
 }
 
 function _iniciarTimerSessao() {
@@ -132,22 +130,104 @@ function regenerarNotaSessao() {
   showToast('✦ Nota regenerada pela IA');
 }
 
-function _getTranscriptLines() {
-  const sp = patients[currentSessionPatientIdx] || patients[0];
-  const pLabel = sp ? sp.name.split(' ')[0] : 'Paciente';
-  return [
-    { cls:'who-t', label:'Terapeuta', text:'Como você se sentiu esta semana? Conseguiu usar as estratégias que combinamos?' },
-    { cls:'who-p', label:pLabel, text:'Tentei quase todo dia. Percebi padrões que não via antes.', flag:false },
-    { cls:'who-t', label:'Terapeuta', text:'Que pensamentos apareceram quando você tentou aplicar?' },
-    { cls:'who-p', label:pLabel, text:'Acho que ainda fico preso(a) na ruminação… é difícil sair desse ciclo.', flag:true, flagLabel:'Crença nuclear' },
-    { cls:'who-t', label:'Terapeuta', text:'Você consegue identificar o gatilho quando isso começa?' },
-    { cls:'who-p', label:pLabel, text:'Aprendi a perceber melhor. Quando percebo, já fico um pouco mais calmo(a).', flag:false },
-    { cls:'who-t', label:'Terapeuta', text:'E o que acontece quando você questiona esse pensamento?' },
-    { cls:'who-p', label:pLabel, text:'Fica mais leve. Mas na hora é difícil lembrar… acho que preciso de mais prática.', flag:true, flagLabel:'Marco terapêutico' },
-  ];
+// ── PAINEL DE CONTEXTO CLÍNICO ───────────────────────────────────────────────
+
+function _renderSessionContext(p) {
+  if (!p) return;
+
+  // Card 1: últimas notas (sempre local)
+  var notas = (p.prontuarioNotes || []).slice(-3).reverse();
+  var notasHtml = notas.length
+    ? notas.map(function(n) {
+        var txt = (n.text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g,' ').trim();
+        var trunc = txt.substring(0, 80) + (txt.length > 80 ? '…' : '');
+        return '<div class="sess-nota-item"><span class="sess-nota-date">' + escHTML(n.date || '') + '</span><span class="sess-nota-txt">' + escHTML(trunc) + '</span></div>';
+      }).join('')
+    : '<div class="sess-nota-empty">Nenhuma nota registrada ainda.</div>';
+  var listEl = document.getElementById('sess-notas-list');
+  if (listEl) listEl.innerHTML = notasHtml;
+
+  // Humor médio (últimas 4 entradas)
+  var mh = (p.moodHistory || []).slice(-4);
+  if (mh.length >= 2) {
+    var vals = mh.map(function(e) { return typeof e === 'object' ? (e.value || 0) : Number(e); });
+    var avg = (vals.reduce(function(a,b){return a+b;},0) / vals.length).toFixed(1);
+    var trend = vals[vals.length-1] >= vals[0] ? '↑' : '↓';
+    var humEl = document.getElementById('sess-humor-line');
+    if (humEl) { humEl.textContent = 'Humor recente: ' + avg + '/10 ' + trend; humEl.style.display = ''; }
+  }
+
+  // Cards 2 e 3: usa briefing em cache se existir
+  var cacheKey = p.id || p.name;
+  var cache = typeof _getBriefingCache === 'function' ? _getBriefingCache(cacheKey) : null;
+  if (cache && cache.content) {
+    _renderSessFromBriefing(p, cache.content);
+  } else {
+    _renderSessLocalFallback(p);
+  }
 }
-const transcriptLines = _getTranscriptLines();
-let transcriptMuted = false;
+
+function _parseBriefingSection(content, title) {
+  var re = new RegExp(title + '[:\\s]+([\\s\\S]*?)(?=\\n[A-ZÁÉÍÓÚ]{3,}[:\\s]|$)', 'i');
+  var m = content.match(re);
+  return m ? m[1].trim() : '';
+}
+
+function _renderSessFromBriefing(p, content) {
+  var foco   = _parseBriefingSection(content, 'FOCO RECOMENDADO PARA HOJE');
+  var padrao = _parseBriefingSection(content, 'PADRÃO IDENTIFICADO');
+  var alerta = _parseBriefingSection(content, 'PONTO DE ATENÇÃO');
+  var html2  = '';
+  if (foco)   html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(foco) + '</span></div>';
+  if (padrao) html2 += '<div class="insight-item"><span class="insight-icon">🔁</span><span>' + escHTML(padrao) + '</span></div>';
+  if (alerta) html2 += '<div class="insight-item"><span class="insight-icon">⚠</span><span>' + escHTML(alerta) + '</span></div>';
+  html2 += '<div class="sess-briefing-badge">✦ Baseado no briefing de hoje</div>';
+  var el2 = document.getElementById('sess-contexto-body');
+  if (el2) el2.innerHTML = html2;
+
+  var perguntas = _parseBriefingSection(content, 'PERGUNTAS SUGERIDAS');
+  var linhas = perguntas.split(/\n/)
+    .map(function(l){ return l.replace(/^[-•\d.]+\s*/,'').trim(); })
+    .filter(Boolean).slice(0, 3);
+  _renderSessPerguntas(linhas);
+}
+
+function _renderSessLocalFallback(p) {
+  var temas = typeof buildThemes === 'function' ? buildThemes(p) : [];
+  var temasStr = temas.slice(0,3).map(function(t){ return t.word + ' (' + t.count + '×)'; }).join(', ') || '—';
+  var html2 = '<div class="insight-item"><span class="insight-icon">🔁</span><span>Temas: ' + escHTML(temasStr) + '</span></div>';
+  var metasArr = Array.isArray(p.metas) ? p.metas.filter(function(m){ return m && m.texto; }).slice(0,2) : [];
+  if (metasArr.length) {
+    html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(metasArr.map(function(m){ return m.texto; }).join(' · ').substring(0,100)) + '</span></div>';
+  } else if (typeof p.metas === 'string' && p.metas.trim()) {
+    html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(p.metas.substring(0,100)) + '</span></div>';
+  }
+  html2 += '<div class="insight-item"><span class="insight-icon">📈</span><span>Sessão ' + (p.sessions||0) + ' · ' + (p.progress||0) + '% de evolução</span></div>';
+  html2 += '<div class="sess-briefing-badge" style="color:var(--muted)">💡 Gere o briefing antes da sessão para insights detalhados</div>';
+  var el2 = document.getElementById('sess-contexto-body');
+  if (el2) el2.innerHTML = html2;
+
+  var abord = (p.abordagem || '').toLowerCase();
+  var mapa = {
+    'tcc':        ['Quais pensamentos automáticos surgiram esta semana?','Que evidências contrariam essa crença?','Como foi a tarefa de casa combinada?'],
+    'cognitivo':  ['Quais pensamentos automáticos surgiram esta semana?','Que evidências contrariam essa crença?','Como foi a tarefa de casa combinada?'],
+    'psicanál':   ['O que ficou em aberto da sessão anterior?','Que associações surgem espontaneamente?','Há algo que prefere não trazer?'],
+    'psicanali':  ['O que ficou em aberto da sessão anterior?','Que associações surgem espontaneamente?','Há algo que prefere não trazer?'],
+    'sistêm':     ['Como o sistema familiar reagiu esta semana?','Quem mais é afetado por esse padrão?','O que mudou nas relações?'],
+    'sistem':     ['Como o sistema familiar reagiu esta semana?','Quem mais é afetado por esse padrão?','O que mudou nas relações?'],
+    'humanis':    ['Como você se sentiu consigo mesmo esta semana?','O que o aproxima de quem quer ser?','O que precisa de mais espaço aqui?'],
+    'act':        ['Em que valores quer se apoiar hoje?','O que a mente diz que te impede?','Que ação pequena comprometeria esta semana?'],
+  };
+  var chave = Object.keys(mapa).find(function(k){ return abord.includes(k); });
+  _renderSessPerguntas(chave ? mapa[chave] : ['Como você está chegando hoje?','O que quer trazer para esta sessão?','O que ficou da última vez?']);
+}
+
+function _renderSessPerguntas(linhas) {
+  var el = document.getElementById('sess-perguntas');
+  if (!el || !linhas.length) return;
+  el.innerHTML = '<div class="sess-perguntas-title">Perguntas sugeridas</div>' +
+    linhas.map(function(l){ return '<div class="sess-pergunta">• ' + escHTML(l) + '</div>'; }).join('');
+}
 
 // ── WHEREBY INTEGRATION ──────────────────────────────────────────────────────
 //
@@ -602,13 +682,11 @@ function editPostNote() {
 function closePostSession() {
   const modal = document.getElementById('modal-post-session');
   if (modal) modal.remove();
-  navigate('prontuarios');
-  // Abre prontuário do paciente da sessão atual
-  setTimeout(() => {
-    const list = document.querySelector('#page-prontuarios .panel-list');
-    const items = list?.querySelectorAll('.list-item');
-    if (items && items[currentSessionPatientIdx]) items[currentSessionPatientIdx].click();
-  }, 100);
+  navigate('pacientes');
+  setTimeout(function() {
+    if (typeof selectPatient === 'function') selectPatient(currentSessionPatientIdx);
+    if (typeof selectPatientTab === 'function') selectPatientTab('notas');
+  }, 150);
 }
 
 function indexPostSession() {

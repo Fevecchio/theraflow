@@ -554,12 +554,15 @@ tr:last-child td { border-bottom: none; }
 .session-timer { position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,.5); color: #fff; font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
 .ai-panel { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
 .ai-section-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
-.transcript-feed { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-.transcript-line { display: flex; gap: 10px; align-items: flex-start; }
-.who { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; margin-top: 2px; }
-.who-t { background: var(--sage-light); color: var(--sage); }
-.who-p { background: var(--blue-light); color: var(--blue); }
-.transcript-text { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+.sess-nota-item { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.sess-nota-item:last-child { border-bottom: none; }
+.sess-nota-date { font-size: 11px; color: var(--muted); font-weight: 600; }
+.sess-nota-txt { font-size: 12px; color: var(--ink-soft); line-height: 1.4; }
+.sess-nota-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
+.sess-humor { font-size: 12px; color: var(--sage); font-weight: 600; margin-top: 8px; }
+.sess-briefing-badge { font-size: 11px; color: var(--sage); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.sess-perguntas-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.sess-pergunta { font-size: 12px; color: var(--ink-soft); line-height: 1.5; padding: 3px 0; }
 .insight-item { display: flex; gap: 10px; padding: 12px 14px; background: var(--amber-light); border-radius: 10px; border-left: 3px solid var(--amber); margin-bottom: 8px; font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
 /* Banner primeiro paciente */
 .first-patient-banner { background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%); border: 1.5px dashed #b4c6f5; border-radius: 16px; padding: 40px 32px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; margin-bottom: 24px; }
@@ -1068,7 +1071,6 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   }
   .video-main { min-height: 240px; }
   .ai-panel { overflow-y: visible; }
-  .transcript-feed { max-height: 160px; }
 }
 
 /* ── MOBILE SIDEBAR ── */
@@ -1594,16 +1596,6 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 .sup-loading-dot:nth-child(2) { animation-delay: -.16s; }
 @keyframes sup-bounce { 0%,80%,100%{transform:scale(0);opacity:.3} 40%{transform:scale(1);opacity:1} }
 
-/* ── TRANSCRIPT EVIDENCE ── */
-.transcript-line.flagged .transcript-text {
-  background: var(--purple-light); border-radius: 6px; padding: 2px 6px;
-  border-left: 2px solid var(--purple); color: var(--ink);
-}
-.transcript-flag-badge {
-  font-size: 9px; font-weight: 700; color: var(--purple);
-  background: var(--purple-light); padding: 1px 5px; border-radius: 4px;
-  margin-left: 6px; letter-spacing: .3px; text-transform: uppercase;
-}
 .evidence-quote {
   background: var(--purple-light); border-left: 3px solid var(--purple);
   border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 8px 0;

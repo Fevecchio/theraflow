@@ -174,25 +174,6 @@ function atualizarTrialUI(count) {
 
 // ── /WHEREBY INTEGRATION ─────────────────────────────────────────────────────
 
-function toggleTranscriptMute() {
-  transcriptMuted = !transcriptMuted;
-  const btn = document.getElementById('mute-transcript-btn');
-  const dot = document.getElementById('transcript-rec-dot');
-  const label = document.getElementById('transcript-rec-label');
-  if (transcriptMuted) {
-    btn.style.background = 'rgba(192,57,43,.5)';
-    btn.title = 'Retomar transcrição';
-    if (dot) { dot.style.background = '#666'; dot.style.animation = 'none'; }
-    if (label) label.textContent = 'Transcrição pausada — não está sendo registrado';
-    showToast('Transcrição pausada. Este trecho não será registrado.');
-  } else {
-    btn.style.background = '';
-    btn.title = 'Silenciar transcrição';
-    if (dot) { dot.style.background = 'var(--red)'; dot.style.animation = 'blink 1s infinite'; }
-    if (label) label.textContent = 'Gravando com consentimento ativo';
-    showToast('Transcrição retomada.');
-  }
-}
 
 function showSessionLink() {
   const _slp = patients[currentSessionPatientIdx] || patients[0];
@@ -257,10 +238,6 @@ function sendLinkWhatsApp(link) {
   showToast('📲 Link enviado e salvo no portal de ' + _wsNome);
 }
 
-let tIdx = 0;
-let sessionTranscriptLogged = [];
-let _transcriptActive = false; // flag para parar simulação ao navegar
-
 /* ── EMAIL via Resend (/api/send-email) ── */
 async function _sendEmail(template, to, data) {
   try {
@@ -283,45 +260,6 @@ async function _sendEmail(template, to, data) {
   }
 }
 
-function stopTranscriptSimulation() { _transcriptActive = false; }
-
-function simulateTranscript() {
-  const feed = document.getElementById('transcript-feed');
-  if(!feed) return;
-  feed.innerHTML = ''; tIdx = 0; sessionTranscriptLogged = []; _transcriptActive = true;
-  // Atualiza labels de paciente no transcript com nome real
-  const _stP = patients[currentSessionPatientIdx] || patients[0];
-  const _stFirst = _stP ? _stP.name.split(' ')[0] : 'Paciente';
-  transcriptLines.forEach(l => { if (l.cls === 'who-p') l.label = _stFirst; });
-  const countEl = document.getElementById('transcript-count');
-  const add = () => {
-    if(!_transcriptActive || !document.getElementById('transcript-feed')) return;
-    if(tIdx < transcriptLines.length) {
-      const l = transcriptLines[tIdx];
-      const d = document.createElement('div');
-      d.className = 'transcript-line fade-in' + (l.flag ? ' flagged' : '');
-      d.innerHTML = `<span class="who ${l.cls}">${escHTML(l.label[0])}</span><span class="transcript-text">${escHTML(l.text)}${l.flag ? `<span class="transcript-flag-badge">✦ ${escHTML(l.flagLabel)}</span>` : ''}</span>`;
-      feed.appendChild(d); feed.scrollTop = feed.scrollHeight;
-      sessionTranscriptLogged.push(l);
-      const marcos = sessionTranscriptLogged.filter(l => l.flag).length;
-      if (countEl) countEl.textContent = marcos > 0 ? `${marcos} marco${marcos > 1 ? 's' : ''} clínico${marcos > 1 ? 's' : ''} detectado${marcos > 1 ? 's' : ''}` : '';
-      // Show signal badge when a flagged line appears
-      if (l.flag) {
-        const sig = document.getElementById('transcript-sup-signal');
-        if (sig) { sig.style.display = 'inline-flex'; setTimeout(() => { sig.style.display = 'none'; }, 3000); }
-      }
-      tIdx++;
-      setTimeout(add, 3200 + Math.random()*1800);
-    } else {
-      const d = document.createElement('div');
-      d.className = 'transcript-line fade-in';
-      d.innerHTML = `<span class="who who-t">T</span><span class="transcript-text" style="font-style:italic;color:var(--muted)">transcrevendo…</span>`;
-      feed.appendChild(d); feed.scrollTop = feed.scrollHeight;
-      setTimeout(() => { tIdx = 0; setTimeout(add, 3000); }, 4000);
-    }
-  };
-  setTimeout(add, 1200);
-}
 
 // ── AGENDA ───────────────────────────────────────────────────────────────────
 

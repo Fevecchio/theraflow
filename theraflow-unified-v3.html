@@ -841,42 +841,24 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </div>
     </div>
     <div class="ai-panel">
-      <div class="card card-sm" style="border-left:3px solid var(--sage)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-          <div style="display:flex;align-items:center;gap:7px">
-            <span style="font-size:14px">🎙</span>
-            <span class="ai-section-title" style="margin-bottom:0">Monitor clínico</span>
-          </div>
-          <span id="transcript-sup-signal" style="display:none;font-size:11px;color:var(--purple);background:var(--purple-light);padding:2px 8px;border-radius:10px;font-weight:600">✦ Trecho sinalizado</span>
-        </div>
-        <div style="font-size:11px;color:var(--sage);background:var(--green-light);border-radius:6px;padding:7px 10px;margin-bottom:10px;line-height:1.6;padding-left:21px">
-          🎙 Prévia simulada · ao encerrar, Whereby envia a gravação → Whisper transcreve os dois lados → Claude gera a nota
-        </div>
-        <div class="transcript-feed" id="transcript-feed"></div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-          <div id="transcript-rec-dot" style="width:8px;height:8px;border-radius:50%;background:var(--red);animation:blink 1s infinite;flex-shrink:0"></div>
-          <span id="transcript-rec-label" style="font-size:12px;color:var(--muted)">Gravando · só sua voz agora</span>
-          <span style="margin-left:auto;font-size:11px;color:var(--purple);font-weight:600" id="transcript-count"></span>
-        </div>
+      <div class="card card-sm" id="sess-historico">
+        <div class="ai-section-title">📋 Últimas sessões</div>
+        <div id="sess-notas-list"></div>
+        <div id="sess-humor-line" style="display:none" class="sess-humor"></div>
       </div>
-      <div class="card card-sm">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="ai-section-title" style="margin-bottom:0">Insights da IA</div>
-          <span style="font-size:10px;color:var(--muted);background:#f5f5f5;border-radius:10px;padding:3px 8px;white-space:nowrap">📁 Sessão 11 · 18/03</span>
-        </div>
-        <div style="font-size:11px;color:var(--muted);background:#f9f9f9;border-radius:6px;padding:6px 10px;margin-bottom:10px;line-height:1.5">Baseado na última sessão indexada. Os insights desta sessão estarão disponíveis após encerrar e indexar.</div>
-        <div class="insight-item"><span class="insight-icon">🔁</span><span><strong>Tema recorrente:</strong> autoexigência — apareceu em 7 das últimas 11 sessões.</span></div>
-        <div class="insight-item"><span class="insight-icon">📊</span><span><strong>Evolução:</strong> ansiedade caiu de 8/10 para ~5/10 nas últimas 6 semanas.</span></div>
-        <div class="insight-item" style="background:var(--blue-light);border-color:var(--blue)"><span class="insight-icon">💡</span><span><strong>Sugestão (Sessão 11):</strong> paciente mencionou "não consigo desligar" — oportunidade para explorar mindfulness nesta sessão.</span></div>
+      <div class="card card-sm" id="sess-contexto">
+        <div class="ai-section-title">✦ Contexto clínico</div>
+        <div id="sess-contexto-body"></div>
       </div>
-      <div class="card card-sm">
-        <div class="ai-section-title">Ficha do paciente</div>
+      <div class="card card-sm" id="sess-guia">
+        <div class="ai-section-title">🧭 Para esta sessão</div>
         <div style="display:flex;flex-direction:column;gap:8px" id="session-ficha">
           <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Abordagem</span><span id="sf-abordagem">—</span></div>
           <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Sessão</span><span id="sf-sessao">—</span></div>
           <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">CID</span><span id="sf-cid">—</span></div>
           <button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="navigate('prontuarios')">Ver prontuário →</button>
         </div>
+        <div id="sess-perguntas" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"></div>
       </div>
     </div>
   </div>
