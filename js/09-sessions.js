@@ -291,6 +291,7 @@ function showPostSessionFlow() {
   const _tNome = _tNomeCompleto.split(' ')[0];
   const _tInitials = _tNomeCompleto.trim().split(' ').filter(w=>w).map(w=>w[0].toUpperCase()).slice(0,2).join('');
   const _quickNotes = (document.getElementById('session-quick-notes')?.value || '').trim();
+  const _sessionNote = (document.getElementById('session-ai-note')?.value || '').trim();
 
   const modal = document.createElement('div');
   modal.id = 'modal-post-session';
@@ -513,10 +514,15 @@ function showPostSessionFlow() {
     if (s1) s1.style.display = 'none';
     if (s2) {
       s2.style.display = 'block';
-      // Gera nota estruturada pela abordagem
+      // Usa anotações do terapeuta se existirem; senão gera template pela abordagem
       var noteEl = document.getElementById('post-note-text');
       if (noteEl && noteEl.tagName !== 'TEXTAREA') {
-        noteEl.innerHTML = _gerarNotaEstrutural();
+        if (_sessionNote) {
+          noteEl.style.whiteSpace = 'pre-wrap';
+          noteEl.textContent = _sessionNote;
+        } else {
+          noteEl.innerHTML = _gerarNotaEstrutural();
+        }
       }
       // Gera resumo para o portal do paciente via IA
       var _spForResumo = patients[currentSessionPatientIdx] || patients[0];
@@ -566,8 +572,8 @@ function _gerarNotaEstrutural() {
   var nome = sp ? _firstName(sp.name) : 'Paciente';
   var sessaoNum = sp ? (sp.sessions||0) + 1 : 1;
   var hoje = new Date().toLocaleDateString('pt-BR');
-  var qn = (document.getElementById('session-quick-notes')?.value || '').trim();
-  var notasHtml = qn ? '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:6px 10px;margin-bottom:10px;border-radius:0 6px 6px 0;font-size:12px;color:#92400e"><strong>Anotações do terapeuta:</strong> ' + qn + '</span>' : '';
+  var qn = (document.getElementById('session-quick-notes')?.value || document.getElementById('session-ai-note')?.value || '').trim();
+  var notasHtml = qn ? '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:6px 10px;margin-bottom:10px;border-radius:0 6px 6px 0;font-size:12px;color:#92400e"><strong>Notas da sessão:</strong> ' + escHTML(qn.substring(0, 300)) + '</span>' : '';
   var corpo = '';
   if (abord.includes('tcc') || abord.includes('cognitivo')) {
     corpo = '<strong>S — Subjetivo:</strong> ' + nome + ' apresentou-se à sessão ' + sessaoNum + '. Relato do paciente a ser preenchido após revisão da transcrição.<br/><br/>' +
