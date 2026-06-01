@@ -536,7 +536,7 @@ tr:last-child td { border-bottom: none; }
 
 /* ── SESSION ── */
 .session-layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; height: calc(100vh - 160px); }
-.video-area { background: #0f1410; border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+.video-area { background: #0f1410; border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; height: 100%; }
 .video-main { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
 .video-placeholder { text-align: center; color: #6a7a6d; }
 .video-avatar-large { width: 80px; height: 80px; border-radius: 50%; background: #2a3f2d; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #8fb89c; margin: 0 auto 12px; }

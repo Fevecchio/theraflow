@@ -827,14 +827,6 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <button class="ctrl-btn ctrl-btn-red" onclick="endWherebySession()" title="Encerrar sessão" style="font-size:13px;position:relative">✕<span style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.7);white-space:nowrap">Encerrar</span></button>
         </div>
       </div>
-      <div class="card card-sm">
-        <div class="ai-section-title" style="margin-bottom:10px">Nota pós-sessão <span style="font-weight:400;color:var(--muted)">(IA redigiu · você revisa)</span></div>
-        <textarea id="session-ai-note" class="note-area" style="min-height:110px;font-size:13px;line-height:1.6">Paciente chegou demonstrando leve agitação. Relatou semana difícil no trabalho com sobrecarga de demandas. Foram trabalhadas técnicas de reestruturação cognitiva frente a pensamentos catastróficos sobre performance profissional. Paciente demonstrou boa adesão e insight.</textarea>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-ghost btn-sm" onclick="regenerarNotaSessao()">↻ Regenerar</button>
-          <button class="btn btn-primary btn-sm" style="flex:1" onclick="indexPostSession()">✓ Salvar e indexar na IA</button>
-        </div>
-      </div>
     </div>
     <div class="ai-panel">
       <div class="card card-sm" id="sess-historico">
@@ -855,6 +847,15 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="navigate('prontuarios')">Ver prontuário →</button>
         </div>
         <div id="sess-perguntas" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"></div>
+      </div>
+      <div class="card card-sm" id="sess-nota-card">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+          <div class="ai-section-title" style="margin-bottom:0">✏ Notas da sessão</div>
+          <button class="btn btn-ghost btn-sm" onclick="regenerarNotaSessao()" style="font-size:11px;padding:2px 8px">↻ IA</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Anote durante a consulta · IA completa ao encerrar</div>
+        <textarea id="session-ai-note" class="note-area" style="min-height:130px;font-size:12px;line-height:1.6"></textarea>
+        <button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px;justify-content:center" onclick="indexPostSession()">✓ Salvar e indexar na IA</button>
       </div>
     </div>
   </div>
