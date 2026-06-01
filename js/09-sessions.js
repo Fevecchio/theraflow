@@ -194,7 +194,7 @@ function _renderSessFromBriefing(p, content) {
 
 function _renderSessLocalFallback(p) {
   var temas = typeof buildThemes === 'function' ? buildThemes(p) : [];
-  var temasStr = temas.slice(0,3).map(function(t){ return t.word + ' (' + t.count + '×)'; }).join(', ') || '—';
+  var temasStr = temas.slice(0,3).map(function(t){ return t.label + ' (' + t.freq + '×)'; }).join(', ') || '—';
   var html2 = '<div class="insight-item"><span class="insight-icon">🔁</span><span>Temas: ' + escHTML(temasStr) + '</span></div>';
   var metasArr = Array.isArray(p.metas) ? p.metas.filter(function(m){ return m && m.texto; }).slice(0,2) : [];
   if (metasArr.length) {
