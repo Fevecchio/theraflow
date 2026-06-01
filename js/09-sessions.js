@@ -305,7 +305,7 @@ function showPostSessionFlow() {
   const _durStr = _durMin > 0 ? `${_durMin} min` : '< 1 min';
 
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.3)">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
 
       <!-- STEP 1: Whereby finalizando + Whisper processando -->
       <div id="post-step-1" style="padding:36px 40px;text-align:center">
@@ -618,7 +618,7 @@ async function _gerarNotaClinicaIA(sp, sessionNotes) {
   if (!sessionNotes || !sessionNotes.trim()) return null;
   var abord = (sp && sp.abordagem) ? sp.abordagem : 'TCC';
   var sessao = sp ? (sp.sessions||0)+1 : 1;
-  var system = 'Você é um assistente clínico para psicólogos brasileiros. Gere uma nota clínica estruturada e profissional em português, baseada nas anotações do terapeuta. Use o formato adequado para a abordagem indicada (SOAP para TCC; formato livre para Psicanálise; etc). Seja objetivo, clínico e conciso. Máximo 300 palavras.';
+  var system = 'Você é um assistente clínico para psicólogos brasileiros. Gere uma nota clínica estruturada em texto simples (sem markdown, sem asteriscos, sem hashtags, sem traços horizontais). Use o formato SOAP para TCC (S — Subjetivo, O — Objetivo, A — Avaliação, P — Plano) ou formato adequado à abordagem. Seja objetivo e conciso. Máximo 250 palavras.';
   var user = 'Paciente: ' + (sp ? sp.name : 'Paciente') + '. Abordagem: ' + abord + '. Sessão ' + sessao + '.\n\nAnotações do terapeuta durante a sessão:\n' + sessionNotes.substring(0, 800) + '\n\nGere a nota clínica estruturada completa baseada nessas anotações.';
   try {
     var res = await fetchWithTimeout('/api/briefing', {
@@ -628,11 +628,24 @@ async function _gerarNotaClinicaIA(sp, sessionNotes) {
     }, 25000);
     if (!res.ok) return null;
     var data = await res.json();
-    return (data.content || '').trim() || null;
+    var raw = (data.content || '').trim();
+    return raw ? _stripMd(raw) : null;
   } catch(e) {
     console.warn('[NotaClinicaIA]', e.message);
     return null;
   }
+}
+
+function _stripMd(txt) {
+  return txt
+    .replace(/^#{1,4}\s*/gm, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/^---+$/gm, '')
+    .replace(/^___+$/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 async function _gerarResumoPortalIA(sp, noteText) {
