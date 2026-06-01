@@ -514,14 +514,23 @@ function showPostSessionFlow() {
     if (s1) s1.style.display = 'none';
     if (s2) {
       s2.style.display = 'block';
-      // Usa anotações do terapeuta se existirem; senão gera template pela abordagem
+      // Sempre mostra template estruturado (já inclui bloco de notas do terapeuta)
       var noteEl = document.getElementById('post-note-text');
       if (noteEl && noteEl.tagName !== 'TEXTAREA') {
+        noteEl.innerHTML = _gerarNotaEstrutural();
+        // Se há notas do terapeuta, gera nota SOAP real via IA em background
         if (_sessionNote) {
-          noteEl.style.whiteSpace = 'pre-wrap';
-          noteEl.textContent = _sessionNote;
-        } else {
-          noteEl.innerHTML = _gerarNotaEstrutural();
+          noteEl.insertAdjacentHTML('afterbegin', '<div id="_note-ia-loader" style="font-size:11px;color:var(--sage,#4a7c59);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;animation:spin .8s linear infinite">⟳</span> Claude gerando nota clínica a partir das suas anotações…</div>');
+          _gerarNotaClinicaIA(patients[currentSessionPatientIdx] || patients[0], _sessionNote).then(function(notaIA) {
+            var el = document.getElementById('post-note-text');
+            if (notaIA && el && el.tagName !== 'TEXTAREA') {
+              el.style.whiteSpace = 'pre-wrap';
+              el.textContent = notaIA;
+            } else {
+              var loader = document.getElementById('_note-ia-loader');
+              if (loader) loader.remove();
+            }
+          });
         }
       }
       // Gera resumo para o portal do paciente via IA
@@ -603,6 +612,27 @@ function _gerarNotaEstrutural() {
       '<strong>Próximo passo:</strong> Questão a manter em aberto para próxima sessão.';
   }
   return notasHtml + '<div style="font-size:12px;color:#888;margin-bottom:8px">Sessão ' + sessaoNum + ' · ' + hoje + ' · ' + (sp ? sp.abordagem : 'Psicologia Clínica') + '</div>' + corpo;
+}
+
+async function _gerarNotaClinicaIA(sp, sessionNotes) {
+  if (!sessionNotes || !sessionNotes.trim()) return null;
+  var abord = (sp && sp.abordagem) ? sp.abordagem : 'TCC';
+  var sessao = sp ? (sp.sessions||0)+1 : 1;
+  var system = 'Você é um assistente clínico para psicólogos brasileiros. Gere uma nota clínica estruturada e profissional em português, baseada nas anotações do terapeuta. Use o formato adequado para a abordagem indicada (SOAP para TCC; formato livre para Psicanálise; etc). Seja objetivo, clínico e conciso. Máximo 300 palavras.';
+  var user = 'Paciente: ' + (sp ? sp.name : 'Paciente') + '. Abordagem: ' + abord + '. Sessão ' + sessao + '.\n\nAnotações do terapeuta durante a sessão:\n' + sessionNotes.substring(0, 800) + '\n\nGere a nota clínica estruturada completa baseada nessas anotações.';
+  try {
+    var res = await fetchWithTimeout('/api/briefing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
+      body: JSON.stringify({ systemPrompt: system, userPrompt: user, patientData: sp })
+    }, 25000);
+    if (!res.ok) return null;
+    var data = await res.json();
+    return (data.content || '').trim() || null;
+  } catch(e) {
+    console.warn('[NotaClinicaIA]', e.message);
+    return null;
+  }
 }
 
 async function _gerarResumoPortalIA(sp, noteText) {
