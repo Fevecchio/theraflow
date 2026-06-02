@@ -1027,6 +1027,7 @@ function pacIncrementarEx(pidx, exId) {
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.exercises = p.exercises;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
   renderPatientApp(pidx, pacs);
+  if (typeof pacNavTo === 'function') pacNavTo('ex');
 }
 
 
@@ -1424,7 +1425,10 @@ function pacToggleEx(pidx, exId, patientName) {
   if (ex) ex.done = !ex.done;
   localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof patients !== 'undefined' && patients[pidx]) patients[pidx].exercises = p.exercises;
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.exercises = p.exercises;
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
   renderPatientApp(pidx, pacs);
+  if (typeof pacNavTo === 'function') pacNavTo('ex');
 }
 
 function pacToggleMeta(pidx, metaId, cb, patientName) {
@@ -1434,7 +1438,9 @@ function pacToggleMeta(pidx, metaId, cb, patientName) {
   if (m) m.done = cb.checked;
   localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof patients !== 'undefined' && patients[pidx]) patients[pidx].portalMetas = p.portalMetas;
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
   renderPatientApp(pidx, pacs);
+  if (typeof pacNavTo === 'function') pacNavTo('me');
 }
 
 function pacSalvarDiario(tipo, idx) {
