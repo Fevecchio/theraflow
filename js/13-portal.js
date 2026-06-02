@@ -987,12 +987,12 @@ function renderPatientApp(idx, pacs) {
         + '<div id="pac-senha-chevron" style="font-size:11px;color:var(--muted);transition:transform .2s">▼</div>'
       + '</div>'
       + '<div id="pac-alterar-senha-form" style="display:none;padding:4px 0 8px">'
-        + '<div style="margin-bottom:8px"><input id="pac-senha-atual" type="password" placeholder="Senha atual" class="pac-flow-input" style="margin-bottom:0"/></div>'
-        + '<div style="margin-bottom:8px"><input id="pac-senha-nova" type="password" placeholder="Nova senha (mín. 6 caracteres)" class="pac-flow-input" style="margin-bottom:0"/></div>'
-        + '<div style="margin-bottom:10px"><input id="pac-senha-nova2" type="password" placeholder="Confirmar nova senha" class="pac-flow-input" style="margin-bottom:0"/></div>'
-        + '<div id="pac-senha-alterar-err" style="display:none;font-size:13px;color:#c0392b;margin-bottom:8px"></div>'
-        + '<div id="pac-senha-alterar-ok" style="display:none;font-size:13px;color:var(--sage);margin-bottom:8px">✓ Senha alterada com sucesso!</div>'
-        + '<button onclick="pacConfirmarAlteracaoSenha()" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Salvar nova senha</button>'
+        + '<div style="position:relative;margin-bottom:8px"><input id="pac-senha-atual" type="password" placeholder="Senha atual" class="pac-flow-input" autocomplete="current-password" style="margin-bottom:0;padding-right:40px"/><span onclick="var e=document.getElementById(\'pac-senha-atual\');e.type=e.type===\'password\'?\'text\':\'password\'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none">👁</span></div>'
+        + '<div style="position:relative;margin-bottom:8px"><input id="pac-senha-nova" type="password" placeholder="Nova senha (mín. 6 caracteres)" class="pac-flow-input" autocomplete="new-password" style="margin-bottom:0;padding-right:40px"/><span onclick="var e=document.getElementById(\'pac-senha-nova\');e.type=e.type===\'password\'?\'text\':\'password\'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none">👁</span></div>'
+        + '<div style="position:relative;margin-bottom:10px"><input id="pac-senha-nova2" type="password" placeholder="Confirmar nova senha" class="pac-flow-input" autocomplete="new-password" style="margin-bottom:0;padding-right:40px"/><span onclick="var e=document.getElementById(\'pac-senha-nova2\');e.type=e.type===\'password\'?\'text\':\'password\'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none">👁</span></div>'
+        + '<div id="pac-senha-alterar-err" style="display:none;font-size:13px;color:#c0392b;margin-bottom:8px;padding:8px 10px;background:#fff0f0;border-radius:7px;border:1px solid #fcc"></div>'
+        + '<div id="pac-senha-alterar-ok" style="display:none;font-size:13px;color:var(--sage);margin-bottom:8px;padding:8px 10px;background:#f0faf4;border-radius:7px;border:1px solid rgba(74,124,89,.3)">✓ Senha alterada com sucesso!</div>'
+        + '<button id="pac-senha-salvar-btn" onclick="pacConfirmarAlteracaoSenha()" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Salvar nova senha</button>'
       + '</div>'
     + '</div></div>'
   + '</div>'  /* /pac-tab-me */
@@ -1291,7 +1291,11 @@ async function pacConfirmarAlteracaoSenha() {
     senhaValida = (atual === defaultPwd);
   }
 
-  if (!senhaValida) { errEl.textContent = 'Senha atual incorreta.'; errEl.style.display = ''; return; }
+  if (!senhaValida) { errEl.textContent = 'Senha atual incorreta. Verifique e tente novamente.'; errEl.style.display = ''; return; }
+
+  // Estado de loading no botão
+  var btnSalvar = document.getElementById('pac-senha-salvar-btn');
+  if (btnSalvar) { btnSalvar.textContent = 'Salvando…'; btnSalvar.disabled = true; }
 
   // Salva nova senha
   var hashNova = await _portalHash(nova);
@@ -1321,11 +1325,13 @@ async function pacConfirmarAlteracaoSenha() {
     })();
   }
 
+  if (btnSalvar) { btnSalvar.textContent = 'Salvar nova senha'; btnSalvar.disabled = false; }
   okEl.style.display = '';
   ['pac-senha-atual','pac-senha-nova','pac-senha-nova2'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.value = '';
   });
-  setTimeout(function(){ pacToggleAlterarSenha(); }, 2000);
+  if (typeof showToast === 'function') showToast('Senha alterada com sucesso! 🔐');
+  setTimeout(function(){ pacToggleAlterarSenha(); }, 3000);
 }
 
 function pacSalvarMood(idx) {
