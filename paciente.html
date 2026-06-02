@@ -214,30 +214,6 @@ async function _portalHash(senha) {
   }
 }
 
-// Overrides via window.* para garantir que sobrescrevem 04-auth.js
-window.voltarLoginTerapeuta = function() { window.location.href = '/app'; };
-
-// Override de sairPaciente via atribuição (garante que sobrescreve 04-auth.js)
-window.sairPaciente = function() {
-  if (typeof supaPatient !== 'undefined') supaPatient.auth.signOut().catch(function(){});
-  _loggedPatientIdx = null;
-  _loggedPatientData = null;
-  _therapistPatientsBackup = null;
-  document.getElementById('tf-patient-app-layer').classList.remove('open');
-  document.getElementById('tf-patient-app-layer').style.display = '';
-  document.getElementById('tf-patient-login-layer').classList.add('open');
-  var emailEl = document.getElementById('pac-login-email');
-  var senhaEl = document.getElementById('pac-login-senha');
-  if (emailEl) emailEl.value = '';
-  if (senhaEl) senhaEl.value = '';
-  setTimeout(function(){ if (emailEl) emailEl.focus(); }, 100);
-};
-
-window.irParaLoginPaciente = function() {
-  document.getElementById('tf-patient-login-layer').classList.add('open');
-  setTimeout(function(){ document.getElementById('pac-login-email').focus(); }, 100);
-};
-
 // Fluxo pós-login: verifica primeiro acesso → onboarding
 function _pacPosLogin(p, idx, pacs) {
   // Primeiro acesso = ainda não tem senha personalizada
@@ -414,6 +390,28 @@ async function _tryRestorePacientSession() {
 
 // ── Init principal ──
 document.addEventListener('DOMContentLoaded', function() {
+  // Overrides executados aqui, após todos os <script defer> externos terem rodado
+  // (DOMContentLoaded dispara depois dos deferred scripts — inline <script defer> é ignorado)
+  window.voltarLoginTerapeuta = function() { window.location.href = '/app'; };
+  window.irParaLoginPaciente = function() {
+    document.getElementById('tf-patient-login-layer').classList.add('open');
+    setTimeout(function(){ document.getElementById('pac-login-email').focus(); }, 100);
+  };
+  window.sairPaciente = function() {
+    if (typeof supaPatient !== 'undefined') supaPatient.auth.signOut().catch(function(){});
+    _loggedPatientIdx = null;
+    _loggedPatientData = null;
+    _therapistPatientsBackup = null;
+    document.getElementById('tf-patient-app-layer').classList.remove('open');
+    document.getElementById('tf-patient-app-layer').style.display = '';
+    document.getElementById('tf-patient-login-layer').classList.add('open');
+    var emailEl = document.getElementById('pac-login-email');
+    var senhaEl = document.getElementById('pac-login-senha');
+    if (emailEl) emailEl.value = '';
+    if (senhaEl) senhaEl.value = '';
+    setTimeout(function(){ if (emailEl) emailEl.focus(); }, 100);
+  };
+
   _prePreencharEmail();
 
   // Aguarda JS deferred carregar, depois tenta restaurar sessão
