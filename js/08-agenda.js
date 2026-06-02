@@ -666,8 +666,15 @@ function renderWeekView() {
   var _hConfigW = carregarHorarios();
   var _hTrabalhoIniW = _hConfigW ? parseInt((_hConfigW.inicio||'08:00').split(':')[0]) : 8;
   var _hTrabalhoFimW = _hConfigW ? parseInt((_hConfigW.fim||'18:00').split(':')[0]) : 18;
+  // Coleta horas com sessão em qualquer dia da semana (para exibir sessões fora do expediente)
+  var _semanaAppts = appointments.filter(function(a){
+    return dias.some(function(di){ return a.date === di.iso && a.status !== 'cancelada'; });
+  });
+  var _semanaHoras = new Set(_semanaAppts.map(function(a){ return parseInt((a.time||'09:00').split(':')[0]); }));
   var horas = [];
-  for (var _hiw = 0; _hiw <= 23; _hiw++) horas.push(_hiw);
+  for (var _hiw = 0; _hiw <= 23; _hiw++) {
+    if ((_hiw >= _hTrabalhoIniW && _hiw <= _hTrabalhoFimW) || _semanaHoras.has(_hiw)) horas.push(_hiw);
+  }
   var diasAbrev = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
 
   // Cabeçalho
