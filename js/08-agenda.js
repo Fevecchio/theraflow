@@ -568,7 +568,7 @@ function renderDayView() {
     var slotContent = appts.length === 0
       ? '<div class="slot-add" onclick="showAgendarModal(\''+iso+'\',\''+horaStr+'\')" title="Agendar sessão às '+horaStr+'"><span class="slot-add-icon">+</span><span class="slot-add-label">Nova sessão</span></div>'
       : appts.map(function(a){
-          if (a.patientIdx < 0) return '';
+          if (a.patientIdx < 0 || !a.id || !a.time) return '';
           var pi = a.patientIdx;
           var nome = escHTML(a.patientName);
           var isPast = a.date < hoje || (a.date === hoje && parseInt((a.time||'23:59').split(':')[0]) < new Date().getHours());
@@ -714,7 +714,7 @@ function renderWeekView() {
         gridHtml += '<div class="week-cell-add" '+clickEmpty+' title="Agendar '+horaStr+' — '+diasAbrev[di.date.getDay()]+'"><span>+</span></div>';
       }
       appts.forEach(function(a){
-        if (a.patientIdx < 0) return;
+        if (a.patientIdx < 0 || !a.id || !a.time) return;
         var isPastW = di.iso < hoje || (di.iso === hoje && parseInt((a.time||'23:59').split(':')[0]) < new Date().getHours());
         var pBadge = '';
         if (a.presenca === 'compareceu') pBadge = '<div style="font-size:9px;color:#065f46;background:#d1fae5;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✓</div>';
@@ -724,9 +724,9 @@ function renderWeekView() {
           + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:9px;cursor:pointer;color:#065f46;background:#d1fae5;border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
           + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:9px;cursor:pointer;color:#991b1b;background:#fee2e2;border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
           + '</div>';
-        gridHtml += '<div class="'+escHTML(a.color)+' appt-block" style="font-size:11px;padding:3px 5px;margin-bottom:2px" title="'+escHTML(a.patientName)+' — '+escHTML(a.abordagem)+'">'
+        gridHtml += '<div class="'+escHTML(a.color)+' appt-block" style="font-size:11px;padding:3px 5px;margin-bottom:2px" title="'+escHTML(a.patientName)+' — '+escHTML(a.abordagem||'')+'">'
           + '<div style="cursor:pointer" onclick="currentSessionPatientIdx='+a.patientIdx+';navigate(\'sessao\')">'
-          + '<strong>'+escHTML(_firstName(a.patientName))+'</strong><br/>'+escHTML(_firstName(a.abordagem))+' '+a.time+'</div>'
+          + '<strong>'+escHTML(_firstName(a.patientName))+'</strong><br/>'+escHTML(a.abordagem||'')+' '+(a.time||'')+'</div>'
           + pBadge
           + '</div>';
       });
