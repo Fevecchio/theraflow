@@ -44,8 +44,9 @@ async function startSession() {
   const sp = patients[currentSessionPatientIdx] || patients[0];
   tfTrack('session_started', { session_number: sp?.sessions, trial_count: getTrialCount() });
   if (sp) {
-    const sub = document.getElementById('session-subtitle');
-    if (sub) sub.textContent = `${sp.name} · Sessão ${(sp.sessions||0)+1} · ${sp.abordagem||'—'}`;
+    _popularSelectPaciente();
+    var _metaEl = document.getElementById('session-subtitle-meta');
+    if (_metaEl) _metaEl.textContent = `· Sessão ${(sp.sessions||0)+1} · ${sp.abordagem||'—'}`;
     const av = document.getElementById('session-prestate-avatar');
     if (av) av.textContent = sp.initials || sp.name.slice(0,2).toUpperCase();
     const nm = document.getElementById('session-prestate-name');
@@ -101,6 +102,41 @@ async function startSession() {
   }
   // Preenche painel de contexto clínico
   _renderSessionContext(sp);
+}
+
+function _popularSelectPaciente() {
+  var sel = document.getElementById('session-patient-select');
+  if (!sel) return;
+  sel.innerHTML = patients
+    .map(function(p, i) {
+      return '<option value="' + i + '"' + (i === currentSessionPatientIdx ? ' selected' : '') + '>'
+        + escHTML(p.name) + '</option>';
+    }).join('');
+}
+
+function trocarPacienteSessao(newIdx) {
+  if (newIdx < 0 || newIdx >= patients.length) return;
+  currentSessionPatientIdx = newIdx;
+  var sp = patients[newIdx];
+  // Atualiza meta no cabeçalho
+  var metaEl = document.getElementById('session-subtitle-meta');
+  if (metaEl) metaEl.textContent = '· Sessão ' + ((sp.sessions||0)+1) + ' · ' + (sp.abordagem||'—');
+  // Atualiza avatar e nome no pré-estado
+  var av = document.getElementById('session-prestate-avatar');
+  if (av) av.textContent = sp.initials || sp.name.slice(0,2).toUpperCase();
+  var nm = document.getElementById('session-prestate-name');
+  if (nm) nm.textContent = sp.name;
+  // Atualiza ficha
+  var sfA = document.getElementById('sf-abordagem'); if (sfA) sfA.textContent = sp.abordagem || '—';
+  var sfS = document.getElementById('sf-sessao');    if (sfS) sfS.textContent = 'Sessão ' + ((sp.sessions||0)+1);
+  var sfC = document.getElementById('sf-cid');       if (sfC) sfC.textContent = sp.cid || '—';
+  // Gera novo template de nota para o paciente trocado
+  var noteEl = document.getElementById('session-ai-note');
+  if (noteEl) noteEl.value = _gerarNotaEstrutural();
+  // Repopula painel direito (histórico, contexto, perguntas)
+  _renderSessionContext(sp);
+  // Sincroniza índice do briefing
+  if (typeof currentBriefingPatientIdx !== 'undefined') currentBriefingPatientIdx = newIdx;
 }
 
 function _iniciarTimerSessao() {
