@@ -300,8 +300,8 @@ function renderMoodHistory() {
   const chartPac = document.getElementById('pac-mood-history-chart');
   if (!chart && !chartPac) return;
   const p = patients[currentPortalPatientIdx] || patients[0];
-  // Usa moodHistory do paciente se disponível, senão usa o array global
-  const rawHistory = (p && p.moodHistory && p.moodHistory.length > 0) ? p.moodHistory : moodHistory;
+  // Usa moodHistory do paciente; fallback [] (moodHistory global só existe no app do terapeuta)
+  const rawHistory = (p && p.moodHistory && p.moodHistory.length > 0) ? p.moodHistory : (typeof moodHistory !== 'undefined' ? moodHistory : []);
   // Pega últimos 14 dias
   const data = rawHistory.slice(-14);
   const days = ['D','S','T','Q','Q','S','S'];
