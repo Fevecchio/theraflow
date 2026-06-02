@@ -123,7 +123,7 @@ function executarBuscaGlobal(q) {
       || (p.notes||'').toLowerCase().includes(q)
       || (p.abordagem||'').toLowerCase().includes(q)
       || (p.status||'').toLowerCase().includes(q);
-    if (match) resultados.push({ tipo: 'paciente', icon: '👤', bg: '#e8f5e9', titulo: p.name, sub: (p.abordagem||'—') + ' · ' + (p.status||'ativo'), action: function(){ navigate('pacientes'); setTimeout(function(){ selectPatient(i); }, 80); } });
+    if (match) { var _pInit = (p.initials || p.name.trim().split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase()); resultados.push({ tipo: 'paciente', icon: _pInit, bg: p.color || '#4a7c59', titleColor: '#fff', titulo: p.name, sub: (p.abordagem||'—') + ' · ' + (p.status||'ativo'), action: function(){ navigate('pacientes'); setTimeout(function(){ selectPatient(i); }, 80); } }); }
   });
 
   // ── Notas clínicas
@@ -160,13 +160,13 @@ function executarBuscaGlobal(q) {
   // ── Ações rápidas (sempre visíveis sem query)
   if (!q) {
     [
-      { icon: '+ Sessão',    label: 'Agendar nova sessão',        action: function(){ fecharBuscaGlobal(); showAgendarModal(); } },
-      { icon: '+ Paciente',  label: 'Cadastrar novo paciente',    action: function(){ navigate('pacientes'); setTimeout(function(){ showModal('modal-novo-paciente'); }, 200); } },
-      { icon: '✦ Briefing',  label: 'Abrir briefing IA',          action: function(){ navigate('briefing'); } },
-      { icon: '◈ Supervisão',label: 'Ir para supervisão IA',      action: function(){ navigate('supervisao'); } },
-      { icon: '$ Financeiro',label: 'Ver cobranças',              action: function(){ navigate('financeiro'); } },
-      { icon: '📊 Relatório', label: 'Gerar relatório financeiro', action: function(){ fecharBuscaGlobal(); navigate('financeiro'); setTimeout(exportarRelatorioMensal, 300); } },
-    ].forEach(function(a){ resultados.push({ tipo: 'acao', icon: a.icon, bg: '#f8faf8', titulo: a.label, sub: 'Ação rápida', action: a.action }); });
+      { icon: '+',   label: 'Agendar nova sessão',        cat: 'Sessão',      action: function(){ fecharBuscaGlobal(); showAgendarModal(); } },
+      { icon: '+',   label: 'Cadastrar novo paciente',    cat: 'Paciente',    action: function(){ navigate('pacientes'); setTimeout(function(){ showModal('modal-novo-paciente'); }, 200); } },
+      { icon: '✦',   label: 'Abrir briefing IA',          cat: 'Briefing',    action: function(){ navigate('briefing'); } },
+      { icon: '◈',   label: 'Ir para supervisão IA',      cat: 'Supervisão',  action: function(){ navigate('supervisao'); } },
+      { icon: '$',   label: 'Ver cobranças',              cat: 'Financeiro',  action: function(){ navigate('financeiro'); } },
+      { icon: '📊',  label: 'Gerar relatório financeiro', cat: 'Financeiro',  action: function(){ fecharBuscaGlobal(); navigate('financeiro'); setTimeout(exportarRelatorioMensal, 300); } },
+    ].forEach(function(a){ resultados.push({ tipo: 'acao', icon: a.icon, bg: '#f8faf8', titulo: a.label, sub: a.cat, action: a.action }); });
   }
 
   if (!resultados.length) {
@@ -188,9 +188,10 @@ function executarBuscaGlobal(q) {
     grupos[tipo].slice(0, tipo === 'nota' ? 3 : 5).forEach(function(r, ri){
       var idx = flat.length;
       flat.push(r);
+      var _iconStyle = 'background:'+r.bg+(r.titleColor?';color:'+r.titleColor+';font-size:11px;font-weight:700':'')+';';
       html += '<div class="gs-item" data-gs-idx="'+idx+'" onmouseenter="gsItemHover(this)" onclick="gsItemClick('+idx+')">'
-        + '<div class="gs-item-icon" style="background:'+r.bg+'">'+r.icon+'</div>'
-        + '<div><div class="gs-item-title">'+escHTML(r.titulo)+'</div><div class="gs-item-sub">'+escHTML(r.sub)+'</div></div>'
+        + '<div class="gs-item-icon" style="'+_iconStyle+'">'+escHTML(r.icon)+'</div>'
+        + '<div style="flex:1;min-width:0"><div class="gs-item-title">'+escHTML(r.titulo)+'</div><div class="gs-item-sub">'+escHTML(r.sub)+'</div></div>'
         + '</div>';
     });
   });
