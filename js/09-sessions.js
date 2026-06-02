@@ -118,6 +118,9 @@ function trocarPacienteSessao(newIdx) {
   if (newIdx < 0 || newIdx >= patients.length) return;
   currentSessionPatientIdx = newIdx;
   var sp = patients[newIdx];
+  // Sincroniza o select visualmente
+  var sel = document.getElementById('session-patient-select');
+  if (sel) sel.value = String(newIdx);
   // Atualiza meta no cabeçalho
   var metaEl = document.getElementById('session-subtitle-meta');
   if (metaEl) metaEl.textContent = '· Sessão ' + ((sp.sessions||0)+1) + ' · ' + (sp.abordagem||'—');
