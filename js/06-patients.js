@@ -783,7 +783,7 @@ function selectPatientTab(tabName) {
 function _renderTabPlaceholder(tabName) {
   var content = document.getElementById('patient-detail-tab-content');
   if (!content) return;
-  var labels = { notas:'Notas & Timeline', ficha:'Ficha Clínica', intervencoes:'Intervenções', briefing:'Briefing IA', portal:'Portal' };
+  var labels = { notas:'Notas & Timeline', ficha:'Ficha Clínica', briefing:'Briefing IA', portal:'Portal' };
   content.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--muted)">'
     + '<div style="font-size:28px;margin-bottom:12px">⚙</div>'
     + '<div style="font-size:14px;font-weight:600;margin-bottom:6px">' + (labels[tabName]||tabName) + '</div>'
@@ -1027,12 +1027,16 @@ function renderPatientNotas(i) {
 
   if (p.prontuarioNotes && p.prontuarioNotes.length > 0) {
     p.prontuarioNotes.slice().reverse().forEach(function(n, ni) {
+      var textoId = 'ptab-nota-' + i + '-' + ni;
       notasHtml += '<div class="card card-sm" style="border-left:3px solid var(--sage)">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         + '<span style="font-weight:500">Sessão ' + (p.sessions - ni) + ' — ' + escHTML(n.date) + '</span>'
+        + '<div style="display:flex;gap:6px;align-items:center">'
         + '<span class="tag tag-green">Indexada</span>'
+        + '<button onclick="editarNotaTab(\'' + textoId + '\',this,' + i + ',\'' + n.date + '\')" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;padding:2px 8px;color:var(--muted)">✎ Editar</button>'
         + '</div>'
-        + '<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">' + escHTML(n.text) + '</p>'
+        + '</div>'
+        + '<p id="' + textoId + '" style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">' + escHTML(n.text) + '</p>'
         + '</div>';
     });
   } else if (!p.portalNota) {
@@ -1084,6 +1088,20 @@ function renderPatientNotas(i) {
     + notasHtml
     + '<div style="margin-top:24px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Linha do tempo</div>'
     + timelineHtml;
+}
+
+function editarNotaTab(textoId, btn, pidx, noteDate) {
+  var el = document.getElementById(textoId);
+  if (!el) return;
+  if (el.tagName === 'TEXTAREA') _salvarNota(pidx, noteDate, el.value);
+  if (typeof editarNota === 'function') editarNota(textoId, btn);
+}
+
+function _salvarNota(pidx, noteDate, novoTexto) {
+  var p = patients[pidx];
+  if (!p || !p.prontuarioNotes) return;
+  var nota = p.prontuarioNotes.find(function(n){ return n.date === noteDate; });
+  if (nota) { nota.text = novoTexto; salvarPacientes(); }
 }
 
 function renderPatientFicha(i) {
@@ -1206,121 +1224,6 @@ function _excluirMaterialFicha(pidx, mid) {
   salvarPacientes();
   renderPatientFicha(pidx);
   showToast('Material removido.');
-}
-
-// ── Sprint 3: Intervenções ──────────────────────────────────────────────────
-
-function renderPatientIntervencoes(i) {
-  var content = document.getElementById('patient-detail-tab-content');
-  if (!content) return;
-  var p = patients[i];
-  if (!p) return;
-  currentPortalPatientIdx = i;
-
-  // Exercícios
-  var exercises = p.exercises || [];
-  var exHtml;
-  if (exercises.length === 0) {
-    exHtml = '<div style="text-align:center;padding:32px 16px;color:var(--muted)">'
-      + '<div style="font-size:32px;margin-bottom:8px">📋</div>'
-      + '<div style="font-size:13px;margin-bottom:12px">Nenhum exercício atribuído ainda.</div>'
-      + '<button class="btn btn-primary btn-sm" onclick="abrirModalExercicio()">+ Adicionar primeiro exercício</button>'
-      + '</div>';
-  } else {
-    exHtml = exercises.map(function(ex) {
-      var total = ex.total || 1;
-      var concluidos = ex.concluidos || 0;
-      var pct = Math.min(100, Math.round(concluidos / total * 100));
-      var prazoStr = '', prazoColor = 'var(--muted)';
-      if (ex.prazo) {
-        var dias = Math.ceil((new Date(ex.prazo) - new Date()) / 86400000);
-        if (dias < 0) { prazoStr = '⚠ Prazo vencido'; prazoColor = 'var(--red)'; }
-        else if (dias === 0) { prazoStr = '⏰ Vence hoje'; prazoColor = 'var(--amber)'; }
-        else prazoStr = '📅 ' + dias + 'd restantes';
-      }
-      var progressBar = total > 1
-        ? '<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px"><span>' + concluidos + '/' + total + ' realizados</span><span>' + pct + '%</span></div>'
-        + '<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + (pct >= 100 ? 'var(--sage)' : 'var(--amber)') + ';border-radius:3px;transition:width .4s"></div></div></div>'
-        : '';
-      return '<div class="exercise-item ' + (ex.done || pct >= 100 ? 'completed' : '') + '">'
-        + '<div class="exercise-check" onclick="_inTabToggleEx(' + i + ',' + ex.id + ')" style="cursor:pointer">✓</div>'
-        + '<div style="flex:1">'
-        + '<div class="exercise-title">' + escHTML(ex.title) + '</div>'
-        + '<div class="exercise-meta">' + escHTML(ex.desc) + '</div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">'
-        + '<span class="exercise-tag ' + (typeof tagClass === 'function' ? tagClass(ex.tag) : ex.tag) + '">' + (typeof tagLabel === 'function' ? tagLabel(ex.tag) : ex.tag) + '</span>'
-        + (prazoStr ? '<span style="font-size:11px;color:' + prazoColor + '">' + prazoStr + '</span>' : '')
-        + '</div>' + progressBar + '</div>'
-        + '<div style="display:flex;flex-direction:column;gap:4px;margin-left:8px;flex-shrink:0">'
-        + (total > 1 && pct < 100 ? '<button onclick="_inTabIncrEx(' + i + ',' + ex.id + ')" style="background:var(--sage-light);border:1px solid var(--sage);border-radius:6px;cursor:pointer;font-size:11px;padding:2px 7px;color:var(--sage);font-weight:600">+1</button>' : '')
-        + '<button onclick="abrirModalExercicio(' + ex.id + ')" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)">✎</button>'
-        + '<button onclick="_inTabDeleteEx(' + i + ',' + ex.id + ')" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)">✕</button>'
-        + '</div></div>';
-    }).join('');
-  }
-
-  // Materiais inline
-  _materialPatientIdx = i;
-  var mats = p.materials || [];
-  var matsHtml = mats.length === 0
-    ? '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Nenhum material adicionado ainda.</div>'
-    : mats.map(function(m) {
-        var icon = (typeof MATERIAL_ICONS !== 'undefined' ? MATERIAL_ICONS[m.tipo] : null) || '📎';
-        var tituloHtml = m.url ? '<a href="' + escHTML(m.url) + '" target="_blank" rel="noopener">' + escHTML(m.titulo) + '</a>' : escHTML(m.titulo);
-        var labelMap = typeof MATERIAL_LABELS !== 'undefined' ? MATERIAL_LABELS : {};
-        var tag = '<span style="font-size:10.5px;background:#f0f2f0;color:var(--muted);padding:2px 7px;border-radius:10px;font-weight:500">' + escHTML(labelMap[m.tipo] || m.tipo) + '</span>';
-        return '<div class="material-card">'
-          + '<div class="material-icon ' + m.tipo + '">' + icon + '</div>'
-          + '<div style="flex:1;min-width:0"><div class="material-title" style="display:flex;align-items:center;gap:8px">' + tituloHtml + tag + '</div>'
-          + (m.desc ? '<div class="material-desc">' + escHTML(m.desc) + '</div>' : '')
-          + '<div class="material-date">' + escHTML(m.date) + '</div></div>'
-          + '<div class="material-actions">'
-          + (m.url ? '<a href="' + escHTML(m.url) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none">↗ Abrir</a>' : '')
-          + '<button class="task-delete" onclick="_excluirMaterialFicha(' + i + ',' + m.id + ');renderPatientIntervencoes(' + i + ')" title="Excluir">✕</button>'
-          + '</div></div>';
-      }).join('');
-
-  content.innerHTML = '<div class="divider"></div>'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
-    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Exercícios · ' + exercises.length + '</div>'
-    + '<button class="btn btn-primary btn-sm" onclick="abrirModalExercicio()">+ Adicionar</button>'
-    + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">' + exHtml + '</div>'
-    + '<div style="padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Materiais · ' + mats.length + '</div>'
-    + '<button class="btn btn-primary btn-sm" onclick="abrirModalMaterial()">+ Adicionar</button>'
-    + '</div>'
-    + '<div>' + matsHtml + '</div>';
-}
-
-function _inTabToggleEx(pidx, exerciseId) {
-  var p = patients[pidx];
-  if (!p || !p.exercises) return;
-  var ex = p.exercises.find(function(e){ return e.id === exerciseId; });
-  if (ex) { ex.done = !ex.done; salvarPacientes(); }
-  renderPatientIntervencoes(pidx);
-}
-
-function _inTabIncrEx(pidx, exerciseId) {
-  var p = patients[pidx];
-  if (!p || !p.exercises) return;
-  var ex = p.exercises.find(function(e){ return e.id === exerciseId; });
-  if (!ex) return;
-  ex.concluidos = Math.min((ex.concluidos || 0) + 1, ex.total || 1);
-  if (ex.concluidos >= (ex.total || 1)) { ex.done = true; showToast('🎉 Exercício concluído!'); }
-  else showToast('✓ ' + ex.concluidos + '/' + ex.total + ' realizados');
-  salvarPacientes();
-  renderPatientIntervencoes(pidx);
-}
-
-function _inTabDeleteEx(pidx, exerciseId) {
-  if (!confirm('Remover exercício?')) return;
-  var p = patients[pidx];
-  if (!p || !p.exercises) return;
-  p.exercises = p.exercises.filter(function(e){ return e.id !== exerciseId; });
-  salvarPacientes();
-  renderPatientIntervencoes(pidx);
-  showToast('Exercício removido.');
 }
 
 // ── Sprint 3: Briefing IA ───────────────────────────────────────────────────

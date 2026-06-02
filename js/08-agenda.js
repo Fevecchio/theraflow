@@ -546,9 +546,13 @@ function renderDayView() {
   var _hConfig = carregarHorarios();
   var _hTrabalhoIni = _hConfig ? parseInt((_hConfig.inicio||'08:00').split(':')[0]) : 8;
   var _hTrabalhoFim = _hConfig ? parseInt((_hConfig.fim||'18:00').split(':')[0]) : 18;
-  var horas = [];
-  for (var _hi = 0; _hi <= 23; _hi++) horas.push(_hi);
   var sessoesDia = appointments.filter(function(a){ return a.date===iso && a.status!=='cancelada'; });
+  // Mostra só horas do expediente + horas com sessão fora do expediente
+  var _sessoesHoras = new Set(sessoesDia.map(function(a){ return parseInt((a.time||'09:00').split(':')[0]); }));
+  var horas = [];
+  for (var _hi = 0; _hi <= 23; _hi++) {
+    if ((_hi >= _hTrabalhoIni && _hi <= _hTrabalhoFim) || _sessoesHoras.has(_hi)) horas.push(_hi);
+  }
 
   // Mapa hora → agendamentos
   var porHora = {};

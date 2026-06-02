@@ -552,7 +552,7 @@ tr:last-child td { border-bottom: none; }
 .session-live-badge { position: absolute; top: 16px; left: 16px; background: #c0392b; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: .5px; display: flex; align-items: center; gap: 6px; }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: blink 1.2s infinite; }
 .session-timer { position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,.5); color: #fff; font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
-.ai-panel { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.ai-panel { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; min-height: 0; }
 .ai-section-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
 .sess-nota-item { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .sess-nota-item:last-child { border-bottom: none; }

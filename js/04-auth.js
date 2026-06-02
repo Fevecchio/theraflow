@@ -297,7 +297,7 @@ function loginPaciente() {
         _loggedPatientIdx = idx;
         _loggedPatientData = pacs[idx];
         document.getElementById('tf-patient-login-layer').classList.remove('open');
-        document.getElementById('tf-patient-app-layer').classList.add('open');
+        var _pLayer1 = document.getElementById('tf-patient-app-layer'); _pLayer1.style.display = ''; _pLayer1.classList.add('open');
         _verificarTermosPortal(pacs[idx].id || 'local-' + idx, function(){ renderPatientApp(idx, pacs); });
         return;
       }
@@ -331,7 +331,7 @@ function loginPaciente() {
           _loggedPatientIdx = 0;
           _loggedPatientData = pRpc;
           document.getElementById('tf-patient-login-layer').classList.remove('open');
-          document.getElementById('tf-patient-app-layer').classList.add('open');
+          var _pLayer2 = document.getElementById('tf-patient-app-layer'); _pLayer2.style.display = ''; _pLayer2.classList.add('open');
           _verificarTermosPortal(pRpc.id, function(){ renderPatientApp(0, pacsRpc); });
           return;
         }
@@ -422,7 +422,7 @@ function loginPaciente() {
     currentPortalPatientIdx = 0;
 
     document.getElementById('tf-patient-login-layer').classList.remove('open');
-    document.getElementById('tf-patient-app-layer').classList.add('open');
+    var _pLayer3 = document.getElementById('tf-patient-app-layer'); _pLayer3.style.display = ''; _pLayer3.classList.add('open');
     _verificarTermosPortal(p.id || userId, function(){ renderPatientApp(0, [p]); });
   });
 }

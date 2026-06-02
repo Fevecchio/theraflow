@@ -218,9 +218,6 @@ function salvarExercicio() {
   closeModal('modal-exercicio');
   _editingExerciseId = null;
   renderExercises();
-  if (typeof currentPatientTab !== 'undefined' && currentPatientTab === 'intervencoes') {
-    renderPatientIntervencoes(currentPortalPatientIdx);
-  }
 }
 
 function excluirExercicio(exerciseId) {
@@ -1498,7 +1495,9 @@ function renderTrajetoriaPortal(p, idx, readonly) {
     var statusBg = a.presenca === 'compareceu' ? '#e8f5ee' : a.presenca === 'faltou' ? '#fdecea' : '#fff8e6';
     var mood = moodByDate[a.date];
     var moodHtml = mood ? '<span style="font-size:11px;color:var(--muted);margin-left:6px">Humor: <strong style="color:var(--sage)">' + mood + '/10</strong></span>' : '';
-    var resumo = a.resumoParaPaciente || '';
+    var _rawResumo = a.resumoParaPaciente || '';
+    // Descarta respostas de erro/recusa do Claude antes de exibir ao paciente
+    var resumo = /^desculpe|nota.*incompleta|preciso.*detalhes|não (posso|consigo)|unable to/i.test(_rawResumo) ? '' : _rawResumo;
     var insight = a.meuInsight || '';
 
     return '<div class="traj-entry'+(milestone?' traj-milestone':'')+'" data-presenca="'+a.presenca+'" data-date="'+a.date+'" data-id="'+escHTML(String(a.id))+'">'

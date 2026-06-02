@@ -667,7 +667,10 @@ async function _gerarResumoPortalIA(sp, noteText) {
     }, 20000);
     if (!res.ok) return null;
     var data = await res.json();
-    return (data.content || '').trim() || null;
+    var content = (data.content || '').trim();
+    // Descarta respostas de recusa/erro do Claude (não devem aparecer para o paciente)
+    if (!content || /^desculpe|nota.*incompleta|preciso.*detalhes|não (posso|consigo)|unable to/i.test(content)) return null;
+    return content;
   } catch(e) {
     console.warn('[ResumoPortalIA]', e.message);
     return null;
