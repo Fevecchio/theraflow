@@ -1307,7 +1307,14 @@ async function pacConfirmarAlteracaoSenha() {
     }
   }
   try { localStorage.setItem('tf_patients', JSON.stringify(typeof patients !== 'undefined' && patients.length ? patients : [p])); } catch(_) {}
-  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+
+  // Atualiza Supabase via RPC (funciona sem sessão de auth — SECURITY DEFINER)
+  var _emailUpd = p.email || '';
+  if (_emailUpd && typeof supaPatient !== 'undefined') {
+    supaPatient.rpc('portal_update_password', {
+      p_email: _emailUpd, p_old_hash: hashAtual, p_new_hash: hashNova
+    }).catch(function(){});
+  }
 
   okEl.style.display = '';
   ['pac-senha-atual','pac-senha-nova','pac-senha-nova2'].forEach(function(id){
