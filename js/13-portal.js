@@ -1296,11 +1296,17 @@ async function pacConfirmarAlteracaoSenha() {
   var hashNova = await _portalHash(nova);
   p.portalPasswordHash = hashNova;
   p.portalPassword = null;
-  if (typeof patients !== 'undefined' && patients[_loggedPatientIdx]) {
-    patients[_loggedPatientIdx].portalPasswordHash = hashNova;
-    patients[_loggedPatientIdx].portalPassword = null;
+  // Atualiza patients[] garantindo que p está no array (RPC login não popula patients[])
+  if (typeof patients !== 'undefined') {
+    var _pIdx = patients.findIndex(function(q){ return q.id === p.id || (q.email && q.email === p.email); });
+    if (_pIdx !== -1) {
+      patients[_pIdx].portalPasswordHash = hashNova;
+      patients[_pIdx].portalPassword = null;
+    } else {
+      patients.splice(0, patients.length, p); // fallback: popula com paciente atual
+    }
   }
-  try { localStorage.setItem('tf_patients', JSON.stringify(typeof patients !== 'undefined' ? patients : [p])); } catch(_) {}
+  try { localStorage.setItem('tf_patients', JSON.stringify(typeof patients !== 'undefined' && patients.length ? patients : [p])); } catch(_) {}
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
 
   okEl.style.display = '';
