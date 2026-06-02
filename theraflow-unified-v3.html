@@ -775,10 +775,13 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="topbar">
     <div>
       <div class="page-title">Sessão ao vivo</div>
-      <div class="page-subtitle" id="session-subtitle" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-        <select id="session-patient-select" onchange="trocarPacienteSessao(parseInt(this.value))"
-          style="border:none;background:transparent;font:inherit;color:inherit;cursor:pointer;padding:0;outline:none;appearance:none;-webkit-appearance:none;max-width:280px;font-weight:600"></select>
-        <span id="session-subtitle-meta" style="opacity:.65">· Sessão — · —</span>
+      <div class="page-subtitle" id="session-subtitle" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span class="sess-patient-picker" title="Clique para trocar de paciente">
+          <select id="session-patient-select" onchange="trocarPacienteSessao(parseInt(this.value))"
+            style="border:none;background:transparent;font:inherit;color:inherit;cursor:pointer;padding:0;outline:none;appearance:none;-webkit-appearance:none;max-width:260px;font-weight:600"></select>
+          <span class="sess-picker-arrow">▾</span>
+        </span>
+        <span id="session-subtitle-meta" style="opacity:.6">· Sessão — · —</span>
       </div>
     </div>
     <div class="topbar-actions">
