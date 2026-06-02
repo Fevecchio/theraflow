@@ -9,6 +9,10 @@
       "dest": "/theraflow-unified-v3.html"
     },
     {
+      "src": "/paciente",
+      "dest": "/paciente.html"
+    },
+    {
       "src": "/termos",
       "dest": "/termos.html"
     },

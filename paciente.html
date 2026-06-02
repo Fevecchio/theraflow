@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="TheraFlow"/>
+<meta name="theme-color" content="#4a7c59"/>
+<title>TheraFlow — Meu Portal</title>
+<link rel="manifest" href="/manifest-paciente.json"/>
+<link rel="stylesheet" href="/app.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+  /* Reset mínimo para garantir full-screen no mobile */
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg, #f5f3ee); }
+
+  /* Login */
+  #tf-patient-login-layer {
+    display: none; position: fixed; inset: 0; z-index: 9000;
+    background: var(--bg, #f5f3ee); overflow-y: auto;
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  #tf-patient-login-layer.open { display: flex; }
+
+  /* Patient app */
+  #tf-patient-app-layer {
+    display: none; position: fixed; inset: 0; z-index: 9000;
+    flex-direction: column; background: var(--bg, #f5f3ee); overflow: hidden;
+  }
+  #tf-patient-app-layer.open { display: flex; }
+
+  /* Layers de fluxo pós-login */
+  .pac-flow-layer {
+    display: none; position: fixed; inset: 0; z-index: 9500;
+    background: var(--bg, #f5f3ee); overflow-y: auto;
+    flex-direction: column; align-items: center; justify-content: center; padding: 24px;
+  }
+  .pac-flow-layer.open { display: flex; }
+
+  /* Card de onboarding / troca de senha */
+  .pac-flow-card {
+    max-width: 400px; width: 100%; background: #fff; border-radius: 20px;
+    padding: 32px 28px; box-shadow: 0 4px 32px rgba(0,0,0,.1);
+    text-align: center;
+  }
+  .pac-flow-logo { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--sage, #4a7c59); margin-bottom: 4px; }
+  .pac-flow-title { font-size: 20px; font-weight: 700; color: var(--ink, #1a1f1c); margin: 16px 0 8px; }
+  .pac-flow-sub { font-size: 14px; color: var(--muted, #8a9490); line-height: 1.6; margin-bottom: 24px; }
+  .pac-flow-btn {
+    width: 100%; padding: 14px; background: var(--sage, #4a7c59); color: #fff;
+    border: none; border-radius: 12px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: background .15s; margin-bottom: 10px;
+  }
+  .pac-flow-btn:hover { background: #3a6b4a; }
+  .pac-flow-btn.secondary { background: transparent; color: var(--muted, #8a9490); font-weight: 400; font-size: 13px; }
+  .pac-flow-btn.secondary:hover { background: var(--sage-light, #e8f0eb); color: var(--ink, #1a1f1c); }
+  .pac-flow-input { width: 100%; padding: 13px 14px; border: 1.5px solid var(--border, #e2e0db); border-radius: 10px; font-size: 15px; font-family: inherit; outline: none; box-sizing: border-box; margin-bottom: 10px; }
+  .pac-flow-input:focus { border-color: var(--sage, #4a7c59); }
+  .pac-flow-dots { display: flex; gap: 8px; justify-content: center; margin: 20px 0 0; }
+  .pac-flow-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border, #e2e0db); transition: background .2s; }
+  .pac-flow-dot.active { background: var(--sage, #4a7c59); }
+  .pac-feature-list { text-align: left; display: flex; flex-direction: column; gap: 12px; margin: 8px 0 24px; }
+  .pac-feature-item { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; color: var(--ink, #1a1f1c); }
+  .pac-feature-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--sage-light, #e8f0eb); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .pac-install-steps { text-align: left; display: flex; flex-direction: column; gap: 14px; }
+  .pac-install-step { display: flex; align-items: center; gap: 12px; font-size: 13.5px; color: var(--ink, #1a1f1c); line-height: 1.5; }
+  .pac-install-num { width: 26px; height: 26px; border-radius: 50%; background: var(--sage, #4a7c59); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ══════ LOGIN ══════ -->
+<div id="tf-patient-login-layer">
+  <div class="pac-login-card">
+    <div class="pac-login-brand">
+      <div class="pac-login-logo">TheraFlow</div>
+      <div class="pac-login-sub">Portal do Paciente</div>
+    </div>
+    <div class="pac-login-box">
+      <div class="pac-login-title">Bem-vindo(a)</div>
+      <div class="pac-login-hint">Entre com o email e a senha fornecidos pelo seu terapeuta.</div>
+      <div class="form-group">
+        <label>Seu email</label>
+        <input class="form-input" id="pac-login-email" type="email" placeholder="seuemail@exemplo.com" onkeydown="if(event.key==='Enter')loginPaciente()"/>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input class="form-input" id="pac-login-senha" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginPaciente()"/>
+      </div>
+      <div id="pac-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:16px">
+        ⚠ Email ou senha incorretos. Verifique com seu terapeuta.
+      </div>
+      <button id="pac-login-btn" onclick="loginPaciente()" class="pac-flow-btn">
+        Acessar meu portal →
+      </button>
+      <div style="text-align:center;margin-top:12px;font-size:12.5px;color:var(--muted)">
+        Problemas de acesso? <a href="#" onclick="event.preventDefault();document.getElementById('pac-login-senha').value='';document.getElementById('pac-login-error').textContent='Peça para seu terapeuta reenviar o link de acesso.';document.getElementById('pac-login-error').style.display='';" style="color:var(--sage);text-decoration:none">Fale com seu terapeuta</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ APP DO PACIENTE ══════ -->
+<div id="tf-patient-app-layer">
+  <div class="patient-app-header">
+    <div>
+      <div class="patient-app-logo">TheraFlow</div>
+      <div class="patient-app-name" id="pac-app-name">—</div>
+    </div>
+    <button class="patient-app-logout" onclick="sairPaciente()">Sair</button>
+  </div>
+  <div class="patient-app-body" id="pac-app-body">
+    <!-- preenchido por renderPatientApp() -->
+  </div>
+</div>
+
+<!-- ══════ PRIMEIRO ACESSO — CRIAR SENHA ══════ -->
+<div id="pac-mudar-senha-layer" class="pac-flow-layer">
+  <div class="pac-flow-card">
+    <div class="pac-flow-logo">🌿 TheraFlow</div>
+    <div class="pac-flow-title">Crie sua senha</div>
+    <div class="pac-flow-sub">Defina uma senha pessoal que só você saberá. Você usará ela nos próximos acessos.</div>
+    <input class="pac-flow-input" id="pac-nova-senha" type="password" placeholder="Nova senha (mín. 6 caracteres)" maxlength="50"/>
+    <input class="pac-flow-input" id="pac-nova-senha-conf" type="password" placeholder="Confirme a senha"/>
+    <div id="pac-senha-error" style="display:none;font-size:13px;color:#c0392b;margin-bottom:10px;text-align:left"></div>
+    <button class="pac-flow-btn" onclick="pacConfirmarNovaSenha()">Criar minha senha →</button>
+  </div>
+</div>
+
+<!-- ══════ ONBOARDING ══════ -->
+<div id="pac-onboarding-layer" class="pac-flow-layer">
+  <!-- Tela 1: Boas-vindas -->
+  <div id="pac-ob-1" class="pac-flow-card">
+    <div style="font-size:48px;margin-bottom:8px">🌿</div>
+    <div class="pac-flow-title" id="pac-ob-titulo">Olá! Bem-vindo(a) ao seu espaço</div>
+    <div class="pac-flow-sub" id="pac-ob-sub">Seu terapeuta preparou este espaço especialmente para você. Aqui você acompanha sua jornada terapêutica entre as sessões.</div>
+    <div class="pac-flow-dots">
+      <div class="pac-flow-dot active" id="pac-ob-dot-1"></div>
+      <div class="pac-flow-dot" id="pac-ob-dot-2"></div>
+      <div class="pac-flow-dot" id="pac-ob-dot-3"></div>
+    </div>
+    <button class="pac-flow-btn" style="margin-top:20px" onclick="pacObNext(2)">Continuar →</button>
+  </div>
+
+  <!-- Tela 2: O que você pode fazer -->
+  <div id="pac-ob-2" class="pac-flow-card" style="display:none">
+    <div class="pac-flow-title">O que você encontra aqui</div>
+    <div class="pac-feature-list">
+      <div class="pac-feature-item"><div class="pac-feature-icon">😊</div><div><strong>Check-in de humor</strong><br/>Registre como está se sentindo a cada dia</div></div>
+      <div class="pac-feature-item"><div class="pac-feature-icon">📋</div><div><strong>Exercícios terapêuticos</strong><br/>Atividades combinadas com seu terapeuta</div></div>
+      <div class="pac-feature-item"><div class="pac-feature-icon">📅</div><div><strong>Minha jornada</strong><br/>Resumo das suas sessões e evolução</div></div>
+      <div class="pac-feature-item"><div class="pac-feature-icon">📓</div><div><strong>Diário</strong><br/>Espaço de reflexão entre as consultas</div></div>
+    </div>
+    <div class="pac-flow-dots">
+      <div class="pac-flow-dot" id="pac-ob-dot-1b"></div>
+      <div class="pac-flow-dot active" id="pac-ob-dot-2b"></div>
+      <div class="pac-flow-dot" id="pac-ob-dot-3b"></div>
+    </div>
+    <button class="pac-flow-btn" style="margin-top:20px" onclick="pacObNext(3)">Continuar →</button>
+  </div>
+
+  <!-- Tela 3: Instalar app -->
+  <div id="pac-ob-3" class="pac-flow-card" style="display:none">
+    <div style="font-size:40px;margin-bottom:8px">📱</div>
+    <div class="pac-flow-title">Adicione à tela inicial</div>
+    <div class="pac-flow-sub">Use como um app no seu celular, sem precisar abrir o navegador.</div>
+    <div class="pac-install-steps">
+      <div class="pac-install-step"><div class="pac-install-num">1</div><div><strong>iPhone:</strong> toque em <strong>Compartilhar</strong> (⬆️) → "Adicionar à Tela de Início"</div></div>
+      <div class="pac-install-step"><div class="pac-install-num">2</div><div><strong>Android:</strong> toque no menu (⋮) → "Adicionar à tela inicial" ou "Instalar app"</div></div>
+      <div class="pac-install-step"><div class="pac-install-num">3</div><div>Pronto! O ícone 🌿 aparece na sua tela inicial</div></div>
+    </div>
+    <div class="pac-flow-dots">
+      <div class="pac-flow-dot" id="pac-ob-dot-1c"></div>
+      <div class="pac-flow-dot" id="pac-ob-dot-2c"></div>
+      <div class="pac-flow-dot active" id="pac-ob-dot-3c"></div>
+    </div>
+    <button class="pac-flow-btn" style="margin-top:20px" onclick="pacObFinalizar()">Entrar no meu portal →</button>
+    <button class="pac-flow-btn secondary" onclick="pacObFinalizar()">Pular por agora</button>
+  </div>
+</div>
+
+<!-- Scripts — mesma ordem do app do terapeuta, sem 05-onboarding e 18-main -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/00-globals.js" defer></script>
+<script src="/js/01-utils.js" defer></script>
+<script src="/js/02-ui.js" defer></script>
+<script src="/js/03-sync.js" defer></script>
+<script src="/js/04-auth.js" defer></script>
+<script src="/js/06-patients.js" defer></script>
+<script src="/js/13-portal.js" defer></script>
+<script src="/js/16-busca-global.js" defer></script>
+
+<script defer>
+// ══════════════════════════════════════════════════════════
+//  INICIALIZAÇÃO DO PORTAL STANDALONE DO PACIENTE
+// ══════════════════════════════════════════════════════════
+
+// Override: no app do paciente não há "voltar ao terapeuta"
+function voltarLoginTerapeuta() {
+  window.location.href = '/app';
+}
+
+// Override: irParaLoginPaciente apenas mostra a camada de login
+function irParaLoginPaciente() {
+  document.getElementById('tf-patient-login-layer').classList.add('open');
+  setTimeout(function(){ document.getElementById('pac-login-email').focus(); }, 100);
+}
+
+// Fluxo pós-login: verifica primeiro acesso → onboarding
+function _pacPosLogin(p, idx, pacs) {
+  // Primeiro acesso = ainda não tem senha personalizada
+  var ehPrimeiro = !p.portalPasswordHash;
+  if (ehPrimeiro) {
+    _pacMostrarCriarSenha(p, idx, pacs);
+  } else {
+    _pacVerOnboarding(p, idx, pacs);
+  }
+}
+
+// Mostra tela de criação de senha (primeiro acesso)
+function _pacMostrarCriarSenha(p, idx, pacs) {
+  document.getElementById('tf-patient-login-layer').classList.remove('open');
+  document.getElementById('pac-mudar-senha-layer').classList.add('open');
+  window._pacPendente = { p: p, idx: idx, pacs: pacs };
+}
+
+window.pacConfirmarNovaSenha = async function() {
+  var s1 = document.getElementById('pac-nova-senha').value.trim();
+  var s2 = document.getElementById('pac-nova-senha-conf').value.trim();
+  var errEl = document.getElementById('pac-senha-error');
+  errEl.style.display = 'none';
+  if (!s1 || s1.length < 6) { errEl.textContent = 'A senha deve ter pelo menos 6 caracteres.'; errEl.style.display = ''; return; }
+  if (s1 !== s2) { errEl.textContent = 'As senhas não coincidem.'; errEl.style.display = ''; return; }
+  // Salva hash da nova senha
+  var hash = await _portalHash(s1);
+  var { p, idx, pacs } = window._pacPendente || {};
+  if (!p) return;
+  p.portalPasswordHash = hash;
+  p.portalPassword = null; // limpa plaintext se havia
+  if (pacs && pacs[idx]) { pacs[idx].portalPasswordHash = hash; pacs[idx].portalPassword = null; }
+  if (typeof patients !== 'undefined' && patients[idx]) { patients[idx].portalPasswordHash = hash; }
+  try { localStorage.setItem('tf_patients', JSON.stringify(patients || pacs)); } catch(_) {}
+  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+  document.getElementById('pac-mudar-senha-layer').classList.remove('open');
+  _pacVerOnboarding(p, idx, pacs);
+};
+
+// Verifica se já passou pelo onboarding
+function _pacVerOnboarding(p, idx, pacs) {
+  var chave = 'pac_onboarding_' + (p.id || p.email || 'v1');
+  if (localStorage.getItem(chave) === '1') {
+    _pacEntrar(p, idx, pacs);
+  } else {
+    // Personaliza a tela 1 com o nome
+    var titulo = document.getElementById('pac-ob-titulo');
+    var firstName = (p.name || 'Paciente').split(' ')[0];
+    if (titulo) titulo.textContent = 'Olá, ' + firstName + '! Bem-vindo(a) ao seu espaço';
+    window._pacOnbPendente = { p: p, idx: idx, pacs: pacs, chave: chave };
+    document.getElementById('pac-onboarding-layer').classList.add('open');
+    document.getElementById('pac-ob-1').style.display = '';
+    document.getElementById('pac-ob-2').style.display = 'none';
+    document.getElementById('pac-ob-3').style.display = 'none';
+  }
+}
+
+window.pacObNext = function(tela) {
+  document.getElementById('pac-ob-1').style.display = tela === 1 ? '' : 'none';
+  document.getElementById('pac-ob-2').style.display = tela === 2 ? '' : 'none';
+  document.getElementById('pac-ob-3').style.display = tela === 3 ? '' : 'none';
+};
+
+window.pacObFinalizar = function() {
+  var { p, idx, pacs, chave } = window._pacOnbPendente || {};
+  if (chave) { try { localStorage.setItem(chave, '1'); } catch(_) {} }
+  document.getElementById('pac-onboarding-layer').classList.remove('open');
+  _pacEntrar(p, idx, pacs);
+};
+
+// Entra no portal do paciente
+function _pacEntrar(p, idx, pacs) {
+  _loggedPatientData = p;
+  _loggedPatientIdx = idx || 0;
+  var _pLayer = document.getElementById('tf-patient-app-layer');
+  _pLayer.style.display = ''; _pLayer.classList.add('open');
+  _verificarTermosPortal(p.id || 'local', function(){ renderPatientApp(idx || 0, pacs || [p]); });
+}
+
+// ── Override de loginPaciente para o fluxo do paciente.html ──
+// Após o login bem-sucedido, intercepta e insere o fluxo de senha/onboarding
+var _origLoginPaciente = null;
+function _wrapLoginPaciente() {
+  if (typeof loginPaciente !== 'function') return;
+  _origLoginPaciente = loginPaciente;
+  // Monkey-patch de _verificarTermosPortal para inserir o fluxo
+  var _origVerif = _verificarTermosPortal;
+  window._verificarTermosPortal = function(patientId, callback) {
+    // callback é renderPatientApp — vamos interceptar
+    // mas primeiro verificar senha/onboarding
+    // Para isso, usamos _loggedPatientData que foi setado por loginPaciente
+    var p = _loggedPatientData;
+    var pacs = typeof patients !== 'undefined' ? patients : [p];
+    var idx = _loggedPatientIdx || 0;
+    var ehPrimeiro = p && !p.portalPasswordHash;
+    if (ehPrimeiro) {
+      _pacMostrarCriarSenha(p, idx, pacs);
+    } else {
+      var chave = 'pac_onboarding_' + (p ? (p.id || p.email || 'v1') : 'v1');
+      if (localStorage.getItem(chave) !== '1') {
+        var firstName = p ? (p.name || 'Paciente').split(' ')[0] : 'Paciente';
+        var titulo = document.getElementById('pac-ob-titulo');
+        if (titulo) titulo.textContent = 'Olá, ' + firstName + '! Bem-vindo(a) ao seu espaço';
+        window._pacOnbPendente = { p: p, idx: idx, pacs: pacs, chave: chave };
+        document.getElementById('pac-onboarding-layer').classList.add('open');
+        document.getElementById('pac-ob-1').style.display = '';
+        document.getElementById('pac-ob-2').style.display = 'none';
+        document.getElementById('pac-ob-3').style.display = 'none';
+        // O onboarding vai chamar callback (renderPatientApp) quando finalizar
+        window._pacOnbPendente.callback = callback;
+        window.pacObFinalizar = function() {
+          var pend = window._pacOnbPendente || {};
+          if (pend.chave) { try { localStorage.setItem(pend.chave, '1'); } catch(_) {} }
+          document.getElementById('pac-onboarding-layer').classList.remove('open');
+          _origVerif(patientId, pend.callback || callback);
+        };
+      } else {
+        _origVerif(patientId, callback);
+      }
+    }
+  };
+}
+
+// ── Pré-preenche email da URL (?e=email) ──
+function _prePreencharEmail() {
+  try {
+    var urlEmail = new URLSearchParams(window.location.search).get('e');
+    if (urlEmail) {
+      var el = document.getElementById('pac-login-email');
+      if (el) { el.value = decodeURIComponent(urlEmail); setTimeout(function(){ document.getElementById('pac-login-senha').focus(); }, 100); }
+    }
+  } catch(_) {}
+}
+
+// ── Restaura sessão Supabase existente ──
+async function _tryRestorePacientSession() {
+  try {
+    var result = await supaPatient.auth.getSession();
+    var session = result && result.data && result.data.session;
+    if (!session) return false;
+    var userId = session.user.id;
+    // Busca vínculo patient_users
+    var linkRes = await supaPatient.from('patient_users').select('patient_id').eq('auth_user_id', userId).single();
+    if (!linkRes.data) return false;
+    // Carrega dados do paciente
+    var patRes = await supaPatient.from('patients').select('*').eq('id', linkRes.data.patient_id).single();
+    if (!patRes.data) return false;
+    var raw = patRes.data;
+    var p = Object.assign({}, (raw.metadata || {}), {
+      id: raw.id, name: raw.name, email: raw.email,
+      whatsapp: raw.phone, age: raw.age, cidade: raw.cidade,
+      abordagem: raw.abordagem, cid: raw.cid, notes: raw.notes,
+      status: raw.status, sessions: raw.sessions_count,
+      valorSessao: raw.valor_sessao, progress: raw.progress,
+    });
+    // Carrega appointments
+    var apptRes = await supaPatient.from('appointments').select('local_id,date,time,presenca,status,metadata').eq('patient_id', raw.id).order('date', { ascending: false }).limit(60);
+    if (apptRes.data && apptRes.data.length) {
+      p.appointments = apptRes.data.map(function(a){ return Object.assign({}, (a.metadata || {}), { id: a.local_id, date: a.date, time: a.time, presenca: a.presenca, status: a.status }); });
+    }
+    _loggedPatientData = p;
+    if (typeof patients !== 'undefined') patients.splice(0, patients.length, p);
+    _loggedPatientIdx = 0;
+    // Sessão restaurada → pula login, vai direto para o portal (sem onboarding de novo)
+    var pLayer = document.getElementById('tf-patient-app-layer');
+    pLayer.style.display = ''; pLayer.classList.add('open');
+    _verificarTermosPortal(p.id || userId, function(){ renderPatientApp(0, [p]); });
+    return true;
+  } catch(e) {
+    console.warn('[Paciente] Restore session:', e.message);
+    return false;
+  }
+}
+
+// ── Init principal ──
+document.addEventListener('DOMContentLoaded', function() {
+  _prePreencharEmail();
+
+  // Aguarda JS deferred carregar, depois tenta restaurar sessão
+  setTimeout(function() {
+    _wrapLoginPaciente();
+    _tryRestorePacientSession().then(function(restored) {
+      if (!restored) {
+        document.getElementById('tf-patient-login-layer').classList.add('open');
+        setTimeout(function(){ document.getElementById('pac-login-email').focus(); }, 150);
+      }
+    });
+  }, 600);
+});
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  });
+}
+</script>
+</body>
+</html>

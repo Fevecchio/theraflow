@@ -328,7 +328,7 @@ async function compartilharAcessoPortal(i) {
       pacienteNome: p.name,
       email: p.email,
       senha: senha,
-      portalUrl: window.location.origin + window.location.pathname,
+      portalUrl: window.location.origin + '/paciente' + (p.email ? '?e=' + encodeURIComponent(p.email) : ''),
     });
   }
   _enviarWhatsAppAcesso(p, nome, senha);
@@ -336,11 +336,15 @@ async function compartilharAcessoPortal(i) {
 
 function _enviarWhatsAppAcesso(p, nome, senha) {
   var terapeuta = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
+  var portalLink = window.location.origin + '/paciente' + (p.email ? '?e=' + encodeURIComponent(p.email) : '');
   var msg = 'Olá, ' + nome + '! 🌿\n\n'
     + 'Criei seu acesso ao portal TheraFlow — um espaço só seu para registrar seu humor, fazer exercícios e acompanhar sua jornada terapêutica entre nossas sessões.\n\n'
-    + '🔑 *Como acessar:*\n'
+    + '📱 *Acesse aqui:*\n'
+    + portalLink + '\n\n'
+    + '🔑 *Suas credenciais:*\n'
     + 'Email: ' + (p.email || 'seu email') + '\n'
     + 'Senha: ' + senha + '\n\n'
+    + 'No primeiro acesso você criará uma senha pessoal. Depois é só abrir o link e entrar!\n\n'
     + 'Qualquer dúvida é só me chamar. Até a próxima sessão! 💚\n'
     + '— ' + terapeuta;
   var tel = (p.whatsapp || '').replace(/\D/g,'');
