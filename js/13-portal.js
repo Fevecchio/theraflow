@@ -981,6 +981,20 @@ function renderPatientApp(idx, pacs) {
     + '<div id="pac-traj-wrap" style="padding:0 16px 14px">' + jornadaHtml + '</div>'
     + (anamnesePortalHtml ? '<div style="padding:0 16px 14px">' + anamnesePortalHtml + '</div>' : '')
     + '<div style="padding:0 16px 14px">' + notifHtml + '</div>'
+    + '<div style="padding:0 16px 20px"><div class="patient-section-card">'
+      + '<div class="patient-section-header" style="cursor:pointer" onclick="pacToggleAlterarSenha()">'
+        + '<div class="patient-section-title">🔑 Alterar senha</div>'
+        + '<div id="pac-senha-chevron" style="font-size:11px;color:var(--muted);transition:transform .2s">▼</div>'
+      + '</div>'
+      + '<div id="pac-alterar-senha-form" style="display:none;padding:4px 0 8px">'
+        + '<div style="margin-bottom:8px"><input id="pac-senha-atual" type="password" placeholder="Senha atual" class="pac-flow-input" style="margin-bottom:0"/></div>'
+        + '<div style="margin-bottom:8px"><input id="pac-senha-nova" type="password" placeholder="Nova senha (mín. 6 caracteres)" class="pac-flow-input" style="margin-bottom:0"/></div>'
+        + '<div style="margin-bottom:10px"><input id="pac-senha-nova2" type="password" placeholder="Confirmar nova senha" class="pac-flow-input" style="margin-bottom:0"/></div>'
+        + '<div id="pac-senha-alterar-err" style="display:none;font-size:13px;color:#c0392b;margin-bottom:8px"></div>'
+        + '<div id="pac-senha-alterar-ok" style="display:none;font-size:13px;color:var(--sage);margin-bottom:8px">✓ Senha alterada com sucesso!</div>'
+        + '<button onclick="pacConfirmarAlteracaoSenha()" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Salvar nova senha</button>'
+      + '</div>'
+    + '</div></div>'
   + '</div>'  /* /pac-tab-me */
 
 
@@ -1231,6 +1245,69 @@ function pacSelectMood(val, el) {
 
 function pacMoodSliderInput(val) {
   // gradiente arco-íris gerenciado pelo CSS .mood-slider — sem override aqui
+}
+
+function pacToggleAlterarSenha() {
+  var form = document.getElementById('pac-alterar-senha-form');
+  var chevron = document.getElementById('pac-senha-chevron');
+  var aberto = form.style.display !== 'none';
+  form.style.display = aberto ? 'none' : 'block';
+  if (chevron) chevron.style.transform = aberto ? '' : 'rotate(180deg)';
+  if (!aberto) {
+    // limpa campos e mensagens ao abrir
+    ['pac-senha-atual','pac-senha-nova','pac-senha-nova2'].forEach(function(id){
+      var el = document.getElementById(id); if (el) el.value = '';
+    });
+    ['pac-senha-alterar-err','pac-senha-alterar-ok'].forEach(function(id){
+      var el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+  }
+}
+
+async function pacConfirmarAlteracaoSenha() {
+  var atual  = (document.getElementById('pac-senha-atual').value  || '').trim();
+  var nova   = (document.getElementById('pac-senha-nova').value   || '').trim();
+  var nova2  = (document.getElementById('pac-senha-nova2').value  || '').trim();
+  var errEl  = document.getElementById('pac-senha-alterar-err');
+  var okEl   = document.getElementById('pac-senha-alterar-ok');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+
+  if (!atual) { errEl.textContent = 'Digite a senha atual.'; errEl.style.display = ''; return; }
+  if (!nova || nova.length < 6) { errEl.textContent = 'A nova senha deve ter pelo menos 6 caracteres.'; errEl.style.display = ''; return; }
+  if (nova !== nova2) { errEl.textContent = 'As senhas não coincidem.'; errEl.style.display = ''; return; }
+
+  var p = _loggedPatientData;
+  if (!p) return;
+
+  // Valida senha atual
+  var hashAtual = await _portalHash(atual);
+  var senhaValida = false;
+  if (p.portalPasswordHash) {
+    senhaValida = p.portalPasswordHash === hashAtual;
+  } else {
+    // ainda na senha padrão (primeiro nome)
+    var defaultPwd = (p.name || '').split(' ')[0].toLowerCase();
+    senhaValida = (atual === defaultPwd);
+  }
+
+  if (!senhaValida) { errEl.textContent = 'Senha atual incorreta.'; errEl.style.display = ''; return; }
+
+  // Salva nova senha
+  var hashNova = await _portalHash(nova);
+  p.portalPasswordHash = hashNova;
+  p.portalPassword = null;
+  if (typeof patients !== 'undefined' && patients[_loggedPatientIdx]) {
+    patients[_loggedPatientIdx].portalPasswordHash = hashNova;
+    patients[_loggedPatientIdx].portalPassword = null;
+  }
+  try { localStorage.setItem('tf_patients', JSON.stringify(typeof patients !== 'undefined' ? patients : [p])); } catch(_) {}
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+
+  okEl.style.display = '';
+  ['pac-senha-atual','pac-senha-nova','pac-senha-nova2'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  setTimeout(function(){ pacToggleAlterarSenha(); }, 2000);
 }
 
 function pacSalvarMood(idx) {
