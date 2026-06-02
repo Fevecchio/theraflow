@@ -199,6 +199,11 @@
 //  INICIALIZAÇÃO DO PORTAL STANDALONE DO PACIENTE
 // ══════════════════════════════════════════════════════════
 
+// Variáveis declaradas em 15-tarefas.js (não carregado aqui)
+var _loggedPatientIdx = null;
+var _loggedPatientData = null;
+var _therapistPatientsBackup = null;
+
 // Override: no app do paciente não há "voltar ao terapeuta"
 function voltarLoginTerapeuta() {
   window.location.href = '/app';
