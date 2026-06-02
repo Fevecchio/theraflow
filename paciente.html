@@ -204,9 +204,35 @@ var _loggedPatientIdx = null;
 var _loggedPatientData = null;
 var _therapistPatientsBackup = null;
 
+// _portalHash declarada em 17-misc.js (não carregado aqui)
+async function _portalHash(senha) {
+  try {
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('tf-portal:' + senha));
+    return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  } catch(e) {
+    return senha;
+  }
+}
+
 // Override: no app do paciente não há "voltar ao terapeuta"
 function voltarLoginTerapeuta() {
   window.location.href = '/app';
+}
+
+// Override de sairPaciente: no app standalone só mostra a tela de login
+function sairPaciente() {
+  if (typeof supaPatient !== 'undefined') supaPatient.auth.signOut().catch(function(){});
+  _loggedPatientIdx = null;
+  _loggedPatientData = null;
+  _therapistPatientsBackup = null;
+  document.getElementById('tf-patient-app-layer').classList.remove('open');
+  document.getElementById('tf-patient-app-layer').style.display = '';
+  document.getElementById('tf-patient-login-layer').classList.add('open');
+  var emailEl = document.getElementById('pac-login-email');
+  var senhaEl = document.getElementById('pac-login-senha');
+  if (emailEl) emailEl.value = '';
+  if (senhaEl) senhaEl.value = '';
+  setTimeout(function(){ if (emailEl) emailEl.focus(); }, 100);
 }
 
 // Override: irParaLoginPaciente apenas mostra a camada de login
