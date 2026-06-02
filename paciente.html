@@ -94,6 +94,10 @@
       <div id="pac-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:16px">
         ⚠ Email ou senha incorretos. Verifique com seu terapeuta.
       </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer;font-size:13.5px;color:var(--ink, #1a1f1c)">
+        <input type="checkbox" id="pac-keep-logged" style="width:16px;height:16px;accent-color:var(--sage,#4a7c59);cursor:pointer"/>
+        Manter conectado neste dispositivo
+      </label>
       <button id="pac-login-btn" onclick="loginPaciente()" class="pac-flow-btn">
         Acessar meu portal →
       </button>
@@ -328,10 +332,11 @@ function _wrapLoginPaciente() {
           var pend = window._pacOnbPendente || {};
           if (pend.chave) { try { localStorage.setItem(pend.chave, '1'); } catch(_) {} }
           document.getElementById('pac-onboarding-layer').classList.remove('open');
-          _origVerif(patientId, pend.callback || callback);
+          var _cb = pend.callback || callback;
+          _origVerif(patientId, function(){ if (typeof window._pacSalvarRemember === 'function') window._pacSalvarRemember(_loggedPatientData); _cb(); });
         };
       } else {
-        _origVerif(patientId, callback);
+        _origVerif(patientId, function(){ if (typeof window._pacSalvarRemember === 'function') window._pacSalvarRemember(_loggedPatientData); callback(); });
       }
     }
   };
@@ -402,6 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
     _loggedPatientIdx = null;
     _loggedPatientData = null;
     _therapistPatientsBackup = null;
+    try { localStorage.removeItem('tf_pac_remember'); } catch(_) {} // logout explícito apaga "manter conectado"
     document.getElementById('tf-patient-app-layer').classList.remove('open');
     document.getElementById('tf-patient-app-layer').style.display = '';
     document.getElementById('tf-patient-login-layer').classList.add('open');
@@ -414,16 +420,97 @@ document.addEventListener('DOMContentLoaded', function() {
 
   _prePreencharEmail();
 
+  // Pré-marca checkbox se já tinha "manter conectado" salvo
+  try {
+    var _saved = JSON.parse(localStorage.getItem('tf_pac_remember') || 'null');
+    if (_saved && _saved.email) {
+      var _keepEl = document.getElementById('pac-keep-logged');
+      if (_keepEl) _keepEl.checked = true;
+    }
+  } catch(_) {}
+
   // Aguarda JS deferred carregar, depois tenta restaurar sessão
   setTimeout(function() {
     _wrapLoginPaciente();
+
+    // Tenta restaurar sessão Supabase Auth primeiro
     _tryRestorePacientSession().then(function(restored) {
-      if (!restored) {
-        document.getElementById('tf-patient-login-layer').classList.add('open');
-        setTimeout(function(){ document.getElementById('pac-login-email').focus(); }, 150);
-      }
+      if (restored) return;
+
+      // Fallback: auto-login com credenciais salvas ("manter conectado")
+      try {
+        var _saved = JSON.parse(localStorage.getItem('tf_pac_remember') || 'null');
+        if (_saved && _saved.email && _saved.hash) {
+          _autoLoginFromRemember(_saved);
+          return;
+        }
+      } catch(_) {}
+
+      // Nenhuma sessão → mostra tela de login
+      document.getElementById('tf-patient-login-layer').classList.add('open');
+      setTimeout(function(){ document.getElementById('pac-login-email').focus(); }, 150);
     });
   }, 600);
+
+  // ── Salva/remove credenciais "manter conectado" após login bem-sucedido ──
+  // Chamado pelo _wrapLoginPaciente após o portal renderizar
+  window._pacSalvarRemember = async function(p) {
+    var keepEl = document.getElementById('pac-keep-logged');
+    if (keepEl && keepEl.checked && p && p.email) {
+      var h = await _portalHash(document.getElementById('pac-login-senha') ? document.getElementById('pac-login-senha').value : '');
+      // Salva hash atual do paciente (já foi validado pelo login)
+      var hashToSave = p.portalPasswordHash || h;
+      try { localStorage.setItem('tf_pac_remember', JSON.stringify({ email: p.email, hash: hashToSave })); } catch(_) {}
+    } else if (!keepEl || !keepEl.checked) {
+      try { localStorage.removeItem('tf_pac_remember'); } catch(_) {}
+    }
+  };
+
+  // ── Auto-login a partir das credenciais salvas ──
+  async function _autoLoginFromRemember(saved) {
+    try {
+      var pacs = [];
+      try { pacs = JSON.parse(localStorage.getItem('tf_patients') || '[]'); } catch(_) {}
+      var idx = pacs.findIndex(function(p) {
+        return (p.email||'').toLowerCase() === saved.email.toLowerCase() && p.portalPasswordHash === saved.hash;
+      });
+      if (idx !== -1) {
+        // Paciente encontrado no localStorage com hash correspondente
+        _loggedPatientData = pacs[idx];
+        _loggedPatientIdx = idx;
+        document.getElementById('tf-patient-login-layer').classList.remove('open');
+        var _pLayer = document.getElementById('tf-patient-app-layer');
+        _pLayer.style.display = ''; _pLayer.classList.add('open');
+        _verificarTermosPortal(pacs[idx].id || 'local-' + idx, function(){ renderPatientApp(idx, pacs); });
+        return;
+      }
+      // Tenta via RPC
+      var rpcRes = await supaPatient.rpc('portal_patient_login', { p_email: saved.email, p_hash: saved.hash });
+      if (rpcRes.data) {
+        var raw = rpcRes.data;
+        var meta = raw.metadata || {};
+        var p = Object.assign({}, meta, {
+          id: raw.id, name: raw.name, email: raw.email,
+          whatsapp: raw.phone, age: raw.age, abordagem: raw.abordagem,
+          status: raw.status, sessions: raw.sessions_count, progress: raw.progress,
+        });
+        var apptRes = await supaPatient.from('appointments').select('local_id,date,time,presenca,status,metadata').eq('patient_id', raw.id).order('date', { ascending: false }).limit(60);
+        if (apptRes.data && apptRes.data.length) {
+          p.appointments = apptRes.data.map(function(a){ return Object.assign({}, (a.metadata||{}), { id: a.local_id, date: a.date, time: a.time, presenca: a.presenca, status: a.status }); });
+        }
+        _loggedPatientData = p;
+        _loggedPatientIdx = 0;
+        document.getElementById('tf-patient-login-layer').classList.remove('open');
+        var _pL = document.getElementById('tf-patient-app-layer');
+        _pL.style.display = ''; _pL.classList.add('open');
+        _verificarTermosPortal(p.id, function(){ renderPatientApp(0, [p]); });
+        return;
+      }
+    } catch(e) { console.warn('[Remember] auto-login failed:', e.message); }
+    // Falhou → mostra login (não limpa o remember ainda, pode ser problema de conexão)
+    document.getElementById('tf-patient-login-layer').classList.add('open');
+    setTimeout(function(){ document.getElementById('pac-login-email').focus(); }, 150);
+  }
 });
 
 // Service Worker
