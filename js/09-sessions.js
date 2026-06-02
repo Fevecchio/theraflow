@@ -670,7 +670,7 @@ async function _gerarResumoPortalIA(sp, noteText) {
     var content = (data.content || '').trim();
     // Descarta respostas de recusa/erro do Claude (não devem aparecer para o paciente)
     if (!content || /^desculpe|nota.*incompleta|preciso.*detalhes|não (posso|consigo)|unable to/i.test(content)) return null;
-    return content;
+    return typeof _stripMd === 'function' ? _stripMd(content) : content;
   } catch(e) {
     console.warn('[ResumoPortalIA]', e.message);
     return null;
