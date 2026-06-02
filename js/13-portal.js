@@ -1311,9 +1311,13 @@ async function pacConfirmarAlteracaoSenha() {
   // Atualiza Supabase via RPC (funciona sem sessão de auth — SECURITY DEFINER)
   var _emailUpd = p.email || '';
   if (_emailUpd && typeof supaPatient !== 'undefined') {
-    supaPatient.rpc('portal_update_password', {
-      p_email: _emailUpd, p_old_hash: hashAtual, p_new_hash: hashNova
-    }).catch(function(){});
+    (function() {
+      try {
+        supaPatient.rpc('portal_update_password', {
+          p_email: _emailUpd, p_old_hash: hashAtual, p_new_hash: hashNova
+        }).then(null, function(){});
+      } catch(_) {}
+    })();
   }
 
   okEl.style.display = '';
