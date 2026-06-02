@@ -214,13 +214,11 @@ async function _portalHash(senha) {
   }
 }
 
-// Override: no app do paciente não há "voltar ao terapeuta"
-function voltarLoginTerapeuta() {
-  window.location.href = '/app';
-}
+// Overrides via window.* para garantir que sobrescrevem 04-auth.js
+window.voltarLoginTerapeuta = function() { window.location.href = '/app'; };
 
-// Override de sairPaciente: no app standalone só mostra a tela de login
-function sairPaciente() {
+// Override de sairPaciente via atribuição (garante que sobrescreve 04-auth.js)
+window.sairPaciente = function() {
   if (typeof supaPatient !== 'undefined') supaPatient.auth.signOut().catch(function(){});
   _loggedPatientIdx = null;
   _loggedPatientData = null;
@@ -233,13 +231,12 @@ function sairPaciente() {
   if (emailEl) emailEl.value = '';
   if (senhaEl) senhaEl.value = '';
   setTimeout(function(){ if (emailEl) emailEl.focus(); }, 100);
-}
+};
 
-// Override: irParaLoginPaciente apenas mostra a camada de login
-function irParaLoginPaciente() {
+window.irParaLoginPaciente = function() {
   document.getElementById('tf-patient-login-layer').classList.add('open');
   setTimeout(function(){ document.getElementById('pac-login-email').focus(); }, 100);
-}
+};
 
 // Fluxo pós-login: verifica primeiro acesso → onboarding
 function _pacPosLogin(p, idx, pacs) {
