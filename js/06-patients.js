@@ -498,6 +498,7 @@ async function _supaPatientSync() {
         materials: p.materials || [],
         diary: p.diary || [],
         metas: p.metas || [],
+        portalMetas: p.portalMetas || [],
         appointments: p.appointments || [],
         sessionLink: p.sessionLink || null,
         _moodLastDate: p._moodLastDate || null,

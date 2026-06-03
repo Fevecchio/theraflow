@@ -1014,19 +1014,29 @@ function renderPatientApp(idx, pacs) {
   setTimeout(function(){ renderMoodHistory(); }, 0);
 }
 
-function pacIncrementarEx(pidx, exId) {
+/* Resolve paciente de tf_patients OU de _loggedPatientData (contexto standalone /paciente) */
+function _pacGetP(idx) {
   var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[pidx]; if (!p || !p.exercises) return;
+  if (pacs[idx]) return { p: pacs[idx], pacs: pacs, fromLS: true, idx: idx };
+  var ldp = (typeof _loggedPatientData !== 'undefined') ? _loggedPatientData : null;
+  if (ldp) return { p: ldp, pacs: [ldp], fromLS: false, idx: 0 };
+  return null;
+}
+
+function pacIncrementarEx(pidx, exId) {
+  var res = _pacGetP(pidx); if (!res) return;
+  var p = res.p, pacs = res.pacs, _idx = res.idx;
+  if (!p.exercises) return;
   var ex = p.exercises.find(function(e){ return e.id === exId; });
   if (!ex) return;
   ex.concluidos = Math.min((ex.concluidos||0)+1, ex.total||1);
   if (ex.concluidos >= (ex.total||1)) { ex.done = true; showToast('🎉 Exercício concluído! Parabéns!'); }
   else showToast('✓ Realização registrada — ' + ex.concluidos + '/' + (ex.total||1));
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
-  if (typeof patients !== 'undefined' && patients[pidx]) patients[pidx].exercises = p.exercises;
+  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].exercises = p.exercises;
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.exercises = p.exercises;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
-  renderPatientApp(pidx, pacs);
+  renderPatientApp(_idx, pacs);
   if (typeof pacNavTo === 'function') pacNavTo('ex');
 }
 
@@ -1340,34 +1350,29 @@ function pacSalvarMood(idx) {
   var hoje = new Date();
   var dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
 
-  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[idx];
-  if (p) {
-    // Fix 1: salva nota de humor
-    if (!p.moodNotes) p.moodNotes = [];
-    p.moodNotes.push({ date: dataStr, val: val, nota: nota });
-    // Mantém apenas últimas 30 entradas
-    if (p.moodNotes.length > 30) p.moodNotes = p.moodNotes.slice(-30);
+  var res = _pacGetP(idx); if (!res) return;
+  var p = res.p, pacs = res.pacs, _idx = res.idx;
 
-    // Fix 2: atualiza moodHistory (que alimenta o sparkline)
-    if (!p.moodHistory) p.moodHistory = [];
-    p.moodHistory.push({ value: val, emoji: _pacSelectedMoodEmoji || '😐', date: dataStr });
-    if (p.moodHistory.length > 12) p.moodHistory = p.moodHistory.slice(-12);
+  if (!p.moodNotes) p.moodNotes = [];
+  p.moodNotes.push({ date: dataStr, val: val, nota: nota });
+  if (p.moodNotes.length > 30) p.moodNotes = p.moodNotes.slice(-30);
 
-    p.mood = val;
-    var _lastMv = _normMoodVal(p.moodHistory[p.moodHistory.length-1]);
-    var _prevMv = _normMoodVal(p.moodHistory[p.moodHistory.length-2]);
-    p.moodTrend = p.moodHistory.length >= 2
-      ? (_lastMv > _prevMv ? 'up' : _lastMv < _prevMv ? 'down' : 'stable')
-      : 'stable';
-    p._moodLastDate = (typeof hojeISO === 'function') ? hojeISO() : dataStr;
-    // Streak de check-in
-    if (typeof _calcStreak === 'function') _calcStreak(p);
-  }
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (!p.moodHistory) p.moodHistory = [];
+  p.moodHistory.push({ value: val, emoji: _pacSelectedMoodEmoji || '😐', date: dataStr });
+  if (p.moodHistory.length > 12) p.moodHistory = p.moodHistory.slice(-12);
 
-  // Fix 4: mantém _loggedPatientData sincronizado antes do sync Supabase
-  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData && p) {
+  p.mood = val;
+  var _lastMv = _normMoodVal(p.moodHistory[p.moodHistory.length-1]);
+  var _prevMv = _normMoodVal(p.moodHistory[p.moodHistory.length-2]);
+  p.moodTrend = p.moodHistory.length >= 2
+    ? (_lastMv > _prevMv ? 'up' : _lastMv < _prevMv ? 'down' : 'stable')
+    : 'stable';
+  p._moodLastDate = (typeof hojeISO === 'function') ? hojeISO() : dataStr;
+  if (typeof _calcStreak === 'function') _calcStreak(p);
+
+  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) {
     Object.assign(_loggedPatientData, {
       mood: p.mood, moodTrend: p.moodTrend,
       moodHistory: p.moodHistory, moodNotes: p.moodNotes,
@@ -1375,8 +1380,8 @@ function pacSalvarMood(idx) {
       checkInStreak: p.checkInStreak, lastCheckInDate: p.lastCheckInDate,
     });
   }
-  if (typeof patients !== 'undefined' && patients[idx] && p) {
-    Object.assign(patients[idx], {
+  if (typeof patients !== 'undefined' && patients[_idx]) {
+    Object.assign(patients[_idx], {
       mood: p.mood, moodTrend: p.moodTrend,
       moodHistory: p.moodHistory, moodNotes: p.moodNotes,
       _moodLastDate: p._moodLastDate,
@@ -1406,53 +1411,54 @@ function pacSalvarMood(idx) {
 function pacSalvarNotaRapida(idx) {
   var texto = (document.getElementById('pac-quick-note-text')?.value || '').trim();
   if (!texto) { showToast('Escreva algo antes de salvar.'); return; }
-  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[idx];
-  if (p) {
-    if (!p.diary) p.diary = [];
-    var hoje = new Date();
-    var dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-    var dataStr = dias[hoje.getDay()]+', '+String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
-    var horaStr = String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0');
-    p.diary.unshift({ tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: Date.now() });
-    localStorage.setItem('tf_patients', JSON.stringify(pacs));
-    if (typeof patients !== 'undefined' && patients[idx]) patients[idx].diary = p.diary;
-    if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
-  }
+  var res = _pacGetP(idx); if (!res) return;
+  var p = res.p, pacs = res.pacs, _idx = res.idx;
+  if (!p.diary) p.diary = [];
+  var hoje = new Date();
+  var dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var dataStr = dias[hoje.getDay()]+', '+String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
+  var horaStr = String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0');
+  p.diary.unshift({ tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: Date.now() });
+  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.diary = p.diary;
+  if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].diary = p.diary;
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
   var wrap = document.getElementById('pac-quick-note-wrap');
   if (wrap) wrap.style.display = 'none';
   showToast('Nota salva. 🌿');
 }
 
 function pacToggleEx(pidx, exId, patientName) {
-  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[pidx]; if (!p || !p.exercises) return;
+  var res = _pacGetP(pidx); if (!res) return;
+  var p = res.p, pacs = res.pacs, _idx = res.idx;
+  if (!p.exercises) return;
   var ex = p.exercises.find(function(e){ return e.id === exId; });
   if (ex) ex.done = !ex.done;
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
-  if (typeof patients !== 'undefined' && patients[pidx]) patients[pidx].exercises = p.exercises;
+  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].exercises = p.exercises;
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.exercises = p.exercises;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
-  renderPatientApp(pidx, pacs);
+  renderPatientApp(_idx, pacs);
   if (typeof pacNavTo === 'function') pacNavTo('ex');
 }
 
 function pacToggleMeta(pidx, metaId, cb, patientName) {
-  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[pidx]; if (!p || !p.portalMetas) return;
+  var res = _pacGetP(pidx); if (!res) return;
+  var p = res.p, pacs = res.pacs, _idx = res.idx;
+  if (!p.portalMetas) return;
   var m = p.portalMetas.find(function(x){ return x.id === metaId; });
   if (m) m.done = cb.checked;
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
-  if (typeof patients !== 'undefined' && patients[pidx]) patients[pidx].portalMetas = p.portalMetas;
+  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].portalMetas = p.portalMetas;
+  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.portalMetas = p.portalMetas;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
-  renderPatientApp(pidx, pacs);
+  renderPatientApp(_idx, pacs);
   if (typeof pacNavTo === 'function') pacNavTo('me');
 }
 
 function pacSalvarDiario(tipo, idx) {
-  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[idx];
-  if (!p) return;
+  var res = _pacGetP(idx); if (!res) return;
+  var p = res.p, pacs = res.pacs, idx = res.idx;
   if (!p.diary) p.diary = [];
 
   var hoje = new Date();
@@ -1481,7 +1487,7 @@ function pacSalvarDiario(tipo, idx) {
   p.diary.unshift(entrada);
   if (p.diary.length > 50) p.diary = p.diary.slice(0, 50);
 
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
 
   // Mantém memória em sincronia
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) {
