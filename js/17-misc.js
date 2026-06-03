@@ -394,7 +394,7 @@ function renderMonthView() {
     } else if (hasSessoes) {
       // Mostra até 2 nomes e badge com total (sessoes = appointments agora)
       sessoes.slice(0, 2).forEach(function(a) {
-        html += '<div style="font-size:10px;background:var(--sage);color:#fff;border-radius:4px;padding:2px 6px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+        html += '<div class="' + escHTML(a.color||'appt-green') + '" style="font-size:10px;border-radius:4px;padding:2px 6px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
           + escHTML(_firstName(a.patientName)) + ' ' + (a.time||'') + '</div>';
       });
       if (sessoes.length > 2) {
