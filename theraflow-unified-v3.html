@@ -478,6 +478,10 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <button class="nav-item" onclick="navigate('pacientes')">
       <span class="icon">⊙</span> Pacientes
     </button>
+    <button class="nav-item" onclick="navigate('captacao')" id="nav-captacao-btn">
+      <span class="icon">◎</span> Captação
+      <span class="nav-badge" id="nav-captacao-badge" style="display:none">0</span>
+    </button>
     <button class="nav-item" onclick="navigate('sessao')">
       <span class="icon">▶</span> Sessão ao vivo
     </button>
@@ -867,6 +871,20 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </div>
     </div>
   </div>
+</div>
+
+<!-- ══════ CAPTAÇÃO ══════ -->
+<div class="page fade-in" id="page-captacao">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Pipeline de Captação</div>
+      <div class="page-subtitle" id="captacao-subtitle">—</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-primary btn-sm" onclick="abrirModalLead()">+ Novo lead</button>
+    </div>
+  </div>
+  <div class="kanban-board" id="kanban-board"></div>
 </div>
 
 <!-- ══════ TAREFAS ══════ -->
@@ -2889,6 +2907,43 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   </div>
 </div>
 
+<!-- ══ MODAL CAPTAÇÃO — LEAD ══ -->
+<div class="modal-overlay" id="modal-captacao-lead">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="modal-lead-titulo">Novo lead</div>
+    <div class="form-group">
+      <label>Nome <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="lead-nome-input" placeholder="Nome completo" autocomplete="off"/>
+    </div>
+    <div class="form-group">
+      <label>WhatsApp <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="lead-wpp-input" placeholder="(11) 99999-9999" type="tel" autocomplete="off"/>
+    </div>
+    <div class="form-group">
+      <label>Como chegou até você?</label>
+      <select class="form-input" id="lead-origem-select">
+        <option value="indicacao">Indicação</option>
+        <option value="instagram">Instagram</option>
+        <option value="doctoralia">Doctoralia / plataforma</option>
+        <option value="site">Site / Google</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Queixa principal <span style="color:var(--muted);font-size:11px">· opcional</span></label>
+      <input class="form-input" id="lead-queixa-input" placeholder="Ex: Ansiedade, relacionamentos, luto…" autocomplete="off"/>
+    </div>
+    <div class="form-group">
+      <label>Observações <span style="color:var(--muted);font-size:11px">· opcional</span></label>
+      <textarea class="form-input" id="lead-obs-input" rows="2" placeholder="Notas internas, próximos passos…" style="resize:vertical"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-captacao-lead')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarLead()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL NOVA TAREFA ══ -->
 <div class="modal-overlay" id="modal-nova-tarefa">
   <div class="modal" style="max-width:460px">
@@ -2934,6 +2989,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 <script src="/js/16-busca-global.js" defer></script>
 <script src="/js/17-misc.js" defer></script>
 <script src="/js/18-main.js" defer></script>
+<script src="/js/19-captacao.js" defer></script>
 
 <!-- ═══════════════════════════════════════
      ÁREA DO PACIENTE — LOGIN
