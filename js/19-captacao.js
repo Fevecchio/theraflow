@@ -203,10 +203,24 @@ function converterParaPaciente(id) {
   var lead = captacaoLeads.find(function(l){ return l.id === id; });
   if (!lead) return;
   if (!confirm('Converter "' + lead.nome + '" para paciente?\nO lead será removido do pipeline.')) return;
-  var nomeSalvo = lead.nome;
+
+  var nome   = lead.nome;
+  var wpp    = lead.whatsapp || '';
+  var queixa = lead.queixa  || '';
+
   captacaoLeads = captacaoLeads.filter(function(l){ return l.id !== id; });
   salvarCaptacao();
-  renderKanban();
-  showToast('✓ Convertido! Cadastre ' + nomeSalvo + ' em Pacientes.');
-  setTimeout(function(){ navigate('pacientes'); }, 1400);
+
+  // Navega para Pacientes e abre o modal de novo paciente pré-preenchido
+  navigate('pacientes');
+  setTimeout(function() {
+    if (typeof limparModalPaciente === 'function') limparModalPaciente();
+    var nomeEl   = document.getElementById('np-nome');
+    var wppEl    = document.getElementById('np-whatsapp');
+    var queixaEl = document.getElementById('np-queixa');
+    if (nomeEl)   nomeEl.value   = nome;
+    if (wppEl)    wppEl.value    = wpp;
+    if (queixaEl && queixa) queixaEl.value = queixa;
+    showModal('modal-novo-paciente');
+  }, 250);
 }
