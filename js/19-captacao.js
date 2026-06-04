@@ -33,6 +33,10 @@ function salvarCaptacao() {
 }
 
 function atualizarBadgeCaptacao() {
+  // Lazy-load se captacaoLeads ainda não foi populado nesta sessão
+  if (captacaoLeads.length === 0) {
+    try { captacaoLeads = JSON.parse(localStorage.getItem('tf_captacao') || '[]'); } catch(e) {}
+  }
   var ativos = captacaoLeads.filter(function(l){ return l.coluna < 5; }).length;
   var badge = document.getElementById('nav-captacao-badge');
   if (!badge) return;
@@ -43,12 +47,15 @@ function atualizarBadgeCaptacao() {
 function initCaptacao() {
   carregarCaptacao();
   renderKanban();
+  atualizarBadgeCaptacao();
 }
 
 function _captacaoSubtitle() {
   var ativos = captacaoLeads.filter(function(l){ return l.coluna < 5; }).length;
   var perdidos = captacaoLeads.filter(function(l){ return l.coluna === 5; }).length;
-  var txt = ativos + ' lead' + (ativos !== 1 ? 's' : '') + ' em aberto';
+  var txt = ativos === 0 ? 'Nenhum lead em aberto'
+          : ativos === 1 ? '1 lead em aberto'
+          : ativos + ' leads em aberto';
   if (perdidos > 0) txt += ' · ' + perdidos + ' perdido' + (perdidos !== 1 ? 's' : '');
   var el = document.getElementById('captacao-subtitle');
   if (el) el.textContent = txt;

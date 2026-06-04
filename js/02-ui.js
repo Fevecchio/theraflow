@@ -66,6 +66,7 @@ function navigate(page) {
   // Atualiza badges de nav
   _atualizarBadgeSupervisao();
   _atualizarBadgePortal();
+  if (typeof atualizarBadgeCaptacao === 'function') atualizarBadgeCaptacao();
   if (page === 'captacao') initCaptacao();
   if (page === 'tarefas') initTarefas();
   if (page === 'sessao') startSession();
