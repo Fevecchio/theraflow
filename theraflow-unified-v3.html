@@ -300,6 +300,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="ob-title">Bem-vindo de volta</div>
       <div class="ob-subtitle">Entre com seu email e senha para acessar sua conta.</div>
 
+      <div id="login-form-fields">
       <!-- FORM -->
       <div class="form-group">
         <label for="login-email">Email profissional</label>
@@ -338,6 +339,18 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <button class="btn btn-secondary btn-full" onclick="hideLogin()" style="width:100%;justify-content:center;font-size:13px">
         Criar uma conta nova
       </button>
+      </div><!-- fim login-form-fields -->
+
+      <!-- DESAFIO 2FA -->
+      <div id="tfa-challenge" style="display:none">
+        <div style="text-align:center;font-size:34px;margin-bottom:8px">🔐</div>
+        <div class="ob-title" style="text-align:center">Verificação em duas etapas</div>
+        <div class="ob-subtitle" style="text-align:center;margin-bottom:20px">Digite o código de 6 dígitos do seu app autenticador.</div>
+        <input id="tfa-login-code" class="form-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000" style="text-align:center;letter-spacing:8px;font-size:22px;font-weight:600" onkeydown="if(event.key==='Enter')_verifyMfaLogin()"/>
+        <div id="tfa-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-top:12px"></div>
+        <button class="btn btn-primary btn-full btn-lg" onclick="_verifyMfaLogin()" id="btn-tfa-verify" style="width:100%;justify-content:center;margin-top:16px">Verificar e entrar →</button>
+        <button class="btn btn-secondary btn-full" onclick="_cancelMfaChallenge()" style="width:100%;justify-content:center;font-size:13px;margin-top:10px">Cancelar</button>
+      </div>
 
     </div><!-- fim ob-card-body -->
 
@@ -2088,6 +2101,28 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
       </div>
 
+      <!-- Autenticação em dois fatores -->
+      <div class="perfil-section" id="tfa-card">
+        <div class="perfil-section-title">Autenticação em dois fatores (2FA)</div>
+        <div id="tfa-status" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
+        <button class="btn btn-secondary btn-sm" id="btn-tfa-ativar" onclick="ativar2FA()" style="display:none">Ativar 2FA</button>
+        <button class="btn btn-secondary btn-sm" id="btn-tfa-desativar" onclick="desativar2FA()" style="display:none">Desativar 2FA</button>
+
+        <div id="tfa-enroll-area" style="display:none;margin-top:16px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px">
+          <div style="font-size:13px;color:var(--ink);margin-bottom:12px">1. Escaneie o QR code com um app autenticador (Google Authenticator, Authy, 1Password…):</div>
+          <div id="tfa-qr" style="width:184px;height:184px;background:#fff;border-radius:8px;padding:8px;margin:0 auto 12px;box-sizing:border-box"></div>
+          <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:4px">Ou digite a chave manualmente:</div>
+          <div id="tfa-secret" style="font-family:monospace;font-size:12px;text-align:center;word-break:break-all;background:#fff;border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:16px"></div>
+          <div style="font-size:13px;color:var(--ink);margin-bottom:8px">2. Digite o código de 6 dígitos gerado pelo app:</div>
+          <input id="tfa-enroll-code" class="perfil-input" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:18px" onkeydown="if(event.key==='Enter')confirmar2FA()"/>
+          <div id="tfa-enroll-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:8px 12px;font-size:12px;color:#c0392b;margin-top:10px"></div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn btn-primary btn-sm" onclick="confirmar2FA()">Confirmar e ativar</button>
+            <button class="btn btn-secondary btn-sm" onclick="cancelar2FAEnroll()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Aparência -->
       <div class="perfil-section">
         <div class="perfil-section-title">Aparência</div>
@@ -2990,6 +3025,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 <script src="/js/17-misc.js" defer></script>
 <script src="/js/18-main.js" defer></script>
 <script src="/js/19-captacao.js" defer></script>
+<script src="/js/20-2fa.js" defer></script>
 
 <!-- ═══════════════════════════════════════
      ÁREA DO PACIENTE — LOGIN

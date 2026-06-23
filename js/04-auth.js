@@ -61,11 +61,15 @@ function loginSubmit() {
       return;
     }
 
-    // Login Supabase OK — carregar dados do banco
-    await _supaLoadUserData(data.user.id);
-    let account = null;
-    try { account = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
-    _proceedToApp(account);
+    // Login Supabase OK — verifica 2FA (se ativo) antes de carregar dados e entrar
+    if (typeof _postAuthGate === 'function') {
+      _postAuthGate(data.user);
+    } else {
+      await _supaLoadUserData(data.user.id);
+      let account = null;
+      try { account = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
+      _proceedToApp(account);
+    }
   });
 }
 

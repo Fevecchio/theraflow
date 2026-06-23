@@ -81,6 +81,7 @@ function navigate(page) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelector('.therapist-card')?.classList.add('active');
     initPerfil();
+    if (typeof _init2FACard === 'function') _init2FACard();
   }
 }
 
