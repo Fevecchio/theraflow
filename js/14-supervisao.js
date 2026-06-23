@@ -732,10 +732,12 @@ function exportarProntuario() {
       .sort(function(a,b){ return a.date < b.date ? -1 : 1; });
   } catch(e) {}
 
-  // Humor médio
+  // Humor médio (moodHistory pode ser number[] antigo ou {value,emoji,date}[] novo)
   var moodMedia = '';
   if (p.moodHistory && p.moodHistory.length) {
-    var mh = p.moodHistory.filter(function(v){ return v !== null && v !== undefined; });
+    var mh = p.moodHistory
+      .filter(function(v){ return v !== null && v !== undefined; })
+      .map(function(v){ return _normMoodVal(v); });
     if (mh.length) { moodMedia = (mh.reduce(function(s,v){return s+v;},0)/mh.length).toFixed(1) + '/10'; }
   }
 
@@ -787,9 +789,9 @@ function exportarProntuario() {
     '<div class="letterhead">' +
       '<div class="lh-left">' +
         '<h1>Prontuário Clínico</h1>' +
-        '<h2>' + (terapeuta.nome || '—') + '</h2>' +
-        '<div class="crp">CRP ' + (terapeuta.crp || '—') + ' · ' + (terapeuta.abordagem || 'Psicologia Clínica') + '</div>' +
-        (emailSup ? '<div class="crp">' + emailSup + '</div>' : '') +
+        '<h2>' + escHTML(terapeuta.nome || '—') + '</h2>' +
+        '<div class="crp">CRP ' + escHTML(terapeuta.crp || '—') + ' · ' + escHTML(terapeuta.abordagem || 'Psicologia Clínica') + '</div>' +
+        (emailSup ? '<div class="crp">' + escHTML(emailSup) + '</div>' : '') +
       '</div>' +
       '<div class="lh-right">' +
         'Documento gerado em<br/><strong>' + hojeLong + '</strong><br/>' +
@@ -801,13 +803,13 @@ function exportarProntuario() {
     '<div class="patient-header">' +
       '<div class="patient-avatar">' + initials + '</div>' +
       '<div>' +
-        '<div class="patient-name">' + (p.name||'—') + '</div>' +
+        '<div class="patient-name">' + escHTML(p.name||'—') + '</div>' +
         '<div class="patient-meta">' +
-          (p.age ? '<span>🎂 ' + p.age + ' anos</span>' : '') +
-          (p.cidade && p.cidade !== '—' ? '<span>📍 ' + p.cidade + '</span>' : '') +
-          (p.abordagem ? '<span>⚕ ' + p.abordagem + '</span>' : '') +
-          (p.cid && p.cid !== '—' ? '<span>🏷 CID: ' + p.cid + '</span>' : '') +
-          '<span>📊 Status: ' + (p.status||'—') + '</span>' +
+          (p.age ? '<span>🎂 ' + escHTML(p.age) + ' anos</span>' : '') +
+          (p.cidade && p.cidade !== '—' ? '<span>📍 ' + escHTML(p.cidade) + '</span>' : '') +
+          (p.abordagem ? '<span>⚕ ' + escHTML(p.abordagem) + '</span>' : '') +
+          (p.cid && p.cid !== '—' ? '<span>🏷 CID: ' + escHTML(p.cid) + '</span>' : '') +
+          '<span>📊 Status: ' + escHTML(p.status||'—') + '</span>' +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -823,14 +825,14 @@ function exportarProntuario() {
     // Queixa principal
     '<div class="section">' +
       '<div class="section-title">Queixa principal</div>' +
-      '<p style="line-height:1.75;color:#2a2f2c">' + (p.notes||'Não informado') + '</p>' +
+      '<p style="line-height:1.75;color:#2a2f2c;white-space:pre-wrap">' + escHTML(p.notes||'Não informado') + '</p>' +
     '</div>' +
 
     // Histórico de sessões agendadas
     (sessoesPaciente.length ? '<div class="section"><div class="section-title">Histórico de sessões (' + sessoesPaciente.length + ')</div><div class="session-list">' +
       sessoesPaciente.slice(-20).map(function(a,i){
         var d = a.date ? a.date.split('-').reverse().join('/') : '—';
-        return '<div class="session-item"><div class="session-dot"></div><span style="font-weight:500;min-width:80px">' + d + '</span><span style="color:#6a7a70">' + (a.time||'') + (a.abordagem ? ' · ' + a.abordagem : '') + '</span></div>';
+        return '<div class="session-item"><div class="session-dot"></div><span style="font-weight:500;min-width:80px">' + d + '</span><span style="color:#6a7a70">' + escHTML(a.time||'') + (a.abordagem ? ' · ' + escHTML(a.abordagem) : '') + '</span></div>';
       }).join('') +
     '</div></div>' : '') +
 
@@ -858,7 +860,7 @@ function exportarProntuario() {
           '<div class="section-title">Humor ao longo do tempo (últimos ' + Math.min(p.moodHistory.length, 12) + ' registros)</div>' +
           '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
           '<tr style="background:#f7f8f6">' +
-            p.moodHistory.slice(-12).map(function(v,i){ return '<th style="padding:5px 8px;border:1px solid #dde3de;text-align:center;font-weight:600;color:#4a7c59">' + v + '/10</th>'; }).join('') +
+            p.moodHistory.slice(-12).map(function(v,i){ return '<th style="padding:5px 8px;border:1px solid #dde3de;text-align:center;font-weight:600;color:#4a7c59">' + _normMoodEmoji(v) + ' ' + _normMoodVal(v) + '/10</th>'; }).join('') +
           '</tr></table>' +
           '<div style="font-size:11px;color:#8a9490;margin-top:6px">Valores mais recentes à direita · Escala 1 (muito mal) a 10 (muito bem)</div>' +
         '</div>'
@@ -888,7 +890,7 @@ function exportarProntuario() {
 
     // Área de assinatura
     '<div class="sign-area">' +
-      '<div class="sign-box"><div class="sign-line"></div><div class="sign-label">' + (terapeuta.nome||'Terapeuta') + ' · CRP ' + (terapeuta.crp||'—') + '</div></div>' +
+      '<div class="sign-box"><div class="sign-line"></div><div class="sign-label">' + escHTML(terapeuta.nome||'Terapeuta') + ' · CRP ' + escHTML(terapeuta.crp||'—') + '</div></div>' +
       '<div class="sign-box"><div class="sign-line"></div><div class="sign-label">Data e local</div></div>' +
     '</div>' +
 

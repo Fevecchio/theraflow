@@ -80,3 +80,26 @@ function tfTrack(event, props) {
   } catch(e) {}
 }
 
+/* ── REGISTRO DE CONSENTIMENTO (LGPD) ──
+ * Grava o aceite em consent_logs via /api/consent (IP + user-agent capturados
+ * no servidor). Best-effort: nunca bloqueia a UI nem lança erro — o localStorage
+ * continua sendo a fonte que destrava o fluxo. Inclui o JWT do terapeuta quando
+ * houver sessão (necessário só para 'termos_plataforma'). */
+async function _logConsent(tipo, opts) {
+  opts = opts || {};
+  try {
+    var body = { tipo: tipo, versao: opts.versao || '1.0' };
+    if (opts.patientId) body.patientId = opts.patientId;
+    var headers = { 'Content-Type': 'application/json' };
+    try { Object.assign(headers, await _apiAuthHeader()); } catch(e) {}
+    await fetchWithTimeout('/api/consent', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body),
+    }, 8000);
+  } catch(e) {
+    // Sem backend (preview local) ou offline: o aceite já está no localStorage.
+    if (window.console && console.debug) console.debug('[consent] não registrado no banco:', e.message);
+  }
+}
+

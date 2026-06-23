@@ -1,0 +1,139 @@
+/**
+ * TheraFlow — Serverless Function: Registro de consentimento (LGPD)
+ * Deploy: Vercel → /api/consent  (Node.js runtime)
+ *
+ * Grava em public.consent_logs o aceite de termos do terapeuta e do paciente.
+ * Captura IP e user-agent no servidor (impossível de forjar pelo cliente) e
+ * usa SUPABASE_SERVICE_ROLE_KEY para contornar a RLS (o paciente pode estar
+ * logado via RPC, sem sessão Supabase Auth).
+ *
+ * Tipos aceitos (coluna consent_logs.tipo):
+ *   'termos_plataforma' → terapeuta aceita os termos da TheraFlow (exige JWT)
+ *   'portal_paciente'   → paciente aceita os termos do portal (exige patientId)
+ *   'gravacao_sessao'   → consentimento de gravação (CFP 04/2020)
+ *   'uso_ia'            → consentimento para uso de IA nos dados
+ */
+
+const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supabase.co';
+
+const ALLOWED_ORIGINS = [
+  'https://theraflow-one.vercel.app',
+  'https://theraflow.com.br',
+  'https://www.theraflow.com.br',
+  'https://app.theraflow.com.br',
+  'http://localhost:3000',
+  'http://127.0.0.1:5500',
+];
+
+const VALID_TIPOS = ['termos_plataforma', 'portal_paciente', 'gravacao_sessao', 'uso_ia'];
+
+function setCors(res, origin) {
+  const allowed = (!origin || ALLOWED_ORIGINS.includes(origin))
+    ? (origin || ALLOWED_ORIGINS[0])
+    : ALLOWED_ORIGINS[0];
+  res.setHeader('Access-Control-Allow-Origin', allowed);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+}
+
+function supaHeaders(serviceKey) {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': serviceKey,
+    'Authorization': `Bearer ${serviceKey}`,
+  };
+}
+
+async function verifySupabaseJWT(req, serviceKey) {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+  try {
+    const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
+      headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${token}` },
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
+
+function clientIp(req) {
+  const fwd = req.headers['x-forwarded-for'] || '';
+  return fwd.split(',')[0].trim() || req.headers['x-real-ip'] || null;
+}
+
+export default async function handler(req, res) {
+  const origin = req.headers.origin || '';
+  setCors(res, origin);
+
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SERVICE_KEY) {
+    console.error('[consent] SUPABASE_SERVICE_ROLE_KEY ausente');
+    return res.status(500).json({ error: 'Service misconfigured' });
+  }
+
+  const { tipo, patientId, versao } = req.body || {};
+
+  if (!tipo || !VALID_TIPOS.includes(tipo)) {
+    return res.status(400).json({ error: 'tipo inválido' });
+  }
+  if (!versao) {
+    return res.status(400).json({ error: 'versao é obrigatória' });
+  }
+
+  const hdrs = supaHeaders(SERVICE_KEY);
+  let userId = null;
+  let patient = null;
+
+  if (tipo === 'termos_plataforma') {
+    // Aceite do terapeuta — exige sessão autenticada
+    const caller = await verifySupabaseJWT(req, SERVICE_KEY);
+    if (!caller) return res.status(401).json({ error: 'Autenticação necessária' });
+    userId = caller.id;
+  } else {
+    // Aceite vinculado a um paciente — busca o terapeuta dono para preencher user_id
+    if (!patientId) return res.status(400).json({ error: 'patientId é obrigatório' });
+    patient = patientId;
+    try {
+      const r = await fetch(
+        `${SUPA_URL}/rest/v1/patients?id=eq.${encodeURIComponent(patientId)}&select=user_id&limit=1`,
+        { headers: hdrs }
+      );
+      const rows = await r.json();
+      if (Array.isArray(rows) && rows.length > 0) userId = rows[0].user_id;
+    } catch (e) {
+      console.warn('[consent] Falha ao resolver user_id do paciente:', e.message);
+    }
+  }
+
+  const payload = {
+    user_id: userId,
+    patient_id: patient,
+    tipo,
+    versao: String(versao),
+    ip: clientIp(req),
+    user_agent: (req.headers['user-agent'] || '').slice(0, 500),
+  };
+
+  try {
+    const insRes = await fetch(`${SUPA_URL}/rest/v1/consent_logs`, {
+      method: 'POST',
+      headers: { ...hdrs, 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload),
+    });
+    if (!insRes.ok) {
+      const errText = await insRes.text().catch(() => '');
+      console.error('[consent] Falha ao gravar:', insRes.status, errText.slice(0, 200));
+      return res.status(502).json({ error: 'Falha ao registrar consentimento' });
+    }
+    const saved = await insRes.json();
+    console.log('[consent] Registrado:', tipo, patient || userId);
+    return res.status(200).json({ ok: true, id: Array.isArray(saved) ? saved[0]?.id : null });
+  } catch (e) {
+    console.error('[consent] Erro:', e.message);
+    return res.status(500).json({ error: 'Erro interno' });
+  }
+}

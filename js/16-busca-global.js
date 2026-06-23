@@ -462,6 +462,8 @@ function acceptTerms() {
     version: TERMS_VERSION,
     date: new Date().toISOString()
   }));
+  // Registra o aceite no banco (LGPD) — best-effort, não bloqueia
+  if (typeof _logConsent === 'function') _logConsent('termos_plataforma', { versao: TERMS_VERSION });
   // Fecha modal
   const overlay = document.getElementById('modal-terms');
   if (overlay) { overlay.classList.remove('active'); overlay.style.display = 'none'; }

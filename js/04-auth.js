@@ -248,6 +248,10 @@ function _verificarTermosPortal(patientId, callback) {
   document.body.appendChild(modal);
   document.getElementById('btn-aceitar-termos').addEventListener('click', function() {
     try { localStorage.setItem(chave, '1'); } catch(e) {}
+    // Registra o aceite no banco (LGPD) — só quando há UUID real do paciente
+    if (typeof _logConsent === 'function' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+      _logConsent('portal_paciente', { patientId: patientId, versao: '1.0' });
+    }
     modal.remove();
     callback();
   });
