@@ -15,14 +15,15 @@ body { background: #f7f8f6; color: #1a1f1c; font-family: 'DM Sans', sans-serif; 
   z-index: 9999;
   box-sizing: border-box;
   margin: 0;
-  padding: 24px;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   /* Layout */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  min-height: 100vh;
+  min-height: 100dvh;
   /* Cores e tipografia */
   background: #f7f8f6;
   color: #1a1f1c;
@@ -38,6 +39,13 @@ body { background: #f7f8f6; color: #1a1f1c; font-family: 'DM Sans', sans-serif; 
   --radius: 12px;
   --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
   --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+}
+
+@media (max-width: 480px) {
+  #tf-onboarding-layer { padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
+  #tf-onboarding-layer .ob-card-body { padding: 24px; }
+  #tf-onboarding-layer .ob-logo { margin-bottom: 24px; }
+  #tf-onboarding-layer .ob-footer { padding: 16px 24px 24px; }
 }
 
 #tf-app-layer {
