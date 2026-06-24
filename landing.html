@@ -58,6 +58,8 @@ nav {
 .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: all .15s; }
 .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--ink-soft); }
 .btn-outline:hover { border-color: var(--sage); color: var(--sage); }
+.btn-login { border-color: var(--sage); color: var(--sage); font-weight: 700; }
+.btn-login:hover { background: var(--sage-light); border-color: var(--sage); color: var(--sage); }
 .btn-primary { background: var(--sage); color: #fff; box-shadow: 0 2px 8px rgba(74,124,89,.3); }
 .btn-primary:hover { background: var(--sage-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(74,124,89,.4); }
 .btn-lg { padding: 14px 28px; font-size: 15px; border-radius: 11px; }
@@ -331,6 +333,10 @@ footer { background: var(--ink); padding: 60px 0 32px; }
 }
 @media (max-width: 640px) {
   .nav-links { display: none; }
+  .nav-cta .btn-outline:not(.btn-login) { display: none; } /* esconde "Ver demo" no header (já existe no hero) */
+  nav { padding: 0 14px; }
+  .nav-cta { gap: 8px; }
+  .nav-cta .btn { padding: 9px 14px; font-size: 13px; }
   .features-grid { grid-template-columns: 1fr; }
   .steps { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
@@ -358,7 +364,7 @@ footer { background: var(--ink); padding: 60px 0 32px; }
     </div>
     <div class="nav-cta">
       <a href="theraflow-unified-v3.html?demo=1" class="btn btn-outline">Ver demo</a>
-      <a href="theraflow-unified-v3.html" class="btn btn-outline">Entrar</a>
+      <a href="theraflow-unified-v3.html" class="btn btn-outline btn-login">Entrar</a>
       <a href="theraflow-unified-v3.html" class="btn btn-primary">Começar grátis</a>
     </div>
   </div>
