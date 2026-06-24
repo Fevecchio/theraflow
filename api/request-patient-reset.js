@@ -103,10 +103,12 @@ export default async function handler(req, res) {
 
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
+  // Erro de CONFIGURAÇÃO (independe do email existir → não vaza enumeração).
+  // Retorna 500 para ficar visível em monitoramento; o frontend mostra a
+  // mensagem neutra de qualquer forma (ignora o corpo da resposta).
   if (!SERVICE_KEY || !RESEND_KEY) {
-    console.error('[reset-request] Env ausente:', { service: !!SERVICE_KEY, resend: !!RESEND_KEY });
-    // Resposta neutra mesmo em erro de config — não vaza estado
-    return res.status(200).json({ ok: true });
+    console.error('[reset-request] CONFIG: env ausente →', { SUPABASE_SERVICE_ROLE_KEY: !!SERVICE_KEY, RESEND_API_KEY: !!RESEND_KEY });
+    return res.status(500).json({ error: 'reset_misconfigured', missing: { service: !SERVICE_KEY, resend: !RESEND_KEY } });
   }
 
   const email = (((req.body || {}).email) || '').trim().toLowerCase();
@@ -124,6 +126,13 @@ export default async function handler(req, res) {
       `${SUPA_URL}/rest/v1/patient_password_resets?email=eq.${encodeURIComponent(email)}&created_at=gte.${encodeURIComponent(since)}&select=id`,
       { headers: hdrs }
     );
+    // Tabela ausente é erro de CONFIG (independe do email → não vaza enumeração).
+    // Esta query roda antes de sabermos se o email é um paciente, então é seguro
+    // sinalizar 500 aqui. Causa clássica: migration 009 não rodada no Supabase.
+    if (!rlRes.ok && rlRes.status === 404) {
+      console.error('[reset-request] CONFIG: tabela patient_password_resets AUSENTE — rode backend/migrations/009 no Supabase SQL Editor.');
+      return res.status(500).json({ error: 'reset_table_missing', hint: 'Rode a migration 009 no Supabase.' });
+    }
     const recent = rlRes.ok ? await rlRes.json() : [];
     if (Array.isArray(recent) && recent.length >= 3) {
       console.log('[reset-request] Rate-limit atingido para', email);
