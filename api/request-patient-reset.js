@@ -2,15 +2,15 @@
  * TheraFlow — Serverless Function: Solicitar redefinição de senha do paciente
  * Deploy: Vercel → /api/request-patient-reset  (Node.js runtime)
  *
- * Fluxo de auto-recuperação do portal do paciente. Como o paciente pode logar
- * sem conta Supabase Auth (RPC portal_patient_login), não dá para usar o
- * resetPasswordForEmail nativo. Aqui geramos um token de uso único, guardamos
- * apenas o SHA-256 dele (patient_password_resets) e enviamos um email (Resend)
- * com o link /paciente?reset=TOKEN.
+ * Fluxo de auto-recuperação do portal do paciente. O paciente pode logar sem
+ * conta Supabase Auth (RPC portal_patient_login), então não usamos o
+ * resetPasswordForEmail nativo. Geramos um token de uso único e guardamos
+ * apenas o SHA-256 dele DENTRO do metadata do próprio paciente (tabela
+ * `patients`, que já existe) — sem precisar de tabela/migration nova.
  *
  * Sempre responde { ok: true } — não revela se o email existe (anti-enumeração).
  *
- * Env vars (Vercel → Settings → Environment Variables):
+ * Env vars (Vercel):
  *   SUPABASE_SERVICE_ROLE_KEY  (obrigatória — ignora RLS)
  *   RESEND_API_KEY             (obrigatória — envio do email)
  *   RESEND_FROM                (opcional — default onboarding@resend.dev)
@@ -48,16 +48,10 @@ function supaHeaders(serviceKey) {
   };
 }
 
-function clientIp(req) {
-  const fwd = req.headers['x-forwarded-for'] || '';
-  return fwd.split(',')[0].trim() || req.headers['x-real-ip'] || null;
-}
-
 function sha256(s) {
   return crypto.createHash('sha256').update(s).digest('hex');
 }
 
-// Base do link de redefinição — usa o origin do request se confiável, senão produção
 function resolveBaseUrl(origin) {
   if (origin && ALLOWED_ORIGINS.includes(origin) && /^https:\/\//.test(origin)) return origin;
   return 'https://theraflow-one.vercel.app';
@@ -104,15 +98,12 @@ export default async function handler(req, res) {
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
   // Erro de CONFIGURAÇÃO (independe do email existir → não vaza enumeração).
-  // Retorna 500 para ficar visível em monitoramento; o frontend mostra a
-  // mensagem neutra de qualquer forma (ignora o corpo da resposta).
   if (!SERVICE_KEY || !RESEND_KEY) {
     console.error('[reset-request] CONFIG: env ausente →', { SUPABASE_SERVICE_ROLE_KEY: !!SERVICE_KEY, RESEND_API_KEY: !!RESEND_KEY });
     return res.status(500).json({ error: 'reset_misconfigured', missing: { service: !SERVICE_KEY, resend: !RESEND_KEY } });
   }
 
   const email = (((req.body || {}).email) || '').trim().toLowerCase();
-  // Validação simples de formato; resposta sempre neutra
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return res.status(200).json({ ok: true });
   }
@@ -120,50 +111,51 @@ export default async function handler(req, res) {
   const hdrs = supaHeaders(SERVICE_KEY);
 
   try {
-    // 1) Rate-limit leve: máx. 3 pedidos por email em 15 min
-    const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    const rlRes = await fetch(
-      `${SUPA_URL}/rest/v1/patient_password_resets?email=eq.${encodeURIComponent(email)}&created_at=gte.${encodeURIComponent(since)}&select=id`,
-      { headers: hdrs }
-    );
-    // Tabela ausente é erro de CONFIG (independe do email → não vaza enumeração).
-    // Esta query roda antes de sabermos se o email é um paciente, então é seguro
-    // sinalizar 500 aqui. Causa clássica: migration 009 não rodada no Supabase.
-    if (!rlRes.ok && rlRes.status === 404) {
-      console.error('[reset-request] CONFIG: tabela patient_password_resets AUSENTE — rode backend/migrations/009 no Supabase SQL Editor.');
-      return res.status(500).json({ error: 'reset_table_missing', hint: 'Rode a migration 009 no Supabase.' });
-    }
-    const recent = rlRes.ok ? await rlRes.json() : [];
-    if (Array.isArray(recent) && recent.length >= 3) {
-      console.log('[reset-request] Rate-limit atingido para', email);
-      return res.status(200).json({ ok: true });
-    }
-
-    // 2) Procura paciente com esse email (qualquer terapeuta)
+    // 1) Procura paciente(s) com esse email (a tabela patients já existe)
     const pr = await fetch(
-      `${SUPA_URL}/rest/v1/patients?email=eq.${encodeURIComponent(email)}&select=id,name,email&limit=5`,
+      `${SUPA_URL}/rest/v1/patients?email=eq.${encodeURIComponent(email)}&select=id,name,email,metadata&limit=5`,
       { headers: hdrs }
     );
-    const pacientes = pr.ok ? await pr.json() : [];
+    if (!pr.ok) {
+      const t = await pr.text().catch(() => '');
+      console.error('[reset-request] CONFIG: falha ao consultar patients:', pr.status, t.slice(0, 200));
+      return res.status(500).json({ error: 'patients_query_failed' });
+    }
+    const pacientes = await pr.json();
     if (!Array.isArray(pacientes) || pacientes.length === 0) {
-      // Não existe — resposta neutra, sem enviar nada
+      // Email não é paciente — resposta neutra, sem enviar nada
+      console.log('[reset-request] Email sem paciente correspondente (resposta neutra).');
       return res.status(200).json({ ok: true });
     }
 
-    // 3) Gera token + grava só o hash
+    // 2) Rate-limit leve: se houve pedido nos últimos 30s, não reenvia
+    const agora = Date.now();
+    const ultimo = Number((pacientes[0].metadata || {}).resetRequestedAt || 0);
+    if (ultimo && (agora - ultimo) < 30 * 1000) {
+      console.log('[reset-request] Throttle (<30s) para', email);
+      return res.status(200).json({ ok: true });
+    }
+
+    // 3) Gera token e grava só o hash no metadata de cada paciente desse email
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = sha256(rawToken);
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const exp = agora + 60 * 60 * 1000; // 1h
 
-    const ins = await fetch(`${SUPA_URL}/rest/v1/patient_password_resets`, {
-      method: 'POST',
-      headers: { ...hdrs, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ email, token_hash: tokenHash, expires_at: expiresAt, ip: clientIp(req) }),
-    });
-    if (!ins.ok) {
-      const t = await ins.text().catch(() => '');
-      console.error('[reset-request] Falha ao gravar token:', ins.status, t.slice(0, 200));
-      return res.status(200).json({ ok: true }); // neutro
+    for (const p of pacientes) {
+      const merged = Object.assign({}, (p.metadata || {}), {
+        resetTokenHash: tokenHash,
+        resetTokenExp: exp,
+        resetRequestedAt: agora,
+      });
+      const up = await fetch(`${SUPA_URL}/rest/v1/patients?id=eq.${p.id}`, {
+        method: 'PATCH',
+        headers: { ...hdrs, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ metadata: merged }),
+      });
+      if (!up.ok) {
+        const t = await up.text().catch(() => '');
+        console.error('[reset-request] Falha ao gravar token no metadata:', up.status, t.slice(0, 200));
+      }
     }
 
     // 4) Envia o email com o link
@@ -180,9 +172,9 @@ export default async function handler(req, res) {
       html: tmplReset({ pacienteNome, resetUrl }),
     });
     if (result.error) {
-      console.error('[reset-request] Resend error:', result.error);
+      console.error('[reset-request] Resend error:', JSON.stringify(result.error));
     } else {
-      console.log('[reset-request] Email enviado →', email, '| id:', result.data?.id);
+      console.log('[reset-request] Email enviado →', email, '| id:', result.data?.id, '| from:', fromAddr);
     }
 
     return res.status(200).json({ ok: true });

@@ -2,14 +2,14 @@
  * TheraFlow — Serverless Function: Confirmar redefinição de senha do paciente
  * Deploy: Vercel → /api/confirm-patient-reset  (Node.js runtime)
  *
- * Recebe { token, newPassword } da tela /paciente?reset=TOKEN. Valida o token
- * (uso único, não expirado), grava a nova senha como hash no metadata do
- * paciente (mesmo formato do _portalHash do frontend, para o login por RPC
- * aceitar) e — se o paciente tiver conta Supabase Auth — atualiza a senha lá
- * também, mantendo os dois caminhos de login em sincronia.
+ * Recebe { token, newPassword } da tela /paciente?reset=TOKEN. Acha o paciente
+ * cujo metadata.resetTokenHash bate com o SHA-256 do token (não usado, não
+ * expirado), grava a nova senha como hash (mesmo formato do _portalHash do
+ * frontend) e limpa o token (uso único). Se o paciente tiver conta Supabase
+ * Auth, atualiza a senha lá também.
  *
- * Roda com SUPABASE_SERVICE_ROLE_KEY (ignora RLS). newPassword trafega em texto
- * sobre HTTPS, consistente com invite-patient.js e o email de acesso ao portal.
+ * Sem tabela/migration nova — tudo no metadata da tabela `patients`, que já existe.
+ * Roda com SUPABASE_SERVICE_ROLE_KEY (ignora RLS).
  */
 
 import crypto from 'crypto';
@@ -75,42 +75,35 @@ export default async function handler(req, res) {
   const senha = newPassword.trim();
 
   const hdrs = supaHeaders(SERVICE_KEY);
-  const nowIso = new Date().toISOString();
   const tokenHash = sha256(token);
 
   try {
-    // 1) Valida o token (não usado, não expirado)
-    const tr = await fetch(
-      `${SUPA_URL}/rest/v1/patient_password_resets?token_hash=eq.${encodeURIComponent(tokenHash)}&used_at=is.null&expires_at=gt.${encodeURIComponent(nowIso)}&select=id,email&limit=1`,
-      { headers: hdrs }
-    );
-    const rows = tr.ok ? await tr.json() : [];
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return res.status(400).json({ error: 'Link inválido ou expirado. Solicite um novo.' });
-    }
-    const resetRow = rows[0];
-    const email = (resetRow.email || '').toLowerCase();
-    const newHash = portalHash(senha);
-
-    // 2) Atualiza o hash no metadata de cada paciente com esse email
+    // 1) Acha paciente(s) cujo metadata.resetTokenHash bate com o token
     const pr = await fetch(
-      `${SUPA_URL}/rest/v1/patients?email=eq.${encodeURIComponent(email)}&select=id,metadata`,
+      `${SUPA_URL}/rest/v1/patients?metadata->>resetTokenHash=eq.${encodeURIComponent(tokenHash)}&select=id,email,metadata&limit=5`,
       { headers: hdrs }
     );
     const pacientes = pr.ok ? await pr.json() : [];
     if (!Array.isArray(pacientes) || pacientes.length === 0) {
-      // Token válido mas paciente sumiu — marca usado e responde erro suave
-      await fetch(`${SUPA_URL}/rest/v1/patient_password_resets?id=eq.${resetRow.id}`, {
-        method: 'PATCH', headers: { ...hdrs, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ used_at: nowIso }),
-      }).catch(() => {});
-      return res.status(400).json({ error: 'Conta não encontrada. Fale com seu terapeuta.' });
+      return res.status(400).json({ error: 'Link inválido ou expirado. Solicite um novo.' });
     }
 
+    // 2) Valida expiração (1h)
+    const exp = Number((pacientes[0].metadata || {}).resetTokenExp || 0);
+    if (!exp || Date.now() > exp) {
+      return res.status(400).json({ error: 'Link expirado. Solicite uma nova redefinição.' });
+    }
+
+    const newHash = portalHash(senha);
+
+    // 3) Grava a nova senha e LIMPA o token (uso único) em cada paciente
     for (const p of pacientes) {
       const merged = Object.assign({}, (p.metadata || {}), {
         portalPasswordHash: newHash,
         portalPassword: null,
+        resetTokenHash: null,
+        resetTokenExp: null,
+        resetRequestedAt: null,
       });
       await fetch(`${SUPA_URL}/rest/v1/patients?id=eq.${p.id}`, {
         method: 'PATCH',
@@ -118,7 +111,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({ metadata: merged }),
       });
 
-      // 3) Se houver conta Auth vinculada, atualiza a senha lá também (best-effort)
+      // 4) Se houver conta Auth vinculada, atualiza a senha lá também (best-effort)
       try {
         const lr = await fetch(
           `${SUPA_URL}/rest/v1/patient_users?patient_id=eq.${p.id}&select=auth_user_id&limit=1`,
@@ -137,14 +130,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4) Marca o token como usado (uso único)
-    await fetch(`${SUPA_URL}/rest/v1/patient_password_resets?id=eq.${resetRow.id}`, {
-      method: 'PATCH',
-      headers: { ...hdrs, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ used_at: nowIso }),
-    });
-
-    console.log('[reset-confirm] Senha redefinida para', email, '(', pacientes.length, 'registro(s) )');
+    console.log('[reset-confirm] Senha redefinida (', pacientes.length, 'registro(s) ).');
     return res.status(200).json({ ok: true });
   } catch (e) {
     console.error('[reset-confirm] Erro:', e.message);

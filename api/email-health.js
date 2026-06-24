@@ -75,8 +75,8 @@ export default async function handler(req, res) {
   };
 
   if (SERVICE_KEY) {
-    out.checks.patient_password_resets = await tableStatus(SERVICE_KEY, 'patient_password_resets');
     out.checks.patients = await tableStatus(SERVICE_KEY, 'patients');
+    out.checks.reset_token = 'guardado no patients.metadata (sem tabela/migration nova)';
   } else {
     out.checks.aviso = 'Sem SERVICE_KEY não dá para checar tabelas.';
   }
