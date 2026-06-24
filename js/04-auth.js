@@ -435,6 +435,94 @@ function loginPaciente() {
   });
 }
 
+// ── Auto-recuperação de senha do paciente ─────────────────────────────────────
+// Mostra uma mensagem na caixa #pac-login-error, reaproveitada como info ou aviso.
+function _pacShowLoginMsg(msg, tone) {
+  var el = document.getElementById('pac-login-error');
+  if (!el) { try { alert(msg); } catch(_) {} return; }
+  el.textContent = msg;
+  if (tone === 'info') {
+    el.style.background = '#eef5f0'; el.style.border = '1px solid #cfe3d6'; el.style.color = '#2f6b46';
+  } else {
+    el.style.background = '#fff0f0'; el.style.border = '1px solid #fcc'; el.style.color = '#c0392b';
+  }
+  el.style.display = '';
+}
+
+// "Esqueci minha senha?" — pede o reset por email. Resposta sempre neutra
+// (não revela se o email existe). Degrada em silêncio se /api não estiver no ar.
+async function pacEsqueciSenha() {
+  var emailEl = document.getElementById('pac-login-email');
+  var email = ((emailEl && emailEl.value) || '').trim().toLowerCase();
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    _pacShowLoginMsg('Digite seu email no campo acima e toque novamente em "Esqueci minha senha".', 'warn');
+    if (emailEl) emailEl.focus();
+    return;
+  }
+  _pacShowLoginMsg('Se houver uma conta com este email, enviamos um link para redefinir a senha. Confira sua caixa de entrada e o spam.', 'info');
+  try {
+    await fetch('/api/request-patient-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email }),
+    });
+  } catch (e) {
+    // Preview local (serve.js) não roda /api — a mensagem neutra já foi exibida.
+    console.warn('[reset] request indisponível (ok em preview local):', e.message);
+  }
+}
+
+// Tela /paciente?reset=TOKEN — grava a nova senha. Lê o token de window._pacResetToken.
+async function pacConfirmarReset() {
+  var novaEl  = document.getElementById('pac-reset-nova');
+  var nova2El = document.getElementById('pac-reset-nova2');
+  var nova  = ((novaEl  && novaEl.value)  || '').trim();
+  var nova2 = ((nova2El && nova2El.value) || '').trim();
+  var errEl = document.getElementById('pac-reset-error');
+  var btn   = document.getElementById('pac-reset-btn');
+  function _err(m) { if (errEl) { errEl.textContent = m; errEl.style.display = ''; } else { try { alert(m); } catch(_) {} } }
+  if (errEl) errEl.style.display = 'none';
+
+  if (!nova || nova.length < 6) return _err('A nova senha deve ter pelo menos 6 caracteres.');
+  if (nova !== nova2) return _err('As senhas não coincidem.');
+
+  var token = window._pacResetToken;
+  if (!token) return _err('Link inválido ou expirado. Solicite uma nova redefinição.');
+
+  if (btn) { btn.textContent = 'Salvando…'; btn.disabled = true; }
+  try {
+    var r = await fetch('/api/confirm-patient-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token, newPassword: nova }),
+    });
+    var data = {};
+    try { data = await r.json(); } catch(_) {}
+    if (!r.ok || !data.ok) {
+      if (btn) { btn.textContent = 'Salvar nova senha →'; btn.disabled = false; }
+      return _err((data && data.error) || 'Não foi possível redefinir a senha. Tente novamente.');
+    }
+    _pacFinalizarReset();
+  } catch (e) {
+    if (btn) { btn.textContent = 'Salvar nova senha →'; btn.disabled = false; }
+    _err('Erro de conexão. Verifique sua internet e tente novamente.');
+  }
+}
+
+// Sucesso do reset → fecha a tela, limpa o token da URL e volta ao login.
+function _pacFinalizarReset() {
+  window._pacResetToken = null;
+  try { history.replaceState(null, '', window.location.pathname); } catch(_) {}
+  var resetLayer = document.getElementById('tf-patient-reset-layer');
+  if (resetLayer) resetLayer.classList.remove('open');
+  var loginLayer = document.getElementById('tf-patient-login-layer');
+  if (loginLayer) loginLayer.classList.add('open');
+  var senhaEl = document.getElementById('pac-login-senha');
+  if (senhaEl) senhaEl.value = '';
+  _pacShowLoginMsg('Senha alterada com sucesso! Faça login com a nova senha.', 'info');
+  setTimeout(function(){ var s = document.getElementById('pac-login-senha'); if (s) s.focus(); }, 150);
+}
+
 function sairPaciente() {
   supaPatient.auth.signOut().catch(() => {});
   _loggedPatientIdx = null;
