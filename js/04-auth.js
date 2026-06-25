@@ -261,6 +261,48 @@ function _verificarTermosPortal(patientId, callback) {
   });
 }
 
+// Login do paciente via RPC portal_patient_login (hash da senha no metadata,
+// SECURITY DEFINER — não precisa de sessão Auth). Reaproveitado em 2 situações:
+// (a) o Supabase Auth falhou (paciente sem conta Auth); (b) o Auth autenticou
+// numa conta SEM vínculo patient_users (ex.: colisão com o email do terapeuta).
+// Retorna true se logou e abriu o portal; false caso contrário.
+async function _pacTryRpcLogin(email, senha) {
+  try {
+    var senhaHash = await _portalHash(senha);
+    var rpcResult = await supaPatient.rpc('portal_patient_login', { p_email: email, p_hash: senhaHash });
+    if (!rpcResult.data) return false;
+    var raw = rpcResult.data;
+    var meta = raw.metadata || {};
+    var pRpc = Object.assign({}, meta, {
+      id: raw.id, name: raw.name, email: raw.email,
+      whatsapp: raw.phone, age: raw.age, cidade: raw.cidade,
+      abordagem: raw.abordagem, cid: raw.cid, notes: raw.notes,
+      status: raw.status, sessions: raw.sessions_count,
+      valorSessao: raw.valor_sessao, progress: raw.progress,
+    });
+    // Carrega appointments
+    var apptRes = await supaPatient.from('appointments')
+      .select('local_id,date,time,presenca,status,metadata')
+      .eq('patient_id', raw.id).order('date', { ascending: false }).limit(60);
+    if (apptRes.data && apptRes.data.length) {
+      pRpc.appointments = apptRes.data.map(function(a) {
+        return Object.assign({}, (a.metadata || {}), {
+          id: a.local_id, date: a.date, time: a.time,
+          presenca: a.presenca, status: a.status,
+        });
+      });
+    }
+    var pacsRpc = [pRpc];
+    _loggedPatientIdx = 0;
+    _loggedPatientData = pRpc;
+    document.getElementById('tf-patient-login-layer').classList.remove('open');
+    var _pLayer = document.getElementById('tf-patient-app-layer'); _pLayer.style.display = ''; _pLayer.classList.add('open');
+    _verificarTermosPortal(pRpc.id, function(){ renderPatientApp(0, pacsRpc); });
+    return true;
+  } catch (_rpcErr) {}
+  return false;
+}
+
 function loginPaciente() {
   var email = (document.getElementById('pac-login-email').value || '').trim().toLowerCase();
   var senha = (document.getElementById('pac-login-senha').value || '').trim();
@@ -311,39 +353,7 @@ function loginPaciente() {
       }
 
       // Fallback Supabase RPC — funciona em aba anônima / sem localStorage
-      try {
-        var rpcResult = await supaPatient.rpc('portal_patient_login', { p_email: email, p_hash: senhaHash });
-        if (rpcResult.data) {
-          var raw = rpcResult.data;
-          var meta = raw.metadata || {};
-          var pRpc = Object.assign({}, meta, {
-            id: raw.id, name: raw.name, email: raw.email,
-            whatsapp: raw.phone, age: raw.age, cidade: raw.cidade,
-            abordagem: raw.abordagem, cid: raw.cid, notes: raw.notes,
-            status: raw.status, sessions: raw.sessions_count,
-            valorSessao: raw.valor_sessao, progress: raw.progress,
-          });
-          // Carrega appointments
-          var apptRes = await supaPatient.from('appointments')
-            .select('local_id,date,time,presenca,status,metadata')
-            .eq('patient_id', raw.id).order('date', { ascending: false }).limit(60);
-          if (apptRes.data && apptRes.data.length) {
-            pRpc.appointments = apptRes.data.map(function(a) {
-              return Object.assign({}, (a.metadata || {}), {
-                id: a.local_id, date: a.date, time: a.time,
-                presenca: a.presenca, status: a.status,
-              });
-            });
-          }
-          var pacsRpc = [pRpc];
-          _loggedPatientIdx = 0;
-          _loggedPatientData = pRpc;
-          document.getElementById('tf-patient-login-layer').classList.remove('open');
-          var _pLayer2 = document.getElementById('tf-patient-app-layer'); _pLayer2.style.display = ''; _pLayer2.classList.add('open');
-          _verificarTermosPortal(pRpc.id, function(){ renderPatientApp(0, pacsRpc); });
-          return;
-        }
-      } catch(_rpcErr) {}
+      if (await _pacTryRpcLogin(email, senha)) return;
 
       errEl.textContent = '⚠ Email ou senha incorretos. Verifique com seu terapeuta.';
       errEl.style.display = '';
@@ -361,9 +371,13 @@ function loginPaciente() {
       .single();
 
     if (!linkResult.data) {
+      // Autenticou numa conta Auth sem vínculo de paciente (ex.: mesmo email do
+      // terapeuta). Desloga dessa sessão e tenta o login de paciente via RPC,
+      // que valida o hash da senha guardado em patients.metadata.
+      await supaPatient.auth.signOut().catch(() => {});
+      if (await _pacTryRpcLogin(email, senha)) return;
       errEl.textContent = '⚠ Acesso não configurado. Peça ao seu terapeuta para enviar o convite novamente.';
       errEl.style.display = '';
-      await supaPatient.auth.signOut().catch(() => {});
       return;
     }
 
@@ -374,9 +388,10 @@ function loginPaciente() {
       .single();
 
     if (!patResult.data) {
+      await supaPatient.auth.signOut().catch(() => {});
+      if (await _pacTryRpcLogin(email, senha)) return;
       errEl.textContent = '⚠ Acesso ainda não configurado. Aguarde seu terapeuta concluir a configuração e tente novamente.';
       errEl.style.display = '';
-      await supaPatient.auth.signOut().catch(() => {});
       return;
     }
 
