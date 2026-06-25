@@ -1061,7 +1061,9 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 /* ── MOBILE GRIDS & LAYOUT ── */
 @media (max-width: 768px) {
   .grid-2 { grid-template-columns: 1fr; }
-  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  /* minmax(0,…) permite as colunas encolherem abaixo do min-content dos cards,
+     evitando overflow horizontal em viewports estreitas (ex: 390px) */
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .split  { grid-template-columns: 1fr; height: auto; }
   .form-row { grid-template-columns: 1fr; }
   .abordagens-grid { grid-template-columns: 1fr; }
@@ -1071,6 +1073,18 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   .agenda-grid { grid-template-columns: 44px 1fr; }
   .time-slot { padding-right: 8px; font-size: 11px; }
   #tf-onboarding-layer .form-row { grid-template-columns: 1fr; }
+}
+
+/* ── MOBILE ESTREITO: stats em coluna única para não estourar ── */
+@media (max-width: 480px) {
+  .grid-4 { grid-template-columns: 1fr; }
+}
+
+/* Flex-item <main> com min-width:auto (padrão) não encolhe abaixo do seu
+   min-content, estourando a viewport em mobile. min-width:0 deixa o main
+   respeitar a largura do container (correção raiz do overflow horizontal). */
+@media (max-width: 768px) {
+  .app-main, main.app-main, #tf-app-layer > main { min-width: 0; }
 }
 
 /* ── MOBILE SESSION ── */

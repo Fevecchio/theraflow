@@ -319,7 +319,7 @@ function goToPlatform(cadastrarPaciente) {
       <div style="width:64px;height:64px;border-radius:18px;background:var(--sage-light);
         display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px">✅</div>
       <div style="font-family:'Instrument Serif',serif;font-size:28px;margin-bottom:8px">
-        Cadastro concluído, ${nome}!
+        Cadastro concluído, ${escHTML(nome)}!
       </div>
       <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:32px;max-width:380px;margin-left:auto;margin-right:auto">
         Seu perfil foi configurado. Agora abra o TheraFlow para começar.
@@ -332,22 +332,22 @@ function goToPlatform(cadastrarPaciente) {
         <div style="display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;justify-content:space-between;font-size:13.5px">
             <span style="color:var(--muted)">Nome</span>
-            <span style="font-weight:500">${document.getElementById('nome').value.trim()}</span>
+            <span style="font-weight:500">${escHTML(document.getElementById('nome').value.trim())}</span>
           </div>
           <div style="height:1px;background:var(--border)"></div>
           <div style="display:flex;justify-content:space-between;font-size:13.5px">
             <span style="color:var(--muted)">CRP</span>
-            <span style="font-weight:500">${document.getElementById('crp').value.trim()}</span>
+            <span style="font-weight:500">${escHTML(document.getElementById('crp').value.trim())}</span>
           </div>
           <div style="height:1px;background:var(--border)"></div>
           <div style="display:flex;justify-content:space-between;font-size:13.5px">
             <span style="color:var(--muted)">Abordagem</span>
-            <span style="font-weight:500">${savedData.abordagem || '—'}</span>
+            <span style="font-weight:500">${escHTML(savedData.abordagem || '—')}</span>
           </div>
           <div style="height:1px;background:var(--border)"></div>
           <div style="display:flex;justify-content:space-between;font-size:13.5px;align-items:flex-start;gap:16px">
             <span style="color:var(--muted);flex-shrink:0">Secundárias</span>
-            <span style="font-weight:500;text-align:right">${savedData.secundarias && savedData.secundarias.length ? savedData.secundarias.join(', ') : '—'}</span>
+            <span style="font-weight:500;text-align:right">${savedData.secundarias && savedData.secundarias.length ? escHTML(savedData.secundarias.join(', ')) : '—'}</span>
           </div>
           <div style="height:1px;background:var(--border)"></div>
           <div style="display:flex;justify-content:space-between;font-size:13.5px">
