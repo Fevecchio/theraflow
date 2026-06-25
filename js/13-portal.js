@@ -655,8 +655,12 @@ function _badgesGridHtml(p) {
 // ── App do paciente (visão paciente) ──
 /* ── APP DO PACIENTE (área do paciente) ── */
 function renderPatientApp(idx, pacs) {
-  var src = pacs && pacs.length ? pacs : (typeof patients !== 'undefined' ? patients : []);
+  var src = pacs && pacs.length ? pacs : (typeof patients !== 'undefined' && patients.length ? patients : []);
   var p = src[idx];
+  // Fallback p/ contexto standalone (paciente.html): patients[] e pacs herdado
+  // ficam vazios (login via fallback popula _loggedPatientData, não patients[]).
+  // Sem isto o portal fica EM BRANCO após criar senha / onboarding. Ver bug #18.
+  if (!p && typeof _loggedPatientData !== 'undefined' && _loggedPatientData) { p = _loggedPatientData; idx = 0; }
   if (!p) return;
 
   var firstName = (p.name || 'Paciente').split(' ')[0];
