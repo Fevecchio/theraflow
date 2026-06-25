@@ -635,6 +635,23 @@ function loadApiKeyToForm() {
 }
 
 
+// Grid de conquistas (gamificação) a partir de um objeto paciente `p`.
+// Reutilizado na aba Perfil do app do paciente e no preview do terapeuta
+// (initPortal). Avalia cada BADGES_DEF.cond(p) — badges cumpridas ganham
+// .earned, as demais .locked. Read-only (sem interação).
+function _badgesGridHtml(p) {
+  return '<div class="badges-grid">'
+    + BADGES_DEF.map(function(b){
+        var earned = b.cond(p);
+        return '<div class="badge-card '+(earned?'earned':'locked')+'">'
+          + '<div style="font-size:26px;line-height:1">'+b.icon+'</div>'
+          + '<div style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:2px">'+b.name+'</div>'
+          + '<div style="font-size:10px;color:var(--muted)">'+b.desc+'</div>'
+        + '</div>';
+      }).join('')
+    + '</div>';
+}
+
 // ── App do paciente (visão paciente) ──
 /* ── APP DO PACIENTE (área do paciente) ── */
 function renderPatientApp(idx, pacs) {
@@ -718,16 +735,7 @@ function renderPatientApp(idx, pacs) {
   // ── Conquistas ──
   var badgesHtml = '<div class="patient-section-card">'
     + '<div class="patient-section-header"><div class="patient-section-title">🏅 Minhas conquistas</div></div>'
-    + '<div class="patient-section-body"><div class="badges-grid">'
-      + BADGES_DEF.map(function(b){
-          var earned = b.cond(p);
-          return '<div class="badge-card '+(earned?'earned':'locked')+'">'
-            + '<div style="font-size:26px;line-height:1">'+b.icon+'</div>'
-            + '<div style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:2px">'+b.name+'</div>'
-            + '<div style="font-size:10px;color:var(--muted)">'+b.desc+'</div>'
-          + '</div>';
-        }).join('')
-    + '</div></div></div>';
+    + '<div class="patient-section-body">' + _badgesGridHtml(p) + '</div></div>';
 
   // ── Materiais ──
   var mats = p.materials || [];

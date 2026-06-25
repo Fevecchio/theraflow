@@ -1080,6 +1080,10 @@ function initPortal() {
   if (_jornadaWrap && typeof renderTrajetoriaPortal === 'function') {
     _jornadaWrap.innerHTML = renderTrajetoriaPortal(p, currentPortalPatientIdx, true);
   }
+  var _conqWrap = document.getElementById('portal-conquistas-wrap');
+  if (_conqWrap && typeof _badgesGridHtml === 'function') {
+    _conqWrap.innerHTML = _badgesGridHtml(p);
+  }
   clearInterval(_portalCountdownInterval);
   _portalCountdownInterval = setInterval(updatePortalCountdown, 60000);
 
