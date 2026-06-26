@@ -34,6 +34,19 @@ function setCors(res, origin) {
   res.setHeader('Access-Control-Max-Age', '86400');
 }
 
+// Escapa valores controlados pelo caller antes de injetar no HTML do email
+// (evita quebra de layout e phishing via conteúdo malicioso nos campos).
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+// Só aceita URLs http(s) em atributos href (bloqueia javascript:, data:, etc.).
+function safeUrl(u) {
+  const s = String(u == null ? '' : u).trim();
+  return /^https?:\/\//i.test(s) ? s.replace(/"/g, '%22') : '';
+}
+
 async function verifyCallerJWT(req) {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
   if (!token) return null;
@@ -49,9 +62,12 @@ async function verifyCallerJWT(req) {
 // ── Templates HTML ────────────────────────────────────────────────────────────
 
 function tmplInvite({ terapeutaNome, terapeutaCrp, pacienteNome, data, hora, duracao, sessionLink }) {
-  const linkHtml = sessionLink
-    ? `<a href="${sessionLink}" style="display:inline-block;margin-top:20px;padding:14px 28px;background:#4a7c59;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px">▶ Entrar na sessão</a>`
+  const safeLink = safeUrl(sessionLink);
+  const linkHtml = safeLink
+    ? `<a href="${safeLink}" style="display:inline-block;margin-top:20px;padding:14px 28px;background:#4a7c59;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px">▶ Entrar na sessão</a>`
     : `<p style="color:#888;font-size:13px;margin-top:16px">O link da sala será enviado em breve.</p>`;
+  terapeutaNome = esc(terapeutaNome); terapeutaCrp = esc(terapeutaCrp);
+  pacienteNome = esc(pacienteNome); data = esc(data); hora = esc(hora); duracao = esc(duracao);
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -87,9 +103,11 @@ function tmplInvite({ terapeutaNome, terapeutaCrp, pacienteNome, data, hora, dur
 }
 
 function tmplReminder({ terapeutaNome, pacienteNome, data, hora, sessionLink }) {
-  const linkHtml = sessionLink
-    ? `<a href="${sessionLink}" style="display:inline-block;margin-top:20px;padding:14px 28px;background:#4a7c59;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px">▶ Entrar na sessão</a>`
+  const safeLink = safeUrl(sessionLink);
+  const linkHtml = safeLink
+    ? `<a href="${safeLink}" style="display:inline-block;margin-top:20px;padding:14px 28px;background:#4a7c59;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px">▶ Entrar na sessão</a>`
     : '';
+  terapeutaNome = esc(terapeutaNome); pacienteNome = esc(pacienteNome); data = esc(data); hora = esc(hora);
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -121,6 +139,9 @@ function tmplReminder({ terapeutaNome, pacienteNome, data, hora, sessionLink }) 
 }
 
 function tmplPortal({ terapeutaNome, pacienteNome, email, senha, portalUrl }) {
+  const safePortal = safeUrl(portalUrl) || 'https://theraflow-one.vercel.app/paciente';
+  terapeutaNome = esc(terapeutaNome); pacienteNome = esc(pacienteNome); email = esc(email); senha = esc(senha);
+  portalUrl = safePortal;
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>

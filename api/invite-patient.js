@@ -64,6 +64,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'email, password, patientId e therapistId são obrigatórios' });
   }
 
+  // Autorização: o terapeuta só pode criar acesso para si mesmo (mesma proteção
+  // do create-checkout-session/C1). Impede criar vínculo usando o therapistId de
+  // outro terapeuta. O frontend sempre envia therapistId = acc.supa_id (= caller.id).
+  if (therapistId !== caller.id) {
+    return res.status(403).json({ error: 'Forbidden: therapistId não corresponde ao usuário autenticado' });
+  }
+
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!SERVICE_KEY) {
     console.error('[invite-patient] SUPABASE_SERVICE_ROLE_KEY ausente');

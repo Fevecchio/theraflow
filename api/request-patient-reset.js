@@ -52,6 +52,13 @@ function sha256(s) {
   return crypto.createHash('sha256').update(s).digest('hex');
 }
 
+// Escapa o nome (controlado pelo terapeuta) antes de injetar no HTML do email.
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 function resolveBaseUrl(origin) {
   if (origin && ALLOWED_ORIGINS.includes(origin) && /^https:\/\//.test(origin)) return origin;
   return 'https://theraflow-one.vercel.app';
@@ -68,7 +75,7 @@ function tmplReset({ pacienteNome, resetUrl }) {
       <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px">Redefinição de senha</div>
     </div>
     <div style="padding:32px">
-      <p style="font-size:16px;color:#1a1a1a;margin:0 0 8px">Olá${pacienteNome ? `, <strong>${pacienteNome}</strong>` : ''} 🌱</p>
+      <p style="font-size:16px;color:#1a1a1a;margin:0 0 8px">Olá${pacienteNome ? `, <strong>${esc(pacienteNome)}</strong>` : ''} 🌱</p>
       <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px">Recebemos um pedido para redefinir a senha do seu portal. Clique no botão abaixo para criar uma nova senha. O link expira em <strong>1 hora</strong>.</p>
 
       <div style="text-align:center;margin-bottom:24px">
