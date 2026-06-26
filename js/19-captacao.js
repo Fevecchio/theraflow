@@ -209,14 +209,15 @@ function excluirLead(id) {
 function converterParaPaciente(id) {
   var lead = captacaoLeads.find(function(l){ return l.id === id; });
   if (!lead) return;
-  if (!confirm('Converter "' + lead.nome + '" para paciente?\nO lead será removido do pipeline.')) return;
+  if (!confirm('Converter "' + lead.nome + '" para paciente?\nO lead sairá do pipeline ao confirmar a ficha.')) return;
 
   var nome   = lead.nome;
   var wpp    = lead.whatsapp || '';
   var queixa = lead.queixa  || '';
 
-  captacaoLeads = captacaoLeads.filter(function(l){ return l.id !== id; });
-  salvarCaptacao();
+  // NÃO remove o lead aqui — só após a ficha do paciente ser criada de fato.
+  // Caso contrário, se o usuário cancelar o modal (ou não marcar o consentimento
+  // LGPD, que é obrigatório em criarPaciente), o lead seria perdido sem virar paciente.
 
   // Navega para Pacientes e abre o modal de novo paciente pré-preenchido
   navigate('pacientes');
@@ -228,6 +229,27 @@ function converterParaPaciente(id) {
     if (nomeEl)   nomeEl.value   = nome;
     if (wppEl)    wppEl.value    = wpp;
     if (queixaEl && queixa) queixaEl.value = queixa;
+    // Substitui o handler do botão "Criar ficha": só remove o lead se o paciente
+    // for realmente criado (detectado pelo aumento de patients.length, que ocorre
+    // apenas quando criarPaciente passa por todas as validações).
+    var criarBtn = document.getElementById('btn-criar-paciente');
+    if (criarBtn) {
+      criarBtn.onclick = function(){ _finalizarConversaoLead(id); };
+    }
     showModal('modal-novo-paciente');
   }, 250);
+}
+
+// Cria o paciente via criarPaciente() e, em caso de sucesso, remove o lead do pipeline.
+function _finalizarConversaoLead(leadId) {
+  var before = (typeof patients !== 'undefined' && patients) ? patients.length : 0;
+  if (typeof criarPaciente === 'function') criarPaciente();
+  var after = (typeof patients !== 'undefined' && patients) ? patients.length : 0;
+  if (after > before) {
+    // Paciente criado com sucesso → agora sim remove o lead do pipeline.
+    captacaoLeads = captacaoLeads.filter(function(l){ return l.id !== leadId; });
+    salvarCaptacao();
+    if (typeof atualizarBadgeCaptacao === 'function') atualizarBadgeCaptacao();
+  }
+  // Se não criou (validação bloqueou), o lead permanece no pipeline.
 }
