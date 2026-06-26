@@ -425,7 +425,7 @@ function saveDiaryLivre() {
   div.className = 'fade-in';
   div.style.cssText = 'background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--sage)';
   var therapistFirst = (tfUserData.nome || 'Ana').split(' ')[0];
-  div.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between"><span>'+dateStr+'</span><span style="color:var(--sage);font-weight:600">✓ '+therapistFirst+' verá na sessão</span></div><div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+text+'</div>';
+  div.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between"><span>'+escHTML(dateStr)+'</span><span style="color:var(--sage);font-weight:600">✓ '+escHTML(therapistFirst)+' verá na sessão</span></div><div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(text)+'</div>';
   // Remove empty state se existir
   var emptyEl = list.querySelector('div[style*="Nenhum registro"]');
   if (emptyEl) emptyEl.remove();
@@ -462,16 +462,16 @@ function saveDiaryTCC() {
   const dateStr = days[now.getDay()] + ', ' + String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0') + ' · ' +
     String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
   const emoBadge = tccEmocaoSelecionada
-    ? '<span style="background:var(--purple-light);color:var(--purple);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">'+tccEmocaoSelecionada+' · '+intVal+'</span>'
+    ? '<span style="background:var(--purple-light);color:var(--purple);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">'+escHTML(tccEmocaoSelecionada)+' · '+escHTML(intVal)+'</span>'
     : '';
   const altBlock = alt
-    ? '<div style="font-size:12px;color:var(--sage);background:var(--sage-light);border-radius:6px;padding:8px 10px"><span style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.4px;opacity:.7">Alternativa</span><br>'+alt+'</div>'
+    ? '<div style="font-size:12px;color:var(--sage);background:var(--sage-light);border-radius:6px;padding:8px 10px"><span style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.4px;opacity:.7">Alternativa</span><br>'+escHTML(alt)+'</div>'
     : '';
   const div = document.createElement('div');
   div.className = 'fade-in';
   div.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid var(--purple)';
   const _nomeT2 = (tfUserData?.nome || '').split(' ')[0] || 'sua terapeuta';
-  div.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between"><span>'+dateStr+'</span><span class="therapist-label-first" style="color:var(--sage);font-weight:600">✓ '+_nomeT2+' verá na sessão</span></div><div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px"><span style="font-weight:700;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.4px">Situação</span><br><span style="color:var(--ink-soft)">'+sit+'</span></div><div style="font-size:12px"><span style="font-weight:700;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.4px">Pensamento automático</span><br><span style="color:var(--ink-soft)">"'+pen+'"</span></div>'+(emoBadge?'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+emoBadge+'</div>':'')+altBlock+'</div>';
+  div.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between"><span>'+escHTML(dateStr)+'</span><span class="therapist-label-first" style="color:var(--sage);font-weight:600">✓ '+escHTML(_nomeT2)+' verá na sessão</span></div><div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px"><span style="font-weight:700;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.4px">Situação</span><br><span style="color:var(--ink-soft)">'+escHTML(sit)+'</span></div><div style="font-size:12px"><span style="font-weight:700;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.4px">Pensamento automático</span><br><span style="color:var(--ink-soft)">"'+escHTML(pen)+'"</span></div>'+(emoBadge?'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+emoBadge+'</div>':'')+altBlock+'</div>';
   document.getElementById('diary-tcc-list').insertBefore(div, document.getElementById('diary-tcc-list').firstChild);
   ['tcc-situacao','tcc-pensamento','tcc-alternativo'].forEach(id => document.getElementById(id).value = '');
   document.querySelectorAll('.tcc-emocao-btn').forEach(b => { b.style.background='#fff'; b.style.color='var(--ink)'; b.style.borderColor='var(--border)'; });

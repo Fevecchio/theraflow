@@ -1352,7 +1352,7 @@ function saveDiaryEsp(abordagem) {
 
   var card = document.createElement('div');
   card.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid '+cor;
-  card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between"><span>'+dataStr+'</span><span style="color:var(--sage);font-weight:600">✓ '+nomeT+' verá na sessão</span></div>'
+  card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between"><span>'+escHTML(dataStr)+'</span><span style="color:var(--sage);font-weight:600">✓ '+escHTML(nomeT)+' verá na sessão</span></div>'
     + campos.map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:6px">'+escHTML(c)+'</div>'; }).join('');
   listEl.insertBefore(card, listEl.firstChild);
 

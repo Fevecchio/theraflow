@@ -105,7 +105,7 @@ function _showConvitePortalModal(idx) {
       <div style="font-size:36px;margin-bottom:12px">📲</div>
       <div style="font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:8px">Enviar acesso ao portal?</div>
       <div style="font-size:13.5px;color:#6b7280;line-height:1.6;margin-bottom:20px">
-        ${_firstName(p.name)} receberá email e senha pelo WhatsApp para acessar o portal entre as sessões.
+        ${escHTML(_firstName(p.name))} receberá email e senha pelo WhatsApp para acessar o portal entre as sessões.
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button onclick="compartilharAcessoPortal(${idx});document.getElementById('modal-convite-portal').remove()" style="background:#4a7c59;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">✓ Sim, enviar via WhatsApp</button>
