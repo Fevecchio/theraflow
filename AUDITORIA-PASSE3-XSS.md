@@ -47,5 +47,13 @@ Testes E2E (Playwright): payloads no diário livre, diário TCC e tabela de saú
 
 ---
 
-## Observação (não corrigida — baixo, self)
-- **`06-patients.js` render de materiais**: `href` usa `escHTML(m.url)`, que escapa aspas mas **não bloqueia `javascript:`**. Requer o terapeuta cadastrar uma URL maliciosa no próprio material e clicar nela (self-XSS, exige clique). Candidato a aplicar `safeUrl()` (como nos emails do Passe 2) numa próxima leva.
+### 3ª leva (commit `59838bb`) — fecha o item antes em aberto
+| Arquivo | O quê |
+|---|---|
+| `01-utils.js` | Novo helper global `safeURL(u)` — só aceita `http(s)`, escapa aspas, retorna '' se inválida. |
+| `06-patients.js` render de materiais | `href` do material e do botão "Abrir" agora usam `safeURL(m.url)`; URL inválida (ex.: `javascript:`) cai para texto puro (sem link). Testado E2E: material com `javascript:` → sem href; https preservada. |
+
+---
+
+## Status final
+**Varredura de XSS concluída.** Todos os pontos com dado controlável em `innerHTML` escapam (`escHTML`) e os `href` controláveis passam por `safeURL`/validação. Nenhum item em aberto.
