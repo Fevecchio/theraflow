@@ -684,9 +684,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
       <!-- Navegação agrupada -->
       <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">
-        <button onclick="agendaNav(-1)" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">←</button>
+        <button onclick="agendaNav(-1)" aria-label="Período anterior" title="Período anterior" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">←</button>
         <button onclick="agendaNav(0)" style="padding:6px 12px;border:none;border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink);font-weight:600">Hoje</button>
-        <button onclick="agendaNav(1)" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">→</button>
+        <button onclick="agendaNav(1)" aria-label="Próximo período" title="Próximo período" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">→</button>
       </div>
 
       <!-- Ações secundárias -->
@@ -2176,7 +2176,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <label class="perfil-label">Chave da API <span style="font-size:11px;color:var(--muted);font-weight:400">· começa com <code style="background:var(--bg);padding:1px 4px;border-radius:4px">sk-ant-</code></span></label>
           <div style="position:relative">
             <input type="password" id="perfil-api-key" class="perfil-input" placeholder="sk-ant-api03-…" style="padding-right:44px;font-family:monospace;font-size:13px"/>
-            <button type="button" id="btn-toggle-apikey" onclick="toggleApiKeyVisibility()" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;line-height:1">👁</button>
+            <button type="button" id="btn-toggle-apikey" onclick="toggleApiKeyVisibility()" aria-label="Mostrar ou ocultar a chave" title="Mostrar ou ocultar a chave" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;line-height:1">👁</button>
           </div>
           <div id="api-key-status" style="margin-top:8px;font-size:12px;display:none"></div>
           <div style="margin-top:8px;padding:8px 12px;background:#fff8e1;border:1px solid rgba(200,150,0,.2);border-radius:8px;font-size:11.5px;color:#7a5c00;display:flex;gap:6px;align-items:flex-start">

@@ -905,7 +905,7 @@ function renderPatientOverview(i) {
         var dtCls  = typeof dtObj==='object'?dtObj.cls:'';
         var dateLabel = t.dueDate ? ' <span style="font-size:11px;color:'+(dtCls==='overdue'?'var(--red)':dtCls==='today'?'var(--amber)':'var(--muted)')+'">· '+dtText+'</span>' : '';
         return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
-          +'<button onclick="toggleTarefa('+t.id+');selectPatient('+i+')" style="flex-shrink:0;padding:3px 9px;border-radius:20px;border:1.5px solid var(--sage);background:var(--sage-light);color:var(--sage);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background=\'var(--sage)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--sage-light)\';this.style.color=\'var(--sage)\'">✓</button>'
+          +'<button onclick="toggleTarefa('+t.id+');selectPatient('+i+')" aria-label="Concluir tarefa" title="Concluir tarefa" style="flex-shrink:0;padding:3px 9px;border-radius:20px;border:1.5px solid var(--sage);background:var(--sage-light);color:var(--sage);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background=\'var(--sage)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--sage-light)\';this.style.color=\'var(--sage)\'">✓</button>'
           +'<span style="flex:1;font-size:13px;color:var(--ink-soft)">'+escHTML(t.title)+dateLabel+'</span>'
           +'<button onclick="editarTarefa('+t.id+')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:5px" title="Editar">✏</button>'
           +'</div>';
