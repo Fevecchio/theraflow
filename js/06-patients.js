@@ -1161,8 +1161,9 @@ function renderPatientFicha(i) {
   } else {
     matsHtml = mats.map(function(m) {
       var icon = (typeof MATERIAL_ICONS !== 'undefined' ? MATERIAL_ICONS[m.tipo] : null) || '📎';
-      var tituloHtml = m.url
-        ? '<a href="' + escHTML(m.url) + '" target="_blank" rel="noopener">' + escHTML(m.titulo) + '</a>'
+      var safeMatUrl = (typeof safeURL === 'function') ? safeURL(m.url) : (/^https?:\/\//i.test(String(m.url||''))? m.url : '');
+      var tituloHtml = safeMatUrl
+        ? '<a href="' + safeMatUrl + '" target="_blank" rel="noopener">' + escHTML(m.titulo) + '</a>'
         : escHTML(m.titulo);
       var descHtml = m.desc ? '<div class="material-desc">' + escHTML(m.desc) + '</div>' : '';
       var labelMap = (typeof MATERIAL_LABELS !== 'undefined' ? MATERIAL_LABELS : {});
@@ -1175,7 +1176,7 @@ function renderPatientFicha(i) {
         + '<div class="material-date">' + escHTML(m.date) + '</div>'
         + '</div>'
         + '<div class="material-actions">'
-        + (m.url ? '<a href="' + escHTML(m.url) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none">↗ Abrir</a>' : '')
+        + (safeMatUrl ? '<a href="' + safeMatUrl + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none">↗ Abrir</a>' : '')
         + '<button class="task-delete" onclick="_excluirMaterialFicha(' + i + ',' + m.id + ')" title="Excluir">✕</button>'
         + '</div>'
         + '</div>';

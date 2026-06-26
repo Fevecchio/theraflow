@@ -32,6 +32,13 @@ function escHTML(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// URL segura para usar em href: só aceita http(s) (bloqueia javascript:, data:, etc.)
+// e escapa aspas para não quebrar o atributo. Retorna '' se inválida.
+function safeURL(u) {
+  var s = String(u || '').trim();
+  return /^https?:\/\//i.test(s) ? s.replace(/"/g, '%22') : '';
+}
+
 function _firstName(name) {
   return (name || 'Paciente').split(' ')[0] || 'Paciente';
 }
