@@ -629,7 +629,7 @@ function exportarExtratoPaciente(idx) {
   }).join('');
 
   var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>'
-    +'<title>Extrato — '+p.name+'</title>'
+    +'<title>Extrato — '+escHTML(p.name)+'</title>'
     +'<style>body{font-family:Arial,sans-serif;margin:40px;color:#1a2a1e;line-height:1.6}h1{font-size:20px;margin:0 0 4px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#5a8a6a;margin:24px 0 6px;border-bottom:1.5px solid #c8ddc8;padding-bottom:3px}.meta{font-size:12px;color:#666;margin-bottom:28px}.resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}.resumo-item{background:#f4f8f4;border-radius:6px;padding:10px;text-align:center}.resumo-val{font-size:18px;font-weight:700}.resumo-label{font-size:10px;color:#888;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}th{background:#f4f8f4;padding:7px 9px;text-align:left}td{padding:6px 9px;border-bottom:1px solid #e8f0eb}.footer{margin-top:36px;font-size:10px;color:#aaa;border-top:1px solid #ddd;padding-top:10px}@media print{body{margin:20px}}</style></head><body>'
     +'<h1>Extrato Financeiro — '+escHTML(p.name)+'</h1>'
     +'<div class="meta">Terapeuta: '+escHTML(nomeT)+(crpT?' · CRP '+escHTML(crpT):'')+'  &nbsp;·&nbsp;  Gerado em '+hoje+'</div>'
@@ -681,7 +681,7 @@ function exportarRelatorioEvolucao() {
     + '<title>Relatório de Evolução — ' + (p.name||'') + '</title>'
     + '<style>body{font-family:Georgia,serif;margin:40px;color:#1a2a1e;line-height:1.7}h1{font-size:22px;margin:0 0 4px}h2{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#5a8a6a;margin:24px 0 8px;border-bottom:1.5px solid #c8ddc8;padding-bottom:4px}.meta{font-size:13px;color:#666;margin-bottom:32px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat{background:#f4f8f4;border-radius:8px;padding:12px;text-align:center}.stat-val{font-size:22px;font-weight:700;color:#4a7c59}.stat-label{font-size:11px;color:#888}table{width:100%;border-collapse:collapse;font-size:12.5px}th{background:#f4f8f4;padding:8px 10px;text-align:left;font-weight:600}td{padding:7px 10px;border-bottom:1px solid #e8f0eb}.footer{margin-top:40px;font-size:11px;color:#aaa;border-top:1px solid #ddd;padding-top:12px}@media print{body{margin:20px}}</style></head><body>'
     + '<h1>Relatório de Evolução Clínica</h1>'
-    + '<div class="meta">Paciente: <strong>' + (p.name||'—') + '</strong> &nbsp;·&nbsp; Terapeuta: ' + nomeT + (crpT?' (CRP '+crpT+')':'') + ' &nbsp;·&nbsp; Gerado em ' + hoje + '</div>'
+    + '<div class="meta">Paciente: <strong>' + escHTML(p.name||'—') + '</strong> &nbsp;·&nbsp; Terapeuta: ' + escHTML(nomeT) + (crpT?' (CRP '+escHTML(crpT)+')':'') + ' &nbsp;·&nbsp; Gerado em ' + hoje + '</div>'
     + '<h2>Resumo de Evolução</h2>'
     + '<div class="grid">'
       + '<div class="stat"><div class="stat-val">' + (p.sessions||0) + '</div><div class="stat-label">Sessões realizadas</div></div>'
@@ -746,7 +746,7 @@ function exportarProntuario() {
   var exTotal = (p.exercises||[]).length;
 
   var htmlOut = '<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n<meta charset="UTF-8"/>\n' +
-    '<title>Prontuário — ' + p.name + '</title>\n<style>\n' +
+    '<title>Prontuário — ' + escHTML(p.name) + '</title>\n<style>\n' +
     '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
     'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; color: #1a1f1c; background: #fff; }\n' +
     '.page { max-width: 760px; margin: 0 auto; padding: 48px 48px 60px; }\n' +
@@ -1379,10 +1379,10 @@ function atualizarMetricasSupervisao() {
         const moodVal = p.mood !== null ? p.mood + '/10' : '—';
         const obs = p.alert || (p.status === 'Atenção' ? 'Status de atenção — revisar plano.' : 'Humor baixo — monitorar.');
         return `<tr>
-          <td><div class="patient-info"><div class="patient-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'};color:#fff">${p.initials||(p.name?p.name.trim().split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase():'?')}</div><div><div class="patient-name">${p.name}</div><div class="patient-meta">${p.abordagem}</div></div></div></td>
+          <td><div class="patient-info"><div class="patient-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'};color:#fff">${escHTML(p.initials||(p.name?p.name.trim().split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase():'?'))}</div><div><div class="patient-name">${escHTML(p.name)}</div><div class="patient-meta">${escHTML(p.abordagem||'')}</div></div></div></td>
           <td>Sessão ${p.sessions}</td>
           <td><span class="tag ${moodColor}">${moodVal}</span></td>
-          <td style="font-size:13px;color:var(--ink-soft)">${obs.length > 60 ? obs.slice(0,60)+'…' : obs}</td>
+          <td style="font-size:13px;color:var(--ink-soft)">${escHTML(obs.length > 60 ? obs.slice(0,60)+'…' : obs)}</td>
           <td><button class="btn btn-secondary btn-sm" onclick="currentBriefingPatientIdx=${p._i};navigate('briefing')">✦ Briefing</button></td>
         </tr>`;
       }).join('');
@@ -1408,7 +1408,7 @@ function injectNewEvidenceIntoSupervisao() {
   banner.innerHTML = `
     <span style="font-size:18px">✦</span>
     <div style="flex:1">
-      <div style="font-size:13.5px;font-weight:600;color:var(--purple)">${(() => { const sp = patients[currentSessionPatientIdx]||patients[0]; return `Sessão ${sp.sessions} de ${sp.name} indexada agora`; })()}</div>
+      <div style="font-size:13.5px;font-weight:600;color:var(--purple)">${(() => { const sp = patients[currentSessionPatientIdx]||patients[0]; return `Sessão ${sp.sessions} de ${escHTML(sp.name)} indexada agora`; })()}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px">2 trechos sinalizados · nota clínica aprovada · análise atualizada</div>
     </div>
     <span class="sup-new-badge">✦ Novo</span>`;
