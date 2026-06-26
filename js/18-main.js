@@ -222,6 +222,10 @@ function aplicarDadosNoApp() {
   if (fWppTpl) {
     try { var _accT = JSON.parse(localStorage.getItem('tf_account')||'{}'); fWppTpl.value = _accT.wpp_template || ''; } catch(e){}
   }
+  var fLembreteQuando = document.getElementById('perfil-lembrete-quando');
+  if (fLembreteQuando) {
+    try { var _accLq = JSON.parse(localStorage.getItem('tf_account')||'{}'); if (_accLq.lembrete_quando) fLembreteQuando.value = _accLq.lembrete_quando; } catch(e){}
+  }
   var fPix = document.getElementById('perfil-pix-key');
   if (fPix) {
     try { var _accPix = JSON.parse(localStorage.getItem('tf_account')||'{}'); fPix.value = _accPix.pix_key || ''; } catch(e){}

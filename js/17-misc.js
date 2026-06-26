@@ -623,6 +623,8 @@ function saveProfile() {
     if (wppEl) acc.whatsapp = wppEl.value.trim();
     var wppTplEl = document.getElementById('perfil-wpp-template');
     if (wppTplEl) acc.wpp_template = wppTplEl.value.trim();
+    var lembreteQuandoEl = document.getElementById('perfil-lembrete-quando');
+    if (lembreteQuandoEl) acc.lembrete_quando = lembreteQuandoEl.value;
     var pixEl = document.getElementById('perfil-pix-key');
     if (pixEl) acc.pix_key = pixEl.value.trim();
     if (apiKeyVal) acc.claude_api_key = apiKeyVal;

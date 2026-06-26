@@ -1981,10 +1981,6 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <label class="perfil-label">Chave PIX (incluída nos lembretes de cobrança)</label>
             <input id="perfil-pix-key" class="perfil-input" type="text" placeholder="CPF, email, celular ou chave aleatória" />
           </div>
-          <div>
-            <label class="perfil-label">Template de lembrete WhatsApp <span style="font-weight:400;color:var(--muted)">(variáveis: [Nome], [dia], [hora], [Terapeuta])</span></label>
-            <textarea id="perfil-wpp-template" class="perfil-input" rows="4" style="resize:vertical;line-height:1.6" placeholder="Olá [Nome]! 🌿&#10;&#10;Lembrete da sua sessão de psicoterapia [dia] às [hora].&#10;&#10;Até logo! 💚&#10;— [Terapeuta]"></textarea>
-          </div>
         </div>
         <div>
           <label class="perfil-label">Mini bio (aparece no Portal do Paciente)</label>
@@ -2231,17 +2227,17 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div style="display:flex;flex-direction:column;gap:14px">
           <div>
             <label class="perfil-label">Quando preparar o lembrete</label>
-            <select class="perfil-input">
-              <option>24h antes da sessão</option>
-              <option>48h antes da sessão</option>
-              <option>1h antes da sessão</option>
-              <option>Não preparar</option>
+            <select id="perfil-lembrete-quando" class="perfil-input">
+              <option value="24h">24h antes da sessão</option>
+              <option value="48h">48h antes da sessão</option>
+              <option value="1h">1h antes da sessão</option>
+              <option value="nao">Não preparar</option>
             </select>
           </div>
           <div>
-            <label class="perfil-label">Modelo da mensagem</label>
-            <textarea class="perfil-input" style="min-height:80px;resize:none;line-height:1.6">Olá {nome}! Lembrando da nossa sessão {dia}, {diaSemana} às {horario}. Qualquer imprevisto me avisa com antecedência. Até lá 🌿</textarea>
-            <div style="font-size:11px;color:var(--muted);margin-top:5px">Variáveis: {nome} {dia} {diaSemana} {horario}</div>
+            <label class="perfil-label">Modelo da mensagem <span style="font-weight:400;color:var(--muted)">(variáveis: [Nome], [dia], [hora], [Terapeuta])</span></label>
+            <textarea id="perfil-wpp-template" class="perfil-input" style="min-height:80px;resize:vertical;line-height:1.6" placeholder="Olá [Nome]! 🌿&#10;&#10;Lembrete da sua sessão de psicoterapia [dia] às [hora].&#10;&#10;Até logo! 💚&#10;— [Terapeuta]"></textarea>
+            <div style="font-size:11px;color:var(--muted);margin-top:5px">Variáveis: [Nome] [dia] [hora] [Terapeuta]</div>
           </div>
         </div>
       </div>

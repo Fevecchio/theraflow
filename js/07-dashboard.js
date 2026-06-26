@@ -33,10 +33,13 @@ function _stopDashAutoRefresh() {
 function _wppInterpolate(tpl, nome, dia, hora, terapeuta) {
   var base = tpl && tpl.trim()
     ? tpl
-    : 'Olá [Nome]! 🌿\n\nLembrete da sua sessão de psicoterapia [dia].\n\nAté logo! 💚\n— [Terapeuta]';
+    : 'Olá [Nome]! 🌿\n\nLembrete da sua sessão de psicoterapia [dia] às [hora].\n\nAté logo! 💚\n— [Terapeuta]';
+  // Se o template já usa [hora] explicitamente, [dia] vira só a data (evita duplicar a hora).
+  // Caso contrário (templates antigos só com [dia]), embute "às [hora]" no [dia] como antes.
+  var temHora = /\[hora\]/.test(base);
   return base
     .replace(/\[Nome\]/g, nome)
-    .replace(/\[dia\]/g, hora ? dia + ' às ' + hora : dia)
+    .replace(/\[dia\]/g, (hora && !temHora) ? dia + ' às ' + hora : dia)
     .replace(/\[hora\]/g, hora || '')
     .replace(/\[Terapeuta\]/g, terapeuta);
 }
