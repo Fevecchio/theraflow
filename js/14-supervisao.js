@@ -1251,7 +1251,16 @@ function salvarMaterial() {
 
 // ── Supervisão: init e funções de reflexão/autoconhecimento ──
 function initSupervisao() {
-  // Dashboard sempre visível — onboarding só aparece se desativado
+  // Sincroniza o toggle com o estado persistido
+  const supToggle = document.getElementById('sup-toggle');
+  if (supToggle) supToggle.checked = !!supActivated;
+  // Se desativado, mostra o onboarding (estado desativado) e não o dashboard.
+  if (!supActivated) {
+    document.getElementById('sup-dashboard').style.display = 'none';
+    document.getElementById('sup-onboarding').style.display = 'flex';
+    return;
+  }
+  // Ativado: dashboard visível, onboarding escondido
   document.getElementById('sup-onboarding').style.display = 'none';
   document.getElementById('sup-dashboard').style.display = 'block';
   // Garante abas corretas
