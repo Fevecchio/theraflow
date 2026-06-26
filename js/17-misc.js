@@ -563,6 +563,18 @@ function saveProfile() {
 
   if (!nome) { showToast('⚠ Informe seu nome.'); return; }
 
+  // Valida a chave Claude ANTES de qualquer alteração (DOM/memória/localStorage).
+  // Antes, a validação ficava no fim e fazia return depois de já ter mutado o hero,
+  // a sidebar e o tfUserData — deixando estado parcial (memória ≠ localStorage) e
+  // descartando o save. Validando cedo, ou salva tudo ou não altera nada.
+  const apiKeyInput = document.getElementById('perfil-api-key');
+  const apiKeyVal = apiKeyInput ? apiKeyInput.value.trim() : '';
+  if (apiKeyVal && !apiKeyVal.startsWith('sk-ant-')) {
+    showToast('⚠ Chave inválida. A chave Claude começa com "sk-ant-". Nenhuma alteração foi salva.');
+    if (apiKeyInput) apiKeyInput.focus();
+    return;
+  }
+
   // Calcula iniciais (até 2 letras)
   const initials = nome.trim().split(' ')
     .filter(w => w.length > 0)
@@ -604,14 +616,7 @@ function saveProfile() {
   var keyToLabel = {tcc:'TCC', psicanalise:'Psicanálise', sistemica:'Sistêmica', humanista:'Humanista', act:'ACT'};
   tfUserData.abordagem = keyToLabel[profileAbordagem] || profileAbordagem;
 
-  // ── Salva dados no localStorage ──
-  const apiKeyInput = document.getElementById('perfil-api-key');
-  const apiKeyVal = apiKeyInput ? apiKeyInput.value.trim() : '';
-  // Valida formato da chave Claude antes de salvar
-  if (apiKeyVal && !apiKeyVal.startsWith('sk-ant-')) {
-    showToast('⚠ Chave inválida. A chave Claude começa com "sk-ant-".');
-    return;
-  }
+  // ── Salva dados no localStorage ── (apiKeyVal já validado no topo)
   try {
     const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
     acc.nome = nome;

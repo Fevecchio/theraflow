@@ -239,11 +239,14 @@ function salvarNovaTarefa() {
     var newId = Date.now();
     tasks.push({ id: newId, title: titulo, titulo: titulo, patientName: paciente, dueDate: data, status: 'aberta', createdAt: hojeISO() });
     showToast('Tarefa criada!');
+    // A tarefa nova é "aberta"; se o filtro atual for "Concluídas" ela ficaria
+    // oculta (parece que sumiu). Volta para "Abertas" para o usuário vê-la.
+    if (tarefasFiltro === 'concluidas') tarefasFiltro = 'abertas';
   }
   editingTaskId = null;
   salvarTarefas();
   closeModal('modal-nova-tarefa');
-  renderTarefas();
+  setTarefasFiltro(tarefasFiltro); // sincroniza botões de filtro + re-renderiza
   renderDashTarefas();
   atualizarBadgeTarefas();
 }
