@@ -581,5 +581,8 @@ function carregarCharges() {
 
 function salvarCharges() {
   try { localStorage.setItem('tf_charges', JSON.stringify(charges)); } catch(e) {}
+  // Mantém o status financeiro dos pacientes consistente com as cobranças
+  // (pagamento/estorno/exclusão refletem na lista de pacientes e no dashboard sem precisar renavegar).
+  if (typeof _recalcFinStatus === 'function') _recalcFinStatus();
   _supaSync_charges().catch(() => {});
 }
