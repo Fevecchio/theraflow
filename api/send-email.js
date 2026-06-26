@@ -59,6 +59,49 @@ async function verifyCallerJWT(req) {
   } catch(e) { return null; }
 }
 
+// Normaliza o destinatário (Resend aceita string ou array) para um email simples.
+function normalizeTo(to) {
+  const first = Array.isArray(to) ? to[0] : to;
+  return String(first == null ? '' : first).trim().toLowerCase();
+}
+
+// Anti-abuso: o terapeuta só pode enviar para o email de um PACIENTE SEU.
+// Sem isso, qualquer terapeuta logado poderia disparar emails do TheraFlow (com
+// dados controlados) para endereços arbitrários — vetor de spam/phishing.
+//
+// Retorna { ok: true } se autorizado; { ok: false } se o destinatário
+// comprovadamente não é paciente do caller; { ok: true, soft: true } quando a
+// verificação não pôde ser feita por erro técnico (config/rede) — nesse caso
+// liberamos (fail-open) para não bloquear envios legítimos por instabilidade,
+// apenas logando. É proteção anti-abuso, não barreira de dados sensíveis.
+async function callerOwnsRecipient(callerId, to) {
+  const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SERVICE_KEY) {
+    console.warn('[send-email] SERVICE_ROLE ausente — pulando validação de destinatário (fail-open).');
+    return { ok: true, soft: true };
+  }
+  const target = normalizeTo(to);
+  if (!target) return { ok: false };
+  try {
+    // service_role bypassa RLS → checagem determinística por dono (user_id).
+    const r = await fetch(
+      `${SUPA_URL}/rest/v1/patients?user_id=eq.${encodeURIComponent(callerId)}&select=email`,
+      { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+    );
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      console.warn('[send-email] Falha ao validar destinatário (fail-open):', r.status, t.slice(0, 120));
+      return { ok: true, soft: true };
+    }
+    const rows = await r.json();
+    const emails = (Array.isArray(rows) ? rows : []).map((x) => String(x.email || '').trim().toLowerCase());
+    return { ok: emails.includes(target) };
+  } catch (e) {
+    console.warn('[send-email] Exceção ao validar destinatário (fail-open):', e.message);
+    return { ok: true, soft: true };
+  }
+}
+
 // ── Templates HTML ────────────────────────────────────────────────────────────
 
 function tmplInvite({ terapeutaNome, terapeutaCrp, pacienteNome, data, hora, duracao, sessionLink }) {
@@ -198,6 +241,13 @@ export default async function handler(req, res) {
 
   if (!template || !to) {
     return res.status(400).json({ error: '`template` e `to` são obrigatórios' });
+  }
+
+  // Anti-abuso: só permite enviar para um paciente do próprio terapeuta.
+  const ownership = await callerOwnsRecipient(caller.id, to);
+  if (!ownership.ok) {
+    console.warn('[send-email] Bloqueado: destinatário não é paciente do caller', caller.id);
+    return res.status(403).json({ error: 'Destinatário não é um paciente vinculado à sua conta.' });
   }
 
   const resend = new Resend(RESEND_KEY);
