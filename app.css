@@ -1102,11 +1102,11 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 }
 
 /* Flex-item <main> com min-width:auto (padrão) não encolhe abaixo do seu
-   min-content, estourando a viewport em mobile. min-width:0 deixa o main
-   respeitar a largura do container (correção raiz do overflow horizontal). */
-@media (max-width: 768px) {
-  .app-main, main.app-main, #tf-app-layer > main { min-width: 0; }
-}
+   min-content, estourando a viewport. min-width:0 (em TODOS os tamanhos) deixa
+   o main respeitar a largura do container — o conteúdo de largura fixa (ex:
+   Kanban da Captação, 6 colunas) passa a rolar dentro do seu próprio
+   overflow-x:auto em vez de esticar a página. Correção raiz do overflow. */
+.app-main, main.app-main, .main, #tf-app-layer > main { min-width: 0; }
 
 /* ── MOBILE SESSION ── */
 @media (max-width: 768px) {
