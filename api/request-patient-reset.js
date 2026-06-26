@@ -59,6 +59,24 @@ function esc(s) {
   ));
 }
 
+function clientIp(req) {
+  const fwd = req.headers['x-forwarded-for'] || '';
+  return fwd.split(',')[0].trim() || req.headers['x-real-ip'] || 'unknown';
+}
+
+// Rate-limit in-memory por IP (best-effort; ver nota nos demais endpoints). Como
+// este endpoint é público e envia email (custo), limita rajadas de um mesmo IP.
+const _rlBuckets = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const arr = (_rlBuckets.get(key) || []).filter((t) => now - t < windowMs);
+  if (arr.length >= max) return false;
+  arr.push(now);
+  _rlBuckets.set(key, arr);
+  if (_rlBuckets.size > 5000) _rlBuckets.clear();
+  return true;
+}
+
 function resolveBaseUrl(origin) {
   if (origin && ALLOWED_ORIGINS.includes(origin) && /^https:\/\//.test(origin)) return origin;
   return 'https://theraflow-one.vercel.app';
@@ -112,6 +130,13 @@ export default async function handler(req, res) {
 
   const email = (((req.body || {}).email) || '').trim().toLowerCase();
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return res.status(200).json({ ok: true });
+  }
+
+  // Rate-limit por IP (10/min). Resposta neutra (200 {ok:true}) p/ preservar a
+  // anti-enumeração — o limite corta custo de email sem revelar nada ao chamador.
+  if (!rateLimit(`reset:${clientIp(req)}`, 10, 60 * 1000)) {
+    console.log('[reset-request] Rate-limit por IP atingido (resposta neutra).');
     return res.status(200).json({ ok: true });
   }
 

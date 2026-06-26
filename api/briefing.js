@@ -31,6 +31,23 @@ function setCors(res, origin) {
 
 const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supabase.co';
 
+// Rate-limit in-memory (best-effort). Persiste entre invocações na mesma instância
+// "quente" do Vercel; instâncias frias têm seu próprio estado, então não é um limite
+// distribuído rigoroso — é uma barreira anti-rajada/anti-abuso barata e sem dependência.
+// Para limite forte/global, usar Vercel KV/Upstash no futuro.
+const _rlBuckets = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const arr = (_rlBuckets.get(key) || []).filter((t) => now - t < windowMs);
+  if (arr.length >= max) {
+    return { allowed: false, retryAfter: Math.ceil((windowMs - (now - arr[0])) / 1000) };
+  }
+  arr.push(now);
+  _rlBuckets.set(key, arr);
+  if (_rlBuckets.size > 5000) _rlBuckets.clear(); // poda defensiva contra crescimento ilimitado
+  return { allowed: true };
+}
+
 async function verifySupabaseJWT(req) {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
   if (!token) return null;
@@ -76,13 +93,36 @@ export default async function handler(req, res) {
   const user = await verifySupabaseJWT(req);
   if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
 
+  // Rate-limit por usuário: 30 chamadas/min é folgado p/ uso clínico real
+  // (briefing/nota/resumo são esporádicos) e corta rajadas de abuso de créditos.
+  const rl = rateLimit(`briefing:${user.id}`, 30, 60 * 1000);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(rl.retryAfter));
+    return res.status(429).json({ error: 'Muitas requisições. Tente novamente em instantes.' });
+  }
+
   const { systemPrompt, userPrompt, patientData } = req.body || {};
 
   if (!userPrompt || typeof userPrompt !== 'string') {
     return res.status(400).json({ error: 'userPrompt is required' });
   }
 
-  const system = systemPrompt || buildDefaultSystem(patientData);
+  // Defesa-em-profundidade contra abuso de custo (uso do proxy como LLM genérico):
+  // limita o tamanho dos prompts. Os fluxos legítimos (nota SOAP, resumo, briefing)
+  // ficam muito abaixo destes limites — o briefing com histórico raramente passa de
+  // poucos KB. O controle de VOLUME por usuário fica a cargo do rate-limit (_rateLimit).
+  const MAX_SYSTEM = 8000;
+  const MAX_USER = 24000;
+  if (typeof systemPrompt === 'string' && systemPrompt.length > MAX_SYSTEM) {
+    return res.status(413).json({ error: 'systemPrompt excede o tamanho permitido' });
+  }
+  if (userPrompt.length > MAX_USER) {
+    return res.status(413).json({ error: 'userPrompt excede o tamanho permitido' });
+  }
+
+  const system = (typeof systemPrompt === 'string' && systemPrompt.trim())
+    ? systemPrompt
+    : buildDefaultSystem(patientData);
 
   let claudeRes;
   try {

@@ -34,6 +34,22 @@ function setCors(res, origin) {
   res.setHeader('Access-Control-Max-Age', '86400');
 }
 
+// Rate-limit in-memory (best-effort). Persiste na instância "quente" do Vercel;
+// instâncias frias têm estado próprio — barreira anti-rajada barata, não limite
+// distribuído. Para limite forte/global, usar Vercel KV/Upstash no futuro.
+const _rlBuckets = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const arr = (_rlBuckets.get(key) || []).filter((t) => now - t < windowMs);
+  if (arr.length >= max) {
+    return { allowed: false, retryAfter: Math.ceil((windowMs - (now - arr[0])) / 1000) };
+  }
+  arr.push(now);
+  _rlBuckets.set(key, arr);
+  if (_rlBuckets.size > 5000) _rlBuckets.clear();
+  return { allowed: true };
+}
+
 // Escapa valores controlados pelo caller antes de injetar no HTML do email
 // (evita quebra de layout e phishing via conteúdo malicioso nos campos).
 function esc(s) {
@@ -94,7 +110,16 @@ async function callerOwnsRecipient(callerId, to) {
       return { ok: true, soft: true };
     }
     const rows = await r.json();
-    const emails = (Array.isArray(rows) ? rows : []).map((x) => String(x.email || '').trim().toLowerCase());
+    const emails = (Array.isArray(rows) ? rows : [])
+      .map((x) => String(x.email || '').trim().toLowerCase())
+      .filter(Boolean);
+    // Sem pacientes no banco (conta nova ou sync ainda pendente do 1º paciente):
+    // não dá para validar ownership de forma significativa → libera (fail-open).
+    // O abuso residual fica limitado pelo rate-limit por usuário.
+    if (emails.length === 0) {
+      console.warn('[send-email] Caller sem pacientes no banco — pulando validação (fail-open).');
+      return { ok: true, soft: true };
+    }
     return { ok: emails.includes(target) };
   } catch (e) {
     console.warn('[send-email] Exceção ao validar destinatário (fail-open):', e.message);
@@ -236,6 +261,14 @@ export default async function handler(req, res) {
   // Valida JWT do terapeuta
   const caller = await verifyCallerJWT(req);
   if (!caller) return res.status(401).json({ error: 'Autenticação necessária' });
+
+  // Rate-limit por usuário: 30 emails/min cobre o pior caso legítimo (agendar várias
+  // sessões de uma vez) e corta abuso de envio em massa.
+  const rl = rateLimit(`send-email:${caller.id}`, 30, 60 * 1000);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(rl.retryAfter));
+    return res.status(429).json({ error: 'Muitos envios em sequência. Aguarde um instante.' });
+  }
 
   const { template, to, data } = req.body || {};
 
