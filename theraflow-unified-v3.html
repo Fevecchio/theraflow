@@ -427,11 +427,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="modal" style="max-width:460px">
     <div class="modal-title">Nota rápida</div>
     <div class="form-group">
-      <label>Paciente</label>
+      <label for="nr-paciente">Paciente</label>
       <select class="form-input" id="nr-paciente"></select>
     </div>
     <div class="form-group">
-      <label>Nota</label>
+      <label for="nr-texto">Nota</label>
       <textarea class="form-input" id="nr-texto" style="min-height:100px;resize:vertical" placeholder="Anotação clínica, observação, lembrete…"></textarea>
     </div>
     <div class="modal-actions">
@@ -1041,19 +1041,19 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Queixa e início</div>
           <div class="grid-2" style="gap:14px">
             <div class="form-group">
-              <label>Queixa principal</label>
+              <label for="ana-queixa">Queixa principal</label>
               <textarea id="ana-queixa" rows="3" placeholder="O que traz o paciente?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
             </div>
             <div class="form-group">
-              <label>Início dos sintomas</label>
+              <label for="ana-inicio">Início dos sintomas</label>
               <input id="ana-inicio" type="text" placeholder="Ex: há 6 meses, após demissão" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
             </div>
             <div class="form-group">
-              <label>Fatores desencadeantes</label>
+              <label for="ana-fatores">Fatores desencadeantes</label>
               <textarea id="ana-fatores" rows="2" placeholder="O que precipitou?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
             </div>
             <div class="form-group">
-              <label>Tentativas anteriores de resolução</label>
+              <label for="ana-tentativas">Tentativas anteriores de resolução</label>
               <textarea id="ana-tentativas" rows="2" placeholder="Já tentou resolver como?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
             </div>
           </div>
@@ -1079,15 +1079,15 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Saúde e histórico médico</div>
           <div class="grid-2" style="gap:14px">
             <div class="form-group">
-              <label>Doenças crônicas / condições médicas</label>
+              <label for="ana-doencas">Doenças crônicas / condições médicas</label>
               <input id="ana-doencas" type="text" placeholder="Hipertensão, diabetes, etc." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
             </div>
             <div class="form-group">
-              <label>Medicações em uso</label>
+              <label for="ana-medicacoes">Medicações em uso</label>
               <input id="ana-medicacoes" type="text" placeholder="Nome, dose, há quanto tempo" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
             </div>
             <div class="form-group" style="grid-column:1/-1">
-              <label>Histórico familiar de saúde mental</label>
+              <label for="ana-hist-familiar">Histórico familiar de saúde mental</label>
               <textarea id="ana-hist-familiar" rows="2" placeholder="Familiar com diagnóstico psiquiátrico ou em tratamento?" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
             </div>
           </div>
@@ -1098,7 +1098,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Contexto de vida</div>
           <div class="grid-2" style="gap:14px">
             <div class="form-group">
-              <label>Estado civil</label>
+              <label for="ana-estado-civil">Estado civil</label>
               <select id="ana-estado-civil" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;background:#fff;box-sizing:border-box">
                 <option value="">Selecionar…</option>
                 <option value="Solteiro(a)">Solteiro(a)</option>
@@ -1110,7 +1110,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
               </select>
             </div>
             <div class="form-group">
-              <label>Situação profissional</label>
+              <label for="ana-sit-prof">Situação profissional</label>
               <select id="ana-sit-prof" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;background:#fff;box-sizing:border-box">
                 <option value="">Selecionar…</option>
                 <option value="Empregado(a) CLT">Empregado(a) CLT</option>
@@ -1122,11 +1122,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
               </select>
             </div>
             <div class="form-group">
-              <label>Filhos</label>
+              <label for="ana-filhos">Filhos</label>
               <input id="ana-filhos" type="text" placeholder="Quantos, idades" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
             </div>
             <div class="form-group">
-              <label>Rede de apoio afetivo</label>
+              <label for="ana-suporte">Rede de apoio afetivo</label>
               <input id="ana-suporte" type="text" placeholder="Família, amigos, parceiro(a)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"/>
             </div>
           </div>
@@ -1137,11 +1137,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Objetivos terapêuticos</div>
           <div style="display:flex;flex-direction:column;gap:14px">
             <div class="form-group">
-              <label>O que o paciente espera alcançar com a terapia?</label>
+              <label for="ana-objetivos">O que o paciente espera alcançar com a terapia?</label>
               <textarea id="ana-objetivos" rows="3" placeholder="Objetivos e expectativas para o processo terapêutico" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
             </div>
             <div class="form-group">
-              <label>Observações livres do terapeuta</label>
+              <label for="ana-obs">Observações livres do terapeuta</label>
               <textarea id="ana-obs" rows="3" placeholder="Impressões da 1ª sessão, hipóteses iniciais, aspectos de atenção" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='var(--border)'"></textarea>
             </div>
           </div>
@@ -1941,23 +1941,23 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div class="perfil-section-title">Dados profissionais</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
           <div>
-            <label class="perfil-label">Nome completo</label>
+            <label for="perfil-nome" class="perfil-label">Nome completo</label>
             <input id="perfil-nome" class="perfil-input" value="Ana Meireles" />
           </div>
           <div>
-            <label class="perfil-label">CRP</label>
+            <label for="perfil-crp" class="perfil-label">CRP</label>
             <input id="perfil-crp" class="perfil-input" value="06/123456" />
           </div>
           <div>
-            <label class="perfil-label">Especialidade</label>
+            <label for="perfil-especialidade" class="perfil-label">Especialidade</label>
             <input id="perfil-especialidade" class="perfil-input" value="Psicologia Clínica" />
           </div>
           <div>
-            <label class="perfil-label">Cidade</label>
+            <label for="perfil-cidade" class="perfil-label">Cidade</label>
             <input id="perfil-cidade" class="perfil-input" value="São Paulo, SP" />
           </div>
           <div>
-            <label class="perfil-label">Tempo de sessão padrão</label>
+            <label for="perfil-duracao" class="perfil-label">Tempo de sessão padrão</label>
             <select id="perfil-duracao" class="perfil-input">
               <option value="45">45 minutos</option>
               <option value="50" selected>50 minutos</option>
@@ -1966,24 +1966,24 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             </select>
           </div>
           <div>
-            <label class="perfil-label">Valor padrão por sessão (R$)</label>
+            <label for="perfil-valor-sessao" class="perfil-label">Valor padrão por sessão (R$)</label>
             <input id="perfil-valor-sessao" class="perfil-input" type="number" min="50" max="2000" step="10" placeholder="200" />
           </div>
           <div>
-            <label class="perfil-label">Email de contato / suporte</label>
+            <label for="perfil-email-suporte" class="perfil-label">Email de contato / suporte</label>
             <input id="perfil-email-suporte" class="perfil-input" type="email" placeholder="seu@email.com.br" />
           </div>
           <div>
-            <label class="perfil-label">WhatsApp (usado pelo portal do paciente para solicitar sessão)</label>
+            <label for="perfil-whatsapp" class="perfil-label">WhatsApp (usado pelo portal do paciente para solicitar sessão)</label>
             <input id="perfil-whatsapp" class="perfil-input" type="tel" placeholder="(11) 99999-9999" />
           </div>
           <div>
-            <label class="perfil-label">Chave PIX (incluída nos lembretes de cobrança)</label>
+            <label for="perfil-pix-key" class="perfil-label">Chave PIX (incluída nos lembretes de cobrança)</label>
             <input id="perfil-pix-key" class="perfil-input" type="text" placeholder="CPF, email, celular ou chave aleatória" />
           </div>
         </div>
         <div>
-          <label class="perfil-label">Mini bio (aparece no Portal do Paciente)</label>
+          <label for="perfil-bio" class="perfil-label">Mini bio (aparece no Portal do Paciente)</label>
           <textarea id="perfil-bio" class="perfil-input" style="min-height:72px;resize:none;line-height:1.6">Psicólogo(a) clínico(a) com foco em TCC e ansiedade. Atendo adultos e adolescentes com uma abordagem acolhedora e baseada em evidências.</textarea>
         </div>
       </div>
@@ -2033,7 +2033,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
 
         <div style="margin-top:14px">
-          <label class="perfil-label">Abordagem secundária (opcional)</label>
+          <label for="perfil-abordagem-sec" class="perfil-label">Abordagem secundária (opcional)</label>
           <select id="perfil-abordagem-sec" class="perfil-input">
             <option value="">Nenhuma</option>
             <option>Psicanálise / Psicodinâmica</option>
@@ -2082,15 +2082,15 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div class="perfil-section-title">Segurança</div>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div>
-            <label class="perfil-label">Senha atual</label>
+            <label for="perfil-senha-atual" class="perfil-label">Senha atual</label>
             <input type="password" id="perfil-senha-atual" class="perfil-input" placeholder="••••••••"/>
           </div>
           <div>
-            <label class="perfil-label">Nova senha</label>
+            <label for="perfil-senha-nova" class="perfil-label">Nova senha</label>
             <input type="password" id="perfil-senha-nova" class="perfil-input" placeholder="Mínimo 8 caracteres"/>
           </div>
           <div>
-            <label class="perfil-label">Confirmar nova senha</label>
+            <label for="perfil-senha-confirmar" class="perfil-label">Confirmar nova senha</label>
             <input type="password" id="perfil-senha-confirmar" class="perfil-input" placeholder="Repita a nova senha"/>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="atualizarSenha()" style="align-self:flex-start">Atualizar senha</button>
@@ -2173,7 +2173,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           Conecte sua chave da API Anthropic para ativar o Briefing IA e a Supervisão IA em tempo real. A chave fica salva apenas no seu navegador.
         </div>
         <div>
-          <label class="perfil-label">Chave da API <span style="font-size:11px;color:var(--muted);font-weight:400">· começa com <code style="background:var(--bg);padding:1px 4px;border-radius:4px">sk-ant-</code></span></label>
+          <label for="perfil-api-key" class="perfil-label">Chave da API <span style="font-size:11px;color:var(--muted);font-weight:400">· começa com <code style="background:var(--bg);padding:1px 4px;border-radius:4px">sk-ant-</code></span></label>
           <div style="position:relative">
             <input type="password" id="perfil-api-key" class="perfil-input" placeholder="sk-ant-api03-…" style="padding-right:44px;font-family:monospace;font-size:13px"/>
             <button type="button" id="btn-toggle-apikey" onclick="toggleApiKeyVisibility()" aria-label="Mostrar ou ocultar a chave" title="Mostrar ou ocultar a chave" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;line-height:1">👁</button>
@@ -2194,7 +2194,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
         <div id="horarios-grid" style="display:flex;flex-direction:column;gap:10px"></div>
         <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
-          <label class="perfil-label" style="margin:0">Horário padrão:</label>
+          <label for="horario-inicio" class="perfil-label" style="margin:0">Horário padrão:</label>
           <input type="time" id="horario-inicio" class="perfil-input" style="width:110px;padding:7px 10px" value="08:00"/>
           <span style="color:var(--muted);font-size:13px">até</span>
           <input type="time" id="horario-fim" class="perfil-input" style="width:110px;padding:7px 10px" value="18:00"/>
@@ -2226,7 +2226,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
         <div style="display:flex;flex-direction:column;gap:14px">
           <div>
-            <label class="perfil-label">Quando preparar o lembrete</label>
+            <label for="perfil-lembrete-quando" class="perfil-label">Quando preparar o lembrete</label>
             <select id="perfil-lembrete-quando" class="perfil-input">
               <option value="24h">24h antes da sessão</option>
               <option value="48h">48h antes da sessão</option>
@@ -2235,7 +2235,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             </select>
           </div>
           <div>
-            <label class="perfil-label">Modelo da mensagem <span style="font-weight:400;color:var(--muted)">(variáveis: [Nome], [dia], [hora], [Terapeuta])</span></label>
+            <label for="perfil-wpp-template" class="perfil-label">Modelo da mensagem <span style="font-weight:400;color:var(--muted)">(variáveis: [Nome], [dia], [hora], [Terapeuta])</span></label>
             <textarea id="perfil-wpp-template" class="perfil-input" style="min-height:80px;resize:vertical;line-height:1.6" placeholder="Olá [Nome]! 🌿&#10;&#10;Lembrete da sua sessão de psicoterapia [dia] às [hora].&#10;&#10;Até logo! 💚&#10;— [Terapeuta]"></textarea>
             <div style="font-size:11px;color:var(--muted);margin-top:5px">Variáveis: [Nome] [dia] [hora] [Terapeuta]</div>
           </div>
@@ -2485,22 +2485,22 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="modal" style="max-width:560px">
     <div class="modal-title" id="modal-paciente-titulo">Novo paciente</div>
     <div class="form-row">
-      <div class="form-group"><label>Nome completo</label><input class="form-input" id="np-nome" placeholder="Nome do paciente"/></div>
-      <div class="form-group"><label>Data de nascimento</label><input class="form-input" id="np-nascimento" type="date"/></div>
+      <div class="form-group"><label for="np-nome">Nome completo</label><input class="form-input" id="np-nome" placeholder="Nome do paciente"/></div>
+      <div class="form-group"><label for="np-nascimento">Data de nascimento</label><input class="form-input" id="np-nascimento" type="date"/></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Email <span style="color:var(--sage);font-size:11px">· convites e lembretes</span></label><input class="form-input" id="np-email" type="email" placeholder="email@exemplo.com"/></div>
-      <div class="form-group"><label>WhatsApp <span style="color:var(--red);font-size:11px">· obrigatório</span></label><input class="form-input" id="np-whatsapp" type="tel" placeholder="(11) 99999-9999" required/></div>
+      <div class="form-group"><label for="np-email">Email <span style="color:var(--sage);font-size:11px">· convites e lembretes</span></label><input class="form-input" id="np-email" type="email" placeholder="email@exemplo.com"/></div>
+      <div class="form-group"><label for="np-whatsapp">WhatsApp <span style="color:var(--red);font-size:11px">· obrigatório</span></label><input class="form-input" id="np-whatsapp" type="tel" placeholder="(11) 99999-9999" required/></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Cidade</label><input class="form-input" id="np-cidade" placeholder="São Paulo, SP"/></div>
-      <div class="form-group"><label>CID principal <span style="color:var(--muted);font-size:11px">· opcional</span></label><input class="form-input" id="np-cid" placeholder="Ex: F41.1"/></div>
+      <div class="form-group"><label for="np-cidade">Cidade</label><input class="form-input" id="np-cidade" placeholder="São Paulo, SP"/></div>
+      <div class="form-group"><label for="np-cid">CID principal <span style="color:var(--muted);font-size:11px">· opcional</span></label><input class="form-input" id="np-cid" placeholder="Ex: F41.1"/></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Abordagem</label><select class="form-input" id="np-abordagem"><option>TCC</option><option>Psicanálise</option><option>Sistêmica</option><option>Humanista</option><option>ACT</option><option>EMDR</option></select></div>
-      <div class="form-group"><label>Status</label><select class="form-input" id="np-status"><option value="Nova">Nova</option><option value="Ativa">Ativa</option><option value="Atenção">Atenção</option><option value="Inativa">Inativa</option></select></div>
+      <div class="form-group"><label for="np-abordagem">Abordagem</label><select class="form-input" id="np-abordagem"><option>TCC</option><option>Psicanálise</option><option>Sistêmica</option><option>Humanista</option><option>ACT</option><option>EMDR</option></select></div>
+      <div class="form-group"><label for="np-status">Status</label><select class="form-input" id="np-status"><option value="Nova">Nova</option><option value="Ativa">Ativa</option><option value="Atenção">Atenção</option><option value="Inativa">Inativa</option></select></div>
     </div>
-    <div class="form-group"><label>Queixa principal</label><textarea class="note-area" id="np-queixa" style="min-height:80px" placeholder="Descreva a queixa inicial…"></textarea></div>
+    <div class="form-group"><label for="np-queixa">Queixa principal</label><textarea class="note-area" id="np-queixa" style="min-height:80px" placeholder="Descreva a queixa inicial…"></textarea></div>
     <div id="np-consentimento-wrap" style="margin:4px 0 12px;padding:10px 12px;background:#f7f8f6;border-radius:8px;border:1px solid var(--border)">
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12.5px;line-height:1.5;color:var(--ink-soft)">
         <input type="checkbox" id="np-consentimento" style="accent-color:var(--sage);width:15px;height:15px;flex-shrink:0;margin-top:2px"/>
@@ -2518,11 +2518,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 <div class="modal-overlay" id="modal-exercicio">
   <div class="modal" style="max-width:480px">
     <div class="modal-title" id="modal-exercicio-titulo">Novo exercício</div>
-    <div class="form-group"><label>Título</label><input class="form-input" id="ex-titulo" placeholder="Ex: Diário de pensamentos"/></div>
-    <div class="form-group"><label>Instrução para o paciente</label><textarea class="note-area" id="ex-desc" style="min-height:80px" placeholder="Descreva o que o paciente deve fazer…"></textarea></div>
+    <div class="form-group"><label for="ex-titulo">Título</label><input class="form-input" id="ex-titulo" placeholder="Ex: Diário de pensamentos"/></div>
+    <div class="form-group"><label for="ex-desc">Instrução para o paciente</label><textarea class="note-area" id="ex-desc" style="min-height:80px" placeholder="Descreva o que o paciente deve fazer…"></textarea></div>
     <div class="form-row">
       <div class="form-group">
-        <label>Categoria</label>
+        <label for="ex-tag">Categoria</label>
         <select class="form-input" id="ex-tag">
           <option value="tcc">📋 TCC</option>
           <option value="relaxa">🧘 Relaxamento</option>
@@ -2533,12 +2533,12 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </select>
       </div>
       <div class="form-group">
-        <label>Prazo <span style="color:var(--muted);font-size:11px">· opcional</span></label>
+        <label for="ex-prazo">Prazo <span style="color:var(--muted);font-size:11px">· opcional</span></label>
         <input class="form-input" id="ex-prazo" type="date" />
       </div>
     </div>
     <div class="form-group">
-      <label>Repetições esperadas <span style="color:var(--muted);font-size:11px">· ex: 7 (dias da semana)</span></label>
+      <label for="ex-total">Repetições esperadas <span style="color:var(--muted);font-size:11px">· ex: 7 (dias da semana)</span></label>
       <input class="form-input" id="ex-total" type="number" min="1" max="30" placeholder="1" style="width:100px"/>
     </div>
     <div class="modal-actions">
@@ -2606,11 +2606,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="modal" style="max-width:440px">
     <div class="modal-title">Bloquear período</div>
     <div class="form-row">
-      <div class="form-group"><label>Data inicial</label><input class="form-input" id="bloq-inicio" type="date"/></div>
-      <div class="form-group"><label>Data final</label><input class="form-input" id="bloq-fim" type="date"/></div>
+      <div class="form-group"><label for="bloq-inicio">Data inicial</label><input class="form-input" id="bloq-inicio" type="date"/></div>
+      <div class="form-group"><label for="bloq-fim">Data final</label><input class="form-input" id="bloq-fim" type="date"/></div>
     </div>
     <div class="form-group">
-      <label>Motivo</label>
+      <label for="bloq-motivo">Motivo</label>
       <select class="form-input" id="bloq-motivo">
         <option value="ferias">Férias</option>
         <option value="feriado">Feriado</option>
@@ -2619,7 +2619,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <option value="outro">Outro</option>
       </select>
     </div>
-    <div class="form-group"><label>Observação (opcional)</label><input class="form-input" id="bloq-obs" placeholder="Ex: Semana Santa, licença médica…"/></div>
+    <div class="form-group"><label for="bloq-obs">Observação (opcional)</label><input class="form-input" id="bloq-obs" placeholder="Ex: Semana Santa, licença médica…"/></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('modal-bloqueio')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarBloqueio()">Salvar bloqueio</button>
@@ -2684,7 +2684,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div id="plan-fields-mensal">
       <div class="form-row">
         <div class="form-group">
-          <label>Sessões por mês</label>
+          <label for="plan-sessions-select">Sessões por mês</label>
           <select class="form-input" id="plan-sessions-select">
             <option value="1">1 sessão/mês (pontual)</option>
             <option value="2">2 sessões/mês (quinzenal)</option>
@@ -2735,7 +2735,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <input class="form-input" value="R$ 200,00" placeholder="R$ 200,00"/>
         </div>
         <div class="form-group">
-          <label>Data da sessão</label>
+          <label for="fin-plano-data">Data da sessão</label>
           <input class="form-input" id="fin-plano-data" type="text" placeholder="dd/mm/aaaa"/>
         </div>
       </div>
@@ -2916,7 +2916,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="modal" style="max-width:480px">
     <div class="modal-title">Adicionar material</div>
     <div class="form-group">
-      <label>Tipo</label>
+      <label for="mat-tipo">Tipo</label>
       <select class="form-input" id="mat-tipo" onchange="materialTipoChange()">
         <option value="link">🔗 Link</option>
         <option value="artigo">📄 Artigo / Leitura</option>
@@ -2926,15 +2926,15 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </select>
     </div>
     <div class="form-group">
-      <label>Título <span style="color:var(--red)">*</span></label>
+      <label for="mat-titulo">Título <span style="color:var(--red)">*</span></label>
       <input class="form-input" id="mat-titulo" placeholder="Ex: Exercício de respiração diafragmática…"/>
     </div>
     <div class="form-group" id="mat-url-group">
-      <label>URL <span style="color:var(--muted);font-size:11px">· cole o link aqui</span></label>
+      <label for="mat-url">URL <span style="color:var(--muted);font-size:11px">· cole o link aqui</span></label>
       <input class="form-input" id="mat-url" type="url" placeholder="https://…"/>
     </div>
     <div class="form-group">
-      <label>Descrição <span style="color:var(--muted);font-size:11px">· opcional</span></label>
+      <label for="mat-desc">Descrição <span style="color:var(--muted);font-size:11px">· opcional</span></label>
       <textarea class="note-area" id="mat-desc" style="min-height:70px" placeholder="Contexto ou instrução para o paciente…"></textarea>
     </div>
     <div class="modal-actions">
@@ -2949,15 +2949,15 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="modal" style="max-width:480px">
     <div class="modal-title" id="modal-lead-titulo">Novo lead</div>
     <div class="form-group">
-      <label>Nome <span style="color:var(--red)">*</span></label>
+      <label for="lead-nome-input">Nome <span style="color:var(--red)">*</span></label>
       <input class="form-input" id="lead-nome-input" placeholder="Nome completo" autocomplete="off"/>
     </div>
     <div class="form-group">
-      <label>WhatsApp <span style="color:var(--red)">*</span></label>
+      <label for="lead-wpp-input">WhatsApp <span style="color:var(--red)">*</span></label>
       <input class="form-input" id="lead-wpp-input" placeholder="(11) 99999-9999" type="tel" autocomplete="off"/>
     </div>
     <div class="form-group">
-      <label>Como chegou até você?</label>
+      <label for="lead-origem-select">Como chegou até você?</label>
       <select class="form-input" id="lead-origem-select">
         <option value="indicacao">Indicação</option>
         <option value="instagram">Instagram</option>
@@ -2967,11 +2967,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </select>
     </div>
     <div class="form-group">
-      <label>Queixa principal <span style="color:var(--muted);font-size:11px">· opcional</span></label>
+      <label for="lead-queixa-input">Queixa principal <span style="color:var(--muted);font-size:11px">· opcional</span></label>
       <input class="form-input" id="lead-queixa-input" placeholder="Ex: Ansiedade, relacionamentos, luto…" autocomplete="off"/>
     </div>
     <div class="form-group">
-      <label>Observações <span style="color:var(--muted);font-size:11px">· opcional</span></label>
+      <label for="lead-obs-input">Observações <span style="color:var(--muted);font-size:11px">· opcional</span></label>
       <textarea class="form-input" id="lead-obs-input" rows="2" placeholder="Notas internas, próximos passos…" style="resize:vertical"></textarea>
     </div>
     <div class="modal-actions">
@@ -2986,17 +2986,17 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="modal" style="max-width:460px">
     <div class="modal-title" id="modal-tarefa-titulo">Nova tarefa</div>
     <div class="form-group">
-      <label>Assunto <span style="color:var(--red)">*</span></label>
+      <label for="tarefa-titulo-input">Assunto <span style="color:var(--red)">*</span></label>
       <input class="form-input" id="tarefa-titulo-input" placeholder="Ex: Enviar recibo para Camila, Ligar para João…"/>
     </div>
     <div class="form-group">
-      <label>Relativo a (paciente) <span style="color:var(--muted);font-size:11px">· opcional</span></label>
+      <label for="tarefa-paciente-select">Relativo a (paciente) <span style="color:var(--muted);font-size:11px">· opcional</span></label>
       <select class="form-input" id="tarefa-paciente-select">
         <option value="">— Nenhum (tarefa geral) —</option>
       </select>
     </div>
     <div class="form-group">
-      <label>Data de vencimento <span style="color:var(--muted);font-size:11px">· opcional</span></label>
+      <label for="tarefa-data-input">Data de vencimento <span style="color:var(--muted);font-size:11px">· opcional</span></label>
       <input class="form-input" id="tarefa-data-input" type="date"/>
     </div>
     <div class="modal-actions">
@@ -3044,11 +3044,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="pac-login-title">Bem-vindo(a)</div>
       <div class="pac-login-hint">Entre com o email e a senha fornecidos pelo seu terapeuta.</div>
       <div class="form-group">
-        <label>Seu email</label>
+        <label for="pac-login-email">Seu email</label>
         <input class="form-input" id="pac-login-email" type="email" placeholder="seuemail@exemplo.com" onkeydown="if(event.key==='Enter')loginPaciente()"/>
       </div>
       <div class="form-group">
-        <label>Senha</label>
+        <label for="pac-login-senha">Senha</label>
         <input class="form-input" id="pac-login-senha" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginPaciente()"/>
       </div>
       <div id="pac-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:16px">
