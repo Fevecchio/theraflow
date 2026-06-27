@@ -2668,8 +2668,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
 
     <div class="form-group">
-      <label>Paciente</label>
-      <select class="form-input">
+      <label for="plan-paciente-select">Paciente</label>
+      <select class="form-input" id="plan-paciente-select">
         <option>Selecionar paciente…</option>
         <option>Camila Rocha — mensal (R$720/mês)</option>
         <option>Rafael Andrade — avulso (R$200/sessão)</option>
@@ -2693,18 +2693,18 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           </select>
         </div>
         <div class="form-group">
-          <label>Valor do pacote</label>
-          <input class="form-input" value="R$ 720,00" placeholder="R$ 720,00"/>
+          <label for="plan-valor-pacote">Valor do pacote</label>
+          <input class="form-input" id="plan-valor-pacote" value="R$ 720,00" placeholder="R$ 720,00"/>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Desconto aplicado</label>
-          <input class="form-input" value="10%" style="max-width:100px"/>
+          <label for="plan-desconto">Desconto aplicado</label>
+          <input class="form-input" id="plan-desconto" value="10%" style="max-width:100px"/>
         </div>
         <div class="form-group">
-          <label>Dia de vencimento</label>
-          <select class="form-input">
+          <label for="plan-vencimento">Dia de vencimento</label>
+          <select class="form-input" id="plan-vencimento">
             <option>Dia 1</option>
             <option>Dia 5</option>
             <option>Dia 10</option>
@@ -2715,8 +2715,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
       </div>
       <div class="form-group">
-        <label>Política de falta</label>
-        <select class="form-input">
+        <label for="plan-politica-falta">Política de falta</label>
+        <select class="form-input" id="plan-politica-falta">
           <option>Sessão perdida não é reposta</option>
           <option>Sessão perdida pode ser reposta no mesmo mês</option>
           <option>Sessão perdida transfere para o próximo mês</option>
@@ -2731,8 +2731,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div id="plan-fields-avulso" style="display:none">
       <div class="form-row">
         <div class="form-group">
-          <label>Valor por sessão</label>
-          <input class="form-input" value="R$ 200,00" placeholder="R$ 200,00"/>
+          <label for="plan-valor-sessao">Valor por sessão</label>
+          <input class="form-input" id="plan-valor-sessao" value="R$ 200,00" placeholder="R$ 200,00"/>
         </div>
         <div class="form-group">
           <label for="fin-plano-data">Data da sessão</label>
@@ -2740,8 +2740,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
       </div>
       <div class="form-group">
-        <label>Recorrência</label>
-        <select class="form-input">
+        <label for="plan-recorrencia">Recorrência</label>
+        <select class="form-input" id="plan-recorrencia">
           <option value="unica">Sessão única (não vai repetir)</option>
           <option value="semanal">Semanal — cobrar a cada sessão</option>
           <option value="quinzenal">Quinzenal — cobrar a cada sessão</option>
@@ -2749,8 +2749,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </select>
       </div>
       <div class="form-group">
-        <label>Método de pagamento</label>
-        <select class="form-input">
+        <label for="plan-metodo-pgto">Método de pagamento</label>
+        <select class="form-input" id="plan-metodo-pgto">
           <option>PIX</option>
           <option>Dinheiro</option>
           <option>Cartão de crédito</option>
