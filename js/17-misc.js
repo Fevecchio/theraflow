@@ -156,19 +156,28 @@ function atualizarTrialUI(count) {
   const fill = document.getElementById('trial-progress-fill');
   if (el) el.textContent = count;
   if (fill) fill.style.width = Math.min(100, (count / 20) * 100) + '%';
-  if (bar && count >= 20) {
+
+  const esgotado = count >= 20;
+  if (bar && esgotado) {
     bar.style.background = 'rgba(192,57,43,.1)';
     bar.style.borderColor = 'rgba(192,57,43,.25)';
     bar.querySelectorAll('span').forEach(s => s.style.color = '#c0392b');
     if (fill) fill.style.background = '#c0392b';
-    if (!bar.querySelector('#trial-assinar-btn')) {
-      const btn = document.createElement('button');
+  }
+
+  // Botão "Assinar Pro" sempre disponível (não só ao esgotar o trial) —
+  // permite ao terapeuta assinar a qualquer momento.
+  if (bar) {
+    let btn = bar.querySelector('#trial-assinar-btn');
+    if (!btn) {
+      btn = document.createElement('button');
       btn.id = 'trial-assinar-btn';
-      btn.textContent = 'Assinar Pro — R$89/mês →';
       btn.onclick = function() { assinarPro(btn); };
-      btn.style.cssText = 'margin-top:8px;width:100%;padding:6px;background:#c0392b;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit';
       bar.appendChild(btn);
     }
+    btn.textContent = 'Assinar Pro — R$89/mês →';
+    const cor = esgotado ? '#c0392b' : '#4a7c59';
+    btn.style.cssText = 'margin-top:8px;width:100%;padding:6px;background:' + cor + ';color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit';
   }
 }
 
