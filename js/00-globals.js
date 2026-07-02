@@ -1,7 +1,7 @@
 // 00-globals.js — Constantes, clientes Supabase, variáveis de estado globais
 
 /* ── STRIPE ── */
-const _STRIPE_PK = 'pk_test_51TNCbIFY0RoCsYEc3dHRoo3rpeHRP6ucbwzq5NhYLJL3QyGgFvwj88XLvamEd02rdgWX09UlESaSz83K64AGdL2m00gzfh3Tca';
+const _STRIPE_PK = 'pk_live_51TNCatFMX7qsuCFDYDhe1UNb3SFuDZ3gK9bpI5ef53ZTIRiKOkMnoOh0tVIGseYjBRi9Fu2zxO23GZTOAcc7LvSr00UvMkgL4g';
 let _tfPlanPro = false;
 let _tfTrialDismissed = false;
 let _loadingUserData = false;
