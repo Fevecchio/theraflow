@@ -423,6 +423,8 @@ document.addEventListener('DOMContentLoaded', function() {
     _loggedPatientIdx = null;
     _loggedPatientData = null;
     _therapistPatientsBackup = null;
+    if (typeof _pacClearPortalAuth === 'function') _pacClearPortalAuth();
+    if (typeof _stopMsgPoll === 'function') _stopMsgPoll();
     try { localStorage.removeItem('tf_pac_remember'); } catch(_) {} // logout explícito apaga "manter conectado"
     document.getElementById('tf-patient-app-layer').classList.remove('open');
     document.getElementById('tf-patient-app-layer').style.display = '';
@@ -505,6 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Paciente encontrado no localStorage com hash correspondente
         _loggedPatientData = pacs[idx];
         _loggedPatientIdx = idx;
+        if (typeof _pacSetPortalAuth === 'function') _pacSetPortalAuth(saved.email, saved.hash);
         document.getElementById('tf-patient-login-layer').classList.remove('open');
         var _pLayer = document.getElementById('tf-patient-app-layer');
         _pLayer.style.display = ''; _pLayer.classList.add('open');
@@ -527,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         _loggedPatientData = p;
         _loggedPatientIdx = 0;
+        if (typeof _pacSetPortalAuth === 'function') _pacSetPortalAuth(saved.email, saved.hash);
         document.getElementById('tf-patient-login-layer').classList.remove('open');
         var _pL = document.getElementById('tf-patient-app-layer');
         _pL.style.display = ''; _pL.classList.add('open');

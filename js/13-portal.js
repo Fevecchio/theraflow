@@ -1093,13 +1093,13 @@ function _pacInitChat(idx, p) {
   if (!block) return;
   var msgs = _msgCache[p.id] || [];
   block.innerHTML = _pacRenderChatBlock(p, msgs, idx);
-  _supaFetchMessages(p.id, supaPatient).then(function(msgs) {
+  _pacFetchMessages(p.id).then(function(msgs) {
     if (!document.getElementById('pac-chat-block')) return;
     block.innerHTML = _pacRenderChatBlock(p, msgs, idx);
     var thread = document.getElementById('pac-chat-thread');
     if (thread) thread.scrollTop = thread.scrollHeight;
     _pacUpdateMsgDot(p.id);
-    _supaMarkRead(p.id, 'therapist', supaPatient).catch(function(){});
+    _pacMarkRead(p.id).catch(function(){});
   });
   _startMsgPoll(p.id, function(msgs) {
     var b = document.getElementById('pac-chat-block');
@@ -1128,7 +1128,7 @@ async function pacEnviarMensagem(idx) {
   if (!body) return;
   input.value = '';
   input.disabled = true;
-  var msgs = await _supaSendMessage(p.id, 'patient', body, supaPatient);
+  var msgs = await _pacSendMessage(p.id, body);
   input.disabled = false;
   if (msgs) {
     var block = document.getElementById('pac-chat-block');
@@ -1323,6 +1323,8 @@ async function pacConfirmarAlteracaoSenha() {
   var hashNova = await _portalHash(nova);
   p.portalPasswordHash = hashNova;
   p.portalPassword = null;
+  // Atualiza o hash usado pelas RPCs de chat (senão o chat para de autorizar após trocar a senha)
+  if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) _pacSetPortalAuth(p.email || _pacPortalAuth.email, hashNova);
   // Atualiza patients[] garantindo que p está no array (RPC login não popula patients[])
   if (typeof patients !== 'undefined') {
     var _pIdx = patients.findIndex(function(q){ return q.id === p.id || (q.email && q.email === p.email); });
@@ -1734,7 +1736,7 @@ function pacNavTo(tab) {
   // Ao voltar para Home, marca mensagens da terapeuta como lidas
   if (tab === 'home' && _loggedPatientData && _loggedPatientData.id) {
     var pid = _loggedPatientData.id;
-    _supaMarkRead(pid, 'therapist', supaPatient).then(function() {
+    _pacMarkRead(pid).then(function() {
       _pacUpdateMsgDot(pid);
     }).catch(function(){});
   }

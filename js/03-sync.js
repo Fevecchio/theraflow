@@ -29,6 +29,14 @@ var _msgPollTimer = null;
 var _msgCache = {};      // { [patientId]: Message[] }
 var _unreadCount = {};   // { [patientId]: number }
 
+// Paciente logado SEM sessão Supabase Auth (login via RPC portal_patient_login ou
+// fallback local). Nesse modo, auth.uid() é null e as RLS de `messages` bloqueiam
+// (erro 42501), então o chat roteia pelas RPCs SECURITY DEFINER (migration 010),
+// autorizadas por email+hash. Fica null para paciente com sessão Auth (usa RLS direto).
+var _pacPortalAuth = null;  // { email, hash }
+function _pacSetPortalAuth(email, hash) { if (email && hash) _pacPortalAuth = { email: String(email).trim(), hash: String(hash) }; }
+function _pacClearPortalAuth() { _pacPortalAuth = null; }
+
 async function _supaFetchMessages(patientId, client) {
   if (!patientId) return [];
   try {
@@ -89,13 +97,67 @@ function _countUnread(patientId, myRole) {
   return msgs.filter(function(m) { return m.sender_role !== myRole && !m.read_at; }).length;
 }
 
+// ── Operações de chat do LADO PACIENTE ──
+// Roteiam pelas RPCs quando o paciente não tem sessão Auth (_pacPortalAuth setado);
+// caso contrário caem no acesso direto à tabela (paciente com conta Auth → RLS ok).
+async function _pacFetchMessages(patientId) {
+  if (_pacPortalAuth) {
+    try {
+      var { data, error } = await supaPatient.rpc('portal_fetch_messages', {
+        p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash
+      });
+      if (error) throw error;
+      _msgCache[patientId] = data || [];
+      return _msgCache[patientId];
+    } catch(e) {
+      console.warn('[msg] rpc fetch falhou:', e.message);
+      return _msgCache[patientId] || [];
+    }
+  }
+  return _supaFetchMessages(patientId, supaPatient);
+}
+
+async function _pacSendMessage(patientId, body) {
+  if (!body || !body.trim()) return false;
+  if (_pacPortalAuth) {
+    try {
+      var { error } = await supaPatient.rpc('portal_send_message', {
+        p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash, p_body: body.trim()
+      });
+      if (error) throw error;
+      return await _pacFetchMessages(patientId);
+    } catch(e) {
+      console.warn('[msg] rpc send falhou:', e.message);
+      return false;
+    }
+  }
+  return _supaSendMessage(patientId, 'patient', body, supaPatient);
+}
+
+async function _pacMarkRead(patientId) {
+  if (_pacPortalAuth) {
+    try {
+      await supaPatient.rpc('portal_mark_read', {
+        p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash
+      });
+      var cached = _msgCache[patientId] || [];
+      cached.forEach(function(m) { if (m.sender_role === 'therapist' && !m.read_at) m.read_at = new Date().toISOString(); });
+      _unreadCount[patientId] = 0;
+      return;
+    } catch(e) { console.warn('[msg] rpc markRead falhou:', e.message); return; }
+  }
+  return _supaMarkRead(patientId, 'therapist', supaPatient);
+}
+
 function _startMsgPoll(patientId, callbackFn, intervalMs) {
   _stopMsgPoll();
   if (!patientId) return;
   var ms = intervalMs || 30000;
   _msgPollTimer = setInterval(function() {
-    var client = _loggedPatientData ? supaPatient : supa;
-    _supaFetchMessages(patientId, client).then(function(msgs) {
+    var fetchP = _pacPortalAuth
+      ? _pacFetchMessages(patientId)
+      : _supaFetchMessages(patientId, _loggedPatientData ? supaPatient : supa);
+    fetchP.then(function(msgs) {
       if (typeof callbackFn === 'function') callbackFn(msgs);
     });
   }, ms);

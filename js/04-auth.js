@@ -295,6 +295,7 @@ async function _pacTryRpcLogin(email, senha) {
     var pacsRpc = [pRpc];
     _loggedPatientIdx = 0;
     _loggedPatientData = pRpc;
+    _pacSetPortalAuth(email, senhaHash); // sem sessão Auth → chat usa RPCs (migration 010)
     document.getElementById('tf-patient-login-layer').classList.remove('open');
     var _pLayer = document.getElementById('tf-patient-app-layer'); _pLayer.style.display = ''; _pLayer.classList.add('open');
     _verificarTermosPortal(pRpc.id, function(){ renderPatientApp(0, pacsRpc); });
@@ -317,6 +318,7 @@ function loginPaciente() {
   }
 
   if (btn) { btn.textContent = 'Entrando…'; btn.disabled = true; }
+  _pacClearPortalAuth(); // reset; só os caminhos SEM sessão Auth (RPC/local) voltam a setar
 
   supaPatient.auth.signInWithPassword({ email, password: senha }).then(async function({ data, error }) {
     if (btn) { btn.textContent = 'Acessar meu portal →'; btn.disabled = false; }
@@ -346,6 +348,7 @@ function loginPaciente() {
       if (idx !== -1) {
         _loggedPatientIdx = idx;
         _loggedPatientData = pacs[idx];
+        _pacSetPortalAuth(email, senhaHash); // login local, sem sessão Auth → chat usa RPCs
         document.getElementById('tf-patient-login-layer').classList.remove('open');
         var _pLayer1 = document.getElementById('tf-patient-app-layer'); _pLayer1.style.display = ''; _pLayer1.classList.add('open');
         _verificarTermosPortal(pacs[idx].id || 'local-' + idx, function(){ renderPatientApp(idx, pacs); });
@@ -542,6 +545,8 @@ function sairPaciente() {
   supaPatient.auth.signOut().catch(() => {});
   _loggedPatientIdx = null;
   _loggedPatientData = null;
+  _pacClearPortalAuth();
+  _stopMsgPoll();
   _cancelarNotificacaoPac();
 
   // Restaura lista de pacientes do terapeuta
