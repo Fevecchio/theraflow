@@ -1701,7 +1701,13 @@ async function pacSalvarInsight(pidx, apptId) {
   if (appt) {
     appt.meuInsight = texto;
     // Persiste via Supabase usando cliente do paciente
-    if (typeof supaPatient !== 'undefined' && p.id) {
+    if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) {
+      // Paciente logado via RPC (sem sessão Auth) → RLS bloqueia update direto; usa RPC
+      supaPatient.rpc('portal_save_insight', {
+        p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash,
+        p_local_id: String(apptId), p_texto: texto
+      }).then(function(){}).catch(function(){});
+    } else if (typeof supaPatient !== 'undefined' && p.id) {
       supaPatient.from('appointments')
         .update({ metadata: { resumoParaPaciente: appt.resumoParaPaciente || null, meuInsight: texto } })
         .eq('patient_id', p.id)
