@@ -63,8 +63,11 @@ let _lkRecorder = null;
 let _lkChunks = [];
 let _lkAudioCtx = null;
 
-function _lkAuthHeaders(extra) {
-  const base = (typeof _apiAuthHeader === 'function') ? (_apiAuthHeader() || {}) : {};
+// _apiAuthHeader é ASYNC (js/01-utils.js) — precisa de await, senão espalha uma Promise
+// e a requisição vai sem o Bearer do Supabase → 401.
+async function _lkAuthHeaders(extra) {
+  let base = {};
+  try { if (typeof _apiAuthHeader === 'function') base = (await _apiAuthHeader()) || {}; } catch (_) {}
   return Object.assign({}, base, extra || {});
 }
 
@@ -88,7 +91,7 @@ async function startLiveKitSession() {
     // Cria a sala + tokens no backend
     const resp = await fetch('/api/create-session-room', {
       method: 'POST',
-      headers: _lkAuthHeaders({ 'Content-Type': 'application/json' }),
+      headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ patientId: sp && sp.id }),
     });
     if (!resp.ok) throw new Error('create-session-room ' + resp.status);
@@ -164,7 +167,7 @@ async function endLiveKitSession() {
     // 1) Transcrição (v1: Groq cloud; v2: substituída por on-device no desktop)
     const tr = await fetch('/api/transcribe', {
       method: 'POST',
-      headers: _lkAuthHeaders({ 'Content-Type': audioBlob.type || 'audio/webm' }),
+      headers: await _lkAuthHeaders({ 'Content-Type': audioBlob.type || 'audio/webm' }),
       body: audioBlob,
     });
     if (!tr.ok) throw new Error('transcribe ' + tr.status);
@@ -174,7 +177,7 @@ async function endLiveKitSession() {
     const sp = patients[currentSessionPatientIdx] || patients[0];
     const nr = await fetch('/api/session-note', {
       method: 'POST',
-      headers: _lkAuthHeaders({ 'Content-Type': 'application/json' }),
+      headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ transcript: text, abordagem: sp && sp.abordagem }),
     });
     if (!nr.ok) throw new Error('session-note ' + nr.status);
