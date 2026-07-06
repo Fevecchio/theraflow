@@ -67,7 +67,8 @@ async function startSession() {
   const _btnSala = document.getElementById('btn-entrar-sala');
   const _warnSala = document.getElementById('session-no-link-warning');
   if (_btnSala && _warnSala) {
-    const _hasLink = !!(sp && sp.sessionLink);
+    // No modo LiveKit a sala é criada automaticamente — link do paciente é dispensável.
+    const _hasLink = !!window._TF_LIVEKIT_ENABLED || !!(sp && sp.sessionLink);
     _btnSala.disabled = !_hasLink;
     _btnSala.style.opacity = _hasLink ? '1' : '.45';
     _btnSala.style.cursor  = _hasLink ? 'pointer' : 'not-allowed';
