@@ -8,8 +8,33 @@
  *
  * Retorna { url, roomName, hostToken, patientToken }. A sala é criada sob demanda pelo
  * LiveKit quando o primeiro participante entra com um token válido (não precisa RoomServiceClient).
+ *
+ * NOTA: o token de acesso do LiveKit é apenas um JWT HS256 assinado com o API secret, com o
+ * grant `video`. Geramos à mão com o `crypto` nativo — evita o `livekit-server-sdk` (ESM-only,
+ * que quebra na transpilação ESM→CJS da Vercel: FUNCTION_INVOCATION_FAILED). Zero dependências.
  */
-import { AccessToken } from 'livekit-server-sdk';
+import crypto from 'node:crypto';
+
+function base64url(buf) {
+  return Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Monta um Access Token do LiveKit (JWT HS256). Formato estável entre versões do LiveKit.
+function livekitToken(apiKey, apiSecret, identity, name, room, ttlSeconds) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    exp: now + ttlSeconds,
+    iss: apiKey,
+    nbf: now,
+    sub: identity,
+    name,
+    video: { room, roomJoin: true, canPublish: true, canSubscribe: true, canPublishData: true },
+  };
+  const data = base64url(JSON.stringify(header)) + '.' + base64url(JSON.stringify(payload));
+  const sig = crypto.createHmac('sha256', apiSecret).update(data).digest();
+  return data + '.' + base64url(sig);
+}
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
@@ -70,20 +95,15 @@ export default async function handler(req, res) {
   const shortId = String(user.id || '').replace(/-/g, '').slice(0, 8);
   const roomName = `sess_${shortId}_${Date.now().toString(36)}`;
 
-  // Host = terapeuta (dono da sessão)
-  const host = new AccessToken(KEY, SECRET, { identity: `terapeuta_${shortId}`, name: 'Terapeuta', ttl: '3h' });
-  host.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true });
-
-  // Convidado = paciente
+  const TTL = 3 * 60 * 60; // 3h
   const patIdentity = `paciente_${String(patientId || 'anon').replace(/[^a-z0-9_-]/gi, '').slice(0, 24)}`;
-  const patient = new AccessToken(KEY, SECRET, { identity: patIdentity, name: 'Paciente', ttl: '3h' });
-  patient.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true });
 
   try {
-    const [hostToken, patientToken] = await Promise.all([host.toJwt(), patient.toJwt()]);
+    const hostToken = livekitToken(KEY, SECRET, `terapeuta_${shortId}`, 'Terapeuta', roomName, TTL);
+    const patientToken = livekitToken(KEY, SECRET, patIdentity, 'Paciente', roomName, TTL);
     return res.status(200).json({ url: URL, roomName, hostToken, patientToken });
   } catch (err) {
-    console.error('[create-session-room] toJwt falhou:', err.message);
+    console.error('[create-session-room] geracao de token falhou:', err.message);
     return res.status(500).json({ error: 'Falha ao gerar token: ' + err.message });
   }
 }

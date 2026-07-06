@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "stripe": "^14.0.0",
-    "resend": "^3.0.0",
-    "livekit-server-sdk": "^2.0.0"
+    "resend": "^3.0.0"
   }
 }
