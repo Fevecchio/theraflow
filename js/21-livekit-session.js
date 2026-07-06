@@ -101,7 +101,11 @@ async function startLiveKitSession() {
     // 3) Conecta como host e prepara o mixer de áudio (para gravação efêmera)
     _lkRoom = new LK.Room({ adaptiveStream: true, dynacast: true });
     _lkAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // CRÍTICO: o AudioContext nasce "suspended" (foi criado após awaits, fora do gesto do
+    // usuário) — sem resume() o MediaStreamDestination sai MUDO e o Whisper alucina. Resume aqui.
+    try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
     const mixDest = _lkAudioCtx.createMediaStreamDestination();
+    let _lkMicMixed = false; // garante que o mic do terapeuta entrou no mix
     _lkChunks = [];
 
     // Áudio + vídeo do paciente ao serem assinados
@@ -118,15 +122,25 @@ async function startLiveKitSession() {
     await _lkRoom.localParticipant.setCameraEnabled(true);
     await _lkRoom.localParticipant.setMicrophoneEnabled(true);
 
-    // Mic local no mixer + vídeo local no canto
-    const micPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Microphone);
-    const micTrack = micPub && micPub.track && micPub.track.mediaStreamTrack;
-    if (micTrack) _lkAudioCtx.createMediaStreamSource(new MediaStream([micTrack])).connect(mixDest);
+    // Mic local no mixer + vídeo local no canto. O mic pode não estar pronto no mesmo tick
+    // após setMicrophoneEnabled — tentamos algumas vezes até o track existir.
+    for (let i = 0; i < 10 && !_lkMicMixed; i++) {
+      const micPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Microphone);
+      const micTrack = micPub && micPub.track && micPub.track.mediaStreamTrack;
+      if (micTrack && micTrack.readyState === 'live') {
+        _lkAudioCtx.createMediaStreamSource(new MediaStream([micTrack])).connect(mixDest);
+        _lkMicMixed = true;
+        break;
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
+    if (!_lkMicMixed) console.warn('[livekit] mic do terapeuta NAO entrou no mix — transcricao pode sair vazia');
     const camPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
     if (camPub && camPub.track) _lkMountLocalVideo(camPub.track.attach());
 
     // 4) Grava o áudio MIXADO (efêmero — só para transcrever; nada é enviado ao servidor até o fim)
     //    v2: no desktop, trocar esta gravação+/api/transcribe por Whisper ON-DEVICE (Web Worker/WebGPU).
+    try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
     _lkRecorder = new MediaRecorder(mixDest.stream, { mimeType: _pickAudioMime() });
     _lkRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkChunks.push(e.data); };
     _lkRecorder.start(1000);
