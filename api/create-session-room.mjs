@@ -9,32 +9,12 @@
  * Retorna { url, roomName, hostToken, patientToken }. A sala é criada sob demanda pelo
  * LiveKit quando o primeiro participante entra com um token válido (não precisa RoomServiceClient).
  *
- * NOTA: o token de acesso do LiveKit é apenas um JWT HS256 assinado com o API secret, com o
- * grant `video`. Geramos à mão com o `crypto` nativo — evita o `livekit-server-sdk` (ESM-only,
- * que quebra na transpilação ESM→CJS da Vercel: FUNCTION_INVOCATION_FAILED). Zero dependências.
+ * NOTA: usamos o SDK oficial `livekit-server-sdk` (AccessToken) para gerar o token — gerador
+ * autoritativo, evita divergências de assinatura. Este arquivo é `.mjs` (ESM nativo) de propósito:
+ * assim a Vercel NÃO o transpila para CommonJS e o import ESM-only do SDK funciona (o `.js` era
+ * transpilado ESM→CJS e o require do SDK crashava: FUNCTION_INVOCATION_FAILED).
  */
-import crypto from 'node:crypto';
-
-function base64url(buf) {
-  return Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-// Monta um Access Token do LiveKit (JWT HS256). Formato estável entre versões do LiveKit.
-function livekitToken(apiKey, apiSecret, identity, name, room, ttlSeconds) {
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const payload = {
-    exp: now + ttlSeconds,
-    iss: apiKey,
-    nbf: now,
-    sub: identity,
-    name,
-    video: { room, roomJoin: true, canPublish: true, canSubscribe: true, canPublishData: true },
-  };
-  const data = base64url(JSON.stringify(header)) + '.' + base64url(JSON.stringify(payload));
-  const sig = crypto.createHmac('sha256', apiSecret).update(data).digest();
-  return data + '.' + base64url(sig);
-}
+import { AccessToken } from 'livekit-server-sdk';
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
@@ -84,9 +64,11 @@ export default async function handler(req, res) {
   const user = await verifySupabaseJWT(req);
   if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
 
-  const KEY = process.env.LIVEKIT_API_KEY;
-  const SECRET = process.env.LIVEKIT_API_SECRET;
-  const URL = process.env.LIVEKIT_URL;
+  // .trim() defensivo: chaves coladas no painel podem vir com espaço/quebra de linha invisível,
+  // o que quebraria a assinatura HMAC (o LiveKit rejeitaria com "invalid token").
+  const KEY = (process.env.LIVEKIT_API_KEY || '').trim();
+  const SECRET = (process.env.LIVEKIT_API_SECRET || '').trim();
+  const URL = (process.env.LIVEKIT_URL || '').trim();
   if (!KEY || !SECRET || !URL) {
     return res.status(500).json({ error: 'LiveKit não configurado (LIVEKIT_API_KEY/SECRET/URL).' });
   }
@@ -94,13 +76,18 @@ export default async function handler(req, res) {
   const { patientId } = req.body || {};
   const shortId = String(user.id || '').replace(/-/g, '').slice(0, 8);
   const roomName = `sess_${shortId}_${Date.now().toString(36)}`;
-
-  const TTL = 3 * 60 * 60; // 3h
   const patIdentity = `paciente_${String(patientId || 'anon').replace(/[^a-z0-9_-]/gi, '').slice(0, 24)}`;
 
   try {
-    const hostToken = livekitToken(KEY, SECRET, `terapeuta_${shortId}`, 'Terapeuta', roomName, TTL);
-    const patientToken = livekitToken(KEY, SECRET, patIdentity, 'Paciente', roomName, TTL);
+    const mkToken = async (identity, name) => {
+      const at = new AccessToken(KEY, SECRET, { identity, name, ttl: '3h' });
+      at.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true, canPublishData: true });
+      return at.toJwt(); // async no SDK v2
+    };
+    const [hostToken, patientToken] = await Promise.all([
+      mkToken(`terapeuta_${shortId}`, 'Terapeuta'),
+      mkToken(patIdentity, 'Paciente'),
+    ]);
     return res.status(200).json({ url: URL, roomName, hostToken, patientToken });
   } catch (err) {
     console.error('[create-session-room] geracao de token falhou:', err.message);
