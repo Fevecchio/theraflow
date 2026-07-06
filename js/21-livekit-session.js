@@ -62,6 +62,49 @@ let _lkRoom = null;
 let _lkRecorder = null;
 let _lkChunks = [];
 let _lkAudioCtx = null;
+let _lkAnalyser = null;
+let _lkMeterRAF = null;
+let _lkLastTranscript = '';
+
+// Medidor de áudio ao vivo — confirma visualmente que o mic está sendo captado.
+function _lkStartMeter(sourceNode) {
+  try {
+    _lkAnalyser = _lkAudioCtx.createAnalyser();
+    _lkAnalyser.fftSize = 1024;
+    sourceNode.connect(_lkAnalyser); // paralelo ao mixDest — o que alimenta o medidor também vai pra gravação
+    // injeta a UI do medidor sobre o vídeo
+    let bar = document.getElementById('lk-mic-meter');
+    if (!bar) {
+      const wrap = document.querySelector('#page-sessao .video-main') || document.body;
+      bar = document.createElement('div');
+      bar.id = 'lk-mic-meter';
+      bar.style.cssText = 'position:absolute;bottom:14px;left:14px;z-index:4;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.55);border-radius:20px;padding:6px 12px;font-size:12px;color:#fff';
+      bar.innerHTML = '🎤 <div style="width:90px;height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden"><div id="lk-mic-fill" style="width:0%;height:100%;background:#4ade80;transition:width .06s"></div></div><span id="lk-mic-label" style="opacity:.85">captando…</span>';
+      wrap.appendChild(bar);
+    }
+    const buf = new Float32Array(_lkAnalyser.fftSize);
+    let sawSound = false;
+    const tick = () => {
+      if (!_lkAnalyser) return;
+      _lkAnalyser.getFloatTimeDomainData(buf);
+      let sum = 0; for (const v of buf) sum += v * v;
+      const rms = Math.sqrt(sum / buf.length);
+      const pct = Math.min(100, Math.round(rms * 900));
+      const fill = document.getElementById('lk-mic-fill');
+      const lbl = document.getElementById('lk-mic-label');
+      if (fill) fill.style.width = pct + '%';
+      if (rms > 0.01) sawSound = true;
+      if (lbl) lbl.textContent = sawSound ? 'áudio ok ✓' : 'fale para testar…';
+      _lkMeterRAF = requestAnimationFrame(tick);
+    };
+    _lkMeterRAF = requestAnimationFrame(tick);
+  } catch (e) { console.warn('[livekit] meter', e); }
+}
+function _lkStopMeter() {
+  if (_lkMeterRAF) { cancelAnimationFrame(_lkMeterRAF); _lkMeterRAF = null; }
+  _lkAnalyser = null;
+  const bar = document.getElementById('lk-mic-meter'); if (bar) bar.remove();
+}
 
 // _apiAuthHeader é ASYNC (js/01-utils.js) — precisa de await, senão espalha uma Promise
 // e a requisição vai sem o Bearer do Supabase → 401.
@@ -128,13 +171,18 @@ async function startLiveKitSession() {
       const micPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Microphone);
       const micTrack = micPub && micPub.track && micPub.track.mediaStreamTrack;
       if (micTrack && micTrack.readyState === 'live') {
-        _lkAudioCtx.createMediaStreamSource(new MediaStream([micTrack])).connect(mixDest);
+        const micSource = _lkAudioCtx.createMediaStreamSource(new MediaStream([micTrack]));
+        micSource.connect(mixDest);
+        _lkStartMeter(micSource); // barrinha ao vivo: confirma que o mic está sendo captado
         _lkMicMixed = true;
         break;
       }
       await new Promise(r => setTimeout(r, 150));
     }
-    if (!_lkMicMixed) console.warn('[livekit] mic do terapeuta NAO entrou no mix — transcricao pode sair vazia');
+    if (!_lkMicMixed) {
+      console.warn('[livekit] mic do terapeuta NAO entrou no mix — transcricao pode sair vazia');
+      if (typeof showToast === 'function') showToast('⚠ Não consegui captar seu microfone. Verifique a permissão/dispositivo.');
+    }
     const camPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
     if (camPub && camPub.track) _lkMountLocalVideo(camPub.track.attach());
 
@@ -154,6 +202,7 @@ async function startLiveKitSession() {
 }
 
 async function endLiveKitSession() {
+  _lkStopMeter();
   // Para a gravação e coleta o blob
   let audioBlob = null;
   try {
@@ -169,9 +218,8 @@ async function endLiveKitSession() {
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null;
   if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 
-  if (!audioBlob) {
-    if (typeof showToast === 'function') showToast('Sessão encerrada (sem áudio para transcrever).');
-    if (typeof showPostSessionFlow === 'function') showPostSessionFlow();
+  if (!audioBlob || audioBlob.size < 1200) {
+    _lkShowPostSession({ transcript: '', note: '', empty: true });
     return;
   }
 
@@ -186,25 +234,94 @@ async function endLiveKitSession() {
     });
     if (!tr.ok) throw new Error('transcribe ' + tr.status);
     const { text } = await tr.json();
+    const transcript = (text || '').trim();
+    _lkLastTranscript = transcript;
+
+    // Guarda: sem fala real captada → NÃO gera nota (evita nota fabricada a partir de silêncio).
+    if (transcript.replace(/[^\p{L}\p{N}]/gu, '').length < 8) {
+      _lkShowPostSession({ transcript, note: '', empty: true });
+      return;
+    }
 
     // 2) Nota clínica (Claude, transcript pseudonimizado no servidor)
     const sp = patients[currentSessionPatientIdx] || patients[0];
     const nr = await fetch('/api/session-note', {
       method: 'POST',
       headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ transcript: text, abordagem: sp && sp.abordagem }),
+      body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem }),
     });
     if (!nr.ok) throw new Error('session-note ' + nr.status);
     const { note } = await nr.json();
 
     const ta = document.getElementById('session-ai-note');
     if (ta) ta.value = note;
-    if (typeof showPostSessionFlow === 'function') showPostSessionFlow();
-    if (typeof showToast === 'function') showToast('Nota gerada ✓ Revise antes de salvar no prontuário.');
+    _lkShowPostSession({ transcript, note });
+    if (typeof showToast === 'function') showToast('Nota gerada ✓ Revise antes de salvar.');
   } catch (err) {
     console.error('[livekit] pós-sessão falhou', err);
     if (typeof showToast === 'function') showToast('⚠ Falha ao gerar a nota: ' + err.message);
   }
+}
+
+// Modal pós-sessão HONESTO — mostra a transcrição REAL e a nota REAL (sem conteúdo fabricado).
+function _lkShowPostSession({ transcript, note, empty }) {
+  const old = document.getElementById('lk-post-modal'); if (old) old.remove();
+  const esc = (s) => (typeof escHTML === 'function' ? escHTML(s) : String(s || '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])));
+  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const nome = sp ? sp.name : 'Paciente';
+
+  const emptyBlock = `
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;color:#9a3412;font-size:13px;line-height:1.55">
+      <strong>⚠ Nenhuma fala foi captada nesta gravação.</strong><br/>
+      O áudio saiu em silêncio, então <strong>não geramos nota</strong> (para não inventar conteúdo).
+      Verifique se o microfone certo está ativo e sem mudo — durante a sessão, a barrinha 🎤 deve se mexer quando você fala.
+    </div>`;
+
+  const contentBlock = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Transcrição da sessão (real)</div>
+      <div style="background:#f8faf8;border:1px solid #e6efe9;border-radius:10px;padding:12px 14px;font-size:13px;color:#333;line-height:1.6;max-height:180px;overflow-y:auto;white-space:pre-wrap">${esc(transcript)}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">✦ Nota clínica — rascunho gerado pela IA</div>
+      <textarea id="lk-post-note" style="width:100%;box-sizing:border-box;min-height:200px;border:1.5px solid #d1e7d9;border-radius:10px;padding:12px 14px;font-size:13px;font-family:'DM Sans',sans-serif;line-height:1.6;resize:vertical;outline:none">${esc(note)}</textarea>
+      <div style="font-size:11px;color:#999;margin-top:6px">Revise e edite antes de salvar no prontuário. A gravação de áudio não foi armazenada.</div>
+    </div>`;
+
+  const modal = document.createElement('div');
+  modal.id = 'lk-post-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
+      <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
+        <div style="width:38px;height:38px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px">${empty ? '⚠️' : '✅'}</div>
+        <div><div style="font-weight:600;font-size:15px;color:#1a1a1a">Sessão encerrada · ${esc(nome)}</div>
+        <div style="font-size:12px;color:#888;margin-top:2px">${empty ? 'Sem áudio para transcrever' : 'Transcrição e nota geradas a partir da sua fala'}</div></div>
+      </div>
+      <div style="padding:20px 24px">${empty ? emptyBlock : contentBlock}</div>
+      <div style="padding:12px 24px 20px;display:flex;gap:8px;border-top:1px solid #f0f0f0;justify-content:flex-end">
+        <button onclick="document.getElementById('lk-post-modal').remove()" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555">Fechar</button>
+        ${empty ? '' : `<button onclick="_lkSalvarNotaPostSessao()" style="padding:10px 18px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✓ Salvar no prontuário</button>`}
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+// Salva a nota revisada no prontuário do paciente atual.
+function _lkSalvarNotaPostSessao() {
+  const ta = document.getElementById('lk-post-note');
+  const texto = ta ? ta.value.trim() : '';
+  if (!texto) { if (typeof showToast === 'function') showToast('⚠ A nota está vazia.'); return; }
+  const sp = patients[currentSessionPatientIdx] || patients[0];
+  if (sp) {
+    sp.prontuarioNotes = sp.prontuarioNotes || [];
+    const hoje = new Date();
+    const data = `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}/${hoje.getFullYear()}`;
+    sp.prontuarioNotes.unshift({ date: data, text: texto, source: 'sessao-ia' });
+    if (typeof salvarPacientes === 'function') salvarPacientes();
+  }
+  const m = document.getElementById('lk-post-modal'); if (m) m.remove();
+  if (typeof showToast === 'function') showToast('Nota salva no prontuário ✓');
 }
 
 // Montagem de vídeo — adaptar aos containers reais (#video-main / #whereby-wrapper) na fase de wiring
