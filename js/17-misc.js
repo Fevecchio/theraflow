@@ -187,31 +187,52 @@ function atualizarTrialUI(count) {
 function showSessionLink() {
   const _slp = patients[currentSessionPatientIdx] || patients[0];
   const _slNome = _slp ? _slp.name : 'o paciente';
+
+  // Modo LiveKit: gera o link REAL da sala (sala.html) com o token da paciente da sessão ativa.
+  if (window._TF_LIVEKIT_ENABLED) {
+    if (!window._lkPatientToken || !window._lkUrl) {
+      if (typeof showToast === 'function') showToast('▶ Inicie a videochamada primeiro para gerar o link da paciente.');
+      return;
+    }
+    const _first = _slNome.split(' ')[0];
+    const link = location.origin + '/sala?u=' + encodeURIComponent(window._lkUrl) +
+      '&t=' + encodeURIComponent(window._lkPatientToken) + '&n=' + encodeURIComponent(_first);
+    return _renderSessionLinkModal(link, _slNome, true);
+  }
+
   const _slSlug = _slNome.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   const hoje = new Date();
-  const fakeLink = `theraflow.app/s/${_slSlug}-${hoje.getDate()}${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][hoje.getMonth()]}`;
+  const legacy = `theraflow.app/s/${_slSlug}-${hoje.getDate()}${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][hoje.getMonth()]}`;
+  _renderSessionLinkModal(legacy, _slNome, false);
+}
+
+// Modal do link da sessão. Handlers via addEventListener (o link real é longo — evita
+// problemas de escaping em onclick inline). `real` = link de sala LiveKit válido.
+function _renderSessionLinkModal(link, nome, real) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
   overlay.style.zIndex = '400';
+  const shown = real ? (location.host + '/sala · link seguro da paciente') : link;
   overlay.innerHTML = `
-    <div class="modal fade-in" style="max-width:420px">
+    <div class="modal fade-in" style="max-width:440px">
       <div class="modal-title" style="margin-bottom:6px">Link da sessão</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Envie para ${escHTML(_slNome)} entrar na videochamada.</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Envie para ${escHTML(nome)} entrar na videochamada agora.</div>
       <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px">
-        <span style="font-size:13px;color:var(--ink-soft);flex:1;font-family:monospace">${fakeLink}</span>
-        <button class="btn btn-secondary btn-sm" onclick="copySessionLink('${fakeLink}', this)">📋 Copiar</button>
+        <span style="font-size:13px;color:var(--ink-soft);flex:1;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHTML(shown)}</span>
+        <button class="btn btn-secondary btn-sm" data-act="copy" style="white-space:nowrap">📋 Copiar</button>
       </div>
       <div style="display:flex;align-items:center;gap:6px;background:#f0f7f3;border:1px solid rgba(74,143,110,.2);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:12px;color:var(--sage)">
-        <span>🔗</span>
-        <span>Ao enviar ou copiar, o link é salvo automaticamente no portal do paciente</span>
+        <span>${real ? '🔒' : '🔗'}</span>
+        <span>${real ? 'Link válido só durante esta sessão. A paciente entra direto, sem senha.' : 'Ao enviar ou copiar, o link é salvo automaticamente no portal do paciente'}</span>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" style="flex:1;justify-content:center;background:#e8faf0;border-color:rgba(37,211,102,.3);color:#075E54" onclick="sendLinkWhatsApp('${fakeLink}')">
-          📲 Enviar pelo WhatsApp
-        </button>
-        <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
+        <button class="btn btn-secondary" data-act="wa" style="flex:1;justify-content:center;background:#e8faf0;border-color:rgba(37,211,102,.3);color:#075E54">📲 Enviar pelo WhatsApp</button>
+        <button class="btn btn-secondary" data-act="close" style="flex:1;justify-content:center">Fechar</button>
       </div>
     </div>`;
+  overlay.querySelector('[data-act="copy"]').addEventListener('click', (e) => copySessionLink(link, e.currentTarget));
+  overlay.querySelector('[data-act="wa"]').addEventListener('click', () => sendLinkWhatsApp(link));
+  overlay.querySelector('[data-act="close"]').addEventListener('click', () => overlay.remove());
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }

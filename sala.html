@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>TheraFlow · Sala de videochamada</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%234a7c59'/%3E%3Ctext x='50' y='68' font-size='56' text-anchor='middle' fill='white' font-family='serif'%3ET%3C/text%3E%3C/svg%3E" />
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js" defer></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --sage:#4a7c59; --sage-700:#3a6248; --sage-light:#e8f0eb; --ink:#1a1f1c; --muted:#8a9490; --bg:#f5f3ee; }
+  body { font-family: 'DM Sans', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  .screen { min-height: 100vh; display: flex; flex-direction: column; }
+  /* ── Consentimento ── */
+  #consent-screen { align-items: center; justify-content: center; padding: 24px; }
+  .card { background: #fff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 26px; box-shadow: 0 12px 40px rgba(0,0,0,.08); }
+  .logo { width: 52px; height: 52px; border-radius: 50%; background: var(--sage); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; font-family: 'Instrument Serif', Georgia, serif; margin: 0 auto 18px; }
+  h1 { font-size: 22px; font-weight: 600; text-align: center; margin-bottom: 8px; }
+  .sub { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 22px; line-height: 1.5; }
+  .info { display: flex; gap: 11px; align-items: flex-start; padding: 12px 14px; background: var(--sage-light); border-radius: 12px; margin-bottom: 10px; font-size: 13px; line-height: 1.5; }
+  .info .ic { font-size: 17px; flex-shrink: 0; }
+  .consent-check { display: flex; gap: 10px; align-items: flex-start; margin: 18px 0 20px; padding: 12px 14px; border: 1px solid rgba(74,124,89,.3); border-radius: 12px; cursor: pointer; font-size: 13px; line-height: 1.45; }
+  .consent-check input { margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--sage); }
+  .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
+  .btn-primary { background: var(--sage); color: #fff; }
+  .btn-primary:hover { background: var(--sage-700); }
+  .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+  /* ── Vídeo ── */
+  #call-screen { display: none; background: #0a0f0b; }
+  .video-stage { flex: 1; position: relative; overflow: hidden; }
+  #remote-video { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #remote-video video { width: 100%; height: 100%; object-fit: cover; }
+  #remote-wait { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #7a8a7d; gap: 14px; text-align: center; padding: 24px; }
+  .pulse { width: 60px; height: 60px; border-radius: 50%; background: rgba(74,124,89,.2); display: flex; align-items: center; justify-content: center; font-size: 28px; animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{ transform: scale(1); opacity:.7 } 50%{ transform: scale(1.08); opacity:1 } }
+  #local-video { position: absolute; bottom: 90px; right: 14px; width: 108px; height: 150px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.5); z-index: 3; background: #111; }
+  #local-video video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .rec-badge { position: absolute; top: 14px; left: 14px; z-index: 3; display: flex; align-items: center; gap: 7px; background: rgba(0,0,0,.5); color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 12px; }
+  .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; animation: blink 1.4s infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+  .controls { padding: 18px; display: flex; gap: 14px; align-items: center; justify-content: center; background: #0a0f0b; }
+  .ctrl { width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(255,255,255,.14); transition: all .15s; }
+  .ctrl:hover { background: rgba(255,255,255,.24); }
+  .ctrl.off { background: #64748b; }
+  .ctrl-leave { background: #c0392b; }
+  .ctrl-leave:hover { background: #a5321f; }
+  /* ── Estados de erro/fim ── */
+  #msg-screen { align-items: center; justify-content: center; padding: 24px; text-align: center; }
+  .msg-emoji { font-size: 44px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<!-- Consentimento -->
+<div class="screen" id="consent-screen">
+  <div class="card">
+    <div class="logo">T</div>
+    <h1 id="consent-title">Sua sessão vai começar</h1>
+    <div class="sub" id="consent-sub">Sua terapeuta convidou você para uma videochamada segura.</div>
+
+    <div class="info"><span class="ic">🎥</span><div>A chamada é <strong>privada</strong> e acontece diretamente entre você e sua terapeuta.</div></div>
+    <div class="info"><span class="ic">📝</span><div>Para ajudar sua terapeuta a fazer as anotações, o áudio é <strong>transcrito por IA</strong> durante a sessão.</div></div>
+    <div class="info"><span class="ic">🔒</span><div>O <strong>vídeo e o áudio não são gravados</strong> nem armazenados — apenas a anotação clínica é guardada pela sua terapeuta.</div></div>
+
+    <label class="consent-check">
+      <input type="checkbox" id="consent-box" />
+      <span>Eu concordo em participar da videochamada e com a transcrição do áudio por IA para fins das anotações clínicas.</span>
+    </label>
+
+    <button class="btn btn-primary" id="join-btn" disabled onclick="entrarNaSala()">Entrar na sessão</button>
+  </div>
+</div>
+
+<!-- Chamada -->
+<div class="screen" id="call-screen">
+  <div class="video-stage">
+    <div class="rec-badge"><span class="rec-dot"></span>Sessão em andamento</div>
+    <div id="remote-video"></div>
+    <div id="remote-wait">
+      <div class="pulse">⏳</div>
+      <div>Aguardando sua terapeuta entrar…</div>
+    </div>
+    <div id="local-video"></div>
+  </div>
+  <div class="controls">
+    <button class="ctrl" id="btn-mic" onclick="toggleMic()" title="Microfone">🎤</button>
+    <button class="ctrl" id="btn-cam" onclick="toggleCam()" title="Câmera">📷</button>
+    <button class="ctrl ctrl-leave" onclick="sairDaSala()" title="Sair">📞</button>
+  </div>
+</div>
+
+<!-- Mensagem (erro / fim) -->
+<div class="screen" id="msg-screen" style="display:none">
+  <div class="card">
+    <div class="msg-emoji" id="msg-emoji">👋</div>
+    <h1 id="msg-title">Você saiu da sessão</h1>
+    <div class="sub" id="msg-sub">Pode fechar esta página.</div>
+  </div>
+</div>
+
+<script>
+  var _room = null, _micOn = true, _camOn = true;
+
+  function _qs(k) { return new URLSearchParams(location.search).get(k); }
+
+  function _showScreen(id) {
+    ['consent-screen','call-screen','msg-screen'].forEach(function(s){
+      document.getElementById(s).style.display = (s === id) ? 'flex' : 'none';
+    });
+  }
+
+  function _fatal(title, sub, emoji) {
+    document.getElementById('msg-emoji').textContent = emoji || '⚠️';
+    document.getElementById('msg-title').textContent = title;
+    document.getElementById('msg-sub').textContent = sub;
+    _showScreen('msg-screen');
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var nome = _qs('n');
+    if (nome) {
+      document.getElementById('consent-title').textContent = 'Olá, ' + nome + '!';
+    }
+    var box = document.getElementById('consent-box');
+    box.addEventListener('change', function () {
+      document.getElementById('join-btn').disabled = !box.checked;
+    });
+    // valida cedo se o link tem os dados
+    if (!_qs('u') || !_qs('t')) {
+      _fatal('Link inválido', 'Este link não é válido. Peça um novo link à sua terapeuta.', '🔗');
+    }
+  });
+
+  async function entrarNaSala() {
+    var url = _qs('u'), token = _qs('t');
+    var LK = window.LivekitClient;
+    if (!LK) { _fatal('Recarregue a página', 'Não foi possível carregar o vídeo. Verifique sua conexão e tente de novo.', '🔄'); return; }
+    if (!url || !token) { _fatal('Link inválido', 'Peça um novo link à sua terapeuta.', '🔗'); return; }
+
+    _showScreen('call-screen');
+    try {
+      _room = new LK.Room({ adaptiveStream: true, dynacast: true });
+
+      _room.on(LK.RoomEvent.TrackSubscribed, function (track) {
+        if (track.kind === 'video') {
+          var wait = document.getElementById('remote-wait'); if (wait) wait.style.display = 'none';
+          var cont = document.getElementById('remote-video');
+          cont.innerHTML = '';
+          cont.appendChild(track.attach());
+        }
+        if (track.kind === 'audio') {
+          document.body.appendChild(track.attach()); // toca o áudio da terapeuta
+        }
+      });
+      _room.on(LK.RoomEvent.ParticipantConnected, function () {
+        var wait = document.getElementById('remote-wait'); if (wait) wait.style.display = 'none';
+      });
+      _room.on(LK.RoomEvent.Disconnected, function () {
+        _fatal('A sessão foi encerrada', 'Sua terapeuta encerrou a videochamada. Obrigado!', '👋');
+      });
+
+      await _room.connect(url, token);
+      await _room.localParticipant.setCameraEnabled(true);
+      await _room.localParticipant.setMicrophoneEnabled(true);
+
+      // vídeo local
+      var camPub = _room.localParticipant.getTrackPublication(LK.Track.Source.Camera);
+      if (camPub && camPub.track) {
+        var lv = document.getElementById('local-video'); lv.innerHTML = '';
+        lv.appendChild(camPub.track.attach());
+      }
+      // se já houver terapeuta na sala, esconde o "aguardando"
+      if (_room.numParticipants > 0) {
+        var w = document.getElementById('remote-wait'); if (w) w.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('[sala] connect falhou', err);
+      var msg = String(err && err.message || err);
+      if (/token|permission/i.test(msg)) {
+        _fatal('Link expirado', 'Este link expirou ou já foi usado. Peça um novo à sua terapeuta.', '⏱️');
+      } else if (/denied|NotAllowed|permission/i.test(msg)) {
+        _fatal('Permita a câmera e o microfone', 'Precisamos de acesso à câmera e ao microfone para a sessão. Autorize nas configurações do navegador e recarregue.', '🎥');
+      } else {
+        _fatal('Não foi possível conectar', 'Verifique sua internet e tente abrir o link novamente.', '📶');
+      }
+    }
+  }
+
+  async function toggleMic() {
+    if (!_room) return;
+    _micOn = !_micOn;
+    await _room.localParticipant.setMicrophoneEnabled(_micOn);
+    var b = document.getElementById('btn-mic'); b.classList.toggle('off', !_micOn); b.textContent = _micOn ? '🎤' : '🔇';
+  }
+  async function toggleCam() {
+    if (!_room) return;
+    _camOn = !_camOn;
+    await _room.localParticipant.setCameraEnabled(_camOn);
+    var b = document.getElementById('btn-cam'); b.classList.toggle('off', !_camOn); b.textContent = _camOn ? '📷' : '🚫';
+    if (_camOn) {
+      var camPub = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
+      if (camPub && camPub.track) { var lv = document.getElementById('local-video'); lv.innerHTML = ''; lv.appendChild(camPub.track.attach()); }
+    }
+  }
+  async function sairDaSala() {
+    try { if (_room) await _room.disconnect(); } catch (e) {}
+    _room = null;
+    _fatal('Você saiu da sessão', 'Pode fechar esta página. Até a próxima!', '👋');
+  }
+</script>
+</body>
+</html>

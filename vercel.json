@@ -13,6 +13,10 @@
       "dest": "/paciente.html"
     },
     {
+      "src": "/sala",
+      "dest": "/sala.html"
+    },
+    {
       "src": "/termos",
       "dest": "/termos.html"
     },

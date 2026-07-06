@@ -139,7 +139,9 @@ async function startLiveKitSession() {
     });
     if (!resp.ok) throw new Error('create-session-room ' + resp.status);
     const { url, hostToken, patientToken } = await resp.json();
-    window._lkPatientToken = patientToken; // usado para o paciente entrar (portal / link)
+    // Guardados para gerar o link real da paciente (sala.html) via showSessionLink().
+    window._lkPatientToken = patientToken;
+    window._lkUrl = url;
 
     // 3) Conecta como host e prepara o mixer de áudio (para gravação efêmera)
     _lkRoom = new LK.Room({ adaptiveStream: true, dynacast: true });
@@ -216,6 +218,7 @@ async function endLiveKitSession() {
   try { if (_lkRoom) await _lkRoom.disconnect(); } catch (_) {}
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null;
+  window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
   if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 
   if (!audioBlob || audioBlob.size < 1200) {
