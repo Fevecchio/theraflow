@@ -293,6 +293,10 @@ function _renderSessPerguntas(linhas) {
 // No protótipo, simulamos com uma sala de demonstração pública do Whereby:
 
 function startWherebySession() {
+  // Fluxo real (vídeo LiveKit + transcrição IA) quando ligado; senão, mantém o fluxo atual.
+  if (window._TF_LIVEKIT_ENABLED && typeof _startSessionWithConsent === 'function') {
+    return _startSessionWithConsent();
+  }
   const sp = patients[currentSessionPatientIdx] || patients[0];
   const link = sp && sp.sessionLink;
   if (!link) {
@@ -306,6 +310,10 @@ function startWherebySession() {
 }
 
 function endWherebySession() {
+  // Se a sessão foi iniciada via LiveKit, encerra pelo caminho real (para gravação → transcreve → nota).
+  if (window._TF_LIVEKIT_ENABLED && typeof endLiveKitSession === 'function') {
+    return endLiveKitSession();
+  }
   if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
   const iframe = document.getElementById('whereby-iframe');
   const prestate = document.getElementById('whereby-prestate');
