@@ -130,7 +130,7 @@ function renderFinPlanos() {
     var val = parseFloat(c.value)||0;
     g.total += val;
     if (c.status==='paid') g.paid += val;
-    else if (c.status==='overdue') g.overdue += val;
+    else if (_chargeVencida(c)) g.overdue += val;
     else g.pending += val;
     if (c.billing==='mensal') g.mensal++; else g.avulso++;
   });
@@ -244,8 +244,8 @@ function renderFinFluxo() {
   if (resumoEl) {
     var mesAtualKey = meses[5].key;
     var recebido = charges.filter(function(c){ return !c.deleted && c.status==='paid' && _chargeInMonth(c, mesAtualKey); }).reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
-    var pendente = charges.filter(function(c){ return !c.deleted && c.status==='pending' && _chargeInMonth(c, mesAtualKey); }).reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
-    var atrasado = charges.filter(function(c){ return !c.deleted && c.status==='overdue' && _chargeInMonth(c, mesAtualKey); }).reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
+    var pendente = charges.filter(function(c){ return !c.deleted && c.status==='pending' && !_chargeVencida(c) && _chargeInMonth(c, mesAtualKey); }).reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
+    var atrasado = charges.filter(function(c){ return _chargeVencida(c) && _chargeInMonth(c, mesAtualKey); }).reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
     var totalMes = recebido + pendente + atrasado || 1;
     var pPago = Math.round(recebido / totalMes * 100);
     var pPend = Math.round(pendente / totalMes * 100);

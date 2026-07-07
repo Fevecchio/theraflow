@@ -601,7 +601,8 @@ function _recalcFinStatus() {
   chargesArr.forEach(function(c) {
     var n = c.patient; if (!n) return;
     if (!idx[n]) idx[n] = { overdue:false, pending:false, hasAny:true };
-    if (c.status === 'overdue') idx[n].overdue = true;
+    // Vencida (overdue OU pending com data passada) → semáforo vermelho; pending futura → âmbar.
+    if (_chargeVencida(c)) idx[n].overdue = true;
     else if (c.status === 'pending') idx[n].pending = true;
   });
   patients.forEach(function(p) {
@@ -1417,8 +1418,8 @@ function selectPatient(i, el) {
   (function() {
     var cobPac = (typeof charges !== 'undefined' ? charges : []).filter(function(c){ return !c.deleted && c.patient === p.name; });
     if (cobPac.length > 0) {
-      var hasOverdue = cobPac.some(function(c){ return c.status === 'overdue'; });
-      var hasPending = cobPac.some(function(c){ return c.status === 'pending'; });
+      var hasOverdue = cobPac.some(_chargeVencida);
+      var hasPending = cobPac.some(function(c){ return c.status === 'pending' && !_chargeVencida(c); });
       if (hasOverdue) { p.finStatus = 'overdue'; p.fin = 'Atrasado'; }
       else if (hasPending) { p.finStatus = 'pending'; p.fin = 'Pendente'; }
       else { p.finStatus = 'ok'; p.fin = 'Em dia'; }

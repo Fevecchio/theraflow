@@ -218,7 +218,7 @@ function atualizarDashboard() {
     const fmt = receitaMes >= 1000 ? 'R$'+(receitaMes/1000).toFixed(1)+'k' : 'R$'+receitaMes.toFixed(0);
     elReceita.textContent = fmt;
   }
-  const inadimplentes = charges_.filter(c=>!c.deleted&&c.status==='overdue').length;
+  const inadimplentes = charges_.filter(_chargeVencida).length;
   if (elReceitaDelta) elReceitaDelta.textContent = inadimplentes > 0 ? `⚠ ${inadimplentes} em atraso` : '✓ Em dia';
   if (elReceitaDelta) elReceitaDelta.style.color = inadimplentes > 0 ? 'var(--amber)' : 'var(--sage)';
 
@@ -355,7 +355,7 @@ function _renderDashInsights() {
   }
 
   // Inadimplência na carteira
-  var inadimplentes = charges.filter(function(c){ return !c.deleted && c.status==='overdue'; });
+  var inadimplentes = charges.filter(_chargeVencida);
   if (inadimplentes.length) {
     var totalInad = inadimplentes.reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
     insights.push({ icon:'💸', text: '<strong>R$'+totalInad.toLocaleString('pt-BR')+' em atraso</strong> — '+inadimplentes.length+' cobrança'+( inadimplentes.length>1?'s':'')+' vencida'+( inadimplentes.length>1?'s':'')+' aguardando ação.' });

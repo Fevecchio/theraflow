@@ -49,6 +49,30 @@ function localDateISO(d) {
 }
 function hojeISO() { return localDateISO(new Date()); }
 
+/* Normaliza a data de uma cobrança para YYYY-MM-DD (aceita ISO, DD/MM/YYYY e DD/MM). */
+function _chargeDateISO(d) {
+  if (!d) return null;
+  var s = String(d).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+  var m2 = s.match(/^(\d{1,2})\/(\d{1,2})$/); // DD/MM sem ano → assume ano atual
+  if (m2) return (new Date().getFullYear()) + '-' + m2[2].padStart(2, '0') + '-' + m2[1].padStart(2, '0');
+  return null;
+}
+
+/* Uma cobrança está VENCIDA se está explicitamente 'overdue' OU é 'pending' com vencimento
+   já passado. No fluxo real o status nunca vira 'overdue' sozinho (nenhum código faz essa
+   transição) — este helper torna a inadimplência visível em todo o app sem migração de dados.
+   Auditoria 07/07 (crítico: inadimplência invisível). */
+function _chargeVencida(c) {
+  if (!c || c.deleted) return false;
+  if (c.status === 'overdue') return true;
+  if (c.status !== 'pending') return false;
+  var iso = _chargeDateISO(c.date);
+  return !!iso && iso < hojeISO();
+}
+
 /* Formata número para WhatsApp. Retorna null para números inválidos (0800, 0300). */
 function _wppNumero(phone) {
   var n = (phone || '').replace(/\D/g, '');
