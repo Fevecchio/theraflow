@@ -182,14 +182,15 @@ async function startLiveKitSession() {
     window._lkSessionPatient = sp;
     _lkPublishPortalLink(sp);
 
-    // 3) Conecta como host. Qualidade de vídeo explícita: captura 720p + simulcast —
-    //    sem isso a paciente via o terapeuta "embaçado" (camada/base de captura baixa).
+    // 3) Conecta como host. Qualidade de vídeo: 540p — meio-termo testado. 720p forçado
+    //    (1,7 Mbps) TRAVAVA o vídeo em conexão residencial/celular; 540p (~0,8 Mbps) fica
+    //    nítido e fluido, e o simulcast + adaptiveStream degradam sozinhos se a rede cair.
     const _roomOpts = { adaptiveStream: true, dynacast: true };
     try {
-      if (LK.VideoPresets && LK.VideoPresets.h720) {
-        _roomOpts.videoCaptureDefaults = { resolution: LK.VideoPresets.h720.resolution };
+      if (LK.VideoPresets && LK.VideoPresets.h540) {
+        _roomOpts.videoCaptureDefaults = { resolution: LK.VideoPresets.h540.resolution };
         _roomOpts.publishDefaults = {
-          videoEncoding: LK.VideoPresets.h720.encoding,
+          videoEncoding: LK.VideoPresets.h540.encoding,
           videoSimulcastLayers: [LK.VideoPresets.h360, LK.VideoPresets.h180],
         };
       }

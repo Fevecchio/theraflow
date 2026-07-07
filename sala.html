@@ -139,13 +139,13 @@
 
     _showScreen('call-screen');
     try {
-      // Qualidade explícita: captura 720p + simulcast (mesma config do lado da terapeuta).
+      // Qualidade: 540p (mesma config da terapeuta) — 720p forçado travava em rede residencial/celular.
       var roomOpts = { adaptiveStream: true, dynacast: true };
       try {
-        if (LK.VideoPresets && LK.VideoPresets.h720) {
-          roomOpts.videoCaptureDefaults = { resolution: LK.VideoPresets.h720.resolution };
+        if (LK.VideoPresets && LK.VideoPresets.h540) {
+          roomOpts.videoCaptureDefaults = { resolution: LK.VideoPresets.h540.resolution };
           roomOpts.publishDefaults = {
-            videoEncoding: LK.VideoPresets.h720.encoding,
+            videoEncoding: LK.VideoPresets.h540.encoding,
             videoSimulcastLayers: [LK.VideoPresets.h360, LK.VideoPresets.h180],
           };
         }
