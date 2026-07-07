@@ -70,6 +70,27 @@ let _lkAudioCtx = null;
 let _lkAnalyser = null;
 let _lkMeterRAF = null;
 let _lkLastTranscript = '';
+let _lkRetry = null;          // { audioBlob, pacBlob, pacOffsetSec } p/ reprocessar sem regravar
+
+// Avisa antes de fechar/recarregar a aba durante a sessão (a gravação vive em memória —
+// um F5 a perderia). Registrado quando a gravação começa, removido ao encerrar.
+function _lkGuardUnload(e) {
+  e.preventDefault();
+  e.returnValue = 'A sessão está em andamento. Se sair agora, a gravação e a nota serão perdidas.';
+  return e.returnValue;
+}
+
+// Rascunho de recuperação: grava transcrição+nota assim que existem, para não perder o
+// trabalho se o navegador fechar entre gerar e salvar. Limpo ao salvar no prontuário.
+function _lkSaveDraft(sp, transcript, note) {
+  try {
+    localStorage.setItem('tf_lk_draft', JSON.stringify({
+      patientId: sp && sp.id, patientName: sp && sp.name,
+      at: new Date().toISOString(), transcript: transcript || '', note: note || '',
+    }));
+  } catch (_) {}
+}
+function _lkClearDraft() { try { localStorage.removeItem('tf_lk_draft'); } catch (_) {} }
 
 // Medidor de áudio ao vivo — confirma visualmente que o mic está sendo captado.
 function _lkStartMeter(sourceNode) {
@@ -279,10 +300,13 @@ async function startLiveKitSession() {
 function _lkStartTherRecorder() {
   if (_lkRecorder || !_lkMicDest) return;
   try {
-    _lkRecorder = new MediaRecorder(_lkMicDest.stream, { mimeType: _pickAudioMime() });
+    // 32 kbps mono: voz é inteligível para o Whisper com folga e o arquivo fica ~4× menor
+    // (o default do Chrome ~128 kbps estourava o limite de 4,5 MB de corpo da Vercel em poucos min).
+    _lkRecorder = new MediaRecorder(_lkMicDest.stream, { mimeType: _pickAudioMime(), audioBitsPerSecond: 32000 });
     _lkRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkChunks.push(e.data); };
     _lkRecorder.start(1000);
     _lkRecStartMs = Date.now();
+    window.addEventListener('beforeunload', _lkGuardUnload); // avisa se fechar/recarregar gravando
     if (typeof showToast === 'function') showToast('🔴 Paciente entrou — gravação e transcrição iniciadas.');
   } catch (e) { console.warn('[livekit] ther recorder', e); }
 }
@@ -292,7 +316,7 @@ function _lkStartTherRecorder() {
 function _lkStartPacRecorder() {
   if (_lkPacRecorder || !_lkPacDest) return;
   try {
-    _lkPacRecorder = new MediaRecorder(_lkPacDest.stream, { mimeType: _pickAudioMime() });
+    _lkPacRecorder = new MediaRecorder(_lkPacDest.stream, { mimeType: _pickAudioMime(), audioBitsPerSecond: 32000 });
     _lkPacRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkPacChunks.push(e.data); };
     _lkPacRecorder.start(1000);
     _lkPacRecStartMs = Date.now();
@@ -430,6 +454,7 @@ async function endLiveKitSession() {
   window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
   _lkClearPortalLink(window._lkSessionPatient || patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
   window._lkSessionPatient = null;
+  window.removeEventListener('beforeunload', _lkGuardUnload); // gravação terminou — libera a saída
   if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 
   _lkProcStep('s1', 'done');
@@ -440,11 +465,31 @@ async function endLiveKitSession() {
     return;
   }
 
-  // Pós-sessão: transcreve as DUAS faixas EM PARALELO → intercala com rótulos → nota clínica
+  // Guarda os blobs para permitir reprocessar (botão "tentar de novo") sem regravar.
+  _lkRetry = { audioBlob, pacBlob, pacOffsetSec };
+  await _lkProcessSession();
+}
+
+// Transcreve as 2 faixas → intercala → gera a nota. Reutilizável no retry (usa _lkRetry).
+// Falha aqui NÃO perde nada: os blobs ficam em _lkRetry e o modal oferece "tentar de novo".
+async function _lkProcessSession() {
+  if (!_lkRetry || !_lkRetry.audioBlob) return;
+  const { audioBlob, pacBlob, pacOffsetSec } = _lkRetry;
+  const sp = patients[currentSessionPatientIdx] || patients[0];
+
+  // Guard de tamanho: a Vercel rejeita corpo > ~4,5 MB. A 32 kbps isso ~= 18 min por faixa.
+  // Acima disso, avisa com clareza em vez de estourar num 413 silencioso (a nota fica pendente
+  // p/ reprocessar — a segmentação por tempo, que remove esse teto, é o próximo passo do plano).
+  const LIMITE = 4.4 * 1024 * 1024;
+  if (audioBlob.size > LIMITE || (pacBlob && pacBlob.size > LIMITE)) {
+    _lkHideProcessing();
+    _lkShowPostSession({ tooLong: true });
+    return;
+  }
+
+  _lkShowProcessing(); _lkProcStep('s1', 'done'); _lkProcStep('s2', 'doing');
   try {
-    _lkProcStep('s2', 'doing');
-    // 1) Transcrição (v1: Groq cloud com timestamps; v2: on-device no desktop).
-    //    As duas faixas rodam em paralelo — corta o tempo de espera quase pela metade.
+    // 1) Transcrição das 2 faixas EM PARALELO (Groq, com timestamps).
     const therP = _lkTranscribe(audioBlob);
     const pacP = (pacBlob && pacBlob.size > 1200)
       ? _lkTranscribe(pacBlob).catch((e) => { console.warn('[livekit] transcrição da faixa da paciente falhou', e); return null; })
@@ -453,47 +498,73 @@ async function endLiveKitSession() {
     const pac = await pacP;
     const transcript = pac
       ? _lkMergeTranscripts(ther, pac, pacOffsetSec)
-      : ((ther && ther.text) || '').trim();
+      : _lkCleanSingle(ther); // fallback: 1 faixa, mas ainda filtra alucinação de silêncio
     _lkLastTranscript = transcript;
     _lkProcStep('s2', 'done');
 
-    // Guarda: sem fala real captada → NÃO gera nota (evita nota fabricada a partir de silêncio).
+    // Sem fala real captada → NÃO gera nota (evita nota fabricada a partir de silêncio).
     if (transcript.replace(/[^\p{L}\p{N}]/gu, '').length < 8) {
       _lkHideProcessing();
       _lkShowPostSession({ transcript, note: '', empty: true });
       return;
     }
 
-    // 2) Nota clínica (Claude, transcript pseudonimizado no servidor)
+    // 2) Nota clínica (Claude, transcript pseudonimizado no servidor).
     _lkProcStep('s3', 'doing');
-    const sp = patients[currentSessionPatientIdx] || patients[0];
     const nr = await fetch('/api/session-note', {
       method: 'POST',
       headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem }),
     });
     if (!nr.ok) throw new Error('session-note ' + nr.status);
-    const { note } = await nr.json();
+    let { note } = await nr.json();
+    // Descarta recusa do Claude (não deve virar nota clínica). Mantém a transcrição real.
+    if (_lkIsRefusal(note)) note = '';
     _lkProcStep('s3', 'done');
 
+    _lkSaveDraft(sp, transcript, note); // rascunho: sobrevive a fechar o navegador antes de salvar
+    _lkRetry = null;                    // deu certo — não precisa mais reprocessar
     const ta = document.getElementById('session-ai-note');
-    if (ta) ta.value = note;
+    if (ta && note) ta.value = note;
     _lkHideProcessing();
     _lkShowPostSession({ transcript, note });
-    if (typeof showToast === 'function') showToast('Nota gerada ✓ Revise antes de salvar.');
+    if (typeof showToast === 'function') showToast(note ? 'Nota gerada ✓ Revise antes de salvar.' : 'Transcrição pronta ✓ (nota não gerada)');
   } catch (err) {
     console.error('[livekit] pós-sessão falhou', err);
     _lkHideProcessing();
-    if (typeof showToast === 'function') showToast('⚠ Falha ao gerar a nota: ' + err.message);
+    _lkShowPostSession({ retry: true, errMsg: err.message }); // blobs preservados em _lkRetry
   }
 }
 
+// Reprocessa a partir dos blobs guardados (chamado pelo botão do modal de erro).
+function _lkRetryProcess() {
+  const m = document.getElementById('lk-post-modal'); if (m) m.remove();
+  _lkProcessSession();
+}
+
+// Transcrição de faixa única com o mesmo filtro anti-alucinação do merge (no_speech_prob).
+function _lkCleanSingle(r) {
+  if (r && Array.isArray(r.segments) && r.segments.length) {
+    return r.segments
+      .filter((s) => !(typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85))
+      .map((s) => (s.text || '').trim()).filter(Boolean).join(' ').trim();
+  }
+  return ((r && r.text) || '').trim();
+}
+
+// Detecta recusa/desculpa do modelo para não gravar isso como nota clínica.
+function _lkIsRefusal(t) {
+  return /^\s*(desculpe|não (é )?poss[ií]vel|não (posso|consigo)|infelizmente não|unable to|i (cannot|can't|am unable))/i.test(String(t || ''));
+}
+
 // Modal pós-sessão HONESTO — mostra a transcrição REAL e a nota REAL (sem conteúdo fabricado).
-function _lkShowPostSession({ transcript, note, empty, noPatient }) {
+// Estados: default (transcrição+nota) · empty (silêncio) · noPatient · tooLong (áudio > limite) · retry (falhou).
+function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry, errMsg }) {
   const old = document.getElementById('lk-post-modal'); if (old) old.remove();
   const esc = (s) => (typeof escHTML === 'function' ? escHTML(s) : String(s || '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])));
   const sp = patients[currentSessionPatientIdx] || patients[0];
   const nome = sp ? sp.name : 'Paciente';
+  const isContent = !empty && !tooLong && !retry;
 
   const emptyBlock = noPatient ? `
     <div style="background:#f0f7f3;border:1px solid #cfe3d6;border-radius:10px;padding:14px 16px;color:#3a6248;font-size:13px;line-height:1.55">
@@ -504,6 +575,21 @@ function _lkShowPostSession({ transcript, note, empty, noPatient }) {
       <strong>⚠ Nenhuma fala foi captada nesta gravação.</strong><br/>
       O áudio saiu em silêncio, então <strong>não geramos nota</strong> (para não inventar conteúdo).
       Verifique se o microfone certo está ativo e sem mudo — durante a sessão, a barrinha 🎤 deve se mexer quando você fala.
+    </div>`;
+
+  const tooLongBlock = `
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;color:#9a3412;font-size:13px;line-height:1.55">
+      <strong>⚠ Esta sessão ficou longa demais para transcrever de uma vez.</strong><br/>
+      O áudio excedeu o limite de envio atual. Nada foi perdido do seu lado — mas ainda não conseguimos
+      gerar a nota automaticamente para sessões muito longas. Anote os pontos principais manualmente por ora;
+      o suporte a sessões longas (transcrição em partes) é o próximo passo já planejado.
+    </div>`;
+
+  const retryBlock = `
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;color:#991b1b;font-size:13px;line-height:1.55">
+      <strong>⚠ Não consegui concluir a transcrição/nota.</strong><br/>
+      A gravação desta sessão <strong>ainda está guardada nesta aba</strong> — você pode tentar de novo sem regravar.
+      ${errMsg ? `<div style="margin-top:6px;font-size:11px;opacity:.8">Detalhe técnico: ${esc(errMsg)}</div>` : ''}
     </div>`;
 
   const contentBlock = `
@@ -517,20 +603,33 @@ function _lkShowPostSession({ transcript, note, empty, noPatient }) {
       <div style="font-size:11px;color:#999;margin-top:6px">Revise e edite antes de salvar no prontuário. A gravação de áudio não foi armazenada.</div>
     </div>`;
 
+  const bodyHTML = isContent ? contentBlock : tooLong ? tooLongBlock : retry ? retryBlock : emptyBlock;
+  const icon = isContent ? '✅' : retry ? '⚠️' : tooLong ? '⏱️' : (noPatient ? '🔒' : '⚠️');
+  const subtitle = isContent ? 'Transcrição e nota geradas a partir da conversa'
+    : retry ? 'A gravação está guardada — dá para tentar de novo'
+    : tooLong ? 'Sessão longa demais para a transcrição automática'
+    : (noPatient ? 'A paciente não entrou — nada foi gravado' : 'Sem áudio para transcrever');
+
+  // Botões: Salvar (só no conteúdo) · Tentar de novo (só no retry) · Fechar (com confirmação se há nota não salva)
+  const closeGuard = isContent
+    ? `if(confirm('Fechar sem salvar? A nota desta sessão não será guardada no prontuário.')){document.getElementById('lk-post-modal').remove();}`
+    : `document.getElementById('lk-post-modal').remove();`;
+
   const modal = document.createElement('div');
   modal.id = 'lk-post-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML = `
     <div style="background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
       <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
-        <div style="width:38px;height:38px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px">${empty ? '⚠️' : '✅'}</div>
+        <div style="width:38px;height:38px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px">${icon}</div>
         <div><div style="font-weight:600;font-size:15px;color:#1a1a1a">Sessão encerrada · ${esc(nome)}</div>
-        <div style="font-size:12px;color:#888;margin-top:2px">${empty ? (noPatient ? 'A paciente não entrou — nada foi gravado' : 'Sem áudio para transcrever') : 'Transcrição e nota geradas a partir da conversa'}</div></div>
+        <div style="font-size:12px;color:#888;margin-top:2px">${subtitle}</div></div>
       </div>
-      <div style="padding:20px 24px">${empty ? emptyBlock : contentBlock}</div>
+      <div style="padding:20px 24px">${bodyHTML}</div>
       <div style="padding:12px 24px 20px;display:flex;gap:8px;border-top:1px solid #f0f0f0;justify-content:flex-end">
-        <button onclick="document.getElementById('lk-post-modal').remove()" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555">Fechar</button>
-        ${empty ? '' : `<button onclick="_lkSalvarNotaPostSessao()" style="padding:10px 18px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✓ Salvar no prontuário</button>`}
+        <button onclick="${closeGuard}" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555">Fechar</button>
+        ${retry ? `<button onclick="_lkRetryProcess()" style="padding:10px 18px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">↻ Tentar de novo</button>` : ''}
+        ${isContent ? `<button onclick="_lkSalvarNotaPostSessao()" style="padding:10px 18px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✓ Salvar no prontuário</button>` : ''}
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -549,6 +648,7 @@ function _lkSalvarNotaPostSessao() {
   const sideTa = document.getElementById('session-ai-note');
   if (sideTa) sideTa.value = texto;
   const m = document.getElementById('lk-post-modal'); if (m) m.remove();
+  _lkClearDraft(); _lkRetry = null; // salvo com sucesso — descarta rascunho de recuperação
   if (typeof indexPostSession === 'function') indexPostSession();
 
   // Resumo acessível p/ a paciente ler no portal ("Minha jornada") — no fluxo clássico
