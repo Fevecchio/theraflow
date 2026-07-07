@@ -43,18 +43,30 @@ footer{text-align:center;padding:32px 24px;font-size:13px;color:#6b7c6b;border-t
 
   <h3>2. Dados que coletamos</h3>
   <p><strong>Do Terapeuta:</strong> nome, e-mail, CRP, abordagem terapêutica, dados de pagamento (via Stripe), logs de acesso.</p>
-  <p><strong>Dos Pacientes (dados sensíveis de saúde):</strong> nome, contato, prontuário, notas clínicas, histórico de sessões, diário e check-ins de humor.</p>
+  <p><strong>Dos Pacientes (dados sensíveis de saúde):</strong> nome, contato, prontuário, notas clínicas, histórico de sessões, diário e check-ins de humor. Quando há sessão por vídeo com transcrição, o áudio é processado de forma efêmera (ver seção 4) — não guardamos o vídeo nem o áudio.</p>
   <div class="callout-purple">Dados de saúde mental são tratados como <strong>dados sensíveis</strong> nos termos do Art. 11 da LGPD, com base legal em tutela da saúde (Art. 11, II, f) e consentimento explícito (Art. 11, I).</div>
 
   <h3>3. Como usamos os dados</h3>
   <p>Exclusivamente para: prestar o serviço contratado, gerar análises com IA sob instrução do Terapeuta, enviar comunicações do serviço, cumprir obrigações legais e melhorar a Plataforma (sempre com dados anonimizados).</p>
   <div class="callout"><strong>A TheraFlow não vende, aluga ou compartilha dados pessoais com terceiros para fins comerciais.</strong></div>
 
-  <h3>4. Inteligência Artificial</h3>
-  <p>Os recursos de IA processam dados clínicos exclusivamente para gerar as análises solicitadas pelo Terapeuta. Os dados são enviados à API da Anthropic (Claude), que <strong>não utiliza dados de API para treinar seus modelos</strong>. A TheraFlow não armazena prompts ou respostas da IA associados a pacientes identificados além do necessário.</p>
+  <h3>4. Inteligência Artificial e sessões por vídeo</h3>
+  <p>Os recursos de IA processam dados clínicos exclusivamente para gerar as análises solicitadas pelo Terapeuta. As notas clínicas e análises são geradas pela API da Anthropic (Claude), que <strong>não utiliza dados de API para treinar seus modelos</strong>; antes do envio, o texto é pseudonimizado sempre que possível. A TheraFlow não armazena prompts ou respostas da IA associados a pacientes identificados além do necessário.</p>
+  <p><strong>Videochamada e transcrição:</strong> quando o Terapeuta realiza a sessão por vídeo dentro da Plataforma, a chamada é intermediada pela LiveKit (infraestrutura de vídeo) e, mediante consentimento específico registrado, o áudio é transcrito automaticamente pela Groq (serviço de transcrição por IA) apenas para auxiliar as anotações clínicas. <strong>O vídeo e o áudio não são gravados nem armazenados</strong> — são processados de forma efêmera e descartados; persiste apenas a nota clínica revisada pelo Terapeuta.</p>
 
   <h3>5. Parceiros e transferências</h3>
-  <p>Compartilhamos dados apenas com: Supabase (banco de dados), Anthropic (IA), Stripe (pagamentos), Vercel (hospedagem). Todos sob Data Processing Agreements.</p>
+  <p>Para operar a Plataforma, compartilhamos dados estritamente necessários com os seguintes operadores, todos sob Contrato de Tratamento de Dados (DPA):</p>
+  <ul>
+    <li><strong>Supabase</strong> — banco de dados e autenticação;</li>
+    <li><strong>Vercel</strong> — hospedagem da aplicação;</li>
+    <li><strong>Anthropic (Claude)</strong> — geração de notas e análises clínicas por IA;</li>
+    <li><strong>Groq</strong> — transcrição do áudio das sessões por IA (processamento efêmero, sem armazenamento);</li>
+    <li><strong>LiveKit</strong> — infraestrutura da videochamada (mídia não gravada);</li>
+    <li><strong>Stripe</strong> — processamento de pagamentos da assinatura do Terapeuta;</li>
+    <li><strong>Resend</strong> — envio de e-mails transacionais (convites, lembretes, redefinição de senha);</li>
+    <li><strong>PostHog</strong> — métricas de uso da Plataforma (analytics de produto).</li>
+  </ul>
+  <p>Alguns operadores podem processar dados fora do Brasil; nesses casos, a transferência internacional observa as garantias exigidas pela LGPD (Art. 33).</p>
 
   <h3>6. Segurança</h3>
   <p>Criptografia em trânsito (HTTPS/TLS) e em repouso (AES-256), senhas com hash bcrypt, controle de acesso por Row Level Security, backups automáticos diários, logs de auditoria.</p>
