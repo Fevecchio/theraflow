@@ -294,8 +294,11 @@ function _renderSessPerguntas(linhas) {
 // No protótipo, simulamos com uma sala de demonstração pública do Whereby:
 
 function startWherebySession() {
-  // Fluxo real (vídeo LiveKit + transcrição IA) — padrão. Demo usa o fluxo legado (sem backend).
-  if (window._TF_LIVEKIT_ENABLED && !window._tfDemo && typeof _startSessionWithConsent === 'function') {
+  // Fluxo real (vídeo LiveKit + transcrição IA) SEMPRE fora da demo — o `?livekit=0` só vale
+  // para a demo. Isto garante que um usuário real NUNCA caia no fluxo legado/simulado (que tem
+  // transcrição e "marco clínico" fabricados). Se o LiveKit não carregar, startLiveKitSession
+  // avisa com erro honesto — melhor que dado falso. (Auditoria 07/07 — crítico.)
+  if (!window._tfDemo && typeof _startSessionWithConsent === 'function') {
     return _startSessionWithConsent();
   }
   const sp = patients[currentSessionPatientIdx] || patients[0];
@@ -313,8 +316,9 @@ function startWherebySession() {
 }
 
 function endWherebySession() {
-  // Se a sessão foi iniciada via LiveKit, encerra pelo caminho real (para gravação → transcreve → nota).
-  if (window._TF_LIVEKIT_ENABLED && !window._tfDemo && typeof endLiveKitSession === 'function') {
+  // Fora da demo, encerra SEMPRE pelo caminho real (gravação → transcreve → nota). O fluxo
+  // legado abaixo (showPostSessionFlow) é teatro fabricado e só roda em demo.
+  if (!window._tfDemo && typeof endLiveKitSession === 'function') {
     return endLiveKitSession();
   }
   if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
@@ -330,6 +334,10 @@ function endWherebySession() {
 }
 
 function showPostSessionFlow() {
+  // ⚠️ TEATRO DEMO-ONLY: este modal exibe transcrição/análise HARDCODED ("confiança 94%",
+  // "CRENÇA NUCLEAR DETECTADA"). Só deve rodar no modo demo. Fora da demo, o encerramento
+  // vai para endLiveKitSession (fluxo real). Gate defensivo: (Auditoria 07/07 — crítico.)
+  if (!window._tfDemo) { if (typeof endLiveKitSession === 'function') return endLiveKitSession(); return; }
   // Remove modal anterior se existir
   const existing = document.getElementById('modal-post-session');
   if (existing) existing.remove();

@@ -1393,6 +1393,12 @@ function atualizarMetricasSupervisao() {
 let supHasNewData = false;
 
 function injectNewEvidenceIntoSupervisao() {
+  // ⚠️ Este bloco injeta TRECHOS HARDCODED ("Camila · Sessão 12 · Crença nuclear") como
+  // ilustração — só faz sentido no modo DEMO (cujo paciente fictício é a Camila). No uso
+  // REAL, injetar essas citações em alertas de pacientes reais seria fabricar evidência
+  // clínica. Gate obrigatório: fora do demo, não faz nada. (Auditoria 07/07 — crítico.)
+  if (!window._tfDemo) return;
+
   // Inject a new alert card with real transcript evidence into supervisão
   const content = document.getElementById('sup-ai-content');
   if (!content) return;
