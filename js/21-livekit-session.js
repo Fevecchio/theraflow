@@ -536,21 +536,41 @@ function _lkShowPostSession({ transcript, note, empty, noPatient }) {
   document.body.appendChild(modal);
 }
 
-// Salva a nota revisada no prontuário do paciente atual.
+// Salva a nota revisada e NUTRE a plataforma inteira — delega ao indexPostSession
+// (o mesmo motor do fluxo clássico): prontuário + contador de sessões + presença no
+// agendamento + "Minha jornada" do portal + cobrança no financeiro + registro de
+// sessão (trial) + etapa de exercícios + evidências da Supervisão IA.
 function _lkSalvarNotaPostSessao() {
   const ta = document.getElementById('lk-post-note');
   const texto = ta ? ta.value.trim() : '';
   if (!texto) { if (typeof showToast === 'function') showToast('⚠ A nota está vazia.'); return; }
   const sp = patients[currentSessionPatientIdx] || patients[0];
-  if (sp) {
-    sp.prontuarioNotes = sp.prontuarioNotes || [];
-    const hoje = new Date();
-    const data = `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}/${hoje.getFullYear()}`;
-    sp.prontuarioNotes.unshift({ date: data, text: texto, source: 'sessao-ia' });
-    if (typeof salvarPacientes === 'function') salvarPacientes();
-  }
+  // indexPostSession lê a nota de #session-ai-note — injeta o texto revisado lá.
+  const sideTa = document.getElementById('session-ai-note');
+  if (sideTa) sideTa.value = texto;
   const m = document.getElementById('lk-post-modal'); if (m) m.remove();
-  if (typeof showToast === 'function') showToast('Nota salva no prontuário ✓');
+  if (typeof indexPostSession === 'function') indexPostSession();
+
+  // Resumo acessível p/ a paciente ler no portal ("Minha jornada") — no fluxo clássico
+  // era gerado pelo modal legado; aqui geramos direto e salvamos no appointment que o
+  // indexPostSession marcou (_pendingResumoApptId).
+  if (sp && typeof _gerarResumoPortalIA === 'function') {
+    _gerarResumoPortalIA(sp, texto).then(function (resumo) {
+      if (!resumo || typeof _pendingResumoApptId === 'undefined' || !_pendingResumoApptId) return;
+      var appt = (typeof appointments !== 'undefined' ? appointments : [])
+        .find(function (a) { return String(a.id) === String(_pendingResumoApptId); });
+      if (appt) {
+        appt.resumoParaPaciente = resumo;
+        if (typeof _salvarAppointments === 'function') _salvarAppointments();
+        if (!sp.appointments) sp.appointments = [];
+        var i = sp.appointments.findIndex(function (a) { return String(a.id) === String(appt.id); });
+        if (i >= 0) sp.appointments[i].resumoParaPaciente = resumo;
+        else sp.appointments.push({ id: appt.id, date: appt.date, presenca: 'compareceu', resumoParaPaciente: resumo });
+        if (typeof salvarPacientes === 'function') salvarPacientes();
+      }
+      _pendingResumoApptId = null;
+    }).catch(function () {});
+  }
 }
 
 // Montagem de vídeo — dentro do card da sessão (.video-main), SEM quebrar o layout:
