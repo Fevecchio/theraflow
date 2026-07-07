@@ -348,8 +348,61 @@ function _lkMergeTranscripts(ther, pac, pacOffsetSec) {
   return out.map((r) => r.who + ': ' + r.t).join('\n\n');
 }
 
+// ── Modal de processamento pós-sessão ──
+// O terapeuta clicava em Encerrar e ficava sem feedback até a nota chegar (10–60s).
+// Este modal mostra as etapas + cronômetro: a plataforma está trabalhando.
+let _lkProcTimer = null;
+function _lkShowProcessing() {
+  _lkHideProcessing();
+  if (!document.getElementById('lk-proc-css')) {
+    const s = document.createElement('style');
+    s.id = 'lk-proc-css';
+    s.textContent = '@keyframes lkspin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+  const modal = document.createElement('div');
+  modal.id = 'lk-proc-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:430px;box-shadow:0 24px 80px rgba(0,0,0,.3);padding:26px 28px">
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="width:44px;height:44px;margin:0 auto 12px;border-radius:50%;border:3px solid #e6efe9;border-top-color:#4a7c59;animation:lkspin .9s linear infinite"></div>
+        <div style="font-weight:600;font-size:15px;color:#1a1a1a">Preparando sua nota clínica…</div>
+        <div style="font-size:12px;color:#888;margin-top:3px">Costuma levar menos de 1 minuto · pode deixar esta tela aberta</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px;font-size:13px">
+        <div id="lk-proc-s1" style="display:flex;gap:8px;align-items:center;color:#999"><span>○</span><span>Encerrando a gravação</span></div>
+        <div id="lk-proc-s2" style="display:flex;gap:8px;align-items:center;color:#999"><span>○</span><span>Transcrevendo a conversa</span></div>
+        <div id="lk-proc-s3" style="display:flex;gap:8px;align-items:center;color:#999"><span>○</span><span>Gerando a nota clínica com IA</span></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px">
+        <span id="lk-proc-elapsed" style="font-size:12px;color:#888">⏱ 0s</span>
+        <span style="font-size:11px;color:#999">🔒 áudio processado e descartado</span>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const t0 = Date.now();
+  _lkProcTimer = setInterval(() => {
+    const el = document.getElementById('lk-proc-elapsed');
+    if (el) el.textContent = '⏱ ' + Math.round((Date.now() - t0) / 1000) + 's';
+  }, 1000);
+}
+function _lkProcStep(id, state) { // 'doing' | 'done'
+  const row = document.getElementById('lk-proc-' + id);
+  if (!row) return;
+  const ic = row.firstElementChild;
+  if (state === 'doing') { row.style.color = '#3a6248'; row.style.fontWeight = '600'; if (ic) ic.textContent = '⏳'; }
+  else { row.style.color = '#4a7c59'; row.style.fontWeight = ''; if (ic) ic.textContent = '✓'; }
+}
+function _lkHideProcessing() {
+  if (_lkProcTimer) { clearInterval(_lkProcTimer); _lkProcTimer = null; }
+  const m = document.getElementById('lk-proc-modal'); if (m) m.remove();
+}
+
 async function endLiveKitSession() {
   _lkStopMeter();
+  _lkShowProcessing();
+  _lkProcStep('s1', 'doing');
   // Para as gravações e coleta os blobs (faixa do terapeuta + faixa da paciente)
   let audioBlob = null, pacBlob = null;
   try {
@@ -379,33 +432,40 @@ async function endLiveKitSession() {
   window._lkSessionPatient = null;
   if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 
+  _lkProcStep('s1', 'done');
+
   if (!audioBlob || audioBlob.size < 1200) {
+    _lkHideProcessing();
     _lkShowPostSession({ transcript: '', note: '', empty: true, noPatient });
     return;
   }
 
-  // Pós-sessão: transcreve as DUAS faixas → intercala com rótulos de falante → nota clínica
+  // Pós-sessão: transcreve as DUAS faixas EM PARALELO → intercala com rótulos → nota clínica
   try {
-    if (typeof showToast === 'function') showToast('Transcrevendo e gerando a nota…');
-    // 1) Transcrição (v1: Groq cloud com timestamps; v2: on-device no desktop)
-    const ther = await _lkTranscribe(audioBlob);
-    let pac = null;
-    if (pacBlob && pacBlob.size > 1200) {
-      try { pac = await _lkTranscribe(pacBlob); }
-      catch (e) { console.warn('[livekit] transcrição da faixa da paciente falhou', e); }
-    }
+    _lkProcStep('s2', 'doing');
+    // 1) Transcrição (v1: Groq cloud com timestamps; v2: on-device no desktop).
+    //    As duas faixas rodam em paralelo — corta o tempo de espera quase pela metade.
+    const therP = _lkTranscribe(audioBlob);
+    const pacP = (pacBlob && pacBlob.size > 1200)
+      ? _lkTranscribe(pacBlob).catch((e) => { console.warn('[livekit] transcrição da faixa da paciente falhou', e); return null; })
+      : Promise.resolve(null);
+    const ther = await therP;
+    const pac = await pacP;
     const transcript = pac
       ? _lkMergeTranscripts(ther, pac, pacOffsetSec)
       : ((ther && ther.text) || '').trim();
     _lkLastTranscript = transcript;
+    _lkProcStep('s2', 'done');
 
     // Guarda: sem fala real captada → NÃO gera nota (evita nota fabricada a partir de silêncio).
     if (transcript.replace(/[^\p{L}\p{N}]/gu, '').length < 8) {
+      _lkHideProcessing();
       _lkShowPostSession({ transcript, note: '', empty: true });
       return;
     }
 
     // 2) Nota clínica (Claude, transcript pseudonimizado no servidor)
+    _lkProcStep('s3', 'doing');
     const sp = patients[currentSessionPatientIdx] || patients[0];
     const nr = await fetch('/api/session-note', {
       method: 'POST',
@@ -414,13 +474,16 @@ async function endLiveKitSession() {
     });
     if (!nr.ok) throw new Error('session-note ' + nr.status);
     const { note } = await nr.json();
+    _lkProcStep('s3', 'done');
 
     const ta = document.getElementById('session-ai-note');
     if (ta) ta.value = note;
+    _lkHideProcessing();
     _lkShowPostSession({ transcript, note });
     if (typeof showToast === 'function') showToast('Nota gerada ✓ Revise antes de salvar.');
   } catch (err) {
     console.error('[livekit] pós-sessão falhou', err);
+    _lkHideProcessing();
     if (typeof showToast === 'function') showToast('⚠ Falha ao gerar a nota: ' + err.message);
   }
 }
