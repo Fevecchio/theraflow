@@ -122,6 +122,34 @@ function _pickAudioMime() {
   return 'audio/webm';
 }
 
+// Publica o link real da sala no registro do paciente (portal) + sincroniza.
+// O carimbo sessionLinkAt permite ao portal mostrar o convite só enquanto o token
+// está fresco (TTL 3h) e removê-lo depois. Mesmo formato do link do WhatsApp.
+function _lkPublishPortalLink(sp) {
+  if (!sp || !window._lkUrl || !window._lkPatientToken) return;
+  try {
+    const first = (sp.name || 'Paciente').split(' ')[0];
+    sp.sessionLink = location.origin + '/sala?u=' + encodeURIComponent(window._lkUrl) +
+      '&t=' + encodeURIComponent(window._lkPatientToken) + '&n=' + encodeURIComponent(first);
+    sp.sessionLinkAt = new Date().toISOString();
+    if (typeof salvarPacientes === 'function') salvarPacientes();
+    if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(() => {});
+  } catch (e) { console.warn('[livekit] publicar link no portal', e); }
+}
+
+// Remove o link/convite do portal ao encerrar a sessão (o token já expira, mas isto
+// tira o botão "Entrar" da paciente imediatamente).
+function _lkClearPortalLink(sp) {
+  if (!sp) return;
+  try {
+    if (!sp.sessionLink && !sp.sessionLinkAt) return;
+    sp.sessionLink = null;
+    sp.sessionLinkAt = null;
+    if (typeof salvarPacientes === 'function') salvarPacientes();
+    if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(() => {});
+  } catch (e) { console.warn('[livekit] limpar link do portal', e); }
+}
+
 async function startLiveKitSession() {
   const LK = window.LivekitClient;
   if (!LK) { if (typeof showToast === 'function') showToast('⚠ Biblioteca de vídeo (LiveKit) não carregada.'); return; }
@@ -142,6 +170,10 @@ async function startLiveKitSession() {
     // Guardados para gerar o link real da paciente (sala.html) via showSessionLink().
     window._lkPatientToken = patientToken;
     window._lkUrl = url;
+    // Parte 2/2 da entrada da paciente: publica o link no PORTAL automaticamente ao iniciar.
+    // A paciente logada vê o convite "ao vivo" em tempo real (poll em js/13). Além do link
+    // WhatsApp (que só salva se a terapeuta copiar/enviar), isto cobre a paciente já logada.
+    _lkPublishPortalLink(sp);
 
     // 3) Conecta como host e prepara o mixer de áudio (para gravação efêmera)
     _lkRoom = new LK.Room({ adaptiveStream: true, dynacast: true });
@@ -219,6 +251,7 @@ async function endLiveKitSession() {
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null;
   window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
+  _lkClearPortalLink(patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
   if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 
   if (!audioBlob || audioBlob.size < 1200) {

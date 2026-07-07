@@ -547,6 +547,7 @@ function sairPaciente() {
   _loggedPatientData = null;
   _pacClearPortalAuth();
   _stopMsgPoll();
+  if (typeof _pacStopSessionPoll === 'function') _pacStopSessionPoll();
   _cancelarNotificacaoPac();
 
   // Restaura lista de pacientes do terapeuta

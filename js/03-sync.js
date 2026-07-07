@@ -212,6 +212,7 @@ async function _supaSync_patients() {
           metas: p.metas || [],
           appointments: p.appointments || [],
           sessionLink: p.sessionLink || null,
+          sessionLinkAt: p.sessionLinkAt || null,
           _moodLastDate: p._moodLastDate || null,
           mood: p.mood || null,
           fin: p.fin || null,

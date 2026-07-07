@@ -241,7 +241,10 @@ function _salvarLinkNoPortal(link) {
   var p = patients[currentSessionPatientIdx] || patients[0];
   if (!p) return;
   p.sessionLink = link.startsWith('http') ? link : ('https://' + link);
+  // Carimbo p/ o portal saber que o convite é "ao vivo" (só link real de /sala fresco).
+  if (p.sessionLink.indexOf('/sala?') !== -1) p.sessionLinkAt = new Date().toISOString();
   salvarPacientes();
+  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
 }
 
 function copySessionLink(link, btn) {
