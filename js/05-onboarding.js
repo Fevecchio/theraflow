@@ -455,7 +455,21 @@ document.addEventListener('DOMContentLoaded', function() {
     var acc = null;
     try { acc = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
     if (!acc) return; // Sem conta local configurada, aguarda login manual
-    // Já tem sessão — restaura dados frescos do Supabase e entra no app
+    // GATE 2FA (corrige bypass por reload): se a conta tem 2FA ativo e a sessão
+    // persistida ainda está em aal1 (ex.: recarregou a página no meio do desafio
+    // TOTP, quando o signInWithPassword já gravou a sessão aal1), exige o código
+    // antes de restaurar. Sem isto, um F5 durante o desafio entrava sem o 2FA.
+    // A tela de login já está visível aqui (bloco acima), então o desafio renderiza.
+    try {
+      const { data: aal } = await supa.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal && aal.nextLevel === 'aal2' && aal.currentLevel === 'aal1') {
+        if (typeof _showMfaChallenge === 'function') { _showMfaChallenge(session.user.id); return; }
+        // Defensivo: sem o módulo 2FA carregado, não conclui login parcial numa conta protegida.
+        await supa.auth.signOut().catch(function(){});
+        return;
+      }
+    } catch(e) { /* MFA indisponível no SDK → segue o fluxo normal (conta sem 2FA não é afetada) */ }
+    // Sessão válida (aal2 ou conta sem 2FA) — restaura dados frescos e entra no app
     try { await _supaLoadUserData(session.user.id); } catch(e) { console.warn('[Supa] Auto-restore:', e.message); }
     try { acc = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
     if (acc) _proceedToApp(acc);
