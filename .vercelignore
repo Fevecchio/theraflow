@@ -1,0 +1,25 @@
+# Arquivos que NUNCA devem ir para o deploy (a Vercel serve tudo que sobe,
+# pois outputDirectory é "."). Auditoria 07/07/2026: schema/migrations e
+# relatórios internos estavam PÚBLICOS em produção.
+
+# Infra de banco: versionada no git, mas jamais servida
+backend/
+
+# Relatórios internos / auditorias / planos (também removidos do git)
+AUDITORIA-*
+DIAGNOSTICO-*
+relatorio-*.html
+plano-estrategico-*.pdf
+
+# Tooling local
+.claude/
+serve.js
+.gitignore
+.vercelignore
+
+# Artefatos de QA/design (untracked, mas cinto-e-suspensório p/ deploy via CLI)
+*.png
+*.jpeg
+*.jpg
+design-*
+*.jsx

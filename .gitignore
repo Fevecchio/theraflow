@@ -1,0 +1,23 @@
+# Deploy local da Vercel CLI
+.vercel
+
+# Tooling do Claude Code (settings locais não devem ir ao repo)
+.claude/
+
+# Relatórios internos / auditorias / planos estratégicos — NUNCA versionar
+# (estavam públicos em produção; removidos do git em 07/07/2026)
+AUDITORIA-*
+DIAGNOSTICO-*
+relatorio-*.html
+plano-estrategico-*.pdf
+
+# Artefatos de QA/design (screenshots, mockups)
+*.png
+*.jpeg
+*.jpg
+design-*
+*.jsx
+
+# Dev local
+serve.js
+.playwright-mcp/
