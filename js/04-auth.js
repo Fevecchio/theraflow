@@ -137,14 +137,16 @@ async function sendForgotPassword() {
     document.getElementById('forgot-form-area').style.display = 'none';
     document.getElementById('forgot-success').style.display = 'block';
   }
-  // Auto-redirect para login após 4 segundos com contador
+  // Auto-redirect para login após 4 segundos com contador.
+  // Guard: clicar 2× criava dois setInterval paralelos (contador maluco). F4.5.
+  if (window._forgotRedirectTimer) { clearInterval(window._forgotRedirectTimer); window._forgotRedirectTimer = null; }
   let secs = 4;
   const counter = document.getElementById('forgot-redirect-counter');
   if (counter) counter.textContent = secs;
-  const t = setInterval(() => {
+  window._forgotRedirectTimer = setInterval(() => {
     secs--;
     if (counter) counter.textContent = secs;
-    if (secs <= 0) { clearInterval(t); hideForgotPassword(); }
+    if (secs <= 0) { clearInterval(window._forgotRedirectTimer); window._forgotRedirectTimer = null; hideForgotPassword(); }
   }, 1000);
 }
 

@@ -187,10 +187,12 @@
     } catch (err) {
       console.error('[sala] connect falhou', err);
       var msg = String(err && err.message || err);
-      if (/token|permission/i.test(msg)) {
-        _fatal('Link expirado', 'Este link expirou ou já foi usado. Peça um novo à sua terapeuta.', '⏱️');
-      } else if (/denied|NotAllowed|permission/i.test(msg)) {
+      // Ordem importa: "permission denied" do getUserMedia contém "permission" e caía no ramo
+      // errado ("Link expirado"). Checa câmera/mic PRIMEIRO; token não inclui mais "permission". F4.5.
+      if (/denied|NotAllowed|NotFound|getUserMedia|camera|microphone/i.test(msg)) {
         _fatal('Permita a câmera e o microfone', 'Precisamos de acesso à câmera e ao microfone para a sessão. Autorize nas configurações do navegador e recarregue.', '🎥');
+      } else if (/token|expired|invalid|unauthor/i.test(msg)) {
+        _fatal('Link expirado', 'Este link expirou ou já foi usado. Peça um novo à sua terapeuta.', '⏱️');
       } else {
         _fatal('Não foi possível conectar', 'Verifique sua internet e tente abrir o link novamente.', '📶');
       }

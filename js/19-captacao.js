@@ -102,8 +102,10 @@ function _renderCard(lead, colIdx) {
   var origemLabel = CAPTACAO_ORIGENS[lead.origem] || (lead.origem || '');
   var isPerdido = (colIdx === 5);
 
-  var wppClean = (lead.whatsapp || '').replace(/\D/g, '');
-  var wppHref = wppClean.length >= 8 ? 'https://wa.me/55' + wppClean : '';
+  // _wppNumero normaliza o prefixo 55 (não duplica quando o número já vem com +55) e
+  // rejeita 0800/0300. Antes: 'wa.me/55'+num gerava '5555...' p/ leads com +55. F4.5.
+  var _wn = (typeof _wppNumero === 'function') ? _wppNumero(lead.whatsapp) : (lead.whatsapp || '').replace(/\D/g, '');
+  var wppHref = _wn ? 'https://wa.me/' + _wn : '';
 
   var diasLabel = '';
   if (lead.criado) {
