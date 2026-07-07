@@ -512,6 +512,10 @@ async function _supaPatientSync() {
         readMaterials: p.readMaterials || [],
         portalNota: p.portalNota || null,
         portalNotifHour: p.portalNotifHour || null,
+        // Autoradas pelo terapeuta — incluídas aqui p/ o sync do PACIENTE não as apagar
+        // (esta lista também sobrescreve o metadata inteiro). União com _supaSync_patients.
+        portalDica: p.portalDica || null,
+        portalMensagem: p.portalMensagem || null,
         anamnese: p.anamnese || null,
         portalAnamneseAtiva: p.portalAnamneseAtiva || false,
       }

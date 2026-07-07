@@ -202,14 +202,21 @@ async function _supaSync_patients() {
         sessions_count: p.sessions || 0,
         valor_sessao: p.valorSessao ? parseFloat(p.valorSessao) : null,
         progress: p.progress || 0,
-        // Dados ricos preservados em metadata
+        // Dados ricos preservados em metadata.
+        // ⚠️ Esta lista sobrescreve o metadata INTEIRO no Supabase — precisa conter TODOS os
+        // campos, inclusive os escritos pelo PACIENTE (moodNotes, portalMetas, checkInStreak,
+        // lastCheckInDate, readMaterials, portalNota, portalNotifHour), senão o save do terapeuta
+        // os APAGA. Deve permanecer a UNIÃO com a lista de _supaPatientSync (06-patients.js).
+        // Auditoria 07/07 (crítico: sync do terapeuta apagava dados do paciente).
         metadata: {
           moodHistory: p.moodHistory || [],
+          moodNotes: p.moodNotes || [],
           prontuarioNotes: p.prontuarioNotes || [],
           exercises: p.exercises || [],
           materials: p.materials || [],
           diary: p.diary || [],
           metas: p.metas || [],
+          portalMetas: p.portalMetas || [],
           appointments: p.appointments || [],
           sessionLink: p.sessionLink || null,
           sessionLinkAt: p.sessionLinkAt || null,
@@ -219,6 +226,13 @@ async function _supaSync_patients() {
           forma_pagamento: p.forma_pagamento || null,
           portalPasswordHash: p.portalPasswordHash || null,
           portalPassword: p.portalPassword || null,
+          checkInStreak: p.checkInStreak || 0,
+          lastCheckInDate: p.lastCheckInDate || null,
+          readMaterials: p.readMaterials || [],
+          portalNota: p.portalNota || null,
+          portalNotifHour: p.portalNotifHour || null,
+          portalDica: p.portalDica || null,
+          portalMensagem: p.portalMensagem || null,
           anamnese: p.anamnese || null,
           portalAnamneseAtiva: p.portalAnamneseAtiva || false,
         },
