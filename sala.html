@@ -139,7 +139,18 @@
 
     _showScreen('call-screen');
     try {
-      _room = new LK.Room({ adaptiveStream: true, dynacast: true });
+      // Qualidade explícita: captura 720p + simulcast (mesma config do lado da terapeuta).
+      var roomOpts = { adaptiveStream: true, dynacast: true };
+      try {
+        if (LK.VideoPresets && LK.VideoPresets.h720) {
+          roomOpts.videoCaptureDefaults = { resolution: LK.VideoPresets.h720.resolution };
+          roomOpts.publishDefaults = {
+            videoEncoding: LK.VideoPresets.h720.encoding,
+            videoSimulcastLayers: [LK.VideoPresets.h360, LK.VideoPresets.h180],
+          };
+        }
+      } catch (_) {}
+      _room = new LK.Room(roomOpts);
 
       _room.on(LK.RoomEvent.TrackSubscribed, function (track) {
         if (track.kind === 'video') {

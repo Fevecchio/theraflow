@@ -58,8 +58,13 @@ function confirmarConsentimentoSessao() {
 }
 
 let _lkRoom = null;
-let _lkRecorder = null;
+let _lkRecorder = null;      // gravador da faixa do TERAPEUTA (mic local)
 let _lkChunks = [];
+let _lkPacDest = null;       // destino WebAudio só com o áudio da PACIENTE
+let _lkPacRecorder = null;   // gravador da faixa da paciente (inicia quando ela entra)
+let _lkPacChunks = [];
+let _lkRecStartMs = 0;       // início da gravação do terapeuta (base dos timestamps)
+let _lkPacRecStartMs = 0;    // início da gravação da paciente (alinha os segmentos)
 let _lkAudioCtx = null;
 let _lkAnalyser = null;
 let _lkMeterRAF = null;
@@ -70,7 +75,7 @@ function _lkStartMeter(sourceNode) {
   try {
     _lkAnalyser = _lkAudioCtx.createAnalyser();
     _lkAnalyser.fftSize = 1024;
-    sourceNode.connect(_lkAnalyser); // paralelo ao mixDest — o que alimenta o medidor também vai pra gravação
+    sourceNode.connect(_lkAnalyser); // paralelo ao micDest — o que alimenta o medidor também vai pra gravação
     // injeta a UI do medidor sobre o vídeo
     let bar = document.getElementById('lk-mic-meter');
     if (!bar) {
@@ -176,15 +181,29 @@ async function startLiveKitSession() {
     window._lkSessionPatient = sp;
     _lkPublishPortalLink(sp);
 
-    // 3) Conecta como host e prepara o mixer de áudio (para gravação efêmera)
-    _lkRoom = new LK.Room({ adaptiveStream: true, dynacast: true });
+    // 3) Conecta como host. Qualidade de vídeo explícita: captura 720p + simulcast —
+    //    sem isso a paciente via o terapeuta "embaçado" (camada/base de captura baixa).
+    const _roomOpts = { adaptiveStream: true, dynacast: true };
+    try {
+      if (LK.VideoPresets && LK.VideoPresets.h720) {
+        _roomOpts.videoCaptureDefaults = { resolution: LK.VideoPresets.h720.resolution };
+        _roomOpts.publishDefaults = {
+          videoEncoding: LK.VideoPresets.h720.encoding,
+          videoSimulcastLayers: [LK.VideoPresets.h360, LK.VideoPresets.h180],
+        };
+      }
+    } catch (_) {}
+    _lkRoom = new LK.Room(_roomOpts);
     _lkAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     // CRÍTICO: o AudioContext nasce "suspended" (foi criado após awaits, fora do gesto do
     // usuário) — sem resume() o MediaStreamDestination sai MUDO e o Whisper alucina. Resume aqui.
     try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
-    const mixDest = _lkAudioCtx.createMediaStreamDestination();
-    let _lkMicMixed = false; // garante que o mic do terapeuta entrou no mix
-    _lkChunks = [];
+    // DUAS faixas separadas (não um mix): terapeuta e paciente gravados à parte →
+    // transcritos à parte → intercalados por timestamp = transcrição com RÓTULO DE FALANTE.
+    const micDest = _lkAudioCtx.createMediaStreamDestination();
+    _lkPacDest = _lkAudioCtx.createMediaStreamDestination();
+    let _lkMicMixed = false; // garante que o mic do terapeuta entrou na gravação
+    _lkChunks = []; _lkPacChunks = []; _lkPacRecStartMs = 0;
 
     // Áudio + vídeo do paciente ao serem assinados
     _lkRoom.on(LK.RoomEvent.TrackSubscribed, (track) => {
@@ -197,9 +216,10 @@ async function startLiveKitSession() {
           const audioEl = track.attach();
           audioEl.setAttribute('data-lk-remote-audio', '1');
           document.body.appendChild(audioEl);
-          // 2) MIX (gravação efêmera → transcrição): voz da paciente entra junto com a do terapeuta.
+          // 2) FAIXA DA PACIENTE (gravação efêmera → transcrição com rótulo de falante).
           if (track.mediaStreamTrack) {
-            _lkAudioCtx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack])).connect(mixDest);
+            _lkAudioCtx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack])).connect(_lkPacDest);
+            _lkStartPacRecorder(); // começa a gravar quando a paciente entra (offset guardado)
           }
         }
       } catch (e) { console.warn('[livekit] track subscribe', e); }
@@ -216,7 +236,7 @@ async function startLiveKitSession() {
       const micTrack = micPub && micPub.track && micPub.track.mediaStreamTrack;
       if (micTrack && micTrack.readyState === 'live') {
         const micSource = _lkAudioCtx.createMediaStreamSource(new MediaStream([micTrack]));
-        micSource.connect(mixDest);
+        micSource.connect(micDest);
         _lkStartMeter(micSource); // barrinha ao vivo: confirma que o mic está sendo captado
         _lkMicMixed = true;
         break;
@@ -230,12 +250,15 @@ async function startLiveKitSession() {
     const camPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
     if (camPub && camPub.track) _lkMountLocalVideo(camPub.track.attach());
 
-    // 4) Grava o áudio MIXADO (efêmero — só para transcrever; nada é enviado ao servidor até o fim)
-    //    v2: no desktop, trocar esta gravação+/api/transcribe por Whisper ON-DEVICE (Web Worker/WebGPU).
+    // 4) Grava a faixa do TERAPEUTA (efêmero — só para transcrever; nada sobe até o fim).
+    //    A faixa da paciente começa quando ela entra (_lkStartPacRecorder).
+    //    v2: no desktop, trocar gravação+/api/transcribe por Whisper ON-DEVICE (Web Worker/WebGPU).
     try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
-    _lkRecorder = new MediaRecorder(mixDest.stream, { mimeType: _pickAudioMime() });
+    _lkRecorder = new MediaRecorder(micDest.stream, { mimeType: _pickAudioMime() });
     _lkRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkChunks.push(e.data); };
     _lkRecorder.start(1000);
+    _lkRecStartMs = Date.now();
+    _lkShowWaitingRemote(); // "aguardando a paciente" até o vídeo dela chegar
 
     if (typeof _iniciarTimerSessao === 'function') _iniciarTimerSessao();
     if (typeof showToast === 'function') showToast('Sessão iniciada · a nota será gerada ao encerrar.');
@@ -245,22 +268,92 @@ async function startLiveKitSession() {
   }
 }
 
+// Gravador da faixa da paciente — criado quando o primeiro áudio dela chega.
+// O offset (vs início da gravação do terapeuta) alinha os timestamps na intercalação.
+function _lkStartPacRecorder() {
+  if (_lkPacRecorder || !_lkPacDest) return;
+  try {
+    _lkPacRecorder = new MediaRecorder(_lkPacDest.stream, { mimeType: _pickAudioMime() });
+    _lkPacRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkPacChunks.push(e.data); };
+    _lkPacRecorder.start(1000);
+    _lkPacRecStartMs = Date.now();
+  } catch (e) { console.warn('[livekit] pac recorder', e); }
+}
+
+// Placeholder na área de vídeo enquanto a paciente não entra (substitui o pré-estado).
+function _lkShowWaitingRemote() {
+  const main = document.querySelector('#page-sessao .video-main') || document.querySelector('.video-main');
+  if (!main || document.getElementById('lk-wait-remote')) return;
+  const ph = document.getElementById('whereby-prestate'); if (ph) ph.style.display = 'none';
+  const d = document.createElement('div');
+  d.id = 'lk-wait-remote';
+  d.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#7a8a7d;z-index:1;text-align:center;padding:24px';
+  d.innerHTML = '<div style="font-size:34px">⏳</div><div style="font-size:14px">Aguardando a paciente entrar…</div><div style="font-size:12px;opacity:.75">O convite já está no portal dela — ou envie o link pelo 🔗 abaixo.</div>';
+  main.appendChild(d);
+}
+
+// Transcreve um blob de áudio com timestamps por trecho ({ text, segments }).
+async function _lkTranscribe(blob) {
+  const tr = await fetch('/api/transcribe?segments=1', {
+    method: 'POST',
+    headers: await _lkAuthHeaders({ 'Content-Type': blob.type || 'audio/webm' }),
+    body: blob,
+  });
+  if (!tr.ok) throw new Error('transcribe ' + tr.status);
+  return tr.json();
+}
+
+// Intercala os segmentos das duas faixas por tempo → diálogo "Terapeuta:/Paciente:".
+// Usa 'Paciente' (não o nome real): o transcript segue pseudonimizado até o Claude (LGPD).
+function _lkMergeTranscripts(ther, pac, pacOffsetSec) {
+  const rows = [];
+  const push = (r, who, off) => {
+    ((r && r.segments) || []).forEach((s) => {
+      const t = (s.text || '').trim();
+      if (!t) return;
+      if (typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85) return; // anti-alucinação em silêncio
+      rows.push({ at: (s.start || 0) + off, who, t });
+    });
+  };
+  push(ther, 'Terapeuta', 0);
+  push(pac, 'Paciente', pacOffsetSec || 0);
+  if (!rows.length) return ((ther && ther.text) || '').trim();
+  rows.sort((a, b) => a.at - b.at);
+  // Junta falas consecutivas do mesmo falante num parágrafo só
+  const out = [];
+  for (const r of rows) {
+    const last = out[out.length - 1];
+    if (last && last.who === r.who) last.t += ' ' + r.t;
+    else out.push({ who: r.who, t: r.t });
+  }
+  return out.map((r) => r.who + ': ' + r.t).join('\n\n');
+}
+
 async function endLiveKitSession() {
   _lkStopMeter();
-  // Para a gravação e coleta o blob
-  let audioBlob = null;
+  // Para as gravações e coleta os blobs (faixa do terapeuta + faixa da paciente)
+  let audioBlob = null, pacBlob = null;
   try {
     if (_lkRecorder && _lkRecorder.state !== 'inactive') {
       await new Promise((resolve) => { _lkRecorder.onstop = resolve; _lkRecorder.stop(); });
     }
     if (_lkChunks.length) audioBlob = new Blob(_lkChunks, { type: (_lkChunks[0] && _lkChunks[0].type) || 'audio/webm' });
   } catch (e) { console.warn('[livekit] stop recorder', e); }
-  _lkChunks = [];
+  try {
+    if (_lkPacRecorder && _lkPacRecorder.state !== 'inactive') {
+      await new Promise((resolve) => { _lkPacRecorder.onstop = resolve; _lkPacRecorder.stop(); });
+    }
+    if (_lkPacChunks.length) pacBlob = new Blob(_lkPacChunks, { type: (_lkPacChunks[0] && _lkPacChunks[0].type) || 'audio/webm' });
+  } catch (e) { console.warn('[livekit] stop pac recorder', e); }
+  const pacOffsetSec = (_lkPacRecStartMs && _lkRecStartMs) ? (_lkPacRecStartMs - _lkRecStartMs) / 1000 : 0;
+  _lkChunks = []; _lkPacChunks = [];
 
   try { if (_lkRoom) await _lkRoom.disconnect(); } catch (_) {}
   try { document.querySelectorAll('[data-lk-remote-audio]').forEach(function (el) { el.remove(); }); } catch (_) {}
+  _lkResetVideoArea();
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null;
+  _lkPacRecorder = null; _lkPacDest = null; _lkRecStartMs = 0; _lkPacRecStartMs = 0;
   window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
   _lkClearPortalLink(window._lkSessionPatient || patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
   window._lkSessionPatient = null;
@@ -271,18 +364,19 @@ async function endLiveKitSession() {
     return;
   }
 
-  // Pós-sessão: transcreve → nota clínica
+  // Pós-sessão: transcreve as DUAS faixas → intercala com rótulos de falante → nota clínica
   try {
     if (typeof showToast === 'function') showToast('Transcrevendo e gerando a nota…');
-    // 1) Transcrição (v1: Groq cloud; v2: substituída por on-device no desktop)
-    const tr = await fetch('/api/transcribe', {
-      method: 'POST',
-      headers: await _lkAuthHeaders({ 'Content-Type': audioBlob.type || 'audio/webm' }),
-      body: audioBlob,
-    });
-    if (!tr.ok) throw new Error('transcribe ' + tr.status);
-    const { text } = await tr.json();
-    const transcript = (text || '').trim();
+    // 1) Transcrição (v1: Groq cloud com timestamps; v2: on-device no desktop)
+    const ther = await _lkTranscribe(audioBlob);
+    let pac = null;
+    if (pacBlob && pacBlob.size > 1200) {
+      try { pac = await _lkTranscribe(pacBlob); }
+      catch (e) { console.warn('[livekit] transcrição da faixa da paciente falhou', e); }
+    }
+    const transcript = pac
+      ? _lkMergeTranscripts(ther, pac, pacOffsetSec)
+      : ((ther && ther.text) || '').trim();
     _lkLastTranscript = transcript;
 
     // Guarda: sem fala real captada → NÃO gera nota (evita nota fabricada a partir de silêncio).
@@ -344,7 +438,7 @@ function _lkShowPostSession({ transcript, note, empty }) {
       <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
         <div style="width:38px;height:38px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px">${empty ? '⚠️' : '✅'}</div>
         <div><div style="font-weight:600;font-size:15px;color:#1a1a1a">Sessão encerrada · ${esc(nome)}</div>
-        <div style="font-size:12px;color:#888;margin-top:2px">${empty ? 'Sem áudio para transcrever' : 'Transcrição e nota geradas a partir da sua fala'}</div></div>
+        <div style="font-size:12px;color:#888;margin-top:2px">${empty ? 'Sem áudio para transcrever' : 'Transcrição e nota geradas a partir da conversa'}</div></div>
       </div>
       <div style="padding:20px 24px">${empty ? emptyBlock : contentBlock}</div>
       <div style="padding:12px 24px 20px;display:flex;gap:8px;border-top:1px solid #f0f0f0;justify-content:flex-end">
@@ -372,17 +466,32 @@ function _lkSalvarNotaPostSessao() {
   if (typeof showToast === 'function') showToast('Nota salva no prontuário ✓');
 }
 
-// Montagem de vídeo — adaptar aos containers reais (#video-main / #whereby-wrapper) na fase de wiring
+// Montagem de vídeo — dentro do card da sessão (.video-main), SEM quebrar o layout:
+// elementos ABSOLUTOS (fora do fluxo — antes o vídeo em retrato do celular da paciente
+// estourava o card e desalinhava a página inteira) + object-fit:contain (mostra o rosto
+// inteiro com barras laterais, sem cortar).
 function _lkMountRemoteVideo(el) {
-  const wrap = document.getElementById('whereby-wrapper') || document.querySelector('.video-main');
-  if (!wrap) return;
+  const main = document.querySelector('#page-sessao .video-main') || document.querySelector('.video-main');
+  if (!main) return;
   const ph = document.getElementById('whereby-prestate'); if (ph) ph.style.display = 'none';
-  el.style.cssText = 'width:100%;height:100%;object-fit:cover';
-  wrap.appendChild(el);
+  const wait = document.getElementById('lk-wait-remote'); if (wait) wait.remove();
+  document.querySelectorAll('[data-lk-remote-video]').forEach((v) => v.remove()); // troca de track → sem duplicar
+  el.setAttribute('data-lk-remote-video', '1');
+  el.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#0a0f0b;z-index:1';
+  main.appendChild(el);
 }
 function _lkMountLocalVideo(el) {
   el.muted = true;
-  el.style.cssText = 'position:absolute;bottom:14px;right:14px;width:120px;border-radius:10px;z-index:3;box-shadow:0 4px 12px rgba(0,0,0,.4)';
-  const main = document.querySelector('.video-main');
+  el.setAttribute('data-lk-local-video', '1');
+  el.style.cssText = 'position:absolute;bottom:14px;right:14px;width:150px;aspect-ratio:4/3;object-fit:cover;border-radius:10px;z-index:3;box-shadow:0 4px 12px rgba(0,0,0,.4);background:#111';
+  const main = document.querySelector('#page-sessao .video-main') || document.querySelector('.video-main');
   if (main) main.appendChild(el);
+}
+// Restaura a área de vídeo ao encerrar (remove vídeos/espera e devolve o pré-estado).
+function _lkResetVideoArea() {
+  try {
+    document.querySelectorAll('[data-lk-remote-video],[data-lk-local-video]').forEach((v) => v.remove());
+    const wait = document.getElementById('lk-wait-remote'); if (wait) wait.remove();
+    const ph = document.getElementById('whereby-prestate'); if (ph) ph.style.display = '';
+  } catch (_) {}
 }

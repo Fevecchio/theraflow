@@ -82,11 +82,16 @@ export default async function handler(req, res) {
   }
 
   const mime = req.headers['content-type'] || 'audio/webm';
+  // ?segments=1 → verbose_json (timestamps por trecho). Usado pela transcrição com separação
+  // de falantes: o cliente grava terapeuta e paciente em FAIXAS separadas, transcreve cada uma
+  // e intercala os segmentos por tempo — rótulo de falante "de graça", sem modelo de diarização.
+  const wantSegments = /[?&]segments=1\b/.test(req.url || '');
+
   const form = new FormData();
   form.append('file', new Blob([audio], { type: mime }), 'sessao.webm');
   form.append('model', 'whisper-large-v3-turbo');
   form.append('language', 'pt');
-  form.append('response_format', 'text');
+  form.append('response_format', wantSegments ? 'verbose_json' : 'text');
 
   try {
     const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
@@ -98,6 +103,13 @@ export default async function handler(req, res) {
       const errTxt = await r.text().catch(() => '');
       console.error('[transcribe] Groq HTTP', r.status, errTxt.slice(0, 200));
       return res.status(502).json({ error: `Groq ${r.status}: ${errTxt.slice(0, 200)}` });
+    }
+    if (wantSegments) {
+      const j = await r.json(); // verbose_json → { text, segments: [{start,end,text,no_speech_prob,...}] }
+      const segments = Array.isArray(j.segments)
+        ? j.segments.map(s => ({ start: s.start, end: s.end, text: s.text, no_speech_prob: s.no_speech_prob }))
+        : [];
+      return res.status(200).json({ text: j.text || '', segments });
     }
     const text = await r.text(); // response_format=text → texto puro
     return res.status(200).json({ text });
