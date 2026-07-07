@@ -47,13 +47,12 @@ export default async function handler(req, res) {
   const caller = await verifySupabaseJWT(req);
   if (!caller) return res.status(401).json({ error: 'Autenticação necessária' });
 
-  const { email, supaId } = req.body || {};
-  if (!email) return res.status(400).json({ error: 'email is required' });
-
-  // C1: garante que o supaId do body pertence ao JWT do caller
-  if (supaId && supaId !== caller.id) {
-    return res.status(403).json({ error: 'Forbidden: supaId não corresponde ao usuário autenticado' });
-  }
+  // F3.4: usa SEMPRE a identidade do JWT — ignora email/supaId do corpo. Antes, um email
+  // arbitrário no body podia pendurar a assinatura no customer de outra pessoa, e um supaId
+  // ausente fazia o webhook não ativar o plano (pagamento sem upgrade). Agora ambos vêm do token.
+  const email = caller.email;
+  const supaId = caller.id;
+  if (!email) return res.status(400).json({ error: 'Sua conta está sem email. Refaça o login e tente de novo.' });
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 

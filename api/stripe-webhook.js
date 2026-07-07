@@ -140,6 +140,21 @@ export default async function handler(req, res) {
       }
     }
 
+    // F3.4: cartão recusado / assinatura suspensa. Sem isto, um pagamento que falha mantinha
+    // o plano 'pro' até o Stripe cancelar de vez (dias/semanas). subscription.updated traz o
+    // status autoritativo: só 'active'/'trialing' = pro; past_due/unpaid/canceled = trial.
+    // ⚠️ Requer ADICIONAR o evento 'customer.subscription.updated' ao webhook no painel Stripe
+    // (hoje só assina completed+deleted). Sem isso, o evento não chega e este bloco é inócuo.
+    if (event.type === 'customer.subscription.updated') {
+      const sub = event.data.object;
+      const supaId = await supaFindByStripeCustomer(sub.customer);
+      if (supaId) {
+        const active = sub.status === 'active' || sub.status === 'trialing';
+        await supaUpdatePlan(supaId, active ? 'pro' : 'trial', active ? sub.customer : null);
+        console.log(`[webhook] subscription.updated status=${sub.status} → ${active ? 'pro' : 'trial'} supaId=${supaId}`);
+      }
+    }
+
     // Registra evento como processado
     await fetch(`${SUPA_URL}/rest/v1/processed_webhooks`, {
       method: 'POST',
