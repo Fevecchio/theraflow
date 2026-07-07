@@ -14,6 +14,20 @@
 // Modelo da nota. Opção: 'claude-opus-4-8' para maior fidelidade clínica (custo por nota ~$0,05–0,15).
 const NOTE_MODEL = 'claude-sonnet-4-6';
 
+export const config = { maxDuration: 60 };
+
+// Rate-limit in-memory por instância (best-effort; padrão do api/briefing.js).
+const _rlBuckets = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const arr = (_rlBuckets.get(key) || []).filter((t) => now - t < windowMs);
+  if (arr.length >= max) return { allowed: false, retryAfter: Math.ceil((windowMs - (now - arr[0])) / 1000) };
+  arr.push(now);
+  _rlBuckets.set(key, arr);
+  if (_rlBuckets.size > 5000) _rlBuckets.clear();
+  return { allowed: true };
+}
+
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
   'https://theraflow.com.br',
@@ -80,6 +94,13 @@ export default async function handler(req, res) {
 
   const user = await verifySupabaseJWT(req);
   if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
+
+  // Rate-limit: geração de nota (Claude) é cara. 20/min/usuário.
+  const rl = rateLimit(`session-note:${user.id}`, 20, 60 * 1000);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(rl.retryAfter));
+    return res.status(429).json({ error: 'Muitas notas em pouco tempo. Aguarde um instante.' });
+  }
 
   let { transcript, abordagem } = req.body || {};
   if (!transcript || typeof transcript !== 'string' || !transcript.trim()) {

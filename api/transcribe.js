@@ -10,7 +10,19 @@
  *
  * Env: GROQ_API_KEY, SUPABASE_SERVICE_ROLE_KEY (já existe)
  */
-export const config = { api: { bodyParser: false } };
+export const config = { api: { bodyParser: false }, maxDuration: 60 };
+
+// Rate-limit in-memory por instância (best-effort; padrão do api/briefing.js).
+const _rlBuckets = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const arr = (_rlBuckets.get(key) || []).filter((t) => now - t < windowMs);
+  if (arr.length >= max) return { allowed: false, retryAfter: Math.ceil((windowMs - (now - arr[0])) / 1000) };
+  arr.push(now);
+  _rlBuckets.set(key, arr);
+  if (_rlBuckets.size > 5000) _rlBuckets.clear();
+  return { allowed: true };
+}
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
@@ -65,6 +77,13 @@ export default async function handler(req, res) {
 
   const user = await verifySupabaseJWT(req);
   if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
+
+  // Rate-limit: transcrição é cara (Groq). 20/min/usuário cobre uma sessão real com folga.
+  const rl = rateLimit(`transcribe:${user.id}`, 20, 60 * 1000);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(rl.retryAfter));
+    return res.status(429).json({ error: 'Muitas transcrições em pouco tempo. Aguarde um instante.' });
+  }
 
   const GROQ = process.env.GROQ_API_KEY;
   if (!GROQ) return res.status(500).json({ error: 'Groq não configurado (GROQ_API_KEY).' });
