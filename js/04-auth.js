@@ -833,25 +833,27 @@ function _revealEmgChat() {
 
 // ─── MATERIAIS ───────────────────────────────────────────────────────
 function pacMarcarMaterialLido(idx, mid) {
-  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[idx]; if (!p) return;
+  // _pacGetP resolve o paciente também no login via RPC (fromLS:false → _loggedPatientData).
+  // Antes lia só tf_patients e retornava em silêncio no caminho dominante (RPC). F4.3.
+  var g = (typeof _pacGetP === 'function') ? _pacGetP(idx) : null; if (!g) return;
+  var p = g.p;
   if (!p.readMaterials) p.readMaterials = [];
   var pos = p.readMaterials.indexOf(mid);
   if (pos >= 0) p.readMaterials.splice(pos, 1); else p.readMaterials.push(mid);
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (g.fromLS) localStorage.setItem('tf_patients', JSON.stringify(g.pacs));
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.readMaterials = p.readMaterials;
   if (typeof patients !== 'undefined' && patients[idx]) patients[idx].readMaterials = p.readMaterials;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
-  renderPatientApp(idx, pacs);
+  renderPatientApp(g.idx, g.pacs);
 }
 
 // ─── NOTA PRÉ-SESSÃO ─────────────────────────────────────────────────
 function pacSalvarNotaPreSessao(idx) {
   var texto = (document.getElementById('pac-nota-pre-text')?.value || '').trim();
-  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[idx]; if (!p) return;
+  var g = (typeof _pacGetP === 'function') ? _pacGetP(idx) : null; if (!g) return; // F4.3: cobre login RPC
+  var p = g.p;
   p.portalNota = texto;
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (g.fromLS) localStorage.setItem('tf_patients', JSON.stringify(g.pacs));
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.portalNota = texto;
   if (typeof patients !== 'undefined' && patients[idx]) patients[idx].portalNota = texto;
   var el = document.getElementById('pac-nota-saved');
@@ -868,10 +870,10 @@ function pacAtivarNotificacoes(idx) {
   Notification.requestPermission().then(function(perm){
     var el = document.getElementById('pac-notif-status');
     if (perm !== 'granted') { if (el) el.textContent = 'Permissão negada — verifique as configurações do navegador'; return; }
-    var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-    var p = pacs[idx]; if (!p) return;
+    var g = (typeof _pacGetP === 'function') ? _pacGetP(idx) : null; if (!g) return; // F4.3: cobre login RPC
+    var p = g.p;
     p.portalNotifHour = hora;
-    localStorage.setItem('tf_patients', JSON.stringify(pacs));
+    if (g.fromLS) localStorage.setItem('tf_patients', JSON.stringify(g.pacs));
     if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.portalNotifHour = hora;
     if (el) el.textContent = 'Lembrete ativado para as '+hora+'h ✓';
     _agendarNotificacaoPac(hora);
