@@ -183,6 +183,7 @@ function salvarEdicaoPaciente(i) {
   const d = lerCamposPaciente();
   if (!d.nome) { showToast('Informe o nome do paciente.'); return; }
   const p = patients[i];
+  const _oldName = p.name;
   p.name       = d.nome;
   p.email      = d.email;
   p.whatsapp   = d.whatsapp;
@@ -194,6 +195,24 @@ function salvarEdicaoPaciente(i) {
   p.status     = d.status;
   p.notes      = d.notes;
   p.initials   = d.nome.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  // Propaga o rename para tudo que referencia o paciente por NOME — sem isto, renomear
+  // órfã cobranças (fin volta a "—"), agenda (fallback por nome quebra) e tarefas. F2.4.
+  if (_oldName && _oldName !== d.nome) {
+    try {
+      if (typeof charges !== 'undefined') {
+        var _ch = false; charges.forEach(function(c){ if (c.patient === _oldName) { c.patient = d.nome; _ch = true; } });
+        if (_ch && typeof salvarCharges === 'function') salvarCharges();
+      }
+      if (typeof appointments !== 'undefined') {
+        var _ap = false; appointments.forEach(function(a){ if (a.patientName === _oldName) { a.patientName = d.nome; _ap = true; } });
+        if (_ap && typeof _salvarAppointments === 'function') _salvarAppointments();
+      }
+      if (typeof tasks !== 'undefined') {
+        var _tk = false; tasks.forEach(function(t){ if (t.patientName === _oldName) { t.patientName = d.nome; _tk = true; } });
+        if (_tk && typeof salvarTarefas === 'function') salvarTarefas();
+      }
+    } catch (_) {}
+  }
   salvarPacientes();
   limparModalPaciente();
   closeModal('modal-novo-paciente');
