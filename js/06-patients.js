@@ -78,7 +78,8 @@ function criarPaciente() {
     lastSession: '—', next: '—',
     progress: 0, mood: null, moodTrend: null,
     fin: '—', finStatus: 'ok', alert: null,
-    notes: d.notes, exercises: []
+    notes: d.notes, exercises: [],
+    _pendingSync: true // marca persistente: paciente ainda não confirmado no Supabase (F2.2)
   });
   _newLocalPatientIds.add(_newPatId);
   salvarPacientes();

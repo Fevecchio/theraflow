@@ -181,12 +181,14 @@ function _syncRace(fn) {
 /* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos) */
 async function _supaSync_patients() {
   _setSyncStatus('syncing');
+  var _syncedIds = []; // ids confirmados neste batch → limpar _pendingSync no sucesso (F2.2)
   try {
     await _syncRace(async function() {
       const { data: { user } } = await supa.auth.getUser();
       if (!user) return;
       const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]').filter(p => !p._isDemo);
       if (!pats.length) return;
+      _syncedIds = pats.map(p => p.id).filter(Boolean);
       const rows = pats.map(p => ({
         id: p.id || undefined,
         user_id: user.id,
@@ -245,6 +247,19 @@ async function _supaSync_patients() {
     });
     _syncErrorCount = 0;
     _setSyncStatus('ok');
+    // Sync confirmado: limpa _pendingSync nos pacientes deste batch (só nesses — um paciente
+    // criado DURANTE o sync mantém a flag até o próximo sync). Sem isto o boot os trataria como
+    // offline e duplicaria (restored + offlinePats). F2.2.
+    if (_syncedIds.length) {
+      try {
+        var _syncedSet = new Set(_syncedIds);
+        var _changed = false;
+        if (typeof patients !== 'undefined') patients.forEach(function(p){ if (p && p._pendingSync && _syncedSet.has(p.id)) { delete p._pendingSync; _changed = true; } });
+        var _ls = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+        _ls.forEach(function(p){ if (p && p._pendingSync && _syncedSet.has(p.id)) { delete p._pendingSync; _changed = true; } });
+        if (_changed) localStorage.setItem('tf_patients', JSON.stringify(_ls));
+      } catch(_) {}
+    }
   } catch(e) {
     _syncErrorCount++;
     _setSyncStatus('error');
