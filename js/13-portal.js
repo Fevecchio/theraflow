@@ -673,15 +673,64 @@ function _pacEnsureLiveCss() {
   document.head.appendChild(s);
 }
 
+// Conteúdo do card "Próxima sessão" da Home (dentro do div gradiente #pac-sess-card).
+// Extraído p/ o poll poder atualizar SÓ o card in-place — sem re-renderizar o portal
+// inteiro (que voltaria à Home e apagaria texto que a paciente esteja digitando).
+function _pacSessCardHtml(p) {
+  var proximaStr = p.next && p.next !== '—' ? p.next : null;
+  var sessionLink = p.sessionLink || null;
+  var live = _pacSessionLive(p);
+  var _tn = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome
+    : ((typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistNome) ? _loggedPatientData._therapistNome : 'Ana');
+  var tFirst = _tn.split(' ')[0];
+  if (live) _pacEnsureLiveCss();
+  return '<div style="position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none"></div>'
+    + (live
+        ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><span style="width:9px;height:9px;border-radius:50%;background:#ff5a5a;box-shadow:0 0 0 0 rgba(255,90,90,.6);animation:pacLivePulse 1.6s ease-out infinite;flex-shrink:0"></span><span style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase">Sessão ao vivo agora</span></div>'
+        : '<div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.75;text-transform:uppercase;margin-bottom:6px">Próxima sessão</div>')
+    + (live
+        ? '<div style="font-family:\'Instrument Serif\',serif;font-size:22px;line-height:1.2;margin-bottom:12px">' + escHTML(tFirst) + ' está esperando por você</div>'
+        : (proximaStr
+            ? '<div style="font-family:\'Instrument Serif\',serif;font-size:22px;line-height:1.2;margin-bottom:12px">' + escHTML(proximaStr) + '</div>'
+            : '<div style="font-size:15px;opacity:.75;margin-bottom:12px">Nenhuma sessão agendada</div>'))
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+      + (live
+          ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:#fff;color:#2f5340;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;box-shadow:0 2px 10px rgba(0,0,0,.15)">🎥 Entrar na sessão agora</a>'
+          : (sessionLink && proximaStr ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-block">▶ Entrar na sessão</a>' : ''))
+      + '<div id="pac-solicitar-wrap"><button onclick="pacToggleSolicitarSessao()" style="background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.9);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit">' + (proximaStr ? 'Remarcar' : '📅 Solicitar sessão') + '</button><div id="pac-solicitar-form" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);border-radius:10px;padding:12px"><textarea id="pac-solicitar-msg" placeholder="Horários de preferência…" style="width:100%;min-height:56px;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;outline:none;background:rgba(255,255,255,.15);color:#fff;line-height:1.5;box-sizing:border-box"></textarea><button onclick="pacEnviarSolicitacaoSessao(\'' + escHTML(p.name) + '\')" style="margin-top:8px;width:100%;padding:10px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Enviar via WhatsApp</button></div></div>'
+      + '<button onclick="pacEmergencia()" style="background:rgba(220,80,60,.22);border:1px solid rgba(255,160,150,.4);color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🆘 Preciso de apoio</button>'
+    + '</div>';
+}
+
 // Poll em tempo real: enquanto a paciente está logada, re-busca o sessionLink no
 // backend a cada 20s. Quando a terapeuta inicia a sessão, o convite "ao vivo"
 // aparece sozinho — sem a paciente precisar recarregar. Só roda para paciente
 // autenticada via backend (RPC); no preview local do terapeuta fica inerte.
 var _pacSessionPollTimer = null;
 var _pacLastSessLive = false;
+var _pacVisListenerOn = false;
 
 function _pacStopSessionPoll() {
   if (_pacSessionPollTimer) { clearInterval(_pacSessionPollTimer); _pacSessionPollTimer = null; }
+}
+
+function _pacCheckSessionLive() {
+  if (typeof _pacPortalAuth === 'undefined' || !_pacPortalAuth || !_loggedPatientData) return;
+  supaPatient.rpc('portal_patient_login', { p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash })
+    .then(function(res) {
+      if (!res || !res.data || !_loggedPatientData) return;
+      var meta = res.data.metadata || {};
+      _loggedPatientData.sessionLink = meta.sessionLink || null;
+      _loggedPatientData.sessionLinkAt = meta.sessionLinkAt || null;
+      var liveNow = _pacSessionLive(_loggedPatientData);
+      if (liveNow === _pacLastSessLive) return;
+      _pacLastSessLive = liveNow;
+      // Atualiza SÓ o card da sessão (in-place): não mexe na tab ativa nem em inputs.
+      var card = document.getElementById('pac-sess-card');
+      if (card) card.innerHTML = _pacSessCardHtml(_loggedPatientData);
+      if (liveNow && typeof showToast === 'function') showToast('🔴 Sua terapeuta iniciou a sessão — toque em Entrar');
+    })
+    .catch(function(){});
 }
 
 function _pacStartSessionPoll(p) {
@@ -691,23 +740,15 @@ function _pacStartSessionPoll(p) {
   _pacLastSessLive = _pacSessionLive(p);
   _pacSessionPollTimer = setInterval(function() {
     if (!_pacPortalAuth) { _pacStopSessionPoll(); return; }
-    supaPatient.rpc('portal_patient_login', { p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash })
-      .then(function(res) {
-        if (!res || !res.data || !_loggedPatientData) return;
-        var meta = res.data.metadata || {};
-        _loggedPatientData.sessionLink = meta.sessionLink || null;
-        _loggedPatientData.sessionLinkAt = meta.sessionLinkAt || null;
-        var liveNow = _pacSessionLive(_loggedPatientData);
-        if (liveNow === _pacLastSessLive) return;
-        _pacLastSessLive = liveNow;
-        var appLayer = document.getElementById('tf-patient-app-layer');
-        if (!appLayer || !appLayer.classList.contains('open')) return;
-        // Estado mudou (começou ou encerrou): re-renderiza para refletir o convite.
-        renderPatientApp(_loggedPatientIdx || 0, [_loggedPatientData]);
-        if (liveNow && typeof showToast === 'function') showToast('🔴 Sua terapeuta iniciou a sessão — toque em Entrar');
-      })
-      .catch(function(){});
+    _pacCheckSessionLive();
   }, 20000);
+  // Celular: ao voltar para o app/aba, checa na hora (sem esperar o próximo tick de 20s).
+  if (!_pacVisListenerOn) {
+    _pacVisListenerOn = true;
+    document.addEventListener('visibilitychange', function() {
+      if (_pacSessionPollTimer && document.visibilityState === 'visible') _pacCheckSessionLive();
+    });
+  }
 }
 
 // ── App do paciente (visão paciente) ──
@@ -735,12 +776,8 @@ function renderPatientApp(idx, pacs) {
   // Sincroniza índice para funções que usam currentPortalPatientIdx
   if (typeof currentPortalPatientIdx !== 'undefined') currentPortalPatientIdx = idx;
 
-  // Próxima sessão
-  var proximaStr = p.next && p.next !== '—' ? p.next : null;
-  var sessionLink = p.sessionLink || null;
-  // Sessão AO VIVO: a terapeuta iniciou a videochamada agora (link real de /sala com token
-  // fresco). Diferente do link legado — este aparece/some em tempo real (poll abaixo).
-  var _sessLive = _pacSessionLive(p);
+  // Próxima sessão / sessão ao vivo: card renderizado por _pacSessCardHtml (o poll
+  // atualiza só esse card in-place quando a terapeuta inicia/encerra a videochamada).
 
   // Mensagem do terapeuta
   var msgTexto = p.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos. 🌿';
@@ -980,23 +1017,8 @@ function renderPatientApp(idx, pacs) {
           + '</div>'
         : '')
   + '</div>'
-  + '<div style="margin:0 16px 16px;background:linear-gradient(135deg,#3a6347,var(--sage));border-radius:20px;padding:18px 20px;color:#fff;position:relative;overflow:hidden">'
-    + '<div style="position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none"></div>'
-    + (_sessLive
-        ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><span style="width:9px;height:9px;border-radius:50%;background:#ff5a5a;box-shadow:0 0 0 0 rgba(255,90,90,.6);animation:pacLivePulse 1.6s ease-out infinite;flex-shrink:0"></span><span style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase">Sessão ao vivo agora</span></div>'
-        : '<div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.75;text-transform:uppercase;margin-bottom:6px">Próxima sessão</div>')
-    + (_sessLive
-        ? '<div style="font-family:\'Instrument Serif\',serif;font-size:22px;line-height:1.2;margin-bottom:12px">' + escHTML(_therapistFirst) + ' está esperando por você</div>'
-        : (proximaStr
-            ? '<div style="font-family:\'Instrument Serif\',serif;font-size:22px;line-height:1.2;margin-bottom:12px">' + escHTML(proximaStr) + '</div>'
-            : '<div style="font-size:15px;opacity:.75;margin-bottom:12px">Nenhuma sessão agendada</div>'))
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
-      + (_sessLive
-          ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:#fff;color:#2f5340;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;box-shadow:0 2px 10px rgba(0,0,0,.15)">🎥 Entrar na sessão agora</a>'
-          : (sessionLink && proximaStr ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-block">▶ Entrar na sessão</a>' : ''))
-      + '<div id="pac-solicitar-wrap"><button onclick="pacToggleSolicitarSessao()" style="background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.9);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit">' + (proximaStr ? 'Remarcar' : '📅 Solicitar sessão') + '</button><div id="pac-solicitar-form" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);border-radius:10px;padding:12px"><textarea id="pac-solicitar-msg" placeholder="Horários de preferência…" style="width:100%;min-height:56px;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;outline:none;background:rgba(255,255,255,.15);color:#fff;line-height:1.5;box-sizing:border-box"></textarea><button onclick="pacEnviarSolicitacaoSessao(\'' + escHTML(p.name) + '\')" style="margin-top:8px;width:100%;padding:10px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Enviar via WhatsApp</button></div></div>'
-      + '<button onclick="pacEmergencia()" style="background:rgba(220,80,60,.22);border:1px solid rgba(255,160,150,.4);color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🆘 Preciso de apoio</button>'
-    + '</div>'
+  + '<div id="pac-sess-card" style="margin:0 16px 16px;background:linear-gradient(135deg,#3a6347,var(--sage));border-radius:20px;padding:18px 20px;color:#fff;position:relative;overflow:hidden">'
+    + _pacSessCardHtml(p)
   + '</div>'
   + '<div style="margin:0 16px 14px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)">'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3a6347,var(--sage));display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700;flex-shrink:0">' + _therapistInitial + '</div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">' + escHTML(_therapistFirst) + '</div><div style="font-size:10px;color:var(--muted)">deixou uma mensagem</div></div><div style="margin-left:auto;font-size:10px;color:var(--muted)">hoje</div></div>'
@@ -1091,7 +1113,6 @@ function renderPatientApp(idx, pacs) {
   setTimeout(function(){ _renderDiarioExistente(p); }, 0);
   setTimeout(function(){ _checkNotifPortal(p); }, 0);
   setTimeout(function(){ renderMoodHistory(); }, 0);
-  if (_sessLive) _pacEnsureLiveCss();
   setTimeout(function(){ _pacStartSessionPoll(p); }, 0);
 }
 

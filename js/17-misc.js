@@ -243,8 +243,7 @@ function _salvarLinkNoPortal(link) {
   p.sessionLink = link.startsWith('http') ? link : ('https://' + link);
   // Carimbo p/ o portal saber que o convite é "ao vivo" (só link real de /sala fresco).
   if (p.sessionLink.indexOf('/sala?') !== -1) p.sessionLinkAt = new Date().toISOString();
-  salvarPacientes();
-  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+  salvarPacientes(); // já sincroniza com o Supabase (debounce)
 }
 
 function copySessionLink(link, btn) {

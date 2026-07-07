@@ -132,8 +132,8 @@ function _lkPublishPortalLink(sp) {
     sp.sessionLink = location.origin + '/sala?u=' + encodeURIComponent(window._lkUrl) +
       '&t=' + encodeURIComponent(window._lkPatientToken) + '&n=' + encodeURIComponent(first);
     sp.sessionLinkAt = new Date().toISOString();
+    // salvarPacientes já sincroniza com o Supabase (debounce 1,5s) — suficiente vs poll de 20s.
     if (typeof salvarPacientes === 'function') salvarPacientes();
-    if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(() => {});
   } catch (e) { console.warn('[livekit] publicar link no portal', e); }
 }
 
@@ -146,7 +146,6 @@ function _lkClearPortalLink(sp) {
     sp.sessionLink = null;
     sp.sessionLinkAt = null;
     if (typeof salvarPacientes === 'function') salvarPacientes();
-    if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(() => {});
   } catch (e) { console.warn('[livekit] limpar link do portal', e); }
 }
 
@@ -173,6 +172,9 @@ async function startLiveKitSession() {
     // Parte 2/2 da entrada da paciente: publica o link no PORTAL automaticamente ao iniciar.
     // A paciente logada vê o convite "ao vivo" em tempo real (poll em js/13). Além do link
     // WhatsApp (que só salva se a terapeuta copiar/enviar), isto cobre a paciente já logada.
+    // Guarda a referência: se o terapeuta navegar p/ outra ficha durante a sessão,
+    // o encerrar limpa o link DESTA paciente (não a da ficha aberta no momento).
+    window._lkSessionPatient = sp;
     _lkPublishPortalLink(sp);
 
     // 3) Conecta como host e prepara o mixer de áudio (para gravação efêmera)
@@ -251,7 +253,8 @@ async function endLiveKitSession() {
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null;
   window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
-  _lkClearPortalLink(patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
+  _lkClearPortalLink(window._lkSessionPatient || patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
+  window._lkSessionPatient = null;
   if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 
   if (!audioBlob || audioBlob.size < 1200) {

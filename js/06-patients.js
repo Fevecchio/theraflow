@@ -501,6 +501,7 @@ async function _supaPatientSync() {
         portalMetas: p.portalMetas || [],
         appointments: p.appointments || [],
         sessionLink: p.sessionLink || null,
+        sessionLinkAt: p.sessionLinkAt || null,
         _moodLastDate: p._moodLastDate || null,
         mood: p.mood || null,
         fin: p.fin || null,
