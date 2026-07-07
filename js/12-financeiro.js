@@ -43,7 +43,7 @@ function renderCharges(mesFilter) {
     const paidActions = c.status === 'paid'
       ? `<button class="charge-btn" onclick="event.stopPropagation();gerarReciboPDF(this)">📄 Recibo</button>
          <button class="charge-btn" onclick="event.stopPropagation();undoPayment(${c.id})" style="color:var(--muted);font-size:11px" title="Desfazer pagamento">↩ Desfazer</button>`
-      : `<button class="charge-btn charge-btn-wpp" onclick="event.stopPropagation();sendWppCharge('${c.patient}',${c.value})">📲 WhatsApp</button>
+      : `<button class="charge-btn charge-btn-wpp" onclick="event.stopPropagation();sendWppCharge('${c.id}')">📲 WhatsApp</button>
          <button class="charge-btn charge-btn-check" onclick="event.stopPropagation();confirmPayment(this,${c.id})">✓ Pago</button>`;
 
     const deleteBtn = `<button class="charge-btn-delete" onclick="event.stopPropagation();deleteCharge(${c.id},this)" title="Excluir cobrança">✕</button>`;
@@ -65,11 +65,11 @@ function renderCharges(mesFilter) {
     return `<div class="charge-row" data-charge-id="${c.id}">
       <div class="patient-info">
         <div class="patient-avatar" style="background:${c.color};color:#fff;width:30px;height:30px;font-size:10px">${c.initials}</div>
-        <div><span class="patient-name" style="font-size:13.5px">${c.patient}</span><span class="patient-meta"> · ${sessionLabel}</span>${billingBadge}${timingLabel}</div>
+        <div><span class="patient-name" style="font-size:13.5px">${escHTML(c.patient||'')}</span><span class="patient-meta"> · ${escHTML(sessionLabel)}</span>${billingBadge}${timingLabel}</div>
       </div>
-      <span class="fin-editable" onclick="editField(this,${c.id},'date')" title="Clique para editar">${c.date}</span>
-      <span class="fin-editable" onclick="editField(this,${c.id},'value')" title="Clique para editar" style="font-weight:500">R$${c.value}</span>
-      <span style="font-size:12px;display:flex;align-items:center;gap:4px"><span style="color:#00BDAE">◉</span> ${c.method}</span>
+      <span class="fin-editable" onclick="editField(this,${c.id},'date')" title="Clique para editar">${escHTML(c.date||'')}</span>
+      <span class="fin-editable" onclick="editField(this,${c.id},'value')" title="Clique para editar" style="font-weight:500">R$${escHTML(String(c.value))}</span>
+      <span style="font-size:12px;display:flex;align-items:center;gap:4px"><span style="color:#00BDAE">◉</span> ${escHTML(c.method||'PIX')}</span>
       ${statusTag}
       <div class="charge-actions">${paidActions}${deleteBtn}</div>
     </div>`;
@@ -451,7 +451,12 @@ function marcarPagoInad(chargeId) {
   showToast('✓ Pagamento de ' + _firstName(charge.patient) + ' confirmado.');
 }
 
-function sendWppCharge(name, value) {
+function sendWppCharge(chargeId) {
+  // Recebe o ID da cobrança (não o nome) — evita interpolar o nome do paciente no onclick,
+  // que quebrava com apóstrofo (D'Ávila) e era vetor de injeção. F4.4.
+  var c = (typeof charges !== 'undefined' ? charges : []).find(function(x){ return String(x.id) === String(chargeId); });
+  if (!c) return;
+  var name = c.patient, value = c.value;
   var pidx = patients.findIndex(function(p){ return p.name === name; });
   var p = pidx >= 0 ? patients[pidx] : null;
   if (!p || !p.whatsapp) { showToast('📲 Cobrança de R$' + value + ' anotada para ' + name + '.'); return; }

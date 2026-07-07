@@ -59,11 +59,17 @@ function _ofereceCobrancaPresenca(appt) {
     if (!pg || !pg.classList.contains('active')) return;
     var diaFmt = hoje.split('-').reverse().join('/');
     var toast = document.createElement('div');
+    toast.className = 'cobranca-presenca-toast';
     toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a2a1e;color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:12px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw';
+    // Handlers via addEventListener (closure) — não interpola o nome do paciente no onclick,
+    // que quebrava com apóstrofo (D'Ávila) e era vetor de injeção. F4.4.
     toast.innerHTML = '<span>💳 Criar cobrança para ' + escHTML(_firstName(p.name)) + '? <strong>R$' + valor.toFixed(0) + '</strong></span>'
-      + '<button onclick="_criarCobrancaPresenca(\''+p.name+'\','+valor+',\''+hoje+'\')" style="background:var(--sage);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">Criar</button>'
-      + '<button onclick="this.closest(\'div\').remove()" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0 4px">✕</button>';
+      + '<button data-act="criar" style="background:var(--sage);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">Criar</button>'
+      + '<button data-act="fechar" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0 4px">✕</button>';
     document.body.appendChild(toast);
+    var _pnome = p.name;
+    toast.querySelector('[data-act="criar"]').addEventListener('click', function(){ _criarCobrancaPresenca(_pnome, valor, hoje); });
+    toast.querySelector('[data-act="fechar"]').addEventListener('click', function(){ toast.remove(); });
     setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 8000);
   }, 1500);
 }
@@ -88,7 +94,7 @@ function _criarCobrancaPresenca(nomePaciente, valor, dataIso) {
   salvarCharges();
   if (p) { p.finStatus = 'pending'; p.fin = 'Pendente'; salvarPacientes(); }
   showToast('💳 Cobrança criada para ' + _firstName(nomePaciente) + ' — R$' + valor.toFixed(0));
-  document.querySelectorAll('[onclick*="_criarCobrancaPresenca"]').forEach(function(el){ el.closest('div')?.remove(); });
+  document.querySelectorAll('.cobranca-presenca-toast').forEach(function(el){ el.remove(); });
 }
 
 function _promptNotaRapida(appt) {
