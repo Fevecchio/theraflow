@@ -59,6 +59,7 @@ function confirmarConsentimentoSessao() {
 
 let _lkRoom = null;
 let _lkRecorder = null;      // gravador da faixa do TERAPEUTA (mic local)
+let _lkMicDest = null;       // destino WebAudio com o mic do terapeuta
 let _lkChunks = [];
 let _lkPacDest = null;       // destino WebAudio só com o áudio da PACIENTE
 let _lkPacRecorder = null;   // gravador da faixa da paciente (inicia quando ela entra)
@@ -75,7 +76,7 @@ function _lkStartMeter(sourceNode) {
   try {
     _lkAnalyser = _lkAudioCtx.createAnalyser();
     _lkAnalyser.fftSize = 1024;
-    sourceNode.connect(_lkAnalyser); // paralelo ao micDest — o que alimenta o medidor também vai pra gravação
+    sourceNode.connect(_lkAnalyser); // paralelo ao _lkMicDest — o mesmo sinal do medidor alimenta a gravação
     // injeta a UI do medidor sobre o vídeo
     let bar = document.getElementById('lk-mic-meter');
     if (!bar) {
@@ -200,10 +201,10 @@ async function startLiveKitSession() {
     try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
     // DUAS faixas separadas (não um mix): terapeuta e paciente gravados à parte →
     // transcritos à parte → intercalados por timestamp = transcrição com RÓTULO DE FALANTE.
-    const micDest = _lkAudioCtx.createMediaStreamDestination();
+    _lkMicDest = _lkAudioCtx.createMediaStreamDestination();
     _lkPacDest = _lkAudioCtx.createMediaStreamDestination();
     let _lkMicMixed = false; // garante que o mic do terapeuta entrou na gravação
-    _lkChunks = []; _lkPacChunks = []; _lkPacRecStartMs = 0;
+    _lkChunks = []; _lkPacChunks = []; _lkRecStartMs = 0; _lkPacRecStartMs = 0;
 
     // Áudio + vídeo do paciente ao serem assinados
     _lkRoom.on(LK.RoomEvent.TrackSubscribed, (track) => {
@@ -219,11 +220,14 @@ async function startLiveKitSession() {
           // 2) FAIXA DA PACIENTE (gravação efêmera → transcrição com rótulo de falante).
           if (track.mediaStreamTrack) {
             _lkAudioCtx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack])).connect(_lkPacDest);
-            _lkStartPacRecorder(); // começa a gravar quando a paciente entra (offset guardado)
+            _lkStartTherRecorder(); // gravação SÓ começa com a paciente presente (privacidade)
+            _lkStartPacRecorder();
           }
         }
       } catch (e) { console.warn('[livekit] track subscribe', e); }
     });
+    // Paciente entrou (mesmo que de mic mudo): inicia a gravação do terapeuta.
+    _lkRoom.on(LK.RoomEvent.ParticipantConnected, () => { _lkStartTherRecorder(); });
 
     await _lkRoom.connect(url, hostToken);
     await _lkRoom.localParticipant.setCameraEnabled(true);
@@ -236,7 +240,7 @@ async function startLiveKitSession() {
       const micTrack = micPub && micPub.track && micPub.track.mediaStreamTrack;
       if (micTrack && micTrack.readyState === 'live') {
         const micSource = _lkAudioCtx.createMediaStreamSource(new MediaStream([micTrack]));
-        micSource.connect(micDest);
+        micSource.connect(_lkMicDest);
         _lkStartMeter(micSource); // barrinha ao vivo: confirma que o mic está sendo captado
         _lkMicMixed = true;
         break;
@@ -250,14 +254,14 @@ async function startLiveKitSession() {
     const camPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
     if (camPub && camPub.track) _lkMountLocalVideo(camPub.track.attach());
 
-    // 4) Grava a faixa do TERAPEUTA (efêmero — só para transcrever; nada sobe até o fim).
-    //    A faixa da paciente começa quando ela entra (_lkStartPacRecorder).
+    // 4) GRAVAÇÃO SÓ COMEÇA QUANDO A PACIENTE ENTRA (_lkStartTherRecorder via
+    //    ParticipantConnected/TrackSubscribed): mic aberto antes disso captava conversa
+    //    alheia à consulta e sujava a transcrição/nota. O medidor 🎤 roda desde já
+    //    (testar o mic antes), mas nada é gravado até ela chegar.
     //    v2: no desktop, trocar gravação+/api/transcribe por Whisper ON-DEVICE (Web Worker/WebGPU).
     try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
-    _lkRecorder = new MediaRecorder(micDest.stream, { mimeType: _pickAudioMime() });
-    _lkRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkChunks.push(e.data); };
-    _lkRecorder.start(1000);
-    _lkRecStartMs = Date.now();
+    // Cobre o caso raro de a paciente já estar na sala quando o host conecta (reconexão).
+    try { if (_lkRoom.remoteParticipants && _lkRoom.remoteParticipants.size > 0) _lkStartTherRecorder(); } catch (_) {}
     _lkShowWaitingRemote(); // "aguardando a paciente" até o vídeo dela chegar
 
     if (typeof _iniciarTimerSessao === 'function') _iniciarTimerSessao();
@@ -266,6 +270,20 @@ async function startLiveKitSession() {
     console.error('[livekit] start falhou', err);
     if (typeof showToast === 'function') showToast('⚠ Não foi possível iniciar a sessão: ' + err.message);
   }
+}
+
+// Gravador da faixa do TERAPEUTA — só inicia quando a paciente ENTRA na sala.
+// Antes disso o mic fica aberto (vídeo/medidor) mas NADA é gravado: evita captar
+// conversa alheia à consulta e sujar a transcrição/nota (pedido do usuário 07/07).
+function _lkStartTherRecorder() {
+  if (_lkRecorder || !_lkMicDest) return;
+  try {
+    _lkRecorder = new MediaRecorder(_lkMicDest.stream, { mimeType: _pickAudioMime() });
+    _lkRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkChunks.push(e.data); };
+    _lkRecorder.start(1000);
+    _lkRecStartMs = Date.now();
+    if (typeof showToast === 'function') showToast('🔴 Paciente entrou — gravação e transcrição iniciadas.');
+  } catch (e) { console.warn('[livekit] ther recorder', e); }
 }
 
 // Gravador da faixa da paciente — criado quando o primeiro áudio dela chega.
@@ -288,7 +306,7 @@ function _lkShowWaitingRemote() {
   const d = document.createElement('div');
   d.id = 'lk-wait-remote';
   d.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#7a8a7d;z-index:1;text-align:center;padding:24px';
-  d.innerHTML = '<div style="font-size:34px">⏳</div><div style="font-size:14px">Aguardando a paciente entrar…</div><div style="font-size:12px;opacity:.75">O convite já está no portal dela — ou envie o link pelo 🔗 abaixo.</div>';
+  d.innerHTML = '<div style="font-size:34px">⏳</div><div style="font-size:14px">Aguardando a paciente entrar…</div><div style="font-size:12px;opacity:.75">O convite já está no portal dela — ou envie o link pelo 🔗 abaixo.</div><div style="font-size:12px;opacity:.75;display:flex;align-items:center;gap:5px">🔒 A gravação e a transcrição só começam quando ela entrar.</div>';
   main.appendChild(d);
 }
 
@@ -346,13 +364,14 @@ async function endLiveKitSession() {
     if (_lkPacChunks.length) pacBlob = new Blob(_lkPacChunks, { type: (_lkPacChunks[0] && _lkPacChunks[0].type) || 'audio/webm' });
   } catch (e) { console.warn('[livekit] stop pac recorder', e); }
   const pacOffsetSec = (_lkPacRecStartMs && _lkRecStartMs) ? (_lkPacRecStartMs - _lkRecStartMs) / 1000 : 0;
+  const noPatient = !_lkRecStartMs; // paciente nunca entrou → nada foi gravado (by design)
   _lkChunks = []; _lkPacChunks = [];
 
   try { if (_lkRoom) await _lkRoom.disconnect(); } catch (_) {}
   try { document.querySelectorAll('[data-lk-remote-audio]').forEach(function (el) { el.remove(); }); } catch (_) {}
   _lkResetVideoArea();
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
-  _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null;
+  _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null; _lkMicDest = null;
   _lkPacRecorder = null; _lkPacDest = null; _lkRecStartMs = 0; _lkPacRecStartMs = 0;
   window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
   _lkClearPortalLink(window._lkSessionPatient || patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
@@ -360,7 +379,7 @@ async function endLiveKitSession() {
   if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 
   if (!audioBlob || audioBlob.size < 1200) {
-    _lkShowPostSession({ transcript: '', note: '', empty: true });
+    _lkShowPostSession({ transcript: '', note: '', empty: true, noPatient });
     return;
   }
 
@@ -406,13 +425,17 @@ async function endLiveKitSession() {
 }
 
 // Modal pós-sessão HONESTO — mostra a transcrição REAL e a nota REAL (sem conteúdo fabricado).
-function _lkShowPostSession({ transcript, note, empty }) {
+function _lkShowPostSession({ transcript, note, empty, noPatient }) {
   const old = document.getElementById('lk-post-modal'); if (old) old.remove();
   const esc = (s) => (typeof escHTML === 'function' ? escHTML(s) : String(s || '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])));
   const sp = patients[currentSessionPatientIdx] || patients[0];
   const nome = sp ? sp.name : 'Paciente';
 
-  const emptyBlock = `
+  const emptyBlock = noPatient ? `
+    <div style="background:#f0f7f3;border:1px solid #cfe3d6;border-radius:10px;padding:14px 16px;color:#3a6248;font-size:13px;line-height:1.55">
+      <strong>A paciente não chegou a entrar na sessão.</strong><br/>
+      Por privacidade, <strong>nada foi gravado ou transcrito</strong> — a gravação só começa quando a paciente entra na sala.
+    </div>` : `
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;color:#9a3412;font-size:13px;line-height:1.55">
       <strong>⚠ Nenhuma fala foi captada nesta gravação.</strong><br/>
       O áudio saiu em silêncio, então <strong>não geramos nota</strong> (para não inventar conteúdo).
@@ -438,7 +461,7 @@ function _lkShowPostSession({ transcript, note, empty }) {
       <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
         <div style="width:38px;height:38px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px">${empty ? '⚠️' : '✅'}</div>
         <div><div style="font-weight:600;font-size:15px;color:#1a1a1a">Sessão encerrada · ${esc(nome)}</div>
-        <div style="font-size:12px;color:#888;margin-top:2px">${empty ? 'Sem áudio para transcrever' : 'Transcrição e nota geradas a partir da conversa'}</div></div>
+        <div style="font-size:12px;color:#888;margin-top:2px">${empty ? (noPatient ? 'A paciente não entrou — nada foi gravado' : 'Sem áudio para transcrever') : 'Transcrição e nota geradas a partir da conversa'}</div></div>
       </div>
       <div style="padding:20px 24px">${empty ? emptyBlock : contentBlock}</div>
       <div style="padding:12px 24px 20px;display:flex;gap:8px;border-top:1px solid #f0f0f0;justify-content:flex-end">
