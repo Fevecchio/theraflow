@@ -190,8 +190,17 @@ async function startLiveKitSession() {
     _lkRoom.on(LK.RoomEvent.TrackSubscribed, (track) => {
       try {
         if (track.kind === 'video') { _lkMountRemoteVideo(track.attach()); }
-        if (track.kind === 'audio' && track.mediaStreamTrack) {
-          _lkAudioCtx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack])).connect(mixDest);
+        if (track.kind === 'audio') {
+          // 1) PLAYBACK: sem attach() o terapeuta NÃO OUVE a paciente. E no Chrome o áudio
+          //    remoto só flui para o WebAudio (mix da transcrição) se também estiver tocando
+          //    num elemento de mídia — este attach destrava os dois de uma vez.
+          const audioEl = track.attach();
+          audioEl.setAttribute('data-lk-remote-audio', '1');
+          document.body.appendChild(audioEl);
+          // 2) MIX (gravação efêmera → transcrição): voz da paciente entra junto com a do terapeuta.
+          if (track.mediaStreamTrack) {
+            _lkAudioCtx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack])).connect(mixDest);
+          }
         }
       } catch (e) { console.warn('[livekit] track subscribe', e); }
     });
@@ -249,6 +258,7 @@ async function endLiveKitSession() {
   _lkChunks = [];
 
   try { if (_lkRoom) await _lkRoom.disconnect(); } catch (_) {}
+  try { document.querySelectorAll('[data-lk-remote-audio]').forEach(function (el) { el.remove(); }); } catch (_) {}
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null;
   window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
