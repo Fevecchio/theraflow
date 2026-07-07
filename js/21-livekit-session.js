@@ -1,24 +1,23 @@
 // 21-livekit-session.js — Sessão de vídeo LiveKit + captura de áudio → transcrição → nota clínica IA.
 //
-// STATUS: FUNDAÇÃO (escrita antes das chaves). A ATIVAÇÃO final (ligar os botões + carregar o
-// <script> do LiveKit + teste E2E) acontece na fase de teste, com LIVEKIT_*/GROQ_API_KEY no Vercel.
-// Este arquivo é DORMENTE até ser adicionado ao HTML e os botões apontarem para startLiveKitSession/
-// endLiveKitSession — por isso não altera o comportamento atual do app.
-//
-// Requer no HTML (adicionar na fase de wiring):
-//   <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js" defer></script>
-//   → expõe o global window.LivekitClient
-// Requer env no Vercel: LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL, GROQ_API_KEY.
+// STATUS: ATIVO EM PRODUÇÃO (pipeline E2E validado 06/07/2026; padrão desde 07/07 — flag abaixo).
+// O HTML carrega o SDK via CDN (window.LivekitClient) e os botões da sessão roteiam para
+// startLiveKitSession/endLiveKitSession via js/09 (startWherebySession/endWherebySession).
+// Env no Vercel: LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL, GROQ_API_KEY (+ ANTHROPIC).
 
-// FEATURE FLAG — default OFF. Enquanto false, o app usa o fluxo de sessão atual (Whereby/simulado)
-// e NADA aqui roda em produção. Ligar para a fase de teste E2E (com as chaves LIVEKIT_*/GROQ no Vercel):
-//   • ?livekit=1 na URL, ou  • localStorage.setItem('tf_livekit','1')  — sem precisar de novo deploy.
+// FEATURE FLAG — default ON desde 07/07/2026 (pipeline E2E validado em produção 06/07).
+// O LiveKit (vídeo integrado + transcrição + nota IA) é o fluxo PADRÃO de sessão.
+// Desligar (volta ao fluxo legado de link externo): ?livekit=0 na URL, ou
+// localStorage.setItem('tf_livekit','0') — sem precisar de novo deploy.
+// Exceção: modo DEMO (window._tfDemo) usa o fluxo legado — sem backend real p/ criar sala
+// (checado nos pontos de roteamento, pois _tfDemo é setado depois deste script carregar).
 window._TF_LIVEKIT_ENABLED = (function () {
   try {
-    if (localStorage.getItem('tf_livekit') === '1') return true;
-    if (/[?&]livekit=1\b/.test(location.search)) return true;
+    if (localStorage.getItem('tf_livekit') === '0') return false;
+    if (/[?&]livekit=0\b/.test(location.search)) return false;
+    if (/[?&]livekit=1\b/.test(location.search)) return true; // compat c/ links antigos de teste
   } catch (_) {}
-  return false;
+  return true;
 })();
 
 // Consentimento LGPD por sessão (in-memory). Gate obrigatório antes de iniciar o LiveKit.

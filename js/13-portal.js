@@ -680,6 +680,8 @@ function _pacSessCardHtml(p) {
   var proximaStr = p.next && p.next !== '—' ? p.next : null;
   var sessionLink = p.sessionLink || null;
   var live = _pacSessionLive(p);
+  // Link /sala fora do ao-vivo = token expirado (efêmero) — não oferecer como botão legado.
+  var legacyLink = (sessionLink && String(sessionLink).indexOf('/sala?') === -1) ? sessionLink : null;
   var _tn = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome
     : ((typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistNome) ? _loggedPatientData._therapistNome : 'Ana');
   var tFirst = _tn.split(' ')[0];
@@ -696,7 +698,7 @@ function _pacSessCardHtml(p) {
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
       + (live
           ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:#fff;color:#2f5340;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;box-shadow:0 2px 10px rgba(0,0,0,.15)">🎥 Entrar na sessão agora</a>'
-          : (sessionLink && proximaStr ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-block">▶ Entrar na sessão</a>' : ''))
+          : (legacyLink && proximaStr ? '<a href="' + escHTML(legacyLink) + '" target="_blank" rel="noopener" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-block">▶ Entrar na sessão</a>' : ''))
       + '<div id="pac-solicitar-wrap"><button onclick="pacToggleSolicitarSessao()" style="background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.9);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit">' + (proximaStr ? 'Remarcar' : '📅 Solicitar sessão') + '</button><div id="pac-solicitar-form" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);border-radius:10px;padding:12px"><textarea id="pac-solicitar-msg" placeholder="Horários de preferência…" style="width:100%;min-height:56px;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;outline:none;background:rgba(255,255,255,.15);color:#fff;line-height:1.5;box-sizing:border-box"></textarea><button onclick="pacEnviarSolicitacaoSessao(\'' + escHTML(p.name) + '\')" style="margin-top:8px;width:100%;padding:10px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Enviar via WhatsApp</button></div></div>'
       + '<button onclick="pacEmergencia()" style="background:rgba(220,80,60,.22);border:1px solid rgba(255,160,150,.4);color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🆘 Preciso de apoio</button>'
     + '</div>';
@@ -714,32 +716,44 @@ function _pacStopSessionPoll() {
   if (_pacSessionPollTimer) { clearInterval(_pacSessionPollTimer); _pacSessionPollTimer = null; }
 }
 
+function _pacApplySessionMeta(meta) {
+  if (!_loggedPatientData) return;
+  _loggedPatientData.sessionLink = meta.sessionLink || null;
+  _loggedPatientData.sessionLinkAt = meta.sessionLinkAt || null;
+  var liveNow = _pacSessionLive(_loggedPatientData);
+  if (liveNow === _pacLastSessLive) return;
+  _pacLastSessLive = liveNow;
+  // Atualiza SÓ o card da sessão (in-place): não mexe na tab ativa nem em inputs.
+  var card = document.getElementById('pac-sess-card');
+  if (card) card.innerHTML = _pacSessCardHtml(_loggedPatientData);
+  if (liveNow && typeof showToast === 'function') showToast('🔴 Sua terapeuta iniciou a sessão — toque em Entrar');
+}
+
 function _pacCheckSessionLive() {
-  if (typeof _pacPortalAuth === 'undefined' || !_pacPortalAuth || !_loggedPatientData) return;
-  supaPatient.rpc('portal_patient_login', { p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash })
-    .then(function(res) {
-      if (!res || !res.data || !_loggedPatientData) return;
-      var meta = res.data.metadata || {};
-      _loggedPatientData.sessionLink = meta.sessionLink || null;
-      _loggedPatientData.sessionLinkAt = meta.sessionLinkAt || null;
-      var liveNow = _pacSessionLive(_loggedPatientData);
-      if (liveNow === _pacLastSessLive) return;
-      _pacLastSessLive = liveNow;
-      // Atualiza SÓ o card da sessão (in-place): não mexe na tab ativa nem em inputs.
-      var card = document.getElementById('pac-sess-card');
-      if (card) card.innerHTML = _pacSessCardHtml(_loggedPatientData);
-      if (liveNow && typeof showToast === 'function') showToast('🔴 Sua terapeuta iniciou a sessão — toque em Entrar');
-    })
-    .catch(function(){});
+  if (!_loggedPatientData) return;
+  if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) {
+    // Paciente logada via RPC/local (sem sessão Auth): re-busca pelo RPC de login.
+    supaPatient.rpc('portal_patient_login', { p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash })
+      .then(function(res) { if (res && res.data) _pacApplySessionMeta(res.data.metadata || {}); })
+      .catch(function(){});
+  } else if (_loggedPatientData.id) {
+    // Paciente logada via conta Supabase Auth: lê o próprio registro direto (RLS permite —
+    // é a mesma leitura que o login por Auth já faz).
+    supaPatient.from('patients').select('metadata').eq('id', _loggedPatientData.id).maybeSingle()
+      .then(function(res) { if (res && res.data) _pacApplySessionMeta(res.data.metadata || {}); })
+      .catch(function(){});
+  }
 }
 
 function _pacStartSessionPoll(p) {
   _pacStopSessionPoll();
-  if (typeof _pacPortalAuth === 'undefined' || !_pacPortalAuth) return;
+  // Roda p/ paciente logada (RPC/local OU sessão Auth). No preview do terapeuta
+  // (_loggedPatientData nulo) fica inerte.
+  if (typeof _loggedPatientData === 'undefined' || !_loggedPatientData) return;
   if (typeof supaPatient === 'undefined' || !supaPatient) return;
   _pacLastSessLive = _pacSessionLive(p);
   _pacSessionPollTimer = setInterval(function() {
-    if (!_pacPortalAuth) { _pacStopSessionPoll(); return; }
+    if (!_loggedPatientData) { _pacStopSessionPoll(); return; }
     _pacCheckSessionLive();
   }, 20000);
   // Celular: ao voltar para o app/aba, checa na hora (sem esperar o próximo tick de 20s).

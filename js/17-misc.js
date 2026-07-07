@@ -189,7 +189,7 @@ function showSessionLink() {
   const _slNome = _slp ? _slp.name : 'o paciente';
 
   // Modo LiveKit: gera o link REAL da sala (sala.html) com o token da paciente da sessão ativa.
-  if (window._TF_LIVEKIT_ENABLED) {
+  if (window._TF_LIVEKIT_ENABLED && !window._tfDemo) {
     if (!window._lkPatientToken || !window._lkUrl) {
       if (typeof showToast === 'function') showToast('▶ Inicie a videochamada primeiro para gerar o link da paciente.');
       return;

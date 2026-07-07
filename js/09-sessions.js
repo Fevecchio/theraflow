@@ -68,7 +68,7 @@ async function startSession() {
   const _warnSala = document.getElementById('session-no-link-warning');
   if (_btnSala && _warnSala) {
     // No modo LiveKit a sala é criada automaticamente — link do paciente é dispensável.
-    const _hasLink = !!window._TF_LIVEKIT_ENABLED || !!(sp && sp.sessionLink);
+    const _hasLink = (!!window._TF_LIVEKIT_ENABLED && !window._tfDemo) || !!(sp && sp.sessionLink);
     _btnSala.disabled = !_hasLink;
     _btnSala.style.opacity = _hasLink ? '1' : '.45';
     _btnSala.style.cursor  = _hasLink ? 'pointer' : 'not-allowed';
@@ -294,13 +294,15 @@ function _renderSessPerguntas(linhas) {
 // No protótipo, simulamos com uma sala de demonstração pública do Whereby:
 
 function startWherebySession() {
-  // Fluxo real (vídeo LiveKit + transcrição IA) quando ligado; senão, mantém o fluxo atual.
-  if (window._TF_LIVEKIT_ENABLED && typeof _startSessionWithConsent === 'function') {
+  // Fluxo real (vídeo LiveKit + transcrição IA) — padrão. Demo usa o fluxo legado (sem backend).
+  if (window._TF_LIVEKIT_ENABLED && !window._tfDemo && typeof _startSessionWithConsent === 'function') {
     return _startSessionWithConsent();
   }
   const sp = patients[currentSessionPatientIdx] || patients[0];
   const link = sp && sp.sessionLink;
-  if (!link) {
+  // Link /sala é o convite DA PACIENTE (auto-publicado pelo LiveKit) — nunca abrir como
+  // sala do terapeuta (token errado/expirado → aba que não carrega).
+  if (!link || String(link).indexOf('/sala?') !== -1) {
     showToast('⚠ Adicione o link da videochamada na ficha do paciente antes de iniciar.');
     return;
   }
@@ -312,7 +314,7 @@ function startWherebySession() {
 
 function endWherebySession() {
   // Se a sessão foi iniciada via LiveKit, encerra pelo caminho real (para gravação → transcreve → nota).
-  if (window._TF_LIVEKIT_ENABLED && typeof endLiveKitSession === 'function') {
+  if (window._TF_LIVEKIT_ENABLED && !window._tfDemo && typeof endLiveKitSession === 'function') {
     return endLiveKitSession();
   }
   if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
@@ -806,12 +808,14 @@ function indexPostSession() {
     _sessionAlreadySaved = false;
     return;
   }
-  // Detecta placeholders não preenchidos (padrão [texto entre colchetes])
+  // Detecta placeholders não preenchidos (padrão [texto entre colchetes]).
+  // Aviso com escolha (não bloqueia): o terapeuta pode salvar assim mesmo e revisar depois.
   if (/\[[^\]]{3,}\]/.test(noteText)) {
-    _sessionAlreadySaved = false;
-    showToast('⚠ A nota ainda contém campos não preenchidos — revise os itens entre [ ].');
-    if (noteEl) noteEl.focus();
-    return;
+    if (!confirm('A nota ainda contém campos entre [ ] não preenchidos.\n\nSalvar mesmo assim? (Você pode editar a nota depois no prontuário.)')) {
+      _sessionAlreadySaved = false;
+      if (noteEl) noteEl.focus();
+      return;
+    }
   }
   if (modal) modal.remove();
   incrementarSessaoTrial();
