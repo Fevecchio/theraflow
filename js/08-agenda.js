@@ -92,22 +92,22 @@ function _criarCobrancaPresenca(nomePaciente, valor, dataIso) {
 }
 
 function _promptNotaRapida(appt) {
-  var existing = document.getElementById('modal-nota-rapida');
+  var existing = document.getElementById('modal-nota-presenca');
   if (existing) existing.remove();
   var p = patients[appt.patientIdx];
   if (!p || (appt.patientName && p.name !== appt.patientName)) p = patients.find(function(x){ return x.name === appt.patientName; }) || p;
   if (!p) return;
   var overlay = document.createElement('div');
-  overlay.id = 'modal-nota-rapida';
+  overlay.id = 'modal-nota-presenca';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding-bottom:0';
   overlay.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:560px;padding:20px 24px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.18)">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
       + '<div style="font-size:14px;font-weight:700;color:var(--ink)">📋 Nota rápida — ' + escHTML(_firstName(p.name)) + '</div>'
-      + '<button onclick="document.getElementById(\'modal-nota-rapida\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>'
+      + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>'
     + '</div>'
     + '<textarea id="nota-rapida-text" placeholder="Registre brevemente o que ocorreu na sessão de hoje…" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--sage);border-radius:10px;font-size:13.5px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;line-height:1.6;color:var(--ink)"></textarea>'
     + '<div style="display:flex;gap:10px;margin-top:12px">'
-      + '<button onclick="document.getElementById(\'modal-nota-rapida\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Pular</button>'
+      + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Pular</button>'
       + '<button onclick="_salvarNotaRapida(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Salvar nota</button>'
       + '<button id="btn-preench-ia-nota" onclick="_preencherNotaComIA(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✦ Rascunho IA</button>'
     + '</div>'
@@ -128,7 +128,7 @@ function _salvarNotaRapida(pidx) {
   p.prontuarioNotes.push({ date: data, text: texto });
   p.lastSession = data;
   salvarPacientes();
-  document.getElementById('modal-nota-rapida')?.remove();
+  document.getElementById('modal-nota-presenca')?.remove();
   showToast('📋 Nota salva no prontuário de ' + _firstName(p.name) + '.');
 }
 
