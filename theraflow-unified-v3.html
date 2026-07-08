@@ -205,8 +205,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div class="feature-row">
             <div class="feature-icon" style="background:#f0ecfa">🪞</div>
             <div>
-              <div class="feature-name">Supervisão IA</div>
-              <div class="feature-desc">Alertas clínicos e reflexões pós-sessão</div>
+              <div class="feature-name">Supervisão</div>
+              <div class="feature-desc">Alertas clínicos automáticos e reflexões pós-sessão</div>
             </div>
             <div class="feature-check">✓</div>
           </div>
@@ -511,8 +511,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <!-- DESENVOLVIMENTO PROFISSIONAL -->
     <div class="nav-section">Desenvolvimento Profissional</div>
     <button class="nav-item" id="nav-supervisao-btn" onclick="navigate('supervisao')" style="border:1px solid rgba(90,62,138,.35);background:rgba(90,62,138,.12);color:#c4b4e8;">
-      <span class="icon">◈</span> Supervisão IA
-      <span class="nav-ai-tag">IA</span>
+      <span class="icon">◈</span> Supervisão
+      
       <span id="nav-supervisao-badge" style="display:none;margin-left:6px;background:#c0392b;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center"></span>
     </button>
     <button class="nav-item" style="opacity:.5;cursor:pointer" title="Educação continuada — em desenvolvimento" onclick="showToast('📚 Educação continuada chega em breve! Você será avisado quando lançar.')">
@@ -1530,12 +1530,12 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   </div>
 </div>
 
-<!-- ══════ SUPERVISÃO IA ══════ -->
+<!-- ══════ SUPERVISÃO (análise automática local) ══════ -->
 <div class="page fade-in" id="page-supervisao">
   <div class="topbar">
     <div>
-      <div class="page-title">Supervisão IA</div>
-      <div class="page-subtitle">Desenvolvimento clínico assistido por inteligência artificial</div>
+      <div class="page-title">Supervisão</div>
+      <div class="page-subtitle">Análise automática do seu histórico clínico — apoio ao seu julgamento profissional</div>
     </div>
     <div class="topbar-actions">
       <button class="btn btn-sage btn-sm" onclick="showReflectionModal()">✦ Reflexão pós-sessão</button>
@@ -1547,9 +1547,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div id="sup-onboarding" class="sup-onboarding">
     <div class="sup-onboarding-icon">🔬</div>
     <div style="flex:1">
-      <div class="sup-onboarding-title">Supervisão assistida por IA</div>
+      <div class="sup-onboarding-title">Supervisão com análise automática</div>
       <div class="sup-onboarding-text">
-        Um co-supervisor disponível a qualquer hora. A IA analisa seu histórico clínico e oferece observações sobre padrões, pontos cegos e oportunidades de desenvolvimento — sempre como apoio ao seu julgamento profissional, nunca como substituto.
+        Um apoio disponível a qualquer hora. O TheraFlow analisa automaticamente seu histórico clínico (regras clínicas, no seu navegador) e destaca padrões, pontos cegos e oportunidades de desenvolvimento — sempre como apoio ao seu julgamento profissional, nunca como substituto.
       </div>
       <div class="sup-feature-list">
         <div class="sup-feature-item"><div class="sup-feature-check">✓</div>Detecta padrões recorrentes na sua carteira de pacientes</div>
@@ -1558,7 +1558,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div class="sup-feature-item"><div class="sup-feature-check">✓</div>Aponta casos que estagnaram ou que evoluíram consistentemente</div>
       </div>
       <div class="sup-privacy-note">
-        🔒 <span>Todos os dados são pseudonimizados na análise. A IA não armazena conteúdo clínico identificável. Você pode desativar a qualquer momento em Configurações.</span>
+        🔒 <span>A análise roda no seu navegador — nenhum conteúdo clínico sai do seu dispositivo nem é armazenado fora dele. Você pode desativar a qualquer momento.</span>
       </div>
       <div class="toggle-wrap" style="margin-top:20px">
         <label class="toggle">
@@ -1566,7 +1566,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <span class="toggle-slider"></span>
         </label>
         <div>
-          <div class="toggle-label">Ativar Supervisão IA</div>
+          <div class="toggle-label">Ativar Supervisão</div>
           <div class="toggle-sub">Opcional — você controla o que é analisado</div>
         </div>
       </div>
@@ -1580,7 +1580,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div class="sup-hero">
       <div class="sup-hero-icon">🔬</div>
       <div>
-        <div class="sup-hero-title">Supervisão IA · Semana 12</div>
+        <div class="sup-hero-title">Supervisão · Semana 12</div>
         <div class="sup-hero-sub">Análise baseada em 11 sessões realizadas · 24 pacientes ativos · última atualização há 2h</div>
       </div>
       <div class="sup-hero-right">
@@ -2055,7 +2055,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
         <div class="ia-calibration-card" id="ia-calibration-preview2" style="margin-top:10px">
           <div class="ia-calibration-item">
-            <div class="ia-calibration-label">🔬 Supervisão IA</div>
+            <div class="ia-calibration-label">🔬 Supervisão</div>
             <div class="ia-calibration-value" id="calib-supervisao">Rastreia evolução de sintomas com métricas, adesão às tarefas e consistência do plano terapêutico.</div>
           </div>
           <div style="width:1px;background:rgba(90,62,138,.15)"></div>
@@ -2159,7 +2159,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="perfil-section">
         <div class="perfil-section-title">Integração com Claude API</div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">
-          Conecte sua chave da API Anthropic para ativar o Briefing IA e a Supervisão IA em tempo real. A chave fica salva apenas no seu navegador.
+          Conecte sua chave da API Anthropic para ativar o Briefing IA em tempo real. A chave fica salva apenas no seu navegador.
         </div>
         <div>
           <label for="perfil-api-key" class="perfil-label">Chave da API <span style="font-size:11px;color:var(--muted);font-weight:400">· começa com <code style="background:var(--bg);padding:1px 4px;border-radius:4px">sk-ant-</code></span></label>
@@ -2556,7 +2556,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px">Por profissional · cancele quando quiser</div>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:rgba(255,255,255,.8)">
         <div>✓ Sessões ilimitadas</div>
-        <div>✓ Briefing IA + Supervisão IA</div>
+        <div>✓ Briefing IA + Supervisão clínica</div>
         <div>✓ Prontuários e financeiro completo</div>
         <div>✓ Portal do paciente (PWA)</div>
       </div>

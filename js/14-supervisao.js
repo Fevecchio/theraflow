@@ -1,4 +1,4 @@
-// 14-supervisao.js — Supervisão IA, alertas, reflexões, autoconhecimento
+// 14-supervisao.js — Supervisão (análise automática local), alertas, reflexões, autoconhecimento
 
 function _limparBadgePortal() {
   try {
@@ -30,7 +30,7 @@ function _atualizarBadgeSupervisao() {
   } catch(e) {}
 }
 
-/* ── ALERTAS & SUPERVISÃO IA ── */
+/* ── ALERTAS & SUPERVISÃO (análise automática) ── */
 function gerarAlertasReais() {
   var alertas = [];
   var hoje = new Date();
@@ -1466,7 +1466,7 @@ function deactivateSupervisao() {
   overlay.style.zIndex = '400';
   overlay.innerHTML = `
     <div class="modal fade-in" style="max-width:400px">
-      <div class="modal-title">Desativar Supervisão IA?</div>
+      <div class="modal-title">Desativar Supervisão?</div>
       <div class="modal-body">Suas reflexões salvas serão mantidas. Você pode reativar a qualquer momento.</div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
@@ -1485,7 +1485,7 @@ function confirmDeactivateSupervisao(btn) {
   if (toggle) toggle.checked = false;
   document.getElementById('sup-dashboard').style.display = 'none';
   document.getElementById('sup-onboarding').style.display = 'flex';
-  showToast('Supervisão IA desativada. Você pode reativar a qualquer momento.');
+  showToast('Supervisão desativada. Você pode reativar a qualquer momento.');
 }
 
 function toggleSupervisao(checked) {

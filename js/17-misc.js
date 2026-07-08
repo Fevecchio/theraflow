@@ -532,7 +532,7 @@ function showApiKeyStatus(connected) {
   el.style.display = 'block';
   if (connected) {
     el.style.color = 'var(--sage)';
-    el.textContent = '✓ Chave configurada — Briefing IA e Supervisão IA ativos';
+    el.textContent = '✓ Chave configurada — Briefing IA ativo';
   } else {
     el.style.color = 'var(--muted)';
     el.textContent = 'Nenhuma chave configurada — usando dados de demonstração';

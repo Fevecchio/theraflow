@@ -638,7 +638,7 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
 // Salva a nota revisada e NUTRE a plataforma inteira — delega ao indexPostSession
 // (o mesmo motor do fluxo clássico): prontuário + contador de sessões + presença no
 // agendamento + "Minha jornada" do portal + cobrança no financeiro + registro de
-// sessão (trial) + etapa de exercícios + evidências da Supervisão IA.
+// sessão (trial) + etapa de exercícios + evidências da Supervisão.
 function _lkSalvarNotaPostSessao() {
   const ta = document.getElementById('lk-post-note');
   const texto = ta ? ta.value.trim() : '';

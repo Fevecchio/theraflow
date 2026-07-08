@@ -883,7 +883,7 @@ function renderPatientOverview(i) {
     <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;background:var(--amber-light);border-radius:10px;border-left:3px solid var(--amber);margin-bottom:16px">
       <span style="font-size:16px">⚠</span>
       <div>
-        <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Supervisão IA</div>
+        <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Supervisão</div>
         <div style="font-size:13px;color:var(--ink-soft)">${p.alert}</div>
       </div>
       <button onclick="navigate('supervisao')" style="margin-left:auto;flex-shrink:0;background:none;border:1px solid var(--amber);color:var(--amber);padding:4px 10px;border-radius:6px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap">Ver análise →</button>
