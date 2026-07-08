@@ -260,19 +260,6 @@ function limparSessionLink(i) {
   selectPatient(i);
 }
 
-async function redefinirSenhaPaciente(i) {
-  var p = patients[i];
-  if (!p) return;
-  var nova = prompt('Nova senha para ' + _firstName(p.name) + ':');
-  if (nova === null) return;
-  if (!nova.trim()) { showToast('Senha não pode ser vazia.'); return; }
-  p.portalPassword = nova.trim();
-  p.portalPasswordHash = await _portalHash(nova.trim());
-  salvarPacientes();
-  var el = document.getElementById('pac-senha-display-' + i);
-  if (el) { el.dataset.real = p.portalPassword; el.dataset.visible = '0'; el.textContent = '••••••'; }
-  showToast('Senha atualizada.');
-}
 
 async function compartilharAcessoPortal(i) {
   var p = patients[i];
@@ -284,14 +271,17 @@ async function compartilharAcessoPortal(i) {
     salvarPacientes();
   }
 
-  // Gera senha forte se não tiver
+  // Reenvio: o paciente já tem acesso e a senha em claro não fica guardada (F3.2),
+  // então gerar de novo cria uma senha NOVA que invalida a atual — confirma antes.
+  if (p.portalPasswordHash && !p.portalPassword) {
+    if (!confirm('Reenviar o acesso vai gerar uma NOVA senha para ' + _firstName(p.name)
+      + '. A senha atual dele(a) deixará de funcionar. Continuar?')) return;
+  }
+  // Gera senha forte quando não há uma em memória (1º acesso, ou reenvio confirmado acima).
   if (!p.portalPassword) {
     var _arr = new Uint8Array(4);
     crypto.getRandomValues(_arr);
     p.portalPassword = 'TF' + Array.from(_arr).map(function(b){ return b.toString(36); }).join('').toUpperCase().substring(0, 6);
-    p.portalPasswordHash = await _portalHash(p.portalPassword);
-    salvarPacientes();
-  } else if (!p.portalPasswordHash) {
     p.portalPasswordHash = await _portalHash(p.portalPassword);
     salvarPacientes();
   }
@@ -1004,11 +994,10 @@ function renderPatientOverview(i) {
         <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
         <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
           <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
-          <div style="display:flex;align-items:center;gap:6px">Senha: <strong id="pac-senha-display-${i}" data-visible="0">••••••</strong>
-            <button onclick="_toggleSenhaPortal(${i})" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px" title="Mostrar/ocultar senha">👁</button>
-            <button onclick="redefinirSenhaPaciente(${i})" style="background:none;border:1px solid rgba(44,95,138,.3);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:5px;cursor:pointer;font-family:inherit">Redefinir</button>
-          </div>
-          <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 Compartilhar acesso via WhatsApp</button>
+          <div style="font-size:11.5px;color:var(--muted);line-height:1.5">${p.portalPasswordHash
+            ? '🔒 Acesso ativo. A senha do paciente é pessoal e não fica visível aqui — para gerar uma nova, use “Reenviar acesso”.'
+            : 'O paciente recebe uma senha forte pelo WhatsApp e a troca no primeiro acesso.'}</div>
+          <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 ${p.portalPasswordHash ? 'Reenviar acesso (nova senha)' : 'Enviar acesso via WhatsApp'}</button>
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(220,38,38,.12);text-align:right">
             <button onclick="revogarPortalPaciente(${i})" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">Desativar acesso ao portal</button>
           </div>
@@ -1587,18 +1576,6 @@ async function terapeutaEnviarMensagem(i) {
   }
 }
 
-function _toggleSenhaPortal(i) {
-  var el = document.getElementById('pac-senha-display-' + i);
-  if (!el) return;
-  if (el.dataset.visible === '1') {
-    el.textContent = '••••••';
-    el.dataset.visible = '0';
-  } else {
-    var p = patients[i];
-    el.textContent = (p && (p.portalPassword || _firstName(p.name).toLowerCase())) || '••••••';
-    el.dataset.visible = '1';
-  }
-}
 
 // ── SESSÃO / TIMER ──
 let timerInterval = null, sessionSeconds = 0;

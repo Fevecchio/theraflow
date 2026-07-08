@@ -237,7 +237,8 @@ async function _supaSync_patients() {
           fin: p.fin || null,
           forma_pagamento: p.forma_pagamento || null,
           portalPasswordHash: p.portalPasswordHash || null,
-          portalPassword: p.portalPassword || null,
+          // portalPassword (plaintext) NÃO sobe ao banco (F3.2 / migration 008) — só o hash.
+          // A senha em claro vive no máximo em memória durante o envio do convite.
           checkInStreak: p.checkInStreak || 0,
           lastCheckInDate: p.lastCheckInDate || null,
           readMaterials: p.readMaterials || [],
