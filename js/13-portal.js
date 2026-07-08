@@ -769,6 +769,56 @@ function _pacStartSessionPoll(p) {
 
 // ── App do paciente (visão paciente) ──
 /* ── APP DO PACIENTE (área do paciente) ── */
+// Senha ainda é a temporária enviada pelo terapeuta? (boolean true ou string "true"). F3.2.
+function _pacPrecisaTrocarSenha(p) {
+  return !!p && (p.pwdTemp === true || p.pwdTemp === 'true');
+}
+
+// Overlay bloqueante de criação de senha — UNIVERSAL (funciona no app do terapeuta
+// e no portal, pois cria o próprio DOM). Gate único chamado por renderPatientApp.
+function _pacForcarNovaSenha(p, idx) {
+  var ov = document.getElementById('pac-force-pwd-overlay');
+  if (ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'pac-force-pwd-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,30,24,.78);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:380px;width:100%;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit">'
+    + '<div style="font-size:19px;font-weight:700;color:#1a2a1e;margin-bottom:6px">Crie sua senha de acesso 🔐</div>'
+    + '<div style="font-size:13px;color:#5a6b60;line-height:1.5;margin-bottom:16px">Por segurança, defina uma senha pessoal para continuar. A senha temporária que você recebeu deixa de valer.</div>'
+    + '<input id="pac-fps-1" type="password" placeholder="Nova senha (mín. 6 caracteres)" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
+    + '<input id="pac-fps-2" type="password" placeholder="Confirme a nova senha" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
+    + '<div id="pac-fps-err" style="display:none;color:#c0392b;font-size:12.5px;margin-bottom:10px"></div>'
+    + '<button id="pac-fps-btn" style="width:100%;padding:12px;background:#4a7c59;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Salvar e entrar</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+  var btn = document.getElementById('pac-fps-btn');
+  btn.onclick = async function() {
+    var s1 = (document.getElementById('pac-fps-1').value || '').trim();
+    var s2 = (document.getElementById('pac-fps-2').value || '').trim();
+    var err = document.getElementById('pac-fps-err');
+    err.style.display = 'none';
+    if (s1.length < 6) { err.textContent = 'A senha deve ter pelo menos 6 caracteres.'; err.style.display = ''; return; }
+    if (s1 !== s2) { err.textContent = 'As senhas não coincidem.'; err.style.display = ''; return; }
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    var hash = await _portalHash(s1);
+    p.portalPasswordHash = hash; p.portalPassword = null; p.pwdTemp = false;
+    if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth && typeof _pacSetPortalAuth === 'function') {
+      _pacSetPortalAuth(p.email || _pacPortalAuth.email, hash);
+    }
+    if (typeof patients !== 'undefined') {
+      var pi = patients.findIndex(function(q){ return q.id === p.id || (q.email && q.email === p.email); });
+      if (pi !== -1) { patients[pi].portalPasswordHash = hash; patients[pi].portalPassword = null; patients[pi].pwdTemp = false; }
+    }
+    try { localStorage.setItem('tf_patients', JSON.stringify(typeof patients !== 'undefined' && patients.length ? patients : [p])); } catch(_) {}
+    if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+    else if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+    ov.remove();
+    if (typeof showToast === 'function') showToast('Senha criada! 🔐');
+    renderPatientApp(idx, [p]);
+  };
+  var i1 = document.getElementById('pac-fps-1'); if (i1) i1.focus();
+}
+
 function renderPatientApp(idx, pacs) {
   var src = pacs && pacs.length ? pacs : (typeof patients !== 'undefined' && patients.length ? patients : []);
   var p = src[idx];
@@ -777,6 +827,14 @@ function renderPatientApp(idx, pacs) {
   // Sem isto o portal fica EM BRANCO após criar senha / onboarding. Ver bug #18.
   if (!p && typeof _loggedPatientData !== 'undefined' && _loggedPatientData) { p = _loggedPatientData; idx = 0; }
   if (!p) return;
+
+  // Gate F3.2: senha ainda é a temporária → obriga a criar senha pessoal antes de
+  // entrar. Cobre o app do terapeuta (área do paciente) e qualquer caminho de login
+  // sem o interceptador do portal. No paciente.html o wrap já trata antes deste ponto.
+  if (_pacPrecisaTrocarSenha(p) && typeof _portalHash === 'function') {
+    _pacForcarNovaSenha(p, idx);
+    return;
+  }
 
   var firstName = (p.name || 'Paciente').split(' ')[0];
   var _nameEl = document.getElementById('pac-app-name');

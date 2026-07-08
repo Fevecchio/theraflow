@@ -339,7 +339,6 @@ function _wrapLoginPaciente() {
     var pacs = typeof patients !== 'undefined' ? patients : [p];
     var idx = _loggedPatientIdx || 0;
     var ehPrimeiro = p && (!p.portalPasswordHash || _pacPwdTemp(p));
-    try { alert('[TF diag] hash=' + !!(p && p.portalPasswordHash) + ' | pwdTemp=' + (p && p.pwdTemp) + ' | tipo=' + (p && typeof p.pwdTemp) + ' | forca=' + ehPrimeiro); } catch(_) {}
     if (ehPrimeiro) {
       _pacMostrarCriarSenha(p, idx, pacs);
     } else {
