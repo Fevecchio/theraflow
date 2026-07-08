@@ -283,6 +283,9 @@ async function compartilharAcessoPortal(i) {
     crypto.getRandomValues(_arr);
     p.portalPassword = 'TF' + Array.from(_arr).map(function(b){ return b.toString(36); }).join('').toUpperCase().substring(0, 6);
     p.portalPasswordHash = await _portalHash(p.portalPassword);
+    // Senha temporária: o paciente será obrigado a trocá-la no 1º acesso (ela
+    // trafega em claro no WhatsApp/email, não pode virar permanente). F3.2.
+    p.pwdTemp = true;
     salvarPacientes();
   }
 
@@ -516,6 +519,7 @@ async function _supaPatientSync() {
         fin: p.fin || null,
         forma_pagamento: p.forma_pagamento || null,
         portalPasswordHash: p.portalPasswordHash || null,
+        pwdTemp: p.pwdTemp || false, // troca de senha do paciente limpa a flag (F3.2)
         checkInStreak: p.checkInStreak || 0,
         lastCheckInDate: p.lastCheckInDate || null,
         readMaterials: p.readMaterials || [],

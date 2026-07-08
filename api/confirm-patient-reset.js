@@ -101,6 +101,7 @@ export default async function handler(req, res) {
       const merged = Object.assign({}, (p.metadata || {}), {
         portalPasswordHash: newHash,
         portalPassword: null,
+        pwdTemp: false, // senha definida pelo próprio paciente no reset (F3.2)
         resetTokenHash: null,
         resetTokenExp: null,
         resetRequestedAt: null,

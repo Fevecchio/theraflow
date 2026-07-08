@@ -338,13 +338,12 @@ function loginPaciente() {
       var idx = pacs.findIndex(function(p) {
         var pEmail = (p.email || '').trim().toLowerCase();
         if (pEmail !== email) return false;
-        // Preferência: comparar hash (contas já migradas)
+        // Só autoriza contra o hash. A senha-padrão (primeiro nome) foi removida —
+        // sequestro trivial (F3.2). Sem hash → não loga; o terapeuta reenvia o acesso.
         if (p.portalPasswordHash) return p.portalPasswordHash === senhaHash;
-        // Senha explícita salva — compara plaintext (migra para hash abaixo)
+        // Compat: senha explícita ainda em memória (migra para hash abaixo).
         if (p.portalPassword) return p.portalPassword === senha;
-        // Sem senha definida: aceita primeiro nome em minúsculas como padrão
-        var defaultPwd = (p.name || '').split(' ')[0].toLowerCase();
-        return senha === defaultPwd;
+        return false;
       });
       // Migra automaticamente conta antiga para hash após login bem-sucedido
       if (idx !== -1 && !pacs[idx].portalPasswordHash) {
@@ -398,7 +397,7 @@ function loginPaciente() {
     var _leanMeta = ['moodHistory','moodNotes','exercises','materials','diary','metas','portalMetas',
       'appointments','sessionLink','sessionLinkAt','_moodLastDate','mood','checkInStreak',
       'lastCheckInDate','readMaterials','portalNota','portalNotifHour','portalDica',
-      'portalMensagem','anamnese','portalAnamneseAtiva'];
+      'portalMensagem','anamnese','portalAnamneseAtiva','pwdTemp'];
     var _leanSel = 'id,name,email,phone,age,cidade,abordagem,status,sessions_count,valor_sessao,progress,'
       + _leanMeta.map(function(k){ return 'metadata->' + k; }).join(',');
     var patResult = await supaPatient.from('patients')

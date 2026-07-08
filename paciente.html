@@ -236,8 +236,9 @@ async function _portalHash(senha) {
 
 // Fluxo pós-login: verifica primeiro acesso → onboarding
 function _pacPosLogin(p, idx, pacs) {
-  // Primeiro acesso = ainda não tem senha personalizada
-  var ehPrimeiro = !p.portalPasswordHash;
+  // Primeiro acesso = sem senha própria OU ainda usando a senha temporária que o
+  // terapeuta enviou (pwdTemp) — nos dois casos, obriga a criar senha pessoal. F3.2.
+  var ehPrimeiro = !p.portalPasswordHash || p.pwdTemp === true;
   if (ehPrimeiro) {
     _pacMostrarCriarSenha(p, idx, pacs);
   } else {
@@ -265,10 +266,13 @@ window.pacConfirmarNovaSenha = async function() {
   if (!p) return;
   p.portalPasswordHash = hash;
   p.portalPassword = null; // limpa plaintext se havia
-  if (pacs && pacs[idx]) { pacs[idx].portalPasswordHash = hash; pacs[idx].portalPassword = null; }
-  if (typeof patients !== 'undefined' && patients[idx]) { patients[idx].portalPasswordHash = hash; }
+  p.pwdTemp = false; // senha agora é pessoal — não é mais a temporária. F3.2.
+  if (pacs && pacs[idx]) { pacs[idx].portalPasswordHash = hash; pacs[idx].portalPassword = null; pacs[idx].pwdTemp = false; }
+  if (typeof patients !== 'undefined' && patients[idx]) { patients[idx].portalPasswordHash = hash; patients[idx].pwdTemp = false; }
   try { localStorage.setItem('tf_patients', JSON.stringify(patients || pacs)); } catch(_) {}
-  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+  // Sobe a senha nova pela sessão do paciente (não pela do terapeuta).
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+  else if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
   document.getElementById('pac-mudar-senha-layer').classList.remove('open');
   _pacVerOnboarding(p, idx, pacs);
 };
@@ -328,7 +332,7 @@ function _wrapLoginPaciente() {
     var p = _loggedPatientData;
     var pacs = typeof patients !== 'undefined' ? patients : [p];
     var idx = _loggedPatientIdx || 0;
-    var ehPrimeiro = p && !p.portalPasswordHash;
+    var ehPrimeiro = p && (!p.portalPasswordHash || p.pwdTemp === true);
     if (ehPrimeiro) {
       _pacMostrarCriarSenha(p, idx, pacs);
     } else {

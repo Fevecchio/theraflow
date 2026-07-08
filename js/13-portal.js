@@ -1433,6 +1433,7 @@ async function pacConfirmarAlteracaoSenha() {
   var hashNova = await _portalHash(nova);
   p.portalPasswordHash = hashNova;
   p.portalPassword = null;
+  p.pwdTemp = false; // senha agora é pessoal (F3.2)
   // Atualiza o hash usado pelas RPCs de chat (senão o chat para de autorizar após trocar a senha)
   if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) _pacSetPortalAuth(p.email || _pacPortalAuth.email, hashNova);
   // Atualiza patients[] garantindo que p está no array (RPC login não popula patients[])

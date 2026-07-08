@@ -239,6 +239,7 @@ async function _supaSync_patients() {
           portalPasswordHash: p.portalPasswordHash || null,
           // portalPassword (plaintext) NÃO sobe ao banco (F3.2 / migration 008) — só o hash.
           // A senha em claro vive no máximo em memória durante o envio do convite.
+          pwdTemp: p.pwdTemp || false, // senha temporária → força troca no 1º acesso (F3.2)
           checkInStreak: p.checkInStreak || 0,
           lastCheckInDate: p.lastCheckInDate || null,
           readMaterials: p.readMaterials || [],
