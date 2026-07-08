@@ -16,13 +16,21 @@ function _setSyncStatus(state) {
   } else if (state === 'error') {
     icon.textContent = '⚠'; text.textContent = 'Offline';
     bar.style.color = '#c0392b'; bar.style.background = 'rgba(192,57,43,.08)';
+  } else if (state === 'noauth') {
+    // Sessão Supabase expirada: os dados ficam SÓ locais — não fingir "Sincronizado".
+    icon.textContent = '⚠'; text.textContent = 'Não sincronizado — refaça login';
+    bar.style.color = '#c97d2e'; bar.style.background = 'rgba(201,125,46,.08)';
   } else {
     icon.textContent = '✓'; text.textContent = 'Sincronizado';
     bar.style.color = '#8fb89c'; bar.style.background = 'rgba(74,124,89,.06)';
   }
 }
 window.addEventListener('offline', function() { _setSyncStatus('error'); });
-window.addEventListener('online',  function() { _setSyncStatus('ok'); });
+// Voltou a conexão: sincroniza de verdade (o próprio sync define o status final) —
+// antes só marcava "Sincronizado" sem subir nada.
+window.addEventListener('online',  function() {
+  if (typeof _supaSync_patients === 'function') _supaSync_patients();
+});
 
 /* ── MENSAGENS ── */
 var _msgPollTimer = null;
@@ -180,12 +188,14 @@ function _syncRace(fn) {
 
 /* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos) */
 async function _supaSync_patients() {
+  if (window._tfDemo) return; // demo não sobe nada (nem tem sessão p/ subir)
   _setSyncStatus('syncing');
   var _syncedIds = []; // ids confirmados neste batch → limpar _pendingSync no sucesso (F2.2)
   try {
     await _syncRace(async function() {
       const { data: { user } } = await supa.auth.getUser();
-      if (!user) return;
+      // Sem sessão nada sobe — sinaliza e aborta ANTES do _setSyncStatus('ok') lá embaixo.
+      if (!user) { _setSyncStatus('noauth'); throw new Error('_noauth'); }
       const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]').filter(p => !p._isDemo);
       if (!pats.length) return;
       _syncedIds = pats.map(p => p.id).filter(Boolean);
@@ -261,6 +271,7 @@ async function _supaSync_patients() {
       } catch(_) {}
     }
   } catch(e) {
+    if (e && e.message === '_noauth') return; // status 'noauth' já definido; não é erro de rede
     _syncErrorCount++;
     _setSyncStatus('error');
     console.warn('[Supa] Sync patients falhou:', e.message);
@@ -270,10 +281,11 @@ async function _supaSync_patients() {
 
 /* Sync de cobranças */
 async function _supaSync_charges() {
+  if (window._tfDemo) return;
   try {
     await _syncRace(async function() {
       const { data: { user } } = await supa.auth.getUser();
-      if (!user) return;
+      if (!user) { _setSyncStatus('noauth'); return; }
       const chgs = JSON.parse(localStorage.getItem('tf_charges') || '[]');
       if (!chgs.length) return;
       // Busca mapeamento de nome→id dos pacientes
@@ -304,10 +316,11 @@ async function _supaSync_charges() {
 
 /* Sync de tarefas */
 async function _supaSync_tasks() {
+  if (window._tfDemo) return;
   try {
     await _syncRace(async function() {
       const { data: { user } } = await supa.auth.getUser();
-      if (!user) return;
+      if (!user) { _setSyncStatus('noauth'); return; }
       const tsks = JSON.parse(localStorage.getItem('tf_tasks') || '[]');
       if (!tsks.length) return;
       const rows = tsks.map(t => ({
@@ -330,10 +343,11 @@ async function _supaSync_tasks() {
 }
 
 async function _supaSync_appointments() {
+  if (window._tfDemo) return;
   try {
     await _syncRace(async function() {
       const { data: { user } } = await supa.auth.getUser();
-      if (!user) return;
+      if (!user) { _setSyncStatus('noauth'); return; }
       const appts = JSON.parse(localStorage.getItem('tf_appointments') || '[]');
       const pats  = JSON.parse(localStorage.getItem('tf_patients') || '[]');
       // Se lista local vazia, não deleta no Supabase — pode ser race condition na inicialização
