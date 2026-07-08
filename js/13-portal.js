@@ -1084,7 +1084,7 @@ function renderPatientApp(idx, pacs) {
   /* ══ TAB DIÁRIO ══ */
   + '<div id="pac-tab-diary" class="pac-tab-content" style="display:none">'
     + '<div style="padding:20px 16px 14px"><div style="font-family:\'Instrument Serif\',serif;font-size:24px;color:var(--ink)">Diário</div><div style="font-size:13px;color:var(--muted);margin-top:3px">Espaço seguro · apenas você e sua terapeuta</div></div>'
-    + '<div style="padding:0 16px 14px">' + diarioHtml + '</div>'
+    + '<div style="padding:0 16px 14px" id="pac-diary-wrap">' + diarioHtml + '</div>'
     + '<div style="padding:0 16px 14px">' + notaPreHtml + '</div>'
   + '</div>'  /* /pac-tab-diary */
 
@@ -1527,6 +1527,12 @@ function pacSalvarMood(idx) {
   var qnWrap = document.getElementById('pac-quick-note-wrap');
   if (qnWrap) { qnWrap.style.display = ''; }
   try { localStorage.setItem('tf_portal_new_data', '1'); } catch(e){}
+
+  // Atualiza os gráficos NA HORA (antes só re-renderizavam ao relogar):
+  // o da Home (in-place) e o da tab Diário (regenera a seção, que está oculta agora).
+  if (typeof renderMoodHistory === 'function') renderMoodHistory();
+  var _dw = document.getElementById('pac-diary-wrap');
+  if (_dw && typeof renderPatientDiario === 'function') _dw.innerHTML = renderPatientDiario(p, _idx);
 
   // Sync silencioso para Supabase
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
