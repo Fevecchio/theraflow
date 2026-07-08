@@ -174,9 +174,41 @@ function _lkClearPortalLink(sp) {
   } catch (e) { console.warn('[livekit] limpar link do portal', e); }
 }
 
+// SDK LiveKit sob demanda (~540 KB): só quem inicia sessão baixa — o app não paga esse
+// peso em toda visita (F7). Mesmo pin+SRI do carregamento estático anterior (F5.5) —
+// ao atualizar a versão, recalcular o integrity.
+const _LK_SDK = {
+  src: 'https://cdn.jsdelivr.net/npm/livekit-client@2.20.0/dist/livekit-client.umd.min.js',
+  integrity: 'sha384-s/eoT8qpr81c6c9MG5V7GA5xi5IzfEUQLyk3liFfzu9seBzZ3beFVjsD3pXTRmUc',
+};
+let _lkSdkPromise = null;
+function _lkLoadSdk() {
+  if (window.LivekitClient) return Promise.resolve(window.LivekitClient);
+  if (_lkSdkPromise) return _lkSdkPromise;
+  _lkSdkPromise = new Promise(function (resolve, reject) {
+    const s = document.createElement('script');
+    s.src = _LK_SDK.src;
+    s.integrity = _LK_SDK.integrity;
+    s.crossOrigin = 'anonymous';
+    s.onload = function () {
+      if (window.LivekitClient) resolve(window.LivekitClient);
+      else reject(new Error('SDK carregou sem expor LivekitClient'));
+    };
+    s.onerror = function () {
+      _lkSdkPromise = null; // permite tentar de novo no próximo clique
+      reject(new Error('falha ao baixar a biblioteca de vídeo'));
+    };
+    document.head.appendChild(s);
+  });
+  return _lkSdkPromise;
+}
+
 async function startLiveKitSession() {
-  const LK = window.LivekitClient;
-  if (!LK) { if (typeof showToast === 'function') showToast('⚠ Biblioteca de vídeo (LiveKit) não carregada.'); return; }
+  let LK;
+  try { LK = await _lkLoadSdk(); } catch (e) {
+    if (typeof showToast === 'function') showToast('⚠ Não foi possível carregar a biblioteca de vídeo. Verifique a conexão e tente de novo.');
+    return;
+  }
   const sp = patients[currentSessionPatientIdx] || patients[0];
 
   try {

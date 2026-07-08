@@ -36,6 +36,10 @@ async function startSession() {
   // Reseta o estado da área de vídeo para pré-sessão
   const prestate = document.getElementById('whereby-prestate');
   if (prestate) prestate.style.display = 'block';
+  // Pré-aquece o SDK de vídeo (carregado sob demanda): o download (~540 KB) começa ao abrir
+  // a tela de sessão, não no clique de "Entrar na sala". Falha aqui é silenciosa — o clique
+  // tenta de novo e mostra erro se persistir.
+  if (!window._tfDemo && window._TF_LIVEKIT_ENABLED && typeof _lkLoadSdk === 'function') _lkLoadSdk().catch(function(){});
   const badge = document.querySelector('.session-live-badge');
   if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO';
   // Atualiza header e ficha com paciente atual
