@@ -6,6 +6,62 @@ function abrirModalNovoPlano() {
   showModal('modal-novo-plano');
 }
 
+/* ── NOVA COBRANÇA AVULSA (F4.1) ── */
+function abrirModalNovaCobranca() {
+  var sel = document.getElementById('nc-paciente');
+  if (sel) {
+    var lista = (typeof patients !== 'undefined' ? patients : []).filter(function(p){ return p && p.name; });
+    sel.innerHTML = '<option value="">Selecionar paciente…</option>' + lista.map(function(p){
+      return '<option value="' + escHTML(p.name) + '">' + escHTML(p.name) + '</option>';
+    }).join('');
+  }
+  var dt = document.getElementById('nc-data');
+  if (dt) dt.value = hojeISO();
+  var val = document.getElementById('nc-valor');
+  if (val && !val.value) {
+    // Pré-preenche com o valor de sessão configurado no perfil, se houver
+    try {
+      var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+      var vs = parseFloat(acc.valor_sessao);
+      if (vs > 0) val.value = vs;
+    } catch(e) {}
+  }
+  showModal('modal-nova-cobranca');
+}
+
+function criarNovaCobranca() {
+  var nome = (document.getElementById('nc-paciente') || {}).value || '';
+  var valor = parseFloat((document.getElementById('nc-valor') || {}).value);
+  var dataIso = (document.getElementById('nc-data') || {}).value || hojeISO();
+  var metodo = (document.getElementById('nc-metodo') || {}).value || 'PIX';
+  if (!nome) { showToast('Selecione o paciente.', 'warning'); return; }
+  if (isNaN(valor) || valor <= 0 || valor >= 100000) { showToast('Informe um valor válido (maior que zero).', 'warning'); return; }
+  var p = (typeof patients !== 'undefined' ? patients : []).find(function(x){ return x.name === nome; });
+  var diaFmt = dataIso.split('-').reverse().join('/');
+  charges.push({
+    id: Date.now(),
+    patient: nome,
+    initials: p ? p.initials : nome.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase(),
+    color: p ? p.color : '#4a7c59',
+    desc: 'Sessão ' + diaFmt,
+    value: valor,
+    date: dataIso,
+    status: 'pending',
+    deleted: false,
+    billing: 'avulso',
+    session: diaFmt,
+    method: metodo,
+  });
+  salvarCharges();
+  if (typeof _recalcFinStatus === 'function') { _recalcFinStatus(); if (typeof salvarPacientes === 'function') salvarPacientes(); }
+  var valEl = document.getElementById('nc-valor');
+  if (valEl) valEl.value = '';
+  closeModal('modal-nova-cobranca');
+  renderCharges();
+  if (typeof atualizarStatsFinanceiro === 'function') atualizarStatsFinanceiro();
+  showToast('💳 Cobrança criada para ' + _firstName(nome) + ' — R$' + valor.toFixed(0));
+}
+
 /* ── FINANCEIRO & COBRANÇAS ── */
 let charges = [];
 let currentFinMode = 'pre';
@@ -28,7 +84,7 @@ function renderCharges(mesFilter) {
       <div style="font-size:40px;margin-bottom:12px">💳</div>
       <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Nenhuma cobrança ainda</div>
       <div style="font-size:13px;margin-bottom:20px">Registre cobranças avulsas ou crie planos mensais para seus pacientes.</div>
-      <button class="btn-primary" onclick="showModal('modal-nova-cobranca')">+ Nova cobrança</button>
+      <button class="btn-primary" onclick="abrirModalNovaCobranca()">+ Nova cobrança</button>
     </div>`;
     return;
   }

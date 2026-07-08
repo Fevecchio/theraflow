@@ -259,7 +259,7 @@ document.addEventListener('keydown', function(e) {
     var activePage = document.querySelector('.page.active');
     if (activePage && activePage.id === 'page-pacientes') { showModal('modal-novo-paciente'); return; }
     if (activePage && activePage.id === 'page-agenda') { showAgendarModal(); return; }
-    if (activePage && activePage.id === 'page-financeiro') { showModal('modal-nova-cobranca'); return; }
+    if (activePage && activePage.id === 'page-financeiro') { abrirModalNovaCobranca(); return; }
   }
   // / — foco na busca de prontuários (quando na página de prontuários)
   if (e.key === '/') {

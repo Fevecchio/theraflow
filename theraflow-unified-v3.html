@@ -2774,6 +2774,43 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-nova-cobranca">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">Nova cobrança avulsa</div>
+    <div class="modal-body" style="margin-bottom:16px">Registre uma cobrança pontual para um paciente. Ela aparece como pendente na lista de cobranças.</div>
+    <div class="form-group">
+      <label for="nc-paciente">Paciente</label>
+      <select class="form-input" id="nc-paciente">
+        <option value="">Selecionar paciente…</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="nc-valor">Valor (R$)</label>
+        <input class="form-input" id="nc-valor" type="number" min="0" step="10" placeholder="200"/>
+      </div>
+      <div class="form-group">
+        <label for="nc-data">Data da sessão</label>
+        <input class="form-input" id="nc-data" type="date"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="nc-metodo">Método de pagamento</label>
+      <select class="form-input" id="nc-metodo">
+        <option>PIX</option>
+        <option>Dinheiro</option>
+        <option>Cartão de crédito</option>
+        <option>Cartão de débito</option>
+        <option>TED / Transferência</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-nova-cobranca')">Cancelar</button>
+      <button class="btn btn-primary" onclick="criarNovaCobranca()">Criar cobrança</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-converter-plano">
   <div class="modal" style="max-width:480px">
     <div class="modal-title">Converter para plano mensal</div>
