@@ -391,9 +391,18 @@ function loginPaciente() {
       return;
     }
 
-    // Carrega dados do paciente
+    // Carrega dados do paciente — SELECT ENXUTO (F3.1): mesma allowlist da RPC
+    // portal_patient_login (migration 012). prontuarioNotes/notes/cid/hash da
+    // senha não descem ao navegador do paciente. Chaves do metadata viram
+    // campos top-level (metadata->chave), como o merge antigo já fazia.
+    var _leanMeta = ['moodHistory','moodNotes','exercises','materials','diary','metas','portalMetas',
+      'appointments','sessionLink','sessionLinkAt','_moodLastDate','mood','checkInStreak',
+      'lastCheckInDate','readMaterials','portalNota','portalNotifHour','portalDica',
+      'portalMensagem','anamnese','portalAnamneseAtiva'];
+    var _leanSel = 'id,name,email,phone,age,cidade,abordagem,status,sessions_count,valor_sessao,progress,'
+      + _leanMeta.map(function(k){ return 'metadata->' + k; }).join(',');
     var patResult = await supaPatient.from('patients')
-      .select('*')
+      .select(_leanSel)
       .eq('id', linkResult.data.patient_id)
       .single();
 
@@ -405,22 +414,13 @@ function loginPaciente() {
       return;
     }
 
-    // Mescla campos DB com metadata para ter estrutura completa
+    // As chaves do metadata já chegam top-level pelo select enxuto — só renomeia
+    // os campos de coluna para o formato do app (sem cid/notes: não descem mais).
     var raw = patResult.data;
-    var p = Object.assign({}, (raw.metadata || {}), {
-      id: raw.id,
-      name: raw.name,
-      email: raw.email,
+    var p = Object.assign({}, raw, {
       whatsapp: raw.phone,
-      age: raw.age,
-      cidade: raw.cidade,
-      abordagem: raw.abordagem,
-      cid: raw.cid,
-      notes: raw.notes,
-      status: raw.status,
       sessions: raw.sessions_count,
       valorSessao: raw.valor_sessao,
-      progress: raw.progress,
     });
 
     // Carrega appointments do paciente para a "Minha jornada"

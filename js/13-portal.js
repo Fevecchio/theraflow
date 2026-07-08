@@ -738,10 +738,11 @@ function _pacCheckSessionLive() {
       .then(function(res) { if (res && res.data) _pacApplySessionMeta(res.data || {}); })
       .catch(function(){});
   } else if (_loggedPatientData.id) {
-    // Paciente logada via conta Supabase Auth: lê o próprio registro direto (RLS permite —
-    // é a mesma leitura que o login por Auth já faz).
-    supaPatient.from('patients').select('metadata').eq('id', _loggedPatientData.id).maybeSingle()
-      .then(function(res) { if (res && res.data) _pacApplySessionMeta(res.data.metadata || {}); })
+    // Paciente logada via conta Supabase Auth: lê SÓ as 2 chaves do poll (F3.1) —
+    // antes baixava o metadata inteiro (com prontuário) a cada 20s.
+    supaPatient.from('patients').select('metadata->>sessionLink,metadata->>sessionLinkAt')
+      .eq('id', _loggedPatientData.id).maybeSingle()
+      .then(function(res) { if (res && res.data) _pacApplySessionMeta(res.data); })
       .catch(function(){});
   }
 }
