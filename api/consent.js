@@ -27,6 +27,24 @@ const ALLOWED_ORIGINS = [
 
 const VALID_TIPOS = ['termos_plataforma', 'portal_paciente', 'gravacao_sessao', 'uso_ia'];
 
+// Tipos que vêm de contexto AUTENTICADO do terapeuta (o cliente já envia o JWT):
+// exigem sessão válida + posse do paciente. Fecha a forja de consentimento por
+// quem só conhece um UUID de paciente (F3.5). 'portal_paciente' NÃO está aqui —
+// vem do paciente logado via RPC (sem sessão Auth); sua blindagem precisa de uma
+// RPC SECURITY DEFINER (email+hash) e será feita numa próxima etapa (com SQL).
+const TIPOS_TERAPEUTA = ['termos_plataforma', 'gravacao_sessao', 'uso_ia'];
+
+// Rate-limit best-effort em memória (por instância serverless): corta flood óbvio
+// e poluição da trilha de auditoria. Não é garantia entre instâncias.
+const _rl = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const e = _rl.get(key);
+  if (!e || now > e.reset) { _rl.set(key, { count: 1, reset: now + windowMs }); return true; }
+  if (e.count >= max) return false;
+  e.count++; return true;
+}
+
 function setCors(res, origin) {
   const allowed = (!origin || ALLOWED_ORIGINS.includes(origin))
     ? (origin || ALLOWED_ORIGINS[0])
@@ -75,6 +93,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Service misconfigured' });
   }
 
+  // Rate-limit por IP (30/min): registro de consentimento é esporádico no uso real.
+  const ip = clientIp(req);
+  if (!rateLimit(`consent:${ip || 'anon'}`, 30, 60 * 1000)) {
+    return res.status(429).json({ error: 'Muitas requisições. Tente novamente em instantes.' });
+  }
+
   const { tipo, patientId, versao } = req.body || {};
 
   if (!tipo || !VALID_TIPOS.includes(tipo)) {
@@ -88,13 +112,36 @@ export default async function handler(req, res) {
   let userId = null;
   let patient = null;
 
-  if (tipo === 'termos_plataforma') {
-    // Aceite do terapeuta — exige sessão autenticada
+  if (TIPOS_TERAPEUTA.includes(tipo)) {
+    // Aceite do terapeuta (termos) ou registrado por ele (gravação/IA): exige sessão
+    // autenticada. Para os vinculados a paciente, confere que o terapeuta é DONO do
+    // paciente — impede forjar consentimento de gravação/IA com um UUID vazado (F3.5).
     const caller = await verifySupabaseJWT(req, SERVICE_KEY);
     if (!caller) return res.status(401).json({ error: 'Autenticação necessária' });
     userId = caller.id;
+
+    if (tipo !== 'termos_plataforma') {
+      if (!patientId) return res.status(400).json({ error: 'patientId é obrigatório' });
+      patient = patientId;
+      let ownerId = null;
+      try {
+        const r = await fetch(
+          `${SUPA_URL}/rest/v1/patients?id=eq.${encodeURIComponent(patientId)}&select=user_id&limit=1`,
+          { headers: hdrs }
+        );
+        const rows = await r.json();
+        if (Array.isArray(rows) && rows.length > 0) ownerId = rows[0].user_id;
+      } catch (e) {
+        console.warn('[consent] Falha ao resolver dono do paciente:', e.message);
+      }
+      if (!ownerId || ownerId !== caller.id) {
+        return res.status(403).json({ error: 'Paciente não pertence ao solicitante' });
+      }
+    }
   } else {
-    // Aceite vinculado a um paciente — busca o terapeuta dono para preencher user_id
+    // 'portal_paciente' — paciente logado via RPC (sem sessão Auth). LACUNA CONHECIDA
+    // (F3.5): ainda aceita só com patientId; será blindado com RPC SECURITY DEFINER
+    // (email+hash) numa próxima etapa. Mantido para não quebrar o aceite de termos.
     if (!patientId) return res.status(400).json({ error: 'patientId é obrigatório' });
     patient = patientId;
     try {
