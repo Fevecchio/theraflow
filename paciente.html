@@ -242,9 +242,10 @@ function _pacPwdTemp(p) {
 
 // Fluxo pós-login: verifica primeiro acesso → onboarding
 function _pacPosLogin(p, idx, pacs) {
-  // Primeiro acesso = sem senha própria OU ainda usando a senha temporária que o
-  // terapeuta enviou (pwdTemp) — nos dois casos, obriga a criar senha pessoal. F3.2.
-  var ehPrimeiro = !p.portalPasswordHash || _pacPwdTemp(p);
+  // Força criar senha SÓ quando a senha ainda é a temporária (pwdTemp). Não dá para
+  // usar !portalPasswordHash: após a minimização (F3.1) o hash não desce mais ao
+  // cliente, então seria sempre "true" e obrigaria a recriar senha a cada login. F3.2.
+  var ehPrimeiro = _pacPwdTemp(p);
   if (ehPrimeiro) {
     _pacMostrarCriarSenha(p, idx, pacs);
   } else {
@@ -338,7 +339,8 @@ function _wrapLoginPaciente() {
     var p = _loggedPatientData;
     var pacs = typeof patients !== 'undefined' ? patients : [p];
     var idx = _loggedPatientIdx || 0;
-    var ehPrimeiro = p && (!p.portalPasswordHash || _pacPwdTemp(p));
+    // Só a senha temporária (pwdTemp) força a troca — ver nota em _pacPosLogin. F3.2.
+    var ehPrimeiro = _pacPwdTemp(p);
     if (ehPrimeiro) {
       _pacMostrarCriarSenha(p, idx, pacs);
     } else {
