@@ -732,9 +732,10 @@ function _pacApplySessionMeta(meta) {
 function _pacCheckSessionLive() {
   if (!_loggedPatientData) return;
   if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) {
-    // Paciente logada via RPC/local (sem sessão Auth): re-busca pelo RPC de login.
-    supaPatient.rpc('portal_patient_login', { p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash })
-      .then(function(res) { if (res && res.data) _pacApplySessionMeta(res.data.metadata || {}); })
+    // Paciente logada via RPC/local (sem sessão Auth): RPC mínima do poll
+    // (migration 012) — devolve SÓ sessionLink/sessionLinkAt, nada clínico.
+    supaPatient.rpc('portal_session_meta', { p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash })
+      .then(function(res) { if (res && res.data) _pacApplySessionMeta(res.data || {}); })
       .catch(function(){});
   } else if (_loggedPatientData.id) {
     // Paciente logada via conta Supabase Auth: lê o próprio registro direto (RLS permite —
@@ -1406,10 +1407,14 @@ async function pacConfirmarAlteracaoSenha() {
   var p = _loggedPatientData;
   if (!p) return;
 
-  // Valida senha atual
+  // Valida senha atual. Após a migration 012 a RPC não devolve mais o hash ao
+  // navegador — para login RPC, compara com o hash que ACABOU de autenticar
+  // (_pacPortalAuth.hash). O servidor revalida de novo em portal_update_password.
   var hashAtual = await _portalHash(atual);
   var senhaValida = false;
-  if (p.portalPasswordHash) {
+  if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth && _pacPortalAuth.hash) {
+    senhaValida = (hashAtual === _pacPortalAuth.hash);
+  } else if (p.portalPasswordHash) {
     senhaValida = p.portalPasswordHash === hashAtual;
   } else {
     // ainda na senha padrão (primeiro nome)

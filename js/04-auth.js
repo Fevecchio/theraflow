@@ -278,10 +278,12 @@ async function _pacTryRpcLogin(email, senha) {
     if (!rpcResult.data) return false;
     var raw = rpcResult.data;
     var meta = raw.metadata || {};
+    // Migration 012: a RPC devolve só o que o portal usa — cid/notes/prontuário
+    // não chegam mais ao navegador do paciente (F3.1).
     var pRpc = Object.assign({}, meta, {
       id: raw.id, name: raw.name, email: raw.email,
       whatsapp: raw.phone, age: raw.age, cidade: raw.cidade,
-      abordagem: raw.abordagem, cid: raw.cid, notes: raw.notes,
+      abordagem: raw.abordagem,
       status: raw.status, sessions: raw.sessions_count,
       valorSessao: raw.valor_sessao, progress: raw.progress,
     });
