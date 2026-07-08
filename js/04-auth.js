@@ -90,7 +90,10 @@ function _proceedToApp(account) {
     } catch(e) {}
     tfTrack('user_logged_in', { plano: account.plano || 'trial' });
   }
-  checkTermsAndProceed(function() {
+  // Guard: em paciente.html o js/16 (que define checkTermsAndProceed) não é carregado —
+  // este caminho é só do terapeuta, mas o guard evita ReferenceError se algo mudar.
+  var _launch = typeof checkTermsAndProceed === 'function' ? checkTermsAndProceed : function(cb){ cb(); };
+  _launch(function() {
     document.getElementById('tf-onboarding-layer').style.display = 'none';
     document.getElementById('tf-app-layer').style.display = 'flex';
     carregarPacientes();
