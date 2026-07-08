@@ -285,7 +285,8 @@ async function startLiveKitSession() {
     try { if (_lkRoom.remoteParticipants && _lkRoom.remoteParticipants.size > 0) _lkStartTherRecorder(); } catch (_) {}
     _lkShowWaitingRemote(); // "aguardando a paciente" até o vídeo dela chegar
 
-    if (typeof _iniciarTimerSessao === 'function') _iniciarTimerSessao();
+    // Timer NÃO começa aqui: dispara em _lkStartTherRecorder, quando a paciente entra —
+    // o tempo exibido é o da CONSULTA, não o da espera do terapeuta na sala (F6).
     if (typeof showToast === 'function') showToast('Sessão iniciada · a nota será gerada ao encerrar.');
   } catch (err) {
     console.error('[livekit] start falhou', err);
@@ -306,6 +307,7 @@ function _lkStartTherRecorder() {
     _lkRecorder.start(1000);
     _lkRecStartMs = Date.now();
     window.addEventListener('beforeunload', _lkGuardUnload); // avisa se fechar/recarregar gravando
+    if (typeof _iniciarTimerSessao === 'function') _iniciarTimerSessao(); // timer conta a partir da entrada da paciente
     if (typeof showToast === 'function') showToast('🔴 Paciente entrou — gravação e transcrição iniciadas.');
   } catch (e) { console.warn('[livekit] ther recorder', e); }
 }
