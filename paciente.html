@@ -234,11 +234,17 @@ async function _portalHash(senha) {
   }
 }
 
+// Senha ainda é a temporária enviada pelo terapeuta? Tolerante a tipo: o valor
+// chega como boolean (RPC/spread) ou string "true" (alguns selects PostgREST). F3.2.
+function _pacPwdTemp(p) {
+  return !!p && (p.pwdTemp === true || p.pwdTemp === 'true');
+}
+
 // Fluxo pós-login: verifica primeiro acesso → onboarding
 function _pacPosLogin(p, idx, pacs) {
   // Primeiro acesso = sem senha própria OU ainda usando a senha temporária que o
   // terapeuta enviou (pwdTemp) — nos dois casos, obriga a criar senha pessoal. F3.2.
-  var ehPrimeiro = !p.portalPasswordHash || p.pwdTemp === true;
+  var ehPrimeiro = !p.portalPasswordHash || _pacPwdTemp(p);
   if (ehPrimeiro) {
     _pacMostrarCriarSenha(p, idx, pacs);
   } else {
@@ -332,7 +338,8 @@ function _wrapLoginPaciente() {
     var p = _loggedPatientData;
     var pacs = typeof patients !== 'undefined' ? patients : [p];
     var idx = _loggedPatientIdx || 0;
-    var ehPrimeiro = p && (!p.portalPasswordHash || p.pwdTemp === true);
+    var ehPrimeiro = p && (!p.portalPasswordHash || _pacPwdTemp(p));
+    try { alert('[TF diag] hash=' + !!(p && p.portalPasswordHash) + ' | pwdTemp=' + (p && p.pwdTemp) + ' | tipo=' + (p && typeof p.pwdTemp) + ' | forca=' + ehPrimeiro); } catch(_) {}
     if (ehPrimeiro) {
       _pacMostrarCriarSenha(p, idx, pacs);
     } else {
@@ -383,16 +390,19 @@ async function _tryRestorePacientSession() {
     // Busca vínculo patient_users
     var linkRes = await supaPatient.from('patient_users').select('patient_id').eq('auth_user_id', userId).single();
     if (!linkRes.data) return false;
-    // Carrega dados do paciente
-    var patRes = await supaPatient.from('patients').select('*').eq('id', linkRes.data.patient_id).single();
+    // Carrega dados do paciente — SELECT ENXUTO (F3.1): sem prontuarioNotes/cid/notes/hash.
+    // Mesma allowlist do login; as chaves do metadata chegam top-level.
+    var _rm = ['moodHistory','moodNotes','exercises','materials','diary','metas','portalMetas',
+      'appointments','sessionLink','sessionLinkAt','_moodLastDate','mood','checkInStreak',
+      'lastCheckInDate','readMaterials','portalNota','portalNotifHour','portalDica',
+      'portalMensagem','anamnese','portalAnamneseAtiva','pwdTemp'];
+    var _sel = 'id,name,email,phone,age,cidade,abordagem,status,sessions_count,valor_sessao,progress,'
+      + _rm.map(function(k){ return 'metadata->' + k; }).join(',');
+    var patRes = await supaPatient.from('patients').select(_sel).eq('id', linkRes.data.patient_id).single();
     if (!patRes.data) return false;
     var raw = patRes.data;
-    var p = Object.assign({}, (raw.metadata || {}), {
-      id: raw.id, name: raw.name, email: raw.email,
-      whatsapp: raw.phone, age: raw.age, cidade: raw.cidade,
-      abordagem: raw.abordagem, cid: raw.cid, notes: raw.notes,
-      status: raw.status, sessions: raw.sessions_count,
-      valorSessao: raw.valor_sessao, progress: raw.progress,
+    var p = Object.assign({}, raw, {
+      whatsapp: raw.phone, sessions: raw.sessions_count, valorSessao: raw.valor_sessao,
     });
     // Carrega appointments
     var apptRes = await supaPatient.from('appointments').select('local_id,date,time,presenca,status,metadata').eq('patient_id', raw.id).order('date', { ascending: false }).limit(60);
