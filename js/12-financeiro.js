@@ -485,16 +485,6 @@ function showUndoBar(msg, undoFn) {
   }, 6000);
 }
 
-function markAsPaid(btn) {
-  const item = btn.closest('.fin-overdue-item');
-  item.style.background = '#e8f5ec';
-  item.style.borderColor = 'var(--sage)';
-  item.style.transition = 'all .3s';
-  btn.textContent = '✓ Marcado';
-  btn.disabled = true;
-  setTimeout(() => { item.style.opacity = '.5'; }, 1000);
-}
-
 function marcarPagoInad(chargeId) {
   var charge = charges.find(function(c){ return String(c.id) === String(chargeId); });
   if (!charge) return;

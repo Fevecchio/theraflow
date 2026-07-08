@@ -50,37 +50,6 @@ function excluirMaterial(pidx, mid) {
 }
 // ── /PRONTUÁRIOS ─────────────────────────────────────────────────────────────
 
-function regenerarNota(btn) {
-  const ta = btn?.previousElementSibling;
-  if (!ta || ta.tagName !== 'TEXTAREA') return;
-  const orig = btn.textContent;
-  btn.textContent = '⟳ Gerando...';
-  btn.disabled = true;
-  setTimeout(() => {
-    ta.value = 'Paciente apresentou-se com sinais de sobrecarga cognitiva e emocional. Relatou dificuldade em priorizar tarefas sem sentir que está falhando. Foram explorados padrões de pensamento dicotômico e crenças de autoeficácia. Intervenção focada em técnica de defusão cognitiva. Exercício proposto: identificar 3 pensamentos automáticos ao longo da semana e registrar evidências contrárias.';
-    btn.textContent = orig;
-    btn.disabled = false;
-    showToast('Nota regenerada com novo ângulo clínico.');
-  }, 1600);
-}
-
-function approveNoteAndIndex() {
-  const btn = event.target;
-  btn.textContent = '⟳ Indexando…';
-  btn.disabled = true;
-  setTimeout(() => {
-    btn.textContent = '✓ Salvo e indexado';
-    btn.style.background = '#3d6b4b';
-    const msg = document.getElementById('note-indexed-msg');
-    if (msg) { msg.style.display = 'flex'; }
-    // Mark supervisão as having new data
-    supHasNewData = true;
-    injectNewEvidenceIntoSupervisao();
-    const _anp = patients[currentSessionPatientIdx] || patients[0];
-    showToast(`Sessão ${_anp ? ((_anp.sessions||0)+1) : ''} de ${_anp?.name||'paciente'} indexada. Supervisão IA atualizada.`);
-  }, 1800);
-}
-
 // ── BRIEFING ──
 
 // Constrói sessionHistory dinamicamente a partir das notas reais do paciente

@@ -181,9 +181,6 @@ function atualizarTrialUI(count) {
   }
 }
 
-// ── /WHEREBY INTEGRATION ─────────────────────────────────────────────────────
-
-
 function showSessionLink() {
   const _slp = patients[currentSessionPatientIdx] || patients[0];
   const _slNome = _slp ? _slp.name : 'o paciente';

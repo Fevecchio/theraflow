@@ -812,9 +812,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div class="session-live-badge"><span class="live-dot"></span>AO VIVO</div>
           <div class="session-timer" id="session-timer">00:00</div>
 
-          <!-- ── WHEREBY EMBED ── -->
-          <!-- Em produção: trocar a URL pelo link gerado via Whereby API (POST /v1/meetings) -->
-          <!-- A sala é criada no backend antes da sessão iniciar e o link é injetado aqui -->
+          <!-- ── ÁREA DE VÍDEO (LiveKit monta a UI aqui; ids "whereby-*" são legado) ── -->
           <div id="whereby-wrapper" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center">
 
             <!-- ESTADO: aguardando iniciar (pré-sessão) -->
@@ -833,20 +831,12 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
               </div>
             </div>
 
-            <!-- ESTADO: sessão ativa (iframe Whereby) -->
-            <iframe
-              id="whereby-iframe"
-              style="display:none;width:100%;height:100%;border:none;border-radius:0"
-              allow="camera; microphone; fullscreen; display-capture"
-              src=""
-            ></iframe>
-
           </div>
-          <!-- ── /WHEREBY EMBED ── -->
+          <!-- ── /ÁREA DE VÍDEO ── -->
 
         </div>
         <div class="video-controls">
-          <!-- Controles do TheraFlow — independentes do Whereby -->
+          <!-- Controles do TheraFlow — independentes do provedor de vídeo -->
 <button class="ctrl-btn ctrl-btn-light" title="Copiar link do paciente" onclick="showSessionLink()" style="font-size:13px">🔗</button>
           <div style="height:28px;width:1px;background:rgba(255,255,255,.1);margin:0 4px"></div>
           <button class="ctrl-btn ctrl-btn-red" onclick="endWherebySession()" title="Encerrar sessão" style="font-size:13px;position:relative">✕<span style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.7);white-space:nowrap">Encerrar</span></button>
@@ -876,7 +866,6 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="card card-sm" id="sess-nota-card">
         <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
           <div class="ai-section-title" style="margin-bottom:0">✏ Notas da sessão</div>
-          <button class="btn btn-ghost btn-sm" onclick="regenerarNotaSessao()" style="font-size:11px;padding:2px 8px">↻ IA</button>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Anote durante a consulta · IA completa ao encerrar</div>
         <textarea id="session-ai-note" class="note-area" style="min-height:130px;font-size:12px;line-height:1.6"></textarea>

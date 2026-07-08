@@ -69,7 +69,6 @@ let _lkPacRecStartMs = 0;    // início da gravação da paciente (alinha os seg
 let _lkAudioCtx = null;
 let _lkAnalyser = null;
 let _lkMeterRAF = null;
-let _lkLastTranscript = '';
 let _lkRetry = null;          // { audioBlob, pacBlob, pacOffsetSec } p/ reprocessar sem regravar
 
 // Avisa antes de fechar/recarregar a aba durante a sessão (a gravação vive em memória —
@@ -499,7 +498,6 @@ async function _lkProcessSession() {
     const transcript = pac
       ? _lkMergeTranscripts(ther, pac, pacOffsetSec)
       : _lkCleanSingle(ther); // fallback: 1 faixa, mas ainda filtra alucinação de silêncio
-    _lkLastTranscript = transcript;
     _lkProcStep('s2', 'done');
 
     // Sem fala real captada → NÃO gera nota (evita nota fabricada a partir de silêncio).

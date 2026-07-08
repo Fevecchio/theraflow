@@ -33,11 +33,9 @@ async function startSession() {
   }
   _sessionAlreadySaved = false;
   sessionSeconds = 0; if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
-  // Reseta estado Whereby para pré-sessão
+  // Reseta o estado da área de vídeo para pré-sessão
   const prestate = document.getElementById('whereby-prestate');
-  const iframe   = document.getElementById('whereby-iframe');
   if (prestate) prestate.style.display = 'block';
-  if (iframe)   { iframe.style.display = 'none'; iframe.src = ''; }
   const badge = document.querySelector('.session-live-badge');
   if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO';
   // Atualiza header e ficha com paciente atual
@@ -153,23 +151,6 @@ function _iniciarTimerSessao() {
     if(el) el.textContent = `${m}:${s}`;
   }, 1000);
 }
-function regenerarNotaSessao() {
-  const note = document.getElementById('session-ai-note');
-  if (!note) return;
-  const sp = patients[currentSessionPatientIdx] || patients[0];
-  const nome = sp ? sp.name.split(' ')[0] : 'Paciente';
-  const abord = sp ? (sp.abordagem || 'terapêutica') : 'terapêutica';
-  const queixa = sp ? (sp.notes || '').replace(/\.$/, '').toLowerCase() : 'queixa principal';
-  const variantes = [
-    `${nome} chegou com evolução positiva no processo terapêutico. Abordagem ${abord} — foram explorados padrões relacionados a ${queixa}. Paciente demonstrou boa adesão e insight sobre os próprios mecanismos.`,
-    `Sessão com foco em ${queixa}. Paciente identificou padrões relevantes e demonstrou disposição para o trabalho de mudança. Intervenção ${abord} aplicada com boa receptividade.`,
-    `Atendimento com bom vínculo terapêutico. Tema central: ${queixa}. Técnicas de ${abord} aplicadas. Próxima sessão: revisar as estratégias combinadas hoje.`,
-  ];
-  const novo = variantes[Math.floor(Math.random() * variantes.length)];
-  note.value = novo;
-  showToast('✦ Nota regenerada pela IA');
-}
-
 // ── PAINEL DE CONTEXTO CLÍNICO ───────────────────────────────────────────────
 
 function _renderSessionContext(p) {
@@ -269,29 +250,8 @@ function _renderSessPerguntas(linhas) {
     linhas.map(function(l){ return '<div class="sess-pergunta">• ' + escHTML(l) + '</div>'; }).join('');
 }
 
-// ── WHEREBY INTEGRATION ──────────────────────────────────────────────────────
-//
-// COMO FUNCIONA EM PRODUÇÃO:
-// 1. Antes da sessão, seu backend chama a Whereby API:
-//    POST https://api.whereby.dev/v1/meetings
-//    Body: { endDate: "2026-03-24T22:00:00Z", fields: ["hostRoomUrl"] }
-//    Retorna: { roomUrl, hostRoomUrl }
-//
-// 2. roomUrl → link enviado ao paciente (via WhatsApp / Portal)
-// 3. hostRoomUrl → injetado no iframe abaixo (psicólogo entra como host)
-//
-// PARÂMETROS DE URL úteis do Whereby Embedded:
-//   ?skipMediaPermissionPrompt  — pula permissão (já pediu antes)
-//   ?minimal                   — interface minimalista
-//   ?lang=pt                   — idioma português
-//   ?logo=off                  — remove logo Whereby (plano Business)
-//   ?background=off            — fundo preto (integra com nossa UI)
-//   ?leaveButton=off           — remove botão "sair" deles (usamos o nosso ✕)
-//
-// EXEMPLO DE URL REAL:
-// https://theraflow.whereby.com/sala-camila-rocha-240326?minimal&lang=pt&leaveButton=off
-//
-// No protótipo, simulamos com uma sala de demonstração pública do Whereby:
+// ── INÍCIO/FIM DE SESSÃO — roteamento ────────────────────────────────────────
+// Nomes start/endWherebySession são legado (onclick no HTML) — o fluxo real é LiveKit.
 
 function startWherebySession() {
   // Fluxo real (vídeo LiveKit + transcrição IA) SEMPRE fora da demo — o `?livekit=0` só vale
@@ -322,14 +282,10 @@ function endWherebySession() {
     return endLiveKitSession();
   }
   if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
-  const iframe = document.getElementById('whereby-iframe');
   const prestate = document.getElementById('whereby-prestate');
+  if (prestate) prestate.style.display = 'none';
 
-  iframe.src = '';
-  iframe.style.display = 'none';
-  prestate.style.display = 'none';
-
-  // Mostra modal de pós-sessão com fluxo Whisper
+  // Mostra modal de pós-sessão (teatro demo-only)
   showPostSessionFlow();
 }
 
