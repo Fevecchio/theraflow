@@ -57,13 +57,13 @@ function _ofereceCobrancaPresenca(appt) {
   setTimeout(function() {
     var pg = document.getElementById('page-agenda');
     if (!pg || !pg.classList.contains('active')) return;
-    var diaFmt = hoje.split('-').reverse().join('/');
+    var diaFmt = fmtDataBR(hoje);
     var toast = document.createElement('div');
     toast.className = 'cobranca-presenca-toast';
     toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a2a1e;color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:12px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw';
     // Handlers via addEventListener (closure) — não interpola o nome do paciente no onclick,
     // que quebrava com apóstrofo (D'Ávila) e era vetor de injeção. F4.4.
-    toast.innerHTML = '<span>💳 Criar cobrança para ' + escHTML(_firstName(p.name)) + '? <strong>R$' + valor.toFixed(0) + '</strong></span>'
+    toast.innerHTML = '<span>💳 Criar cobrança para ' + escHTML(_firstName(p.name)) + '? <strong>' + fmtMoedaInt(valor) + '</strong></span>'
       + '<button data-act="criar" style="background:var(--sage);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">Criar</button>'
       + '<button data-act="fechar" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0 4px">✕</button>';
     document.body.appendChild(toast);
@@ -75,7 +75,7 @@ function _ofereceCobrancaPresenca(appt) {
 }
 
 function _criarCobrancaPresenca(nomePaciente, valor, dataIso) {
-  var diaFmt = dataIso.split('-').reverse().join('/');
+  var diaFmt = fmtDataBR(dataIso);
   var p = patients.find(function(x){ return x.name === nomePaciente; });
   charges.push({
     id: Date.now(),
@@ -93,7 +93,7 @@ function _criarCobrancaPresenca(nomePaciente, valor, dataIso) {
   });
   salvarCharges();
   if (p) { p.finStatus = 'pending'; p.fin = 'Pendente'; salvarPacientes(); }
-  showToast('💳 Cobrança criada para ' + _firstName(nomePaciente) + ' — R$' + valor.toFixed(0));
+  showToast('💳 Cobrança criada para ' + _firstName(nomePaciente) + ' — ' + fmtMoedaInt(valor));
   document.querySelectorAll('.cobranca-presenca-toast').forEach(function(el){ el.remove(); });
 }
 
@@ -313,7 +313,7 @@ function confirmarAgendamento() {
   var durVal    = parseInt(dur?.value || '50');
   var recVal    = recorr?.value || 'nenhuma';
   var colorIdx  = pidx % APPT_COLORS.length;
-  var dataBR    = dataVal.split('-').reverse().join('/');
+  var dataBR    = fmtDataBR(dataVal);
 
   // Verificar conflito de horário (± 30 min)
   var horaMin = parseInt(horaVal.split(':')[0])*60 + parseInt(horaVal.split(':')[1]);
@@ -383,7 +383,7 @@ function confirmarAgendamento() {
       var _tNome = _acc.nome || (typeof tfUserData !== 'undefined' && tfUserData?.nome) || '';
       var _tCrp  = _acc.crp  || (typeof tfUserData !== 'undefined' && tfUserData?.crp)  || '';
       if (!_tNome) showToast('⚠ Adicione seu nome no Perfil para aparecer corretamente nos emails');
-      var _dataBR = datas[0].split('-').reverse().join('/');
+      var _dataBR = fmtDataBR(datas[0]);
       var _emailData = {
         terapeutaNome: _tNome || 'Seu terapeuta', terapeutaCrp: _tCrp,
         pacienteNome: p.name,

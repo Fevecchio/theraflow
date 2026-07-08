@@ -257,12 +257,10 @@ function copySessionLink(link, btn) {
 function sendLinkWhatsApp(link) {
   const _wsp = patients[currentSessionPatientIdx] || patients[0];
   const _wsNome = _wsp ? _firstName(_wsp.name) : 'paciente';
-  const _wsNum = _wsp?.whatsapp ? _wsp.whatsapp.replace(/\D/g,'') : '';
   const fullLink = link ? (link.startsWith('http') ? link : 'https://' + link) : 'https://theraflow.app/s/sessao';
   _salvarLinkNoPortal(fullLink);
-  const msg = encodeURIComponent(`Olá ${_wsNome}! Aqui está o link para nossa sessão de hoje: ${fullLink}\n\nAcesse também pelo seu portal TheraFlow.`);
-  const url = _wsNum ? `https://wa.me/${_wsNum.startsWith('55')?_wsNum:'55'+_wsNum}?text=${msg}` : `https://wa.me/?text=${msg}`;
-  window.open(url, '_blank');
+  const msg = `Olá ${_wsNome}! Aqui está o link para nossa sessão de hoje: ${fullLink}\n\nAcesse também pelo seu portal TheraFlow.`;
+  window.open(_wppLink(_wsp?.whatsapp, msg), '_blank');
   document.querySelector('.modal-overlay')?.remove();
   showToast('📲 Link enviado e salvo no portal de ' + _wsNome);
 }

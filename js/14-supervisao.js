@@ -605,7 +605,7 @@ function exportarExtratoPaciente(idx) {
 
   function statusLabel(s){ return s==='paid'?'Pago':s==='overdue'?'Em atraso':'Pendente'; }
   function statusColor(s){ return s==='paid'?'#2e7d4f':s==='overdue'?'#c0392b':'#c97d2e'; }
-  function dataBR(d){ return typeof d==='string'&&d.includes('-')?d.split('-').reverse().join('/'):d||'—'; }
+  var dataBR = fmtDataBR;
   function mesLabel(key){
     if (!key) return '—';
     var meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -619,12 +619,12 @@ function exportarExtratoPaciente(idx) {
     var rows = itens.map(function(c){
       return '<tr><td>'+dataBR(c.date)+'</td><td>'+(c.desc||c.session||'—')+'</td><td>'+(c.method||'PIX')+'</td>'
         +'<td style="color:'+statusColor(c.status)+'">'+statusLabel(c.status)+'</td>'
-        +'<td style="text-align:right;font-weight:500">R$'+parseFloat(c.value).toFixed(2)+'</td></tr>';
+        +'<td style="text-align:right;font-weight:500">'+fmtMoeda(parseFloat(c.value)||0)+'</td></tr>';
     }).join('');
     return '<h2>'+mesLabel(mes)+'</h2>'
       +'<table><tr><th>Data</th><th>Descrição</th><th>Método</th><th>Status</th><th style="text-align:right">Valor</th></tr>'
       +rows
-      +'<tr style="background:#f4f8f4;font-weight:700"><td colspan="4">Subtotal</td><td style="text-align:right">R$'+subTotal.toFixed(2)+'</td></tr>'
+      +'<tr style="background:#f4f8f4;font-weight:700"><td colspan="4">Subtotal</td><td style="text-align:right">'+fmtMoeda(subTotal)+'</td></tr>'
       +'</table>';
   }).join('');
 
@@ -634,10 +634,10 @@ function exportarExtratoPaciente(idx) {
     +'<h1>Extrato Financeiro — '+escHTML(p.name)+'</h1>'
     +'<div class="meta">Terapeuta: '+escHTML(nomeT)+(crpT?' · CRP '+escHTML(crpT):'')+'  &nbsp;·&nbsp;  Gerado em '+hoje+'</div>'
     +'<div class="resumo">'
-      +'<div class="resumo-item"><div class="resumo-val" style="color:#2e7d4f">R$'+totalPago.toFixed(2)+'</div><div class="resumo-label">Pago</div></div>'
-      +'<div class="resumo-item"><div class="resumo-val" style="color:#c97d2e">R$'+totalPendente.toFixed(2)+'</div><div class="resumo-label">Pendente</div></div>'
-      +'<div class="resumo-item"><div class="resumo-val" style="color:#c0392b">R$'+totalAtraso.toFixed(2)+'</div><div class="resumo-label">Em atraso</div></div>'
-      +'<div class="resumo-item"><div class="resumo-val">R$'+totalGeral.toFixed(2)+'</div><div class="resumo-label">Total geral</div></div>'
+      +'<div class="resumo-item"><div class="resumo-val" style="color:#2e7d4f">'+fmtMoeda(totalPago)+'</div><div class="resumo-label">Pago</div></div>'
+      +'<div class="resumo-item"><div class="resumo-val" style="color:#c97d2e">'+fmtMoeda(totalPendente)+'</div><div class="resumo-label">Pendente</div></div>'
+      +'<div class="resumo-item"><div class="resumo-val" style="color:#c0392b">'+fmtMoeda(totalAtraso)+'</div><div class="resumo-label">Em atraso</div></div>'
+      +'<div class="resumo-item"><div class="resumo-val">'+fmtMoeda(totalGeral)+'</div><div class="resumo-label">Total geral</div></div>'
     +'</div>'
     +tabelasHtml
     +'<div class="footer">Extrato gerado em '+hoje+' via TheraFlow · Uso exclusivo do profissional · LGPD</div>'
@@ -696,7 +696,7 @@ function exportarRelatorioEvolucao() {
     + apptsPac.slice().reverse().slice(0,20).map(function(a){
         var status = a.presenca==='compareceu'?'Compareceu':a.presenca==='faltou'?'Faltou':a.presenca==='atrasou'?'Atrasou':a.status==='cancelada'?'Cancelada':'Agendada';
         var cor = a.presenca==='compareceu'?'#2e7d4f':a.presenca==='faltou'?'#c0392b':a.presenca==='atrasou'?'#c97d2e':'#888';
-        var dataBR = (a.date||'').split('-').reverse().join('/');
+        var dataBR = fmtDataBR(a.date);
         return '<tr><td>'+dataBR+'</td><td>'+(a.time||'—')+'</td><td style="color:'+cor+';font-weight:600">'+status+'</td></tr>';
       }).join('')
     + '</table>'
@@ -831,7 +831,7 @@ function exportarProntuario() {
     // Histórico de sessões agendadas
     (sessoesPaciente.length ? '<div class="section"><div class="section-title">Histórico de sessões (' + sessoesPaciente.length + ')</div><div class="session-list">' +
       sessoesPaciente.slice(-20).map(function(a,i){
-        var d = a.date ? a.date.split('-').reverse().join('/') : '—';
+        var d = fmtDataBR(a.date);
         return '<div class="session-item"><div class="session-dot"></div><span style="font-weight:500;min-width:80px">' + d + '</span><span style="color:#6a7a70">' + escHTML(a.time||'') + (a.abordagem ? ' · ' + escHTML(a.abordagem) : '') + '</span></div>';
       }).join('') +
     '</div></div>' : '') +
@@ -1138,7 +1138,7 @@ function selecionarProntuario(i, el) {
       // Gera eventos combinados
       var eventos = [];
       apptsPac.forEach(function(a, ai) {
-        var nota = notasIdx[a.date.split('-').reverse().join('/')];
+        var nota = notasIdx[fmtDataBR(a.date)];
         var presencaLabel = a.presenca === 'compareceu' ? '' : a.presenca === 'faltou' ? 'Falta' : a.presenca === 'atrasou' ? 'Atrasou' : '';
         var statusLabel = a.status === 'cancelada' ? 'Cancelada' : (presencaLabel || 'Realizada');
         var dotColor = a.status==='cancelada' ? 'var(--muted)' : a.presenca==='faltou' ? 'var(--red)' : a.presenca==='atrasou' ? 'var(--amber)' : 'var(--sage)';
@@ -1150,7 +1150,7 @@ function selecionarProntuario(i, el) {
           : '';
         var _totalSessoesTl = (typeof p.sessions === 'number' && p.sessions > 0) ? p.sessions : apptsPac.length;
         var numSessao = Math.max(1, _totalSessoesTl - ai);
-        var dateBR = a.date.split('-').reverse().join('/');
+        var dateBR = fmtDataBR(a.date);
         var moodHtml = '';
         if (p.moodHistory && p.moodHistory[apptsPac.length - ai - 1] !== undefined) {
           var mv = p.moodHistory[apptsPac.length - ai - 1];

@@ -593,12 +593,10 @@ function pacEnviarSolicitacaoSessao(nomePaciente) {
     showToast('WhatsApp do terapeuta não configurado. Peça para ele cadastrar em Perfil.');
     return;
   }
-  var n = wppTerapeuta.replace(/\D/g, '');
-  n = n.startsWith('55') ? n : '55' + n;
   var texto = 'Olá! Sou ' + nomePaciente + ', sua paciente pelo TheraFlow. 🌿\n\n'
     + 'Gostaria de solicitar o agendamento de uma nova sessão.'
     + (msg ? '\n\n' + msg : '') + '\n\nObrigado(a)!';
-  window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(texto), '_blank');
+  window.open(_wppLink(wppTerapeuta, texto), '_blank');
   document.getElementById('pac-solicitar-form').style.display = 'none';
 }
 
@@ -725,8 +723,7 @@ function _getTecnicaDia(abordagem) {
 // ─── EMERGÊNCIA ──────────────────────────────────────────────────────
 function pacEmergencia() {
   var wppTerapeuta = '';
-  try { wppTerapeuta = (JSON.parse(localStorage.getItem('tf_account')||'{}').whatsapp||'').replace(/\D/g,''); } catch(e){}
-  if (wppTerapeuta && !wppTerapeuta.startsWith('55')) wppTerapeuta = '55'+wppTerapeuta;
+  try { wppTerapeuta = _wppNumero(JSON.parse(localStorage.getItem('tf_account')||'{}').whatsapp) || ''; } catch(e){}
   var overlay = document.createElement('div');
   overlay.className = 'pac-emergency-overlay';
   overlay.id = 'pac-emergency-overlay';

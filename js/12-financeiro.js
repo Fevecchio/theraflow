@@ -37,7 +37,7 @@ function criarNovaCobranca() {
   if (!nome) { showToast('Selecione o paciente.', 'warning'); return; }
   if (isNaN(valor) || valor <= 0 || valor >= 100000) { showToast('Informe um valor válido (maior que zero).', 'warning'); return; }
   var p = (typeof patients !== 'undefined' ? patients : []).find(function(x){ return x.name === nome; });
-  var diaFmt = dataIso.split('-').reverse().join('/');
+  var diaFmt = fmtDataBR(dataIso);
   charges.push({
     id: Date.now(),
     patient: nome,
@@ -59,7 +59,7 @@ function criarNovaCobranca() {
   closeModal('modal-nova-cobranca');
   renderCharges();
   if (typeof atualizarStatsFinanceiro === 'function') atualizarStatsFinanceiro();
-  showToast('💳 Cobrança criada para ' + _firstName(nome) + ' — R$' + valor.toFixed(0));
+  showToast('💳 Cobrança criada para ' + _firstName(nome) + ' — ' + fmtMoedaInt(valor));
 }
 
 /* ── FINANCEIRO & COBRANÇAS ── */
@@ -206,8 +206,8 @@ function renderFinPlanos() {
     html += '<div style="font-size:12px;color:var(--muted)">' + g.mensal + ' mensais · ' + g.avulso + ' avulsas</div>';
     html += '</div>';
     html += '<div style="text-align:right">';
-    html += '<div style="font-weight:700;font-size:16px;color:var(--sage-dark)">R$' + g.paid.toFixed(0) + ' <span style="font-size:11px;font-weight:400;color:var(--muted)">recebido</span></div>';
-    if (temPendente) html += '<div style="font-size:12px;color:var(--red)">R$' + valorPend.toFixed(0) + ' pendente</div>';
+    html += '<div style="font-weight:700;font-size:16px;color:var(--sage-dark)">' + fmtMoedaInt(g.paid) + ' <span style="font-size:11px;font-weight:400;color:var(--muted)">recebido</span></div>';
+    if (temPendente) html += '<div style="font-size:12px;color:var(--red)">' + fmtMoedaInt(valorPend) + ' pendente</div>';
     html += '</div>';
     if (temPendente && wpp) {
       html += '</div>';
@@ -260,7 +260,7 @@ function renderFinFluxo() {
       '<div style="flex:1;height:24px;background:var(--bg);border-radius:4px;overflow:hidden">' +
         '<div style="height:100%;width:' + (pct||2) + '%;background:' + cor + ';border-radius:4px;transition:width .5s"></div>' +
       '</div>' +
-      '<span style="' + valStyle + '">' + (m.total > 0 ? 'R$' + (m.total >= 1000 ? (m.total/1000).toFixed(1)+'k' : m.total.toFixed(0)) : '—') + '</span>' +
+      '<span style="' + valStyle + '">' + (m.total > 0 ? fmtMoedaCompact(m.total) : '—') + '</span>' +
     '</div>';
   });
   barsEl.innerHTML = html || '<div style="text-align:center;padding:24px;color:var(--muted)">Nenhuma receita registrada ainda.</div>';
@@ -268,15 +268,15 @@ function renderFinFluxo() {
   // Média e projeção
   var totaisNaoZero = receitaMes.filter(function(m){ return m.total > 0; });
   var media = totaisNaoZero.length ? totaisNaoZero.reduce(function(s,m){ return s+m.total; },0) / totaisNaoZero.length : 0;
-  if (mediaEl) mediaEl.textContent = media > 0 ? 'R$' + (media >= 1000 ? (media/1000).toFixed(1)+'k' : media.toFixed(0)) : '—';
-  if (projEl) projEl.textContent = media > 0 ? 'R$' + ((media*12) >= 1000 ? ((media*12)/1000).toFixed(1)+'k' : (media*12).toFixed(0)) : '—';
+  if (mediaEl) mediaEl.textContent = media > 0 ? fmtMoedaCompact(media) : '—';
+  if (projEl) projEl.textContent = media > 0 ? fmtMoedaCompact(media*12) : '—';
 
   // Ticket médio: total pago / nº de pacientes distintos com pagamento
   if (ticketEl) {
     var pacsPagos = new Set(charges.filter(function(c){ return !c.deleted && c.status==='paid'; }).map(function(c){ return c.patient; }));
     var totalPago = charges.filter(function(c){ return !c.deleted && c.status==='paid'; }).reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
     var ticket = pacsPagos.size > 0 ? totalPago / pacsPagos.size : 0;
-    ticketEl.textContent = ticket > 0 ? 'R$' + ticket.toFixed(0) : '—';
+    ticketEl.textContent = ticket > 0 ? fmtMoedaInt(ticket) : '—';
   }
 
   // Melhor mês do ano atual
@@ -290,7 +290,7 @@ function renderFinFluxo() {
     }
     if (receitaAnual.length) {
       var melhor = receitaAnual.reduce(function(a,b){ return b.tot>a.tot?b:a; });
-      melhorEl.textContent = melhor.label + ' · R$' + (melhor.tot >= 1000 ? (melhor.tot/1000).toFixed(1)+'k' : melhor.tot.toFixed(0));
+      melhorEl.textContent = melhor.label + ' · ' + fmtMoedaCompact(melhor.tot);
     } else {
       melhorEl.textContent = '—';
     }
@@ -318,9 +318,9 @@ function renderFinFluxo() {
       + '</div>'
       + '</div>'
       // Valores
-      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--sage-light);border-radius:8px"><span style="font-size:13px;color:var(--sage);font-weight:500">Recebido</span><span style="font-family:\'Instrument Serif\',serif;font-size:22px;color:var(--sage)">R$' + recebido.toLocaleString('pt-BR') + '</span></div>'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--amber-light);border-radius:8px"><span style="font-size:13px;color:var(--amber);font-weight:500">Pendente</span><span style="font-family:\'Instrument Serif\',serif;font-size:22px;color:var(--amber)">R$' + pendente.toLocaleString('pt-BR') + '</span></div>'
-      + (atrasado > 0 ? '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--red-light);border-radius:8px"><span style="font-size:13px;color:var(--red);font-weight:500">Em atraso</span><span style="font-family:\'Instrument Serif\',serif;font-size:22px;color:var(--red)">R$' + atrasado.toLocaleString('pt-BR') + '</span></div>' : '');
+      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--sage-light);border-radius:8px"><span style="font-size:13px;color:var(--sage);font-weight:500">Recebido</span><span style="font-family:\'Instrument Serif\',serif;font-size:22px;color:var(--sage)">' + fmtMoedaInt(recebido) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--amber-light);border-radius:8px"><span style="font-size:13px;color:var(--amber);font-weight:500">Pendente</span><span style="font-family:\'Instrument Serif\',serif;font-size:22px;color:var(--amber)">' + fmtMoedaInt(pendente) + '</span></div>'
+      + (atrasado > 0 ? '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--red-light);border-radius:8px"><span style="font-size:13px;color:var(--red);font-weight:500">Em atraso</span><span style="font-family:\'Instrument Serif\',serif;font-size:22px;color:var(--red)">' + fmtMoedaInt(atrasado) + '</span></div>' : '');
   }
 }
 
@@ -355,13 +355,13 @@ function renderFinInadimplencia() {
     html += '<div style="display:flex;align-items:center;gap:8px">';
     html += '<div class="patient-avatar" style="width:30px;height:30px;font-size:10px">' + initials + '</div>';
     html += '<div><div style="font-weight:500;font-size:14px">' + escHTML(c.patient||'') + '</div>';
-    html += '<div style="font-size:12px;color:var(--muted)">R$' + (parseFloat(c.value)||0).toFixed(0) + ' em aberto · ' + (c.date ? c.date.split('-').reverse().join('/') : '—') + '</div></div>';
+    html += '<div style="font-size:12px;color:var(--muted)">' + fmtMoedaInt(parseFloat(c.value)||0) + ' em aberto · ' + fmtDataBR(c.date) + '</div></div>';
     html += '</div></div>';
     html += '<div style="display:flex;flex-direction:column;gap:5px">';
     if (wpp) {
       html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppCharge(\'' + escHTML(c.patient||'') + '\',' + (parseFloat(c.value)||0).toFixed(0) + ')">📲 Cobrar</button>';
     } else if (p && p.email) {
-      html += '<a class="charge-btn charge-btn-wpp" href="mailto:' + escHTML(p.email) + '?subject=' + encodeURIComponent('Lembrete de pagamento') + '&body=' + encodeURIComponent('Olá ' + _firstName(c.patient||'') + ',\n\nPassando para lembrar sobre o pagamento de R$' + (parseFloat(c.value)||0).toFixed(0) + ' referente à sua sessão de psicoterapia.\n\nQualquer dúvida, estou à disposição.') + '" style="text-decoration:none">📧 Email</a>';
+      html += '<a class="charge-btn charge-btn-wpp" href="mailto:' + escHTML(p.email) + '?subject=' + encodeURIComponent('Lembrete de pagamento') + '&body=' + encodeURIComponent('Olá ' + _firstName(c.patient||'') + ',\n\nPassando para lembrar sobre o pagamento de ' + fmtMoedaInt(parseFloat(c.value)||0) + ' referente à sua sessão de psicoterapia.\n\nQualquer dúvida, estou à disposição.') + '" style="text-decoration:none">📧 Email</a>';
     } else {
       html += '<span style="font-size:11px;color:var(--muted);padding:4px 0">Sem contato</span>';
     }
@@ -529,7 +529,7 @@ function exportarRelatorioAnual() {
   var rows = charges.filter(function(c){ return !c.deleted && c.status==='paid' && _chargeMonthKey(c).startsWith(String(anoAtual)); });
   if (!rows.length) { showToast('Nenhum pagamento confirmado em ' + anoAtual + ' para gerar relatório.'); return; }
   var terapeuta = tfUserData || {};
-  var fmt = function(v){ return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+  var fmt = fmtMoeda;
 
   // Agrupa por mês
   var porMes = {};
@@ -583,7 +583,7 @@ function abrirWppLote() {
     if (!pendentes.length) {
       body.innerHTML = '<div style="color:var(--sage);font-size:14px">✓ Nenhuma cobrança pendente no momento.</div>';
     } else {
-      var fmt = function(v){ return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+      var fmt = fmtMoeda;
       body.innerHTML = 'Serão enviadas <strong>'+pendentes.length+' cobranças</strong> para pacientes com pagamento pendente ou em atraso.<br><br>'
         + '<div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto">'
         + pendentes.map(function(c){
@@ -611,7 +611,7 @@ function sendWppBatch() {
     if (!p || !p.whatsapp) return;
     var n = p.whatsapp.replace(/\D/g,'');
     n = n.startsWith('55') ? n : '55' + n;
-    var val = 'R$ ' + Number(c.value||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    var val = fmtMoeda(c.value);
     var msg = 'Olá ' + _firstName(p.name) + '! Segue o lembrete de pagamento da sua sessão de psicoterapia no valor de ' + val + '. Qualquer dúvida, é só me chamar aqui! 💚';
     setTimeout(function(){ window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank'); }, enviados * 500);
     enviados++;
@@ -634,7 +634,7 @@ function lembreteInadimplentes() {
     var p = patients.find(function(x){ return x.name === c.patient; });
     var wpp = p && p.whatsapp ? p.whatsapp.replace(/\D/g,'') : '';
     if (wpp && !wpp.startsWith('55')) wpp = '55' + wpp;
-    var dataPt = typeof c.date === 'string' && c.date.includes('-') ? c.date.split('-').reverse().join('/') : c.date;
+    var dataPt = fmtDataBR(c.date);
     var msg = 'Olá ' + escHTML(_firstName(c.patient)) + '! 😊\n\nPassando para lembrar que temos uma cobrança em aberto: sessão de ' + dataPt + ' no valor de R$' + c.value + '.'
       + (pixKey ? '\n\nChave PIX: ' + pixKey : '')
       + '\n\nQualquer dúvida estou à disposição! 🌿\n— ' + nomeT;
@@ -716,7 +716,7 @@ function atualizarStatsFinanceiro(mesFilter) {
   const receitaTotal = ativas.filter(c => c.status === 'paid').reduce((s, c) => s + c.value, 0);
   const aReceber    = ativas.filter(c => c.status === 'pending').reduce((s, c) => s + c.value, 0);
   const emAtraso    = ativas.filter(c => c.status === 'overdue').reduce((s, c) => s + c.value, 0);
-  const _fmtR = function(v) { return 'R$' + (v >= 1000 ? (v/1000).toFixed(1).replace('.',',')+'k' : Math.round(v).toLocaleString('pt-BR')); };
+  const _fmtR = fmtMoedaCompact;
   const stats = document.querySelectorAll('#page-financeiro .stat-value');
   if (stats[0]) stats[0].textContent = _fmtR(receitaTotal);
   if (stats[1]) stats[1].textContent = _fmtR(aReceber);
@@ -777,7 +777,7 @@ function exportarRelatorioMensal() {
   const terapeuta = tfUserData || {};
   const hoje = new Date();
   const mesAtual = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmt = fmtMoeda;
   const statusLabel = s => s === 'paid' ? 'Pago' : s === 'overdue' ? 'Em atraso' : 'Pendente';
   const statusColor = s => s === 'paid' ? '#166534' : s === 'overdue' ? '#991b1b' : '#92400e';
   const statusBg = s => s === 'paid' ? '#dcfce7' : s === 'overdue' ? '#fee2e2' : '#fef3c7';
@@ -962,7 +962,7 @@ function gerarReciboPDF(btn) {
 
 <div class="total-box">
   <div class="total-label">Valor recebido</div>
-  <div class="total-value">R$ ${c ? Number(c.value||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—'}</div>
+  <div class="total-value">${c ? fmtMoeda(c.value) : '—'}</div>
 </div>
 
 <div class="assinatura">

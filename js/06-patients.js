@@ -367,9 +367,8 @@ function _enviarWhatsAppAcesso(p, nome, senha) {
     + 'No primeiro acesso você criará uma senha pessoal. Depois é só abrir o link e entrar!\n\n'
     + 'Qualquer dúvida é só me chamar. Até a próxima sessão! 💚\n'
     + '— ' + terapeuta;
-  var tel = (p.whatsapp || '').replace(/\D/g,'');
-  var url = 'https://wa.me/' + (tel ? '55' + tel : '') + '?text=' + encodeURIComponent(msg);
-  window.open(url, '_blank');
+  // _wppLink normaliza o número (não duplica o 55 quando já vem com +55)
+  window.open(_wppLink(p.whatsapp, msg), '_blank');
 }
 
 async function revogarPortalPaciente(i) {
@@ -1086,7 +1085,7 @@ function renderPatientNotas(i) {
     timelineHtml = '<div style="padding:20px 0;color:var(--muted);font-size:13px;font-style:italic;text-align:center">Nenhum agendamento registrado ainda.</div>';
   } else {
     var eventos = apptsPac.map(function(a, ai) {
-      var nota = notasIdx[a.date.split('-').reverse().join('/')];
+      var nota = notasIdx[fmtDataBR(a.date)];
       var presencaLabel = a.presenca === 'faltou' ? 'Falta' : a.presenca === 'atrasou' ? 'Atrasou' : '';
       var statusLabel = a.status === 'cancelada' ? 'Cancelada' : (presencaLabel || 'Realizada');
       var dotColor = a.status === 'cancelada' ? 'var(--muted)' : a.presenca === 'faltou' ? 'var(--red)' : a.presenca === 'atrasou' ? 'var(--amber)' : 'var(--sage)';
@@ -1097,7 +1096,7 @@ function renderPatientNotas(i) {
         : nota ? '<span class="tag tag-green" style="font-size:10px">Nota indexada</span>' : '';
       var _tot = (typeof p.sessions === 'number' && p.sessions > 0) ? p.sessions : apptsPac.length;
       var numSessao = Math.max(1, _tot - ai);
-      var dateBR = a.date.split('-').reverse().join('/');
+      var dateBR = fmtDataBR(a.date);
       var moodHtml = '';
       if (p.moodHistory && p.moodHistory[apptsPac.length - ai - 1] !== undefined) {
         var mv = p.moodHistory[apptsPac.length - ai - 1];

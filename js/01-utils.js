@@ -73,11 +73,39 @@ function _chargeVencida(c) {
   return !!iso && iso < hojeISO();
 }
 
+/* ── MOEDA (única fonte de formatação — F5.1) ──
+ * fmtMoeda(1234.5)        → "R$ 1.234,50"  (completo: recibos, relatórios, totais)
+ * fmtMoedaInt(1234.5)     → "R$1.235"      (inteiro: listas, toasts, cards)
+ * fmtMoedaCompact(1234.5) → "R$1,2k"       (compacto: dashboard, stats) */
+function fmtMoeda(v) {
+  return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtMoedaInt(v) {
+  return 'R$' + Math.round(Number(v) || 0).toLocaleString('pt-BR');
+}
+function fmtMoedaCompact(v) {
+  v = Number(v) || 0;
+  return v >= 1000 ? 'R$' + (v / 1000).toFixed(1).replace('.', ',') + 'k' : fmtMoedaInt(v);
+}
+
+/* Data para exibição: ISO (YYYY-MM-DD…) → DD/MM/YYYY; outros formatos passam
+ * intactos (muita data legada já vem em BR); vazio → '—'. */
+function fmtDataBR(d) {
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0, 10).split('-').reverse().join('/');
+  return d || '—';
+}
+
 /* Formata número para WhatsApp. Retorna null para números inválidos (0800, 0300). */
 function _wppNumero(phone) {
   var n = (phone || '').replace(/\D/g, '');
   if (!n || n.startsWith('0800') || n.startsWith('0300') || n.startsWith('0500')) return null;
   return n.startsWith('55') ? n : '55' + n;
+}
+
+/* Link wa.me pronto (normaliza o número via _wppNumero; sem número → wa.me/?text=). */
+function _wppLink(phone, texto) {
+  var n = _wppNumero(phone);
+  return 'https://wa.me/' + (n || '') + (texto ? '?text=' + encodeURIComponent(texto) : '');
 }
 
 /* ── FETCH COM TIMEOUT ── */
