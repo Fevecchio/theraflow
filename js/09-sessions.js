@@ -683,7 +683,9 @@ async function _gerarNotaClinicaIA(sp, sessionNotes) {
     var res = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
-      body: JSON.stringify({ systemPrompt: system, userPrompt: user, patientData: sp })
+      // Minimização (LGPD): patientData não é enviado — o servidor o ignora quando
+      // systemPrompt vem preenchido, e sp contém prontuário/whatsapp/token da sala.
+      body: JSON.stringify({ systemPrompt: system, userPrompt: user })
     }, 25000);
     if (!res.ok) return null;
     var data = await res.json();
@@ -721,7 +723,8 @@ async function _gerarResumoPortalIA(sp, noteText) {
     var res = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
-      body: JSON.stringify({ systemPrompt: system, userPrompt: user, patientData: sp })
+      // Minimização (LGPD): patientData omitido — ignorado pelo servidor com systemPrompt presente.
+      body: JSON.stringify({ systemPrompt: system, userPrompt: user })
     }, 20000);
     if (!res.ok) return null;
     var data = await res.json();

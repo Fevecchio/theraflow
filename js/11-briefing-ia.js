@@ -283,7 +283,9 @@ Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos ac
     const res = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
-      body: JSON.stringify({ systemPrompt: system, userPrompt: user, patientData: bp })
+      // Minimização (LGPD): patientData omitido — ignorado pelo servidor com systemPrompt presente,
+      // e bp completo contém prontuário/whatsapp/token da sala.
+      body: JSON.stringify({ systemPrompt: system, userPrompt: user })
     }, 30000);
     if (!res.ok) {
       let errDetail = 'HTTP_' + res.status;
