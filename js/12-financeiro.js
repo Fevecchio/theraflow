@@ -1,9 +1,23 @@
 // 12-financeiro.js — Financeiro, cobranças, planos mensais, recibos, relatórios
 
 function abrirModalNovoPlano() {
+  // Popula o select com os pacientes reais (antes tinha nomes DEMO fixos no HTML).
+  var sel = document.getElementById('plan-paciente-select');
+  if (sel) {
+    var lista = (typeof patients !== 'undefined' ? patients : []).filter(function(p){ return p && p.name; });
+    sel.innerHTML = '<option value="">Selecionar paciente…</option>' + lista.map(function(p){
+      return '<option value="' + escHTML(p.name) + '">' + escHTML(p.name) + '</option>';
+    }).join('');
+  }
   const el = document.getElementById('fin-plano-data');
   if (el) el.value = new Date().toLocaleDateString('pt-BR');
   showModal('modal-novo-plano');
+}
+
+/* Converte texto de valor BR ("R$ 1.200,00") para número. */
+function _parseValorBR(s) {
+  s = String(s || '').replace(/[^\d,.]/g, '').replace(/\./g, '').replace(',', '.');
+  return parseFloat(s) || 0;
 }
 
 /* ── NOVA COBRANÇA AVULSA (F4.1) ── */
@@ -1008,13 +1022,51 @@ function switchPlanType(type) {
 }
 
 function createNewPlan() {
-  const isMensal = document.getElementById('ptype-mensal').classList.contains('selected');
-  closeModal('modal-novo-plano');
+  var isMensal = document.getElementById('ptype-mensal').classList.contains('selected');
+  var nome = (document.getElementById('plan-paciente-select') || {}).value || '';
+  if (!nome) { showToast('Selecione o paciente.', 'warning'); return; }
+  var p = (typeof patients !== 'undefined' ? patients : []).find(function(x){ return x.name === nome; });
+  var _initials = p ? p.initials : nome.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+  var _color = p ? p.color : '#4a7c59';
+
+  var novaCobranca;
   if (isMensal) {
-    showToast('Plano mensal criado com sucesso!');
+    var sessoes = parseInt((document.getElementById('plan-sessions-select') || {}).value || '4');
+    var valor = _parseValorBR((document.getElementById('plan-valor-pacote') || {}).value);
+    var venc = (document.getElementById('plan-vencimento') || {}).value || 'Dia 5';
+    if (valor <= 0) { showToast('Informe o valor do pacote.', 'warning'); return; }
+    // Vencimento: usa o "Dia X" no mês corrente (ou próximo mês se já passou).
+    var diaVenc = parseInt((venc.match(/\d+/) || ['5'])[0]) || 5;
+    var hoje = new Date();
+    var dtVenc = new Date(hoje.getFullYear(), hoje.getMonth(), diaVenc);
+    if (dtVenc < hoje) dtVenc.setMonth(dtVenc.getMonth() + 1);
+    novaCobranca = {
+      id: Date.now(), patient: nome, initials: _initials, color: _color,
+      value: valor, date: localDateISO(dtVenc), status: 'pending', deleted: false,
+      billing: 'mensal', planLabel: sessoes + ' sessões/mês', session: sessoes + 'x/mês',
+      method: 'PIX',
+    };
   } else {
-    showToast('Cobrança avulsa criada com sucesso!');
+    var valorA = _parseValorBR((document.getElementById('plan-valor-sessao') || {}).value);
+    var dataA = (document.getElementById('fin-plano-data') || {}).value;
+    var metodoA = (document.getElementById('plan-metodo-pgto') || {}).value || 'PIX';
+    if (valorA <= 0) { showToast('Informe o valor da sessão.', 'warning'); return; }
+    var isoA = _chargeDateISO(dataA) || hojeISO();
+    novaCobranca = {
+      id: Date.now(), patient: nome, initials: _initials, color: _color,
+      value: valorA, date: isoA, status: 'pending', deleted: false,
+      billing: 'avulso', session: fmtDataBR(isoA), method: metodoA,
+    };
   }
+  charges.push(novaCobranca);
+  salvarCharges();
+  if (typeof _recalcFinStatus === 'function') { _recalcFinStatus(); if (typeof salvarPacientes === 'function') salvarPacientes(); }
+  closeModal('modal-novo-plano');
+  renderCharges();
+  if (typeof atualizarStatsFinanceiro === 'function') atualizarStatsFinanceiro();
+  showToast(isMensal
+    ? '📅 Plano mensal criado para ' + _firstName(nome) + ' — ' + fmtMoedaInt(novaCobranca.value) + '/mês'
+    : '💳 Cobrança criada para ' + _firstName(nome) + ' — ' + fmtMoedaInt(novaCobranca.value));
 }
 
 function editPlanField(el, fieldId) {
