@@ -347,6 +347,12 @@ async function compartilharAcessoPortal(i) {
     });
   }
   _enviarWhatsAppAcesso(p, nome, senha);
+  // A senha em claro vive SÓ durante o envio (é a promessa do F3.2 — o comentário
+  // em js/03 já dizia isso, mas ela ficava em p.portalPassword e ia parar no
+  // tf_patients do localStorage). Limpa: o próximo "Reenviar" cai no confirm e
+  // gera senha NOVA em vez de rearmar a temporária antiga por cima da pessoal.
+  p.portalPassword = null;
+  salvarPacientes();
 }
 
 function _enviarWhatsAppAcesso(p, nome, senha) {
