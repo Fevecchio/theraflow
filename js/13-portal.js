@@ -1306,6 +1306,141 @@ async function pacEnviarMensagem(idx) {
   input.focus();
 }
 
+// DIARY_CONFIG movido de js/12 (que nao carrega no portal) p/ ca — sem isto o form
+// especializado do diario nao aparecia p/ o paciente real. Usado por renderPatientDiario
+// (js/13, portal) e renderDiarioPortal (js/12, previa do terapeuta).
+var DIARY_CONFIG = {
+  'TCC': {
+    tab: '🧠 Diário TCC',
+    cor: 'var(--sage)',
+    corLight: 'var(--sage-light)',
+    instrucao: '💡 Quando perceber uma emoção forte, pare e registre. O objetivo é reconhecer o padrão pensamento → emoção → comportamento.',
+    html: function() {
+      const stepBadge = (n, optional) => `<div style="width:22px;height:22px;border-radius:50%;background:${optional?'#e8f0eb':'var(--sage)'};color:${optional?'var(--sage)':'#fff'};font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${n}</div>`;
+      return `<div style="display:flex;flex-direction:column">
+        <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+            ${stepBadge(1,false)}
+            <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Situação</span>
+          </div>
+          <textarea id="esp-campo-1" placeholder="O que aconteceu? Onde estava, com quem, que horas?" rows="3" class="diary-ta"></textarea>
+        </div>
+        <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+            ${stepBadge(2,false)}
+            <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Pensamento automático</span>
+          </div>
+          <textarea id="esp-campo-2" placeholder="O que passou pela sua cabeça naquele momento?" rows="3" class="diary-ta"></textarea>
+        </div>
+        <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+            ${stepBadge(3,false)}
+            <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Emoção e intensidade</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px">
+            ${['😰 Ansiedade','😢 Tristeza','😤 Raiva','😳 Vergonha','😨 Medo'].map(e=>`<button onclick="selectEmoTCC(this,'${e.split(' ')[1]}')" class="tcc-emocao-btn" style="padding:9px 6px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:12.5px;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;line-height:1.4">${e}</button>`).join('')}
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--muted)">Intensidade</span>
+            <span id="tcc-intensidade-val" style="font-size:13px;font-weight:700;color:var(--sage)">5/10</span>
+          </div>
+          <input type="range" min="1" max="10" value="5" class="diary-slider" oninput="this.style.background='linear-gradient(90deg,var(--sage) '+this.value*10+'%,#e8f0eb '+this.value*10+'%)';document.getElementById('tcc-intensidade-val').textContent=this.value+'/10'">
+        </div>
+        <div style="padding:14px 0">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+            ${stepBadge(4,true)}
+            <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Pensamento alternativo <span style="font-weight:400;color:var(--muted);font-size:13px">(opcional)</span></span>
+          </div>
+          <textarea id="esp-campo-3" placeholder="Existe uma forma diferente de ver essa situação?" rows="3" class="diary-ta"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;padding-top:4px">
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('TCC')">💾 Salvar no diário</button>
+        </div>
+      </div>`;
+    }
+  },
+  'Psicanálise': {
+    tab: '🔍 Associações livres',
+    cor: 'var(--purple)',
+    corLight: 'var(--purple-light)',
+    instrucao: '<strong>Como usar:</strong> Escreva livremente o que vier à mente — sem censura, sem ordem. Sonhos, memórias, sensações, imagens. Tudo tem valor.',
+    html: function() {
+      return `<div style="display:flex;flex-direction:column;gap:12px">
+        <div><label class="diary-label">Associações livres</label>
+          <textarea id="esp-campo-1" placeholder="Deixe os pensamentos fluírem livremente, sem julgamento…" rows="5" class="diary-ta"></textarea></div>
+        <div><label class="diary-label">Sonhos ou imagens da semana <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+          <textarea id="esp-campo-2" placeholder="Algum sonho marcante? Uma imagem ou memória que voltou à mente?" rows="3" class="diary-ta"></textarea></div>
+        <div><label class="diary-label">Sensação corporal associada <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+          <textarea id="esp-campo-3" placeholder="Como seu corpo está carregando isso?" rows="2" class="diary-ta"></textarea></div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('Psicanálise')">💾 Salvar no diário</button>
+        </div>
+      </div>`;
+    }
+  },
+  'Sistêmica': {
+    tab: '🔗 Diário de relações',
+    cor: 'var(--blue)',
+    corLight: 'var(--blue-light)',
+    instrucao: '<strong>Como usar:</strong> Foque nos padrões relacionais que observou esta semana. O que se repetiu? O que surpreendeu?',
+    html: function() {
+      return `<div style="display:flex;flex-direction:column;gap:12px">
+        <div><label class="diary-label">1. Situação relacional</label>
+          <textarea id="esp-campo-1" placeholder="O que aconteceu? Com quem estava? Qual era o contexto?" rows="2" class="diary-ta"></textarea></div>
+        <div><label class="diary-label">2. Padrão percebido</label>
+          <textarea id="esp-campo-2" placeholder="Isso se repete com outras pessoas? Já viveu algo parecido antes em outras relações?" rows="3" class="diary-ta"></textarea></div>
+        <div><label class="diary-label">3. O que você sentiu e não disse</label>
+          <textarea id="esp-campo-3" placeholder="O que quis dizer mas guardou? O que sente que falta nessa relação?" rows="2" class="diary-ta"></textarea></div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('Sistêmica')">💾 Salvar no diário</button>
+        </div>
+      </div>`;
+    }
+  },
+  'ACT': {
+    tab: '🌱 Diário de valores',
+    cor: '#2e7d52',
+    corLight: '#e6f4ec',
+    instrucao: '<strong>Como usar:</strong> Observe suas ações e como se conectam ao que realmente importa para você. Não existe certo ou errado aqui.',
+    html: function() {
+      return `<div style="display:flex;flex-direction:column;gap:12px">
+        <div><label class="diary-label">1. Ação da semana</label>
+          <textarea id="esp-campo-1" placeholder="O que você fez ou evitou fazer esta semana?" rows="2" class="diary-ta"></textarea></div>
+        <div><label class="diary-label">2. Valor envolvido</label>
+          <textarea id="esp-campo-2" placeholder="Qual valor estava em jogo? (ex: família, saúde, liberdade, honestidade…)" rows="2" class="diary-ta"></textarea></div>
+        <div><label class="diary-label">3. Pensamento que atrapalhou</label>
+          <textarea id="esp-campo-3" placeholder="Algum pensamento te afastou de agir conforme seus valores?" rows="2" class="diary-ta"></textarea></div>
+        <div><label class="diary-label">4. Comprometimento</label>
+          <textarea id="esp-campo-4" placeholder="O que você quer fazer diferente esta semana?" rows="2" class="diary-ta"></textarea></div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('ACT')">💾 Salvar no diário</button>
+        </div>
+      </div>`;
+    }
+  },
+  'EMDR': {
+    tab: '🧘 Diário de processamento',
+    cor: 'var(--amber)',
+    corLight: 'var(--amber-light)',
+    instrucao: '<strong>Como usar:</strong> Registre o que surgiu após as sessões — sensações, memórias, sonhos. Não force nada. Anote o que aparecer naturalmente.',
+    html: function() {
+      return `<div style="display:flex;flex-direction:column;gap:12px">
+        <div><label class="diary-label">O que surgiu esta semana</label>
+          <textarea id="esp-campo-1" placeholder="Memórias, imagens, sensações corporais, sonhos que apareceram…" rows="4" class="diary-ta"></textarea></div>
+        <div><label class="diary-label">Nível de perturbação (0–10)</label>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>Calmo</span><span id="emdr-nivel-val">5/10</span><span>Intenso</span></div>
+          <input type="range" min="0" max="10" value="5" style="-webkit-appearance:none;width:100%;height:5px;background:linear-gradient(90deg,var(--amber) 50%,var(--amber-light) 50%);border-radius:10px;outline:none;" oninput="this.style.background='linear-gradient(90deg,var(--amber) '+this.value*10+'%,var(--amber-light) '+this.value*10+'%)';document.getElementById('emdr-nivel-val').textContent=this.value+'/10'">
+        </div>
+        <div><label class="diary-label">O que ajudou a se acalmar <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+          <textarea id="esp-campo-2" placeholder="Respiração, movimento, contato com a natureza, conversa…" rows="2" class="diary-ta"></textarea></div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('EMDR')">💾 Salvar no diário</button>
+        </div>
+      </div>`;
+    }
+  }
+};
+
 function renderPatientDiario(p, idx) {
   var abordagem = p.abordagem || '—';
   var config = (typeof DIARY_CONFIG !== 'undefined') ? DIARY_CONFIG[abordagem] : null;
