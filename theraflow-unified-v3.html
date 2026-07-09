@@ -1251,7 +1251,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="page-subtitle">Março de 2026 · Cobranças, pagamentos e recibos</div>
     </div>
     <div class="topbar-actions">
-      <select onchange="filterFinMonth(this.value)" id="fin-month-select"><option>Março 2026</option><option>Fevereiro 2026</option><option>Janeiro 2026</option></select>
+      <select onchange="filterFinMonth(this.value)" id="fin-month-select"><option value="">Todos os meses</option></select>
       <button class="btn btn-ghost btn-sm" onclick="lembreteInadimplentes()">⚠ Inadimplentes</button>
       <button class="btn btn-ghost btn-sm" onclick="exportarRelatorioMensal()">📊 Relatório PDF</button>
       <button class="btn btn-secondary btn-sm" onclick="exportarFinanceiro()">⬇ CSV</button>
@@ -1418,7 +1418,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="card">
         <div class="section-header" style="margin-bottom:14px">
           <div class="section-title">Recibos emitidos</div>
-          <button class="btn btn-secondary btn-sm" onclick="showToast('Geração em lote chega em breve. Por ora, use o botão 📄 Recibo em cada cobrança paga.', 'info')">📋 Recibos do mês <span style="font-size:9px;background:#eee;color:#888;padding:1px 5px;border-radius:5px;font-weight:600">em breve</span></button>
+          <button class="btn btn-primary btn-sm" onclick="gerarRecibosLote()">📋 Gerar recibos do mês</button>
         </div>
         <table>
           <thead><tr><th>Paciente</th><th>Período</th><th>Valor total</th><th>Status</th><th></th></tr></thead>

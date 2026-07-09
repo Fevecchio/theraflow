@@ -80,9 +80,32 @@ function criarNovaCobranca() {
 let charges = [];
 let currentFinMode = 'pre';
 
+// Popula o select de mês com os meses REAIS das cobranças (value YYYY-MM).
+// Antes as opções eram fixas ("Março 2026") sem value válido → o filtro por mês
+// não casava com _chargeMonthKey (YYYY-MM) e não funcionava.
+function _popularMesSelect() {
+  var sel = document.getElementById('fin-month-select');
+  if (!sel) return;
+  var atual = sel.value;
+  var meses = {};
+  (typeof charges !== 'undefined' ? charges : []).forEach(function(c){
+    if (c.deleted) return;
+    var k = (typeof _chargeMonthKey === 'function') ? _chargeMonthKey(c) : '';
+    if (k) meses[k] = true;
+  });
+  var keys = Object.keys(meses).sort().reverse();
+  var nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  sel.innerHTML = '<option value="">Todos os meses</option>' + keys.map(function(k){
+    var p = k.split('-');
+    return '<option value="' + k + '">' + (nomesMes[parseInt(p[1])-1]||'') + ' de ' + p[0] + '</option>';
+  }).join('');
+  if (atual && /^\d{4}-\d{2}$/.test(atual) && meses[atual]) sel.value = atual;
+}
+
 function renderCharges(mesFilter) {
   const list = document.getElementById('charge-list');
   if (!list) return;
+  _popularMesSelect();
   var mes = mesFilter;
   if (!mes) {
     var sel = document.getElementById('fin-month-select');
@@ -889,28 +912,56 @@ td{padding:8px 10px;border-bottom:1px solid #f3f4f6;vertical-align:middle}tr:hov
   try { localStorage.setItem('tf_first_export', Date.now()); verificarMarcos(); } catch(e){}
 }
 
-function gerarReciboPDF(btn) {
-  // Encontra o card pai para pegar os dados da cobrança
-  const card = btn.closest('[data-charge-id]') || btn.closest('.card') || btn.parentElement;
-  const chargeId = card ? parseInt(card.dataset.chargeId) : null;
-  const c = chargeId != null ? charges.find(ch => ch.id === chargeId) : null;
+// Dados do terapeuta para o recibo (tfUserData ou fallback do localStorage).
+function _reciboTerapeuta() {
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+  return (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome)
+    ? tfUserData : { nome: acc.nome||'—', crp: acc.crp||'—' };
+}
 
-  // Fallback: carrega dados do terapeuta direto do localStorage se tfUserData estiver vazio
-  var _accFallback = {}; try { _accFallback = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
-  const terapeuta = (tfUserData && tfUserData.nome) ? tfUserData : { nome: _accFallback.nome||'—', crp: _accFallback.crp||'—' };
-  const hoje = new Date().toLocaleDateString('pt-BR');
-  // Número sequencial baseado no chargeId para rastreabilidade
-  var _reciboSeq = 0; try { _reciboSeq = parseInt(localStorage.getItem('tf_recibo_seq')||'0')||0; } catch(e){}
-  _reciboSeq++; try { localStorage.setItem('tf_recibo_seq', String(_reciboSeq)); } catch(e){}
-  const num = (chargeId != null ? String(chargeId).slice(-4).padStart(4,'0') : String(_reciboSeq).padStart(4,'0'));
+// Número do recibo: baseado no id da cobrança (determinístico/rastreável) ou seq.
+function _reciboNum(c) {
+  if (c && c.id != null) return String(c.id).slice(-4).padStart(4,'0');
+  var seq = 0; try { seq = parseInt(localStorage.getItem('tf_recibo_seq')||'0')||0; } catch(e){}
+  seq++; try { localStorage.setItem('tf_recibo_seq', String(seq)); } catch(e){}
+  return String(seq).padStart(4,'0');
+}
 
-  const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"/>
+// Corpo de UM recibo (uma "página"). Reusado no recibo individual e no lote.
+function _reciboCorpo(c, terapeuta, hoje) {
+  var num = _reciboNum(c);
+  return `<div class="recibo-page">
+  <div class="header">
+    <div><div class="logo">TheraFlow</div><div class="logo-sub">Plataforma clínica para psicólogos</div></div>
+    <div class="recibo-num"><strong>Recibo nº ${num}</strong>Emitido em ${hoje}</div>
+  </div>
+  <div class="section grid">
+    <div><div class="label">Terapeuta responsável</div><div class="value">${escHTML(terapeuta.nome||'—')}</div><div style="font-size:12px;color:#666">CRP ${escHTML(terapeuta.crp||'—')}</div></div>
+    <div><div class="label">Paciente</div><div class="value">${c ? escHTML(c.patient) : '—'}</div></div>
+  </div>
+  <div class="section grid">
+    <div><div class="label">Descrição do serviço</div><div class="value">${c ? (c.billing === 'mensal' ? escHTML(c.planLabel||'Plano mensal') : 'Sessão de psicoterapia nº '+escHTML(String(c.session||'—'))) : 'Sessão de psicoterapia'}</div></div>
+    <div><div class="label">Data da sessão</div><div class="value">${c && c.date ? escHTML(fmtDataBR(c.date)) : hoje}</div></div>
+  </div>
+  <div class="section grid">
+    <div><div class="label">Forma de pagamento</div><div class="value">${c ? escHTML(c.method||'PIX') : '—'}</div></div>
+    <div><div class="label">Status</div><div class="value">${c && c.status === 'paid' ? '✅ Pago' : '⏳ Pendente'}</div></div>
+  </div>
+  <div class="total-box"><div class="total-label">Valor recebido</div><div class="total-value">${c ? fmtMoeda(c.value) : '—'}</div></div>
+  <div class="assinatura"><div style="margin-bottom:32px">&nbsp;</div>${escHTML(terapeuta.nome||'Terapeuta')}<div style="font-size:11px;color:#888">CRP ${escHTML(terapeuta.crp||'—')} · Psicólogo(a)</div></div>
+  <div class="footer">Recibo emitido pela plataforma TheraFlow · Uso exclusivamente profissional<br/>Este documento é gerado eletronicamente e tem validade como comprovante de pagamento</div>
+</div>`;
+}
+
+// Documento completo com 1+ recibos (page-break entre eles → 1 por folha no PDF).
+function _reciboDoc(corpos) {
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"/>
-<title>Recibo — ${c ? escHTML(c.patient) : 'Sessão'}</title>
+<title>Recibo${corpos.length>1?'s ('+corpos.length+')':''} — TheraFlow</title>
 <style>
-  body{font-family:'Arial',sans-serif;max-width:580px;margin:40px auto;padding:0 24px;color:#1a1a1a;font-size:13px}
+  body{font-family:'Arial',sans-serif;color:#1a1a1a;font-size:13px;margin:0}
+  .recibo-page{max-width:580px;margin:40px auto;padding:0 24px;page-break-after:always}
+  .recibo-page:last-child{page-break-after:auto}
   .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #2d5a3d;padding-bottom:16px;margin-bottom:24px}
   .logo{font-size:20px;font-weight:700;color:#2d5a3d}
   .logo-sub{font-size:11px;color:#666;margin-top:3px}
@@ -925,78 +976,39 @@ function gerarReciboPDF(btn) {
   .total-value{font-size:28px;font-weight:700;color:#2d5a3d}
   .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e0e0e0;font-size:11px;color:#999;text-align:center;line-height:1.8}
   .assinatura{margin-top:40px;border-top:1px solid #1a1a1a;padding-top:8px;font-size:12px;color:#444;width:260px}
-  @media print{body{margin:20px auto}}
-</style>
-</head>
-<body>
-<div class="header">
-  <div>
-    <div class="logo">TheraFlow</div>
-    <div class="logo-sub">Plataforma clínica para psicólogos</div>
-  </div>
-  <div class="recibo-num">
-    <strong>Recibo nº ${num}</strong>
-    Emitido em ${hoje}
-  </div>
-</div>
+</style></head><body>${corpos.join('\n')}</body></html>`;
+}
 
-<div class="section grid">
-  <div>
-    <div class="label">Terapeuta responsável</div>
-    <div class="value">${escHTML(terapeuta.nome || '—')}</div>
-    <div style="font-size:12px;color:#666">CRP ${escHTML(terapeuta.crp || '—')}</div>
-  </div>
-  <div>
-    <div class="label">Paciente</div>
-    <div class="value">${c ? escHTML(c.patient) : '—'}</div>
-  </div>
-</div>
-
-<div class="section grid">
-  <div>
-    <div class="label">Descrição do serviço</div>
-    <div class="value">${c ? (c.billing === 'mensal' ? escHTML(c.planLabel||'Plano mensal') : 'Sessão de psicoterapia nº '+escHTML(String(c.session||'—'))) : 'Sessão de psicoterapia'}</div>
-  </div>
-  <div>
-    <div class="label">Data da sessão</div>
-    <div class="value">${c && c.date ? escHTML(c.date) : hoje}</div>
-  </div>
-</div>
-
-<div class="section grid">
-  <div>
-    <div class="label">Forma de pagamento</div>
-    <div class="value">${c ? escHTML(c.method||'PIX') : '—'}</div>
-  </div>
-  <div>
-    <div class="label">Status</div>
-    <div class="value">${c && c.status === 'paid' ? '✅ Pago' : '⏳ Pendente'}</div>
-  </div>
-</div>
-
-<div class="total-box">
-  <div class="total-label">Valor recebido</div>
-  <div class="total-value">${c ? fmtMoeda(c.value) : '—'}</div>
-</div>
-
-<div class="assinatura">
-  <div style="margin-bottom:32px">&nbsp;</div>
-  ${escHTML(terapeuta.nome || 'Terapeuta')}
-  <div style="font-size:11px;color:#888">CRP ${escHTML(terapeuta.crp||'—')} · Psicólogo(a)</div>
-</div>
-
-<div class="footer">
-  Recibo emitido pela plataforma TheraFlow · Uso exclusivamente profissional<br/>
-  Este documento é gerado eletronicamente e tem validade como comprovante de pagamento
-</div>
-</body></html>`;
-
+function _abrirImpressao(html) {
   const win = window.open('', '_blank');
-  if (!win) { showToast('Permita pop-ups para gerar o recibo.'); return; }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
+  if (!win) { showToast('Permita pop-ups para gerar o recibo.'); return false; }
+  win.document.write(html); win.document.close(); win.focus();
   setTimeout(() => win.print(), 400);
+  return true;
+}
+
+function gerarReciboPDF(btn) {
+  const card = btn.closest('[data-charge-id]') || btn.closest('.card') || btn.parentElement;
+  const chargeId = card ? parseInt(card.dataset.chargeId) : null;
+  const c = chargeId != null ? charges.find(ch => ch.id === chargeId) : null;
+  _abrirImpressao(_reciboDoc([_reciboCorpo(c, _reciboTerapeuta(), new Date().toLocaleDateString('pt-BR'))]));
+}
+
+// Lote: gera UM documento com os recibos de todas as cobranças PAGAS do mês
+// selecionado (ou de todos os meses se nenhum filtro válido) — um por página.
+function gerarRecibosLote() {
+  var sel = document.getElementById('fin-month-select');
+  var mes = (sel && sel.value && /^\d{4}-\d{2}$/.test(sel.value)) ? sel.value : null;
+  var pagos = (typeof charges !== 'undefined' ? charges : []).filter(function(c){
+    return !c.deleted && c.status === 'paid' && (!mes || _chargeInMonth(c, mes));
+  });
+  if (!pagos.length) { showToast('Nenhuma cobrança paga' + (mes ? ' neste mês' : '') + ' para gerar recibos.', 'warning'); return; }
+  var terapeuta = _reciboTerapeuta();
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var corpos = pagos.map(function(c){ return _reciboCorpo(c, terapeuta, hoje); });
+  if (_abrirImpressao(_reciboDoc(corpos))) {
+    showToast('📄 ' + pagos.length + ' recibo' + (pagos.length>1?'s':'') + ' gerado' + (pagos.length>1?'s':'') + ' — revise e salve/imprima.');
+  }
 }
 
 function filterFinMonth(val) {
