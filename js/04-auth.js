@@ -1022,8 +1022,13 @@ function ativarAnamnesePaciente(idx) {
 // ─── ANAMNESE — PACIENTE (portal) ────────────────────────────────────
 
 function pacSalvarAnamnese(idx) {
-  var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  var p = pacs[idx]; if (!p) return;
+  // Resolve o paciente em QUALQUER contexto (login RPC/local/Auth). Antes lia
+  // tf_patients direto, que fica vazio no login RPC → p undefined → falhava em
+  // silêncio (anamnese nunca salvava). Mesmo padrão dos irmãos (F4.3).
+  var res = (typeof _pacGetP === 'function') ? _pacGetP(idx) : null;
+  if (!res) return;
+  var p = res.p, pacs = res.pacs; idx = res.idx;
+  if (!p) return;
 
   function _gp(id) {
     var el = document.getElementById(id);
@@ -1051,7 +1056,7 @@ function pacSalvarAnamnese(idx) {
   });
   p.portalAnamneseAtiva = false; // Some do portal após envio
 
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) {
     _loggedPatientData.anamnese = p.anamnese;
     _loggedPatientData.portalAnamneseAtiva = false;
@@ -1060,6 +1065,8 @@ function pacSalvarAnamnese(idx) {
     patients[idx].anamnese = p.anamnese;
     patients[idx].portalAnamneseAtiva = false;
   }
+  // Sobe ao Supabase (merge — preserva os campos do terapeuta). Antes nem sincronizava.
+  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
 
   // Confirmação visual
   var secao = document.getElementById('pac-anamnese-secao');

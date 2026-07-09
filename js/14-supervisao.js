@@ -281,12 +281,12 @@ function showCalendarSync() {
 
         <!-- O que sincroniza -->
         <div style="background:#f8faf8;border-radius:10px;padding:14px 16px;margin-bottom:24px">
-          <div style="font-size:12px;font-weight:700;color:#4a7c59;margin-bottom:10px">O que é sincronizado</div>
+          <div style="font-size:12px;font-weight:700;color:#4a7c59;margin-bottom:10px">O que será sincronizado <span style="font-size:10px;background:#eee;color:#888;padding:1px 6px;border-radius:6px;font-weight:600">em breve</span></div>
           <div style="display:flex;flex-direction:column;gap:7px">
-            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>✅</span><span>Sessões criadas no TheraFlow → aparecem na sua agenda</span></div>
-            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>✅</span><span>Bloqueios pessoais → respeitados no TheraFlow</span></div>
-            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>✅</span><span>Convite automático ao paciente com link Whereby</span></div>
-            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>✅</span><span>Lembretes 24h e 1h antes por email</span></div>
+            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Sessões criadas no TheraFlow → aparecerão na sua agenda</span></div>
+            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Bloqueios pessoais → respeitados no TheraFlow</span></div>
+            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Convite automático ao paciente com link da sala</span></div>
+            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Lembretes 24h e 1h antes por email</span></div>
             <div style="font-size:12px;color:#aaa;display:flex;gap:8px"><span>❌</span><span>Conteúdo clínico nunca é enviado à agenda</span></div>
           </div>
         </div>
@@ -424,7 +424,7 @@ function enviarLembreteAgenda(nomeCompleto) {
   var pidx = patients.findIndex(function(p){ return p.name === nomeCompleto; });
   var p = patients[pidx];
   if (!p?.whatsapp) {
-    showToast('📨 WhatsApp não cadastrado para ' + nomeCompleto.split(' ')[0] + '. Lembrete anotado internamente.');
+    showToast('⚠ ' + nomeCompleto.split(' ')[0] + ' não tem WhatsApp cadastrado — não foi possível enviar. Adicione o número na ficha do paciente.', 'warning');
     return;
   }
   var n = _wppNumero(p.whatsapp);
