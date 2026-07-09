@@ -1108,19 +1108,29 @@ function selecionarProntuario(i, el) {
     }
   }
 
-  // Injeta notas salvas de sessões anteriores no início da aba notas
-  if (tabNotas && p.prontuarioNotes && p.prontuarioNotes.length > 0) {
+  // Renderiza as notas reais na aba notas (ou empty-state honesto se não houver).
+  // Antes, 2 cards de exemplo hardcoded ("Camila") ficavam fixos no HTML e apareciam
+  // para TODOS os pacientes — removidos; agora a aba reflete só o prontuário real.
+  if (tabNotas) {
     const container = tabNotas.querySelector('div');
     if (container) {
-      const existingInjected = container.querySelectorAll('.injected-note');
-      existingInjected.forEach(n => n.remove());
-      p.prontuarioNotes.slice().reverse().forEach((n, ni) => {
-        const card = document.createElement('div');
-        card.className = 'card card-sm injected-note fade-in';
-        card.style.borderLeft = '3px solid var(--sage)';
-        card.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:500">Sessão ${p.sessions - ni} — ${escHTML(n.date)}</span><span class="tag tag-green">Indexada</span></div><p style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">${escHTML(n.text)}</p>`;
-        container.insertBefore(card, container.firstChild);
-      });
+      container.querySelectorAll('.injected-note, .notas-empty').forEach(n => n.remove());
+      const notas = p.prontuarioNotes || [];
+      if (notas.length > 0) {
+        notas.slice().reverse().forEach((n, ni) => {
+          const card = document.createElement('div');
+          card.className = 'card card-sm injected-note fade-in';
+          card.style.borderLeft = '3px solid var(--sage)';
+          card.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:500">Sessão ${p.sessions - ni} — ${escHTML(n.date)}</span><span class="tag tag-green">Indexada</span></div><p style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">${escHTML(n.text)}</p>`;
+          container.insertBefore(card, container.firstChild);
+        });
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'notas-empty';
+        empty.style.cssText = 'padding:24px 0;color:var(--muted);font-size:13px;font-style:italic;text-align:center';
+        empty.textContent = 'Nenhuma nota clínica ainda. As notas aparecem aqui depois que você salva e indexa uma sessão.';
+        container.appendChild(empty);
+      }
     }
   }
 
@@ -1195,15 +1205,6 @@ function editarNota(textoId, btn) {
   btn.innerHTML = '✓ Salvar';
 }
 
-function aprovarNotaProntuario(cardId, tagId, acoesId) {
-  const card = document.getElementById(cardId);
-  const tag  = document.getElementById(tagId);
-  const acao = document.getElementById(acoesId);
-  if (card) card.style.borderLeftColor = 'var(--sage)';
-  if (tag)  { tag.className = 'tag tag-green'; tag.textContent = 'Aprovada'; }
-  if (acao) acao.style.display = 'none';
-  showToast('✓ Nota aprovada e salva no prontuário.');
-}
 // ── MATERIAIS ────────────────────────────────────────────────────────────────
 var _materialPatientIdx = null;
 

@@ -986,10 +986,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
       </div>
       <div id="tab-notas" style="display:none">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div class="card card-sm" style="border-left:3px solid var(--amber)" id="nota-sessao-12"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:500">Sessão 12 — 24/03</span><span class="tag tag-amber" id="nota-12-tag">Revisão pendente</span></div><p id="nota-12-texto" style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">Paciente chegou com leve agitação. Relatou semana difícil. Foram trabalhadas técnicas de reestruturação cognitiva. Boa adesão e insight sobre autoexigência.</p><div style="display:flex;gap:8px;margin-top:10px" id="nota-12-acoes"><button class="btn btn-secondary btn-sm" onclick="editarNota('nota-12-texto',this)">✎ Editar</button><button class="btn btn-primary btn-sm" onclick="aprovarNotaProntuario('nota-sessao-12','nota-12-tag','nota-12-acoes')">✓ Aprovar</button></div></div>
-          <div class="card card-sm" style="border-left:3px solid var(--sage)"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:500">Sessão 11 — 18/03</span><span class="tag tag-green">Aprovada</span></div><p style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">Paciente relatou uso consistente do diário. Identificou padrão de antecipação catastrófica em situações de avaliação profissional.</p></div>
-        </div>
+        <!-- Notas reais injetadas por renderProntuario (js/14); empty-state quando vazio. -->
+        <div style="display:flex;flex-direction:column;gap:12px"></div>
       </div>
       <div id="tab-ficha" style="display:none">
         <div class="grid-2">
