@@ -367,6 +367,7 @@ function confirmarAgendamento() {
     // Lê checkboxes ANTES de remover o modal (depois o elemento some do DOM)
     var _enviarInvite   = !!(document.getElementById('agendar-chk-invite')?.checked);
     var _enviarReminder = !!(document.getElementById('agendar-chk-reminder')?.checked);
+    var _enviarWpp      = !!(document.getElementById('agendar-chk-wpp')?.checked);
 
     document.getElementById('modal-agendar')?.remove();
     var toastMsg = recVal !== 'nenhuma'
@@ -401,6 +402,19 @@ function confirmarAgendamento() {
         } else {
           showToast('ℹ Sessão em menos de 24h — lembrete não enviado');
         }
+      }
+    }
+
+    // WhatsApp: abre o wa.me com o convite (antes o checkbox era decorativo).
+    if (_enviarWpp) {
+      var _wn = (typeof _wppNumero === 'function') ? _wppNumero(p.whatsapp) : null;
+      if (_wn) {
+        var _dBR = fmtDataBR(datas[0]);
+        var _lk = p.sessionLink ? ('\n\n🔗 Link da sala: ' + (String(p.sessionLink).startsWith('http') ? p.sessionLink : 'https://' + p.sessionLink)) : '';
+        var _msg = 'Olá ' + _firstName(p.name) + '! Sua sessão está agendada para ' + _dBR + ' às ' + horaVal + '.' + _lk + '\n\nAté lá! 🌿';
+        window.open(_wppLink(p.whatsapp, _msg), '_blank');
+      } else {
+        showToast('⚠ Paciente sem WhatsApp válido — link não enviado.');
       }
     }
   }
