@@ -192,12 +192,15 @@ function showSessionLink() {
       return;
     }
     const _first = _slNome.split(' ')[0];
-    // Link COMPARTILHADO (WhatsApp/copiar) usa QUERY (?): mensageiros linkificam o
-    // fragment (#) de forma imprevisível — em produção o token chegava truncado e a
-    // paciente via "Link expirado" (09/07). O formato # (F3.3, sem vazar em logs/
-    // Referer) fica no link do PORTAL (js/21), que não passa por mensageiro.
-    const link = location.origin + '/sala?u=' + encodeURIComponent(window._lkUrl) +
-      '&t=' + encodeURIComponent(window._lkPatientToken) + '&n=' + encodeURIComponent(_first);
+    // Link COMPARTILHADO (WhatsApp/copiar): CÓDIGO CURTO (/sala?c=…) — o token nunca
+    // aparece em URL (F3.3 opção b) e o link cabe no WhatsApp (mensageiros linkificam
+    // o formato # de forma imprevisível; e o link longo com ?t= expunha o token no
+    // histórico). Fallback: sem código (migration 018 ausente), sai o link longo com
+    // query — formato que sempre funcionou no WhatsApp.
+    const link = window._lkPatientCode
+      ? location.origin + '/sala?c=' + encodeURIComponent(window._lkPatientCode)
+      : location.origin + '/sala?u=' + encodeURIComponent(window._lkUrl) +
+        '&t=' + encodeURIComponent(window._lkPatientToken) + '&n=' + encodeURIComponent(_first);
     return _renderSessionLinkModal(link, _slNome, true);
   }
 

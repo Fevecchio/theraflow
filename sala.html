@@ -101,9 +101,14 @@
 <script>
   var _room = null, _micOn = true, _camOn = true;
 
-  // Parâmetros vêm no FRAGMENT (#u=…&t=…) — não vai ao servidor/logs nem vaza via
-  // Referer (F3.3). Fallback p/ query string: links antigos já enviados a pacientes.
+  // Parâmetros por ordem de preferência (F3.3):
+  //  1. _lkOvr — resolvidos do CÓDIGO CURTO (/sala?c=…) trocado no servidor: o token
+  //     nunca aparece em URL nenhuma (nem histórico, nem logs, nem mensageiro).
+  //  2. fragment (#u=…&t=…) — link do portal (não passa por mensageiro).
+  //  3. query (?u=…&t=…) — links longos antigos já enviados a pacientes.
+  var _lkOvr = null;
   function _qs(k) {
+    if (_lkOvr && _lkOvr[k] != null && _lkOvr[k] !== '') return _lkOvr[k];
     try {
       var h = new URLSearchParams((location.hash || '').replace(/^#\??/, ''));
       var v = h.get(k);
@@ -125,15 +130,36 @@
     _showScreen('msg-screen');
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    var nome = _qs('n');
-    if (nome) {
-      document.getElementById('consent-title').textContent = 'Olá, ' + nome + '!';
-    }
+  document.addEventListener('DOMContentLoaded', async function () {
     var box = document.getElementById('consent-box');
     box.addEventListener('change', function () {
       document.getElementById('join-btn').disabled = !box.checked;
     });
+
+    // Link curto: troca o código pelo token no servidor. Falhou/expirou → mensagem
+    // honesta; o token nunca esteve na URL, então nada vaza mesmo em erro.
+    var c = _qs('c');
+    if (c && !_qs('t')) {
+      try {
+        var r = await fetch('/api/create-session-room', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ exchange: c }),
+        });
+        if (!r.ok) throw new Error('exchange ' + r.status);
+        var d = await r.json();
+        _lkOvr = { u: d.url, t: d.token, n: d.n || null };
+      } catch (e) {
+        console.warn('[sala] exchange do código falhou', e);
+        _fatal('Link expirado', 'Este link expirou ou não é mais válido. Peça um novo à sua terapeuta.', '⏱️');
+        return;
+      }
+    }
+
+    var nome = _qs('n');
+    if (nome) {
+      document.getElementById('consent-title').textContent = 'Olá, ' + nome + '!';
+    }
     // valida cedo se o link tem os dados
     if (!_qs('u') || !_qs('t')) {
       _fatal('Link inválido', 'Este link não é válido. Peça um novo link à sua terapeuta.', '🔗');

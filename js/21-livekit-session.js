@@ -263,12 +263,13 @@ async function startLiveKitSession() {
     const resp = await fetch('/api/create-session-room', {
       method: 'POST',
       headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ patientId: sp && sp.id }),
+      body: JSON.stringify({ patientId: sp && sp.id, patientFirst: sp ? (sp.name || '').split(' ')[0] : null }),
     });
     if (!resp.ok) throw new Error('create-session-room ' + resp.status);
-    const { url, hostToken, patientToken } = await resp.json();
+    const { url, hostToken, patientToken, patientCode } = await resp.json();
     // Guardados para gerar o link real da paciente (sala.html) via showSessionLink().
     window._lkPatientToken = patientToken;
+    window._lkPatientCode = patientCode || null; // código curto (/sala?c=…) — null se 018 ausente
     window._lkUrl = url;
     // Parte 2/2 da entrada da paciente: publica o link no PORTAL automaticamente ao iniciar.
     // A paciente logada vê o convite "ao vivo" em tempo real (poll em js/13). Além do link
@@ -535,7 +536,7 @@ async function endLiveKitSession() {
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null; _lkMicDest = null;
   _lkPacRecorder = null; _lkPacDest = null; _lkRecStartMs = 0; _lkEnding = false;
-  window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
+  window._lkPatientToken = null; window._lkUrl = null; window._lkPatientCode = null; // link expira com a sessão
   _lkClearPortalLink(window._lkSessionPatient || patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
   window._lkSessionPatient = null;
   window.removeEventListener('beforeunload', _lkGuardUnload); // gravação terminou — libera a saída
