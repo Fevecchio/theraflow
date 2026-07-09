@@ -1476,9 +1476,13 @@ async function pacConfirmarAlteracaoSenha() {
   } else if (p.portalPasswordHash) {
     senhaValida = p.portalPasswordHash === hashAtual;
   } else {
-    // ainda na senha padrão (primeiro nome)
-    var defaultPwd = (p.name || '').split(' ')[0].toLowerCase();
-    senhaValida = (atual === defaultPwd);
+    // Caminho conta Auth: sem hash local (F3.1) e sem _pacPortalAuth. Valida a senha
+    // atual RE-AUTENTICANDO no Supabase — nunca mais aceitar o "primeiro nome"
+    // (senha-padrão que o F3.2 removeu; aceitá-la aqui reabriria o furo). F3.2/A2.
+    try {
+      var _re = await supaPatient.auth.signInWithPassword({ email: p.email, password: atual });
+      senhaValida = !(_re && _re.error);
+    } catch(_) { senhaValida = false; }
   }
 
   if (!senhaValida) { errEl.textContent = 'Senha atual incorreta. Verifique e tente novamente.'; errEl.style.display = ''; return; }
