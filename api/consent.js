@@ -12,7 +12,14 @@
  *   'portal_paciente'   → paciente aceita os termos do portal (exige patientId)
  *   'gravacao_sessao'   → consentimento de gravação (CFP 04/2020)
  *   'uso_ia'            → consentimento para uso de IA nos dados
+ *
+ * Autenticações aceitas para gravacao_sessao/uso_ia:
+ *   - JWT Supabase do TERAPEUTA (header Authorization) + posse do paciente; ou
+ *   - `lkToken` no body = JWT LiveKit da PACIENTE (emitido por create-session-room
+ *     com patientId no metadata) → registra o aceite REAL dela na sala (F3.5).
  */
+
+import crypto from 'node:crypto';
 
 const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supabase.co';
 
@@ -80,6 +87,35 @@ function clientIp(req) {
   return fwd.split(',')[0].trim() || req.headers['x-real-ip'] || null;
 }
 
+/**
+ * Verifica o JWT LiveKit da PACIENTE (HS256, assinado com LIVEKIT_API_SECRET pelo
+ * nosso create-session-room). Verificação manual via node:crypto de propósito: o
+ * SDK livekit-server-sdk é ESM-only e crasharia aqui (este arquivo é transpilado
+ * p/ CJS — mesmo motivo do create-session-room ser .mjs).
+ * Retorna { patientId } se válido, senão null.
+ */
+function verifyLkPatientToken(lkToken) {
+  const KEY = (process.env.LIVEKIT_API_KEY || '').trim();
+  const SECRET = (process.env.LIVEKIT_API_SECRET || '').trim();
+  if (!KEY || !SECRET || !lkToken) return null;
+  try {
+    const parts = String(lkToken).split('.');
+    if (parts.length !== 3) return null;
+    const expected = crypto.createHmac('sha256', SECRET)
+      .update(parts[0] + '.' + parts[1]).digest();
+    const got = Buffer.from(parts[2], 'base64url');
+    if (expected.length !== got.length || !crypto.timingSafeEqual(expected, got)) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    if (payload.iss !== KEY) return null;                                  // não é nosso emissor
+    if (payload.exp && payload.exp * 1000 < Date.now()) return null;       // expirado
+    if (!/^paciente_/.test(payload.sub || '')) return null;                // só o token da PACIENTE
+    let meta = null;
+    try { meta = JSON.parse(payload.metadata || 'null'); } catch (_) {}
+    if (!meta || !meta.patientId) return null;                             // token antigo, sem id
+    return { patientId: String(meta.patientId) };
+  } catch (e) { return null; }
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   setCors(res, origin);
@@ -99,7 +135,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Muitas requisições. Tente novamente em instantes.' });
   }
 
-  const { tipo, patientId, versao } = req.body || {};
+  const { tipo, patientId, versao, lkToken } = req.body || {};
 
   if (!tipo || !VALID_TIPOS.includes(tipo)) {
     return res.status(400).json({ error: 'tipo inválido' });
@@ -112,7 +148,27 @@ export default async function handler(req, res) {
   let userId = null;
   let patient = null;
 
-  if (TIPOS_TERAPEUTA.includes(tipo)) {
+  const lkAuth = (lkToken && (tipo === 'gravacao_sessao' || tipo === 'uso_ia'))
+    ? verifyLkPatientToken(lkToken) : null;
+
+  if (lkAuth) {
+    // Aceite REAL da PACIENTE na sala (F3.5 lacuna 2): autenticado pelo token
+    // LiveKit dela (assinado por nós em create-session-room, com o patientId no
+    // claim metadata). Ignora patientId do body — o do token é o que vale.
+    patient = lkAuth.patientId;
+    try {
+      const r = await fetch(
+        `${SUPA_URL}/rest/v1/patients?id=eq.${encodeURIComponent(patient)}&select=user_id&limit=1`,
+        { headers: hdrs }
+      );
+      const rows = await r.json();
+      if (Array.isArray(rows) && rows.length > 0) userId = rows[0].user_id;
+      else return res.status(403).json({ error: 'Paciente do token não encontrado' });
+    } catch (e) {
+      console.warn('[consent] Falha ao resolver user_id (lkToken):', e.message);
+      return res.status(502).json({ error: 'Falha ao registrar consentimento' });
+    }
+  } else if (TIPOS_TERAPEUTA.includes(tipo)) {
     // Aceite do terapeuta (termos) ou registrado por ele (gravação/IA): exige sessão
     // autenticada. Para os vinculados a paciente, confere que o terapeuta é DONO do
     // paciente — impede forjar consentimento de gravação/IA com um UUID vazado (F3.5).

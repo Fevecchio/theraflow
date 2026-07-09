@@ -140,12 +140,30 @@
     }
   });
 
+  // Registra o aceite REAL da paciente (checkbox marcado + clique em Entrar) no
+  // consent_logs, autenticado pelo próprio token LiveKit dela (o servidor verifica
+  // a assinatura e extrai o patientId — não dá para forjar). Fire-and-forget: um
+  // erro aqui NUNCA impede a entrada na sessão. F3.5 (lacuna 2).
+  function _logConsentSala(token) {
+    ['gravacao_sessao', 'uso_ia'].forEach(function (tipo) {
+      try {
+        fetch('/api/consent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo: tipo, versao: '1.0', lkToken: token }),
+          keepalive: true,
+        }).catch(function () {});
+      } catch (_) {}
+    });
+  }
+
   async function entrarNaSala() {
     var url = _qs('u'), token = _qs('t');
     var LK = window.LivekitClient;
     if (!LK) { _fatal('Recarregue a página', 'Não foi possível carregar o vídeo. Verifique sua conexão e tente de novo.', '🔄'); return; }
     if (!url || !token) { _fatal('Link inválido', 'Peça um novo link à sua terapeuta.', '🔗'); return; }
 
+    _logConsentSala(token);
     _showScreen('call-screen');
     try {
       // Qualidade: 540p (mesma config da terapeuta) — 720p forçado travava em rede residencial/celular.

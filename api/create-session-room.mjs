@@ -79,14 +79,17 @@ export default async function handler(req, res) {
   const patIdentity = `paciente_${String(patientId || 'anon').replace(/[^a-z0-9_-]/gi, '').slice(0, 24)}`;
 
   try {
-    const mkToken = async (identity, name) => {
-      const at = new AccessToken(KEY, SECRET, { identity, name, ttl: '3h' });
+    const mkToken = async (identity, name, metadata) => {
+      const at = new AccessToken(KEY, SECRET, { identity, name, ttl: '3h', ...(metadata ? { metadata } : {}) });
       at.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true, canPublishData: true });
       return at.toJwt(); // async no SDK v2
     };
+    // O token da paciente carrega o patientId COMPLETO no claim `metadata` (a identity
+    // trunca o UUID em 24 chars). /api/consent verifica a assinatura deste JWT e usa
+    // esse id para registrar o aceite REAL da paciente na sala (F3.5 lacuna 2).
     const [hostToken, patientToken] = await Promise.all([
       mkToken(`terapeuta_${shortId}`, 'Terapeuta'),
-      mkToken(patIdentity, 'Paciente'),
+      mkToken(patIdentity, 'Paciente', patientId ? JSON.stringify({ patientId: String(patientId) }) : null),
     ]);
     return res.status(200).json({ url: URL, roomName, hostToken, patientToken });
   } catch (err) {
