@@ -802,16 +802,21 @@ function _pacForcarNovaSenha(p, idx) {
     btn.disabled = true; btn.textContent = 'Salvando…';
     var hash = await _portalHash(s1);
     p.portalPasswordHash = hash; p.portalPassword = null; p.pwdTemp = false;
-    if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth && typeof _pacSetPortalAuth === 'function') {
-      _pacSetPortalAuth(p.email || _pacPortalAuth.email, hash);
-    }
     if (typeof patients !== 'undefined') {
       var pi = patients.findIndex(function(q){ return q.id === p.id || (q.email && q.email === p.email); });
       if (pi !== -1) { patients[pi].portalPasswordHash = hash; patients[pi].portalPassword = null; patients[pi].pwdTemp = false; }
     }
     try { localStorage.setItem('tf_patients', JSON.stringify(typeof patients !== 'undefined' && patients.length ? patients : [p])); } catch(_) {}
-    if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
-    else if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+    // O sync PRECISA ir antes de trocar _pacPortalAuth: a RPC portal_patient_sync
+    // valida o hash que o servidor ainda tem (o temporário). Com o auth novo antes
+    // do sync, a RPC nega (403) e a senha nova nunca persiste no servidor.
+    var _syncP = (typeof _supaPatientSync === 'function') ? _supaPatientSync()
+      : (typeof _supaSync_patients === 'function' ? _supaSync_patients() : Promise.resolve());
+    Promise.resolve(_syncP).catch(function(){}).then(function() {
+      if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth && typeof _pacSetPortalAuth === 'function') {
+        _pacSetPortalAuth(p.email || _pacPortalAuth.email, hash);
+      }
+    });
     ov.remove();
     if (typeof showToast === 'function') showToast('Senha criada! 🔐');
     renderPatientApp(idx, [p]);

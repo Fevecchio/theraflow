@@ -277,9 +277,17 @@ window.pacConfirmarNovaSenha = async function() {
   if (pacs && pacs[idx]) { pacs[idx].portalPasswordHash = hash; pacs[idx].portalPassword = null; pacs[idx].pwdTemp = false; }
   if (typeof patients !== 'undefined' && patients[idx]) { patients[idx].portalPasswordHash = hash; patients[idx].pwdTemp = false; }
   try { localStorage.setItem('tf_patients', JSON.stringify(patients || pacs)); } catch(_) {}
-  // Sobe a senha nova pela sessão do paciente (não pela do terapeuta).
-  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
-  else if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+  // Sobe a senha nova pela sessão do paciente (não pela do terapeuta). A RPC de sync
+  // valida o hash que o servidor TEM (o temporário) — então o sync vai primeiro, com
+  // _pacPortalAuth ainda no hash antigo, e só depois trocamos para o novo. Sem isso,
+  // consent/poll/diário passam a levar 403 silencioso até o próximo login.
+  var _syncP = (typeof _supaPatientSync === 'function') ? _supaPatientSync()
+    : (typeof _supaSync_patients === 'function' ? _supaSync_patients() : Promise.resolve());
+  Promise.resolve(_syncP).catch(function(){}).then(function() {
+    if (typeof _pacSetPortalAuth === 'function' && typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) {
+      _pacSetPortalAuth(p.email || _pacPortalAuth.email, hash);
+    }
+  });
   document.getElementById('pac-mudar-senha-layer').classList.remove('open');
   _pacVerOnboarding(p, idx, pacs);
 };
