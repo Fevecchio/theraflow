@@ -1369,15 +1369,16 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card">
-          <div class="section-title" style="margin-bottom:14px">Escalação de cobrança</div>
+          <div class="section-title" style="margin-bottom:4px">Escalação de cobrança <span style="font-size:10px;font-weight:600;background:#eef2ee;color:#7a8a7d;padding:2px 7px;border-radius:6px;vertical-align:middle">guia sugerido</span></div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Um roteiro para cobrar com tranquilidade. Cada envio você dispara pelo botão WhatsApp da cobrança — nada é enviado sem você.</div>
           <div style="font-size:13px;color:var(--ink-soft);line-height:1.7">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
               <div style="width:10px;height:10px;border-radius:50%;background:var(--sage);flex-shrink:0"></div>
-              <div><strong>Dia da sessão</strong> — Link PIX enviado via WhatsApp</div>
+              <div><strong>Dia da sessão</strong> — Envie o link PIX via WhatsApp</div>
             </div>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
               <div style="width:10px;height:10px;border-radius:50%;background:var(--amber);flex-shrink:0"></div>
-              <div><strong>Dia 3</strong> — Lembrete gentil automático via WhatsApp</div>
+              <div><strong>Dia 3</strong> — Lembrete gentil via WhatsApp</div>
             </div>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
               <div style="width:10px;height:10px;border-radius:50%;background:var(--amber);flex-shrink:0"></div>
@@ -1417,7 +1418,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="card">
         <div class="section-header" style="margin-bottom:14px">
           <div class="section-title">Recibos emitidos</div>
-          <button class="btn btn-primary btn-sm" onclick="showModal('modal-recibo-lote')">📋 Gerar recibos do mês</button>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Geração em lote chega em breve. Por ora, use o botão 📄 Recibo em cada cobrança paga.', 'info')">📋 Recibos do mês <span style="font-size:9px;background:#eee;color:#888;padding:1px 5px;border-radius:5px;font-weight:600">em breve</span></button>
         </div>
         <table>
           <thead><tr><th>Paciente</th><th>Período</th><th>Valor total</th><th>Status</th><th></th></tr></thead>
@@ -2619,19 +2620,6 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 </div>
 
 <!-- Modal: Gerar recibos em lote -->
-<div class="modal-overlay" id="modal-recibo-lote">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-title">📋 Gerar recibos do mês</div>
-    <div class="modal-body">Serão gerados recibos em PDF para todos os pacientes com pagamentos confirmados em <strong>Março 2026</strong>.</div>
-    <div class="consent-item"><span class="consent-icon">📄</span><div class="consent-text"><strong>Dados incluídos</strong><br/>Nome, CPF (profissional e paciente), CRP, valor, datas, código CNAE.</div></div>
-    <div class="consent-item"><span class="consent-icon">📲</span><div class="consent-text"><strong>Envio automático</strong><br/>Cada paciente recebe seu recibo via WhatsApp após geração.</div></div>
-    <div class="modal-actions" style="margin-top:16px">
-      <button class="btn btn-secondary" onclick="closeModal('modal-recibo-lote')">Cancelar</button>
-      <button class="btn btn-primary" onclick="closeModal('modal-recibo-lote')">📋 Gerar e enviar</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modal-novo-plano">
   <div class="modal" style="max-width:540px">
     <div class="modal-title">Novo plano ou cobrança</div>
