@@ -78,8 +78,10 @@ export default async function handler(req, res) {
   const user = await verifySupabaseJWT(req);
   if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
 
-  // Rate-limit: transcrição é cara (Groq). 20/min/usuário cobre uma sessão real com folga.
-  const rl = rateLimit(`transcribe:${user.id}`, 20, 60 * 1000);
+  // Rate-limit: transcrição é cara (Groq). 45/min/usuário: com a segmentação (~4min
+  // por segmento, 2 faixas), uma sessão de 80min gera ~40 segmentos processados em
+  // rajada no encerrar — 20/min derrubava sessões longas legítimas.
+  const rl = rateLimit(`transcribe:${user.id}`, 45, 60 * 1000);
   if (!rl.allowed) {
     res.setHeader('Retry-After', String(rl.retryAfter));
     return res.status(429).json({ error: 'Muitas transcrições em pouco tempo. Aguarde um instante.' });

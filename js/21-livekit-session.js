@@ -58,18 +58,61 @@ function confirmarConsentimentoSessao() {
 }
 
 let _lkRoom = null;
-let _lkRecorder = null;      // gravador da faixa do TERAPEUTA (mic local)
+let _lkRecorder = null;      // gravador do SEGMENTO ATUAL da faixa do terapeuta
 let _lkMicDest = null;       // destino WebAudio com o mic do terapeuta
-let _lkChunks = [];
 let _lkPacDest = null;       // destino WebAudio só com o áudio da PACIENTE
-let _lkPacRecorder = null;   // gravador da faixa da paciente (inicia quando ela entra)
-let _lkPacChunks = [];
-let _lkRecStartMs = 0;       // início da gravação do terapeuta (base dos timestamps)
-let _lkPacRecStartMs = 0;    // início da gravação da paciente (alinha os segmentos)
+let _lkPacRecorder = null;   // gravador do segmento atual da faixa da paciente
+let _lkRecStartMs = 0;       // início da gravação do terapeuta (base de TODOS os offsets)
 let _lkAudioCtx = null;
 let _lkAnalyser = null;
 let _lkMeterRAF = null;
-let _lkRetry = null;          // { audioBlob, pacBlob, pacOffsetSec } p/ reprocessar sem regravar
+let _lkRetry = null;          // { segsTher, segsPac } p/ reprocessar sem regravar
+
+// ── SEGMENTAÇÃO POR TEMPO (remove o teto de ~18min do upload único) ──
+// Cada faixa grava em segmentos de ~4min: o MediaRecorder do segmento é parado
+// (blob AUTOCONTIDO, com header — o Whisper transcreve cada um sozinho) e outro
+// começa imediatamente. A 32kbps, 4min ≈ 0,96MB — folga ampla no limite de
+// ~4,5MB da Vercel. Offset de cada segmento = (início dele − _lkRecStartMs):
+// os timestamps do Whisper (relativos ao segmento) viram tempo absoluto da
+// sessão na intercalação. Perda entre stop→start: alguns ms a cada 4min.
+// Override p/ teste: localStorage.setItem('tf_seg_ms','40000') → segmentos de 40s
+// (validar a rotação sem uma sessão de 20min). Mínimo 15s; remover a chave volta ao padrão.
+const _LK_SEG_MS = (function () {
+  try { const v = parseInt(localStorage.getItem('tf_seg_ms') || '', 10); if (v >= 15000) return v; } catch (_) {}
+  return 4 * 60 * 1000;
+})();
+let _lkSegsTher = [];        // segmentos fechados: { blob, offsetSec }
+let _lkSegsPac = [];
+let _lkTherRotTimer = null;  // timers da rotação (limpos no encerrar)
+let _lkPacRotTimer = null;
+let _lkEnding = false;       // encerrando → a rotação não abre novo segmento
+
+// Cria o gravador de UM segmento da faixa e agenda a rotação para o próximo.
+function _lkStartSegRec(which) {
+  const isTher = which === 'ther';
+  const dest = isTher ? _lkMicDest : _lkPacDest;
+  if (!dest || _lkEnding) return;
+  const chunks = [];
+  const startMs = Date.now();
+  // 32 kbps mono: voz inteligível p/ o Whisper e arquivo ~4× menor que o default.
+  const rec = new MediaRecorder(dest.stream, { mimeType: _pickAudioMime(), audioBitsPerSecond: 32000 });
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = () => {
+    if (!chunks.length) return;
+    const blob = new Blob(chunks, { type: chunks[0].type || 'audio/webm' });
+    // Segmento minúsculo (ex.: rotação logo antes do encerrar) não vale transcrição.
+    if (blob.size < 1200) return;
+    (isTher ? _lkSegsTher : _lkSegsPac).push({ blob, offsetSec: Math.max(0, (startMs - _lkRecStartMs) / 1000) });
+  };
+  rec.start(1000);
+  const timer = setTimeout(() => {
+    if (_lkEnding) return;
+    try { if (rec.state !== 'inactive') rec.stop(); } catch (_) {}
+    _lkStartSegRec(which); // próximo segmento, sem interromper a consulta
+  }, _LK_SEG_MS);
+  if (isTher) { _lkRecorder = rec; _lkTherRotTimer = timer; }
+  else { _lkPacRecorder = rec; _lkPacRotTimer = timer; }
+}
 
 // Avisa antes de fechar/recarregar a aba durante a sessão (a gravação vive em memória —
 // um F5 a perderia). Registrado quando a gravação começa, removido ao encerrar.
@@ -258,7 +301,7 @@ async function startLiveKitSession() {
     _lkMicDest = _lkAudioCtx.createMediaStreamDestination();
     _lkPacDest = _lkAudioCtx.createMediaStreamDestination();
     let _lkMicMixed = false; // garante que o mic do terapeuta entrou na gravação
-    _lkChunks = []; _lkPacChunks = []; _lkRecStartMs = 0; _lkPacRecStartMs = 0;
+    _lkSegsTher = []; _lkSegsPac = []; _lkRecStartMs = 0; _lkEnding = false;
 
     // Áudio + vídeo do paciente ao serem assinados
     _lkRoom.on(LK.RoomEvent.TrackSubscribed, (track) => {
@@ -333,12 +376,8 @@ async function startLiveKitSession() {
 function _lkStartTherRecorder() {
   if (_lkRecorder || !_lkMicDest) return;
   try {
-    // 32 kbps mono: voz é inteligível para o Whisper com folga e o arquivo fica ~4× menor
-    // (o default do Chrome ~128 kbps estourava o limite de 4,5 MB de corpo da Vercel em poucos min).
-    _lkRecorder = new MediaRecorder(_lkMicDest.stream, { mimeType: _pickAudioMime(), audioBitsPerSecond: 32000 });
-    _lkRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkChunks.push(e.data); };
-    _lkRecorder.start(1000);
-    _lkRecStartMs = Date.now();
+    _lkRecStartMs = Date.now(); // base de todos os offsets de segmento (as 2 faixas)
+    _lkStartSegRec('ther');
     window.addEventListener('beforeunload', _lkGuardUnload); // avisa se fechar/recarregar gravando
     if (typeof _iniciarTimerSessao === 'function') _iniciarTimerSessao(); // timer conta a partir da entrada da paciente
     if (typeof showToast === 'function') showToast('🔴 Paciente entrou — gravação e transcrição iniciadas.');
@@ -346,14 +385,13 @@ function _lkStartTherRecorder() {
 }
 
 // Gravador da faixa da paciente — criado quando o primeiro áudio dela chega.
-// O offset (vs início da gravação do terapeuta) alinha os timestamps na intercalação.
+// O offset de cada segmento (vs início da gravação do terapeuta) alinha os
+// timestamps na intercalação — inclusive o atraso da entrada dela.
 function _lkStartPacRecorder() {
   if (_lkPacRecorder || !_lkPacDest) return;
   try {
-    _lkPacRecorder = new MediaRecorder(_lkPacDest.stream, { mimeType: _pickAudioMime(), audioBitsPerSecond: 32000 });
-    _lkPacRecorder.ondataavailable = (e) => { if (e.data && e.data.size) _lkPacChunks.push(e.data); };
-    _lkPacRecorder.start(1000);
-    _lkPacRecStartMs = Date.now();
+    if (!_lkRecStartMs) _lkRecStartMs = Date.now(); // segurança: base sempre existe
+    _lkStartSegRec('pac');
   } catch (e) { console.warn('[livekit] pac recorder', e); }
 }
 
@@ -380,22 +418,31 @@ async function _lkTranscribe(blob) {
   return tr.json();
 }
 
-// Intercala os segmentos das duas faixas por tempo → diálogo "Terapeuta:/Paciente:".
-// Usa 'Paciente' (não o nome real): o transcript segue pseudonimizado até o Claude (LGPD).
-function _lkMergeTranscripts(ther, pac, pacOffsetSec) {
+// Intercala os trechos de TODOS os segmentos das duas faixas por tempo absoluto
+// (offset do segmento + timestamp do Whisper dentro dele) → diálogo
+// "Terapeuta:/Paciente:". Usa 'Paciente' (não o nome real): o transcript segue
+// pseudonimizado até o Claude (LGPD). Exportada p/ unit-test node.
+function _lkMergeSegments(therResults, therSegs, pacResults, pacSegs) {
   const rows = [];
-  const push = (r, who, off) => {
-    ((r && r.segments) || []).forEach((s) => {
-      const t = (s.text || '').trim();
-      if (!t) return;
-      if (typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85) return; // anti-alucinação em silêncio
-      rows.push({ at: (s.start || 0) + off, who, t });
+  const push = (results, segs, who) => {
+    (results || []).forEach((r, i) => {
+      if (!r) return; // segmento tolerado que falhou (faixa da paciente)
+      const off = (segs && segs[i] && segs[i].offsetSec) || 0;
+      const segList = (r.segments && r.segments.length) ? r.segments
+        : (r.text ? [{ start: 0, text: r.text }] : []); // fallback sem timestamps
+      segList.forEach((s) => {
+        const t = (s.text || '').trim();
+        if (!t) return;
+        if (typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85) return; // anti-alucinação em silêncio
+        rows.push({ at: off + (s.start || 0), who, t });
+      });
     });
   };
-  push(ther, 'Terapeuta', 0);
-  push(pac, 'Paciente', pacOffsetSec || 0);
-  if (!rows.length) return ((ther && ther.text) || '').trim();
+  push(therResults, therSegs, 'Terapeuta');
+  push(pacResults, pacSegs, 'Paciente');
+  if (!rows.length) return '';
   rows.sort((a, b) => a.at - b.at);
+  const temPac = rows.some((r) => r.who === 'Paciente');
   // Junta falas consecutivas do mesmo falante num parágrafo só
   const out = [];
   for (const r of rows) {
@@ -403,6 +450,8 @@ function _lkMergeTranscripts(ther, pac, pacOffsetSec) {
     if (last && last.who === r.who) last.t += ' ' + r.t;
     else out.push({ who: r.who, t: r.t });
   }
+  // Só 1 falante captado → sem rótulo (era o comportamento do fallback de faixa única)
+  if (!temPac) return out.map((r) => r.t).join(' ');
   return out.map((r) => r.who + ': ' + r.t).join('\n\n');
 }
 
@@ -461,30 +510,31 @@ async function endLiveKitSession() {
   _lkStopMeter();
   _lkShowProcessing();
   _lkProcStep('s1', 'doing');
-  // Para as gravações e coleta os blobs (faixa do terapeuta + faixa da paciente)
-  let audioBlob = null, pacBlob = null;
+  // Fecha os segmentos em andamento (a rotação não abre mais nenhum: _lkEnding).
+  // O onstop de cada gravador empurra o blob autocontido para _lkSegsTher/Pac.
+  _lkEnding = true;
+  if (_lkTherRotTimer) { clearTimeout(_lkTherRotTimer); _lkTherRotTimer = null; }
+  if (_lkPacRotTimer) { clearTimeout(_lkPacRotTimer); _lkPacRotTimer = null; }
   try {
     if (_lkRecorder && _lkRecorder.state !== 'inactive') {
-      await new Promise((resolve) => { _lkRecorder.onstop = resolve; _lkRecorder.stop(); });
+      await new Promise((resolve) => { _lkRecorder.addEventListener('stop', resolve, { once: true }); _lkRecorder.stop(); });
     }
-    if (_lkChunks.length) audioBlob = new Blob(_lkChunks, { type: (_lkChunks[0] && _lkChunks[0].type) || 'audio/webm' });
   } catch (e) { console.warn('[livekit] stop recorder', e); }
   try {
     if (_lkPacRecorder && _lkPacRecorder.state !== 'inactive') {
-      await new Promise((resolve) => { _lkPacRecorder.onstop = resolve; _lkPacRecorder.stop(); });
+      await new Promise((resolve) => { _lkPacRecorder.addEventListener('stop', resolve, { once: true }); _lkPacRecorder.stop(); });
     }
-    if (_lkPacChunks.length) pacBlob = new Blob(_lkPacChunks, { type: (_lkPacChunks[0] && _lkPacChunks[0].type) || 'audio/webm' });
   } catch (e) { console.warn('[livekit] stop pac recorder', e); }
-  const pacOffsetSec = (_lkPacRecStartMs && _lkRecStartMs) ? (_lkPacRecStartMs - _lkRecStartMs) / 1000 : 0;
+  const segsTher = _lkSegsTher, segsPac = _lkSegsPac;
   const noPatient = !_lkRecStartMs; // paciente nunca entrou → nada foi gravado (by design)
-  _lkChunks = []; _lkPacChunks = [];
+  _lkSegsTher = []; _lkSegsPac = [];
 
   try { if (_lkRoom) await _lkRoom.disconnect(); } catch (_) {}
   try { document.querySelectorAll('[data-lk-remote-audio]').forEach(function (el) { el.remove(); }); } catch (_) {}
   _lkResetVideoArea();
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null; _lkMicDest = null;
-  _lkPacRecorder = null; _lkPacDest = null; _lkRecStartMs = 0; _lkPacRecStartMs = 0;
+  _lkPacRecorder = null; _lkPacDest = null; _lkRecStartMs = 0; _lkEnding = false;
   window._lkPatientToken = null; window._lkUrl = null; // link da paciente expira com a sessão
   _lkClearPortalLink(window._lkSessionPatient || patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
   window._lkSessionPatient = null;
@@ -493,29 +543,28 @@ async function endLiveKitSession() {
 
   _lkProcStep('s1', 'done');
 
-  if (!audioBlob || audioBlob.size < 1200) {
+  const totalBytes = segsTher.reduce((s, x) => s + x.blob.size, 0);
+  if (!segsTher.length || totalBytes < 1200) {
     _lkHideProcessing();
     _lkShowPostSession({ transcript: '', note: '', empty: true, noPatient });
     return;
   }
 
-  // Guarda os blobs para permitir reprocessar (botão "tentar de novo") sem regravar.
-  _lkRetry = { audioBlob, pacBlob, pacOffsetSec };
+  // Guarda os segmentos para permitir reprocessar (botão "tentar de novo") sem regravar.
+  _lkRetry = { segsTher, segsPac };
   await _lkProcessSession();
 }
 
-// Transcreve as 2 faixas → intercala → gera a nota. Reutilizável no retry (usa _lkRetry).
-// Falha aqui NÃO perde nada: os blobs ficam em _lkRetry e o modal oferece "tentar de novo".
+// Transcreve os segmentos das 2 faixas → intercala → gera a nota. Reutilizável no
+// retry (usa _lkRetry). Falha NÃO perde nada: os segmentos ficam em _lkRetry.
 async function _lkProcessSession() {
-  if (!_lkRetry || !_lkRetry.audioBlob) return;
-  const { audioBlob, pacBlob, pacOffsetSec } = _lkRetry;
+  if (!_lkRetry || !_lkRetry.segsTher || !_lkRetry.segsTher.length) return;
+  const { segsTher, segsPac } = _lkRetry;
   const sp = patients[currentSessionPatientIdx] || patients[0];
 
-  // Guard de tamanho: a Vercel rejeita corpo > ~4,5 MB. A 32 kbps isso ~= 18 min por faixa.
-  // Acima disso, avisa com clareza em vez de estourar num 413 silencioso (a nota fica pendente
-  // p/ reprocessar — a segmentação por tempo, que remove esse teto, é o próximo passo do plano).
+  // Guard defensivo por SEGMENTO (não deveria disparar: 4min a 32kbps ≈ 1MB).
   const LIMITE = 4.4 * 1024 * 1024;
-  if (audioBlob.size > LIMITE || (pacBlob && pacBlob.size > LIMITE)) {
+  if (segsTher.concat(segsPac || []).some((s) => s.blob.size > LIMITE)) {
     _lkHideProcessing();
     _lkShowPostSession({ tooLong: true });
     return;
@@ -523,16 +572,39 @@ async function _lkProcessSession() {
 
   _lkShowProcessing(); _lkProcStep('s1', 'done'); _lkProcStep('s2', 'doing');
   try {
-    // 1) Transcrição das 2 faixas EM PARALELO (Groq, com timestamps).
-    const therP = _lkTranscribe(audioBlob);
-    const pacP = (pacBlob && pacBlob.size > 1200)
-      ? _lkTranscribe(pacBlob).catch((e) => { console.warn('[livekit] transcrição da faixa da paciente falhou', e); return null; })
-      : Promise.resolve(null);
-    const ther = await therP;
-    const pac = await pacP;
-    const transcript = pac
-      ? _lkMergeTranscripts(ther, pac, pacOffsetSec)
-      : _lkCleanSingle(ther); // fallback: 1 faixa, mas ainda filtra alucinação de silêncio
+    // 1) Transcrição de TODOS os segmentos, concorrência 2 (respeita o rate-limit
+    //    do /api/transcribe e não satura a conexão). Segmento do TERAPEUTA que
+    //    falhar → erro (retry preserva tudo); da PACIENTE → tolerado (vira null,
+    //    mesma política de antes com a faixa inteira dela).
+    const totalSegs = segsTher.length + (segsPac || []).length;
+    let doneSegs = 0;
+    const _tick = () => {
+      doneSegs++;
+      const row = document.getElementById('lk-proc-s2');
+      const sp2 = row && row.querySelectorAll('span')[1];
+      if (sp2) sp2.textContent = 'Transcrevendo a conversa (' + doneSegs + '/' + totalSegs + ')';
+    };
+    async function _transcribeAll(segs, tolerante) {
+      const out = new Array(segs.length);
+      let i = 0;
+      async function worker() {
+        while (i < segs.length) {
+          const k = i++;
+          try { out[k] = await _lkTranscribe(segs[k].blob); }
+          catch (e) {
+            if (!tolerante) throw e;
+            console.warn('[livekit] segmento da paciente falhou', e);
+            out[k] = null;
+          }
+          _tick();
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(2, segs.length) }, worker));
+      return out;
+    }
+    const therRes = await _transcribeAll(segsTher, false);
+    const pacRes = (segsPac && segsPac.length) ? await _transcribeAll(segsPac, true) : [];
+    const transcript = _lkMergeSegments(therRes, segsTher, pacRes, segsPac || []);
     _lkProcStep('s2', 'done');
 
     // Sem fala real captada → NÃO gera nota (evita nota fabricada a partir de silêncio).
@@ -575,16 +647,6 @@ function _lkRetryProcess() {
   _lkProcessSession();
 }
 
-// Transcrição de faixa única com o mesmo filtro anti-alucinação do merge (no_speech_prob).
-function _lkCleanSingle(r) {
-  if (r && Array.isArray(r.segments) && r.segments.length) {
-    return r.segments
-      .filter((s) => !(typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85))
-      .map((s) => (s.text || '').trim()).filter(Boolean).join(' ').trim();
-  }
-  return ((r && r.text) || '').trim();
-}
-
 // Detecta recusa/desculpa do modelo para não gravar isso como nota clínica.
 function _lkIsRefusal(t) {
   return /^\s*(desculpe|não (é )?poss[ií]vel|não (posso|consigo)|infelizmente não|unable to|i (cannot|can't|am unable))/i.test(String(t || ''));
@@ -612,10 +674,10 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
 
   const tooLongBlock = `
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;color:#9a3412;font-size:13px;line-height:1.55">
-      <strong>⚠ Esta sessão ficou longa demais para transcrever de uma vez.</strong><br/>
-      O áudio excedeu o limite de envio atual. Nada foi perdido do seu lado — mas ainda não conseguimos
-      gerar a nota automaticamente para sessões muito longas. Anote os pontos principais manualmente por ora;
-      o suporte a sessões longas (transcrição em partes) é o próximo passo já planejado.
+      <strong>⚠ Um trecho da gravação excedeu o limite de envio.</strong><br/>
+      Isso não deveria acontecer (a gravação é dividida em partes pequenas automaticamente).
+      A gravação continua guardada nesta aba — tente encerrar de novo ou anote os pontos principais
+      manualmente e nos avise deste caso.
     </div>`;
 
   const retryBlock = `
