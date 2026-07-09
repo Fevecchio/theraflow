@@ -186,8 +186,10 @@ function _syncRace(fn) {
   ]);
 }
 
-/* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos) */
-async function _supaSync_patients() {
+/* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos)
+ * opts.touch: chaves protegidas (escritas pelo paciente) que ESTA chamada pode
+ * gravar — hoje só ['portalPasswordHash','pwdTemp'] no "Reenviar acesso" (C2). */
+async function _supaSync_patients(opts) {
   if (window._tfDemo) return; // demo não sobe nada (nem tem sessão p/ subir)
   _setSyncStatus('syncing');
   var _syncedIds = []; // ids confirmados neste batch → limpar _pendingSync no sucesso (F2.2)
@@ -251,11 +253,30 @@ async function _supaSync_patients() {
           portalAnamneseAtiva: p.portalAnamneseAtiva || false,
         },
       }));
-      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const withId    = rows.filter(r => r.id && UUID_RE.test(r.id));
-      const withoutId = rows.filter(r => !r.id || !UUID_RE.test(r.id)).map(r => { const {id, ...rest} = r; return rest; });
-      if (withId.length)    { const { error: e1 } = await supa.from('patients').upsert(withId, { onConflict: 'id' }); if (e1) throw e1; }
-      if (withoutId.length) { const { error: e2 } = await supa.from('patients').insert(withoutId); if (e2) throw e2; }
+      // Caminho preferido: RPC merge-aware (migration 016) — UPDATE vira MERGE do
+      // metadata e chaves do paciente saem do patch (C2/staleness: o terapeuta não
+      // sobrescreve mais humor/diário/senha com cópia obsoleta da memória).
+      var _rpcOk = false;
+      try {
+        const { error: eR } = await supa.rpc('therapist_patients_sync', {
+          p_rows: rows, p_touch: (opts && opts.touch) || null,
+        });
+        if (eR) {
+          // PGRST202 = função não existe (migration 016 ainda não aplicada) → legado.
+          if (eR.code === 'PGRST202' || /therapist_patients_sync/.test(eR.message || '')) _rpcOk = false;
+          else throw eR;
+        } else _rpcOk = true;
+      } catch(eRpc) {
+        if (!(eRpc && (eRpc.code === 'PGRST202' || /therapist_patients_sync/.test(eRpc.message || '')))) throw eRpc;
+      }
+      if (!_rpcOk) {
+        // Legado (pré-016): upsert de linha inteira — sobrescreve o metadata TODO.
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const withId    = rows.filter(r => r.id && UUID_RE.test(r.id));
+        const withoutId = rows.filter(r => !r.id || !UUID_RE.test(r.id)).map(r => { const {id, ...rest} = r; return rest; });
+        if (withId.length)    { const { error: e1 } = await supa.from('patients').upsert(withId, { onConflict: 'id' }); if (e1) throw e1; }
+        if (withoutId.length) { const { error: e2 } = await supa.from('patients').insert(withoutId); if (e2) throw e2; }
+      }
     });
     _syncErrorCount = 0;
     _setSyncStatus('ok');

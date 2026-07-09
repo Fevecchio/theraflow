@@ -299,8 +299,10 @@ async function compartilharAcessoPortal(i) {
 
   // Tenta criar conta no Supabase (não bloqueia se falhar)
   if (therapistId && p.email) {
-    // Sync antes para garantir que o paciente existe no banco
-    await _supaSync_patients().catch(() => {});
+    // Sync antes para garantir que o paciente existe no banco. touch: este é o
+    // ÚNICO fluxo em que o terapeuta grava hash/pwdTemp de propósito (a RPC 016
+    // descarta essas chaves de qualquer sync rotineiro — C2/staleness).
+    await _supaSync_patients({ touch: ['portalPasswordHash', 'pwdTemp'] }).catch(() => {});
     try {
       var r = await fetchWithTimeout('/api/invite-patient', {
         method: 'POST',
