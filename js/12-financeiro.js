@@ -1194,6 +1194,20 @@ function renderDiarioPortal(p) {
       ta.addEventListener('focus', function(){ this.style.borderColor = config.cor; });
       ta.addEventListener('blur',  function(){ this.style.borderColor = 'var(--border)'; });
     });
+    // Popula os registros especializados JÁ salvos pelo paciente (tipo 'esp' vem do
+    // portal via pacSalvarDiario). Sem isto a lista nascia vazia e o terapeuta nunca
+    // via o diário especializado real.
+    var espList = document.getElementById('diary-esp-list');
+    if (espList) {
+      (p && p.diary ? p.diary : []).forEach(function(e) {
+        if (e.tipo !== 'esp') return;
+        var card = document.createElement('div');
+        card.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid ' + config.cor;
+        card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">' + escHTML(e.date || '') + (e.hora ? ' · ' + escHTML(e.hora) : '') + '</div>'
+          + (e.campos || []).map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">' + escHTML(c) + '</div>'; }).join('');
+        espList.appendChild(card);
+      });
+    }
   }
 }
 
@@ -1201,7 +1215,12 @@ function renderDiarioLivre(p) {
   const list = document.getElementById('diary-livre-list');
   if (!list) return;
   list.innerHTML = '';
-  const entries = (p && p.diary) ? p.diary : [];
+  const allEntries = (p && p.diary) ? p.diary : [];
+  // Só registros livres nesta lista (os 'esp' vivem na aba especializada). Entradas
+  // antigas sem tipo contam como livres. `ei` fica sendo o índice REAL em p.diary
+  // porque salvarRespostaDiario indexa o array completo.
+  const entries = [];
+  allEntries.forEach(function(e, i) { if (!e.tipo || e.tipo === 'livre') entries.push({ entry: e, ei: i }); });
   if (entries.length === 0) {
     list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px 0;font-style:italic">Nenhum registro ainda. Escreva algo acima! 🌿</div>';
     return;
@@ -1209,7 +1228,8 @@ function renderDiarioLivre(p) {
   var therapistFirst = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome : 'sua terapeuta').split(' ')[0];
   var pidx = currentPortalPatientIdx;
 
-  entries.forEach(function(entry, ei) {
+  entries.forEach(function(item) {
+    var entry = item.entry, ei = item.ei;
     var div = document.createElement('div');
     div.className = 'fade-in';
     div.style.cssText = 'background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--sage);margin-bottom:8px';
@@ -1238,7 +1258,7 @@ function renderDiarioLivre(p) {
           + (entry.reply ? '✦ Editar resposta' : '✦ Responder') + '</button>'
       + '</div>'
       + '</div>'
-      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(entry.text) + '</div>'
+      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(entry.texto || entry.text || '') + '</div>'
       + replyHtml + replyInputHtml;
 
     list.appendChild(div);

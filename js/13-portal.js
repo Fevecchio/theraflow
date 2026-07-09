@@ -1845,10 +1845,10 @@ function _renderDiarioCard(entrada, listId, prepend) {
   var list = document.getElementById(listId);
   if (!list) return;
   var card = document.createElement('div');
-  if (entrada.tipo === 'livre') {
+  if (entrada.tipo !== 'esp') {
     card.style.cssText = 'background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--sage)';
-    card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">'+escHTML(entrada.date)+' · '+escHTML(entrada.hora)+'</div>'
-      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.texto)+'</div>';
+    card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">'+escHTML(entrada.date||'')+(entrada.hora?' · '+escHTML(entrada.hora):'')+'</div>'
+      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.texto || entrada.text || '')+'</div>';
   } else {
     card.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid var(--sage)';
     card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">'+escHTML(entrada.date)+'</div>'
@@ -1865,7 +1865,8 @@ function _renderDiarioExistente(p) {
   if (livre) livre.innerHTML = '';
   if (esp)   esp.innerHTML   = '';
   diary.forEach(function(e) {
-    if (e.tipo === 'livre' && livre) _renderDiarioCard(e, 'pac-diary-livre-list', false);
+    // Entradas antigas sem `tipo` (formato legado, campo .text) contam como livres.
+    if ((e.tipo === 'livre' || !e.tipo) && livre) _renderDiarioCard(e, 'pac-diary-livre-list', false);
     else if (e.tipo === 'esp' && esp) _renderDiarioCard(e, 'pac-diary-esp-list', false);
   });
 }
