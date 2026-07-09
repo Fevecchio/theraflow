@@ -1200,11 +1200,12 @@ function renderDiarioPortal(p) {
     var espList = document.getElementById('diary-esp-list');
     if (espList) {
       (p && p.diary ? p.diary : []).forEach(function(e) {
-        if (e.tipo !== 'esp') return;
+        if (e.tipo !== 'esp' && e.tipo !== 'tcc') return; // 'tcc' = formato legado do compose antigo
+        var linhas = e.campos || [e.text, e.pensamento, (e.emocao ? e.emocao + (e.intensidade ? ' · ' + e.intensidade : '') : null), e.alternativa].filter(Boolean);
         var card = document.createElement('div');
         card.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid ' + config.cor;
         card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">' + escHTML(e.date || '') + (e.hora ? ' · ' + escHTML(e.hora) : '') + '</div>'
-          + (e.campos || []).map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">' + escHTML(c) + '</div>'; }).join('');
+          + linhas.map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">' + escHTML(c) + '</div>'; }).join('');
         espList.appendChild(card);
       });
     }

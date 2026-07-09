@@ -283,9 +283,12 @@ window.pacConfirmarNovaSenha = async function() {
   // _pacPortalAuth ainda no hash antigo, e só depois trocamos para o novo. Sem isso,
   // consent/poll/diário passam a levar 403 silencioso até o próximo login.
   var _syncP = (typeof _supaPatientSync === 'function') ? _supaPatientSync()
-    : (typeof _supaSync_patients === 'function' ? _supaSync_patients() : Promise.resolve());
-  Promise.resolve(_syncP).catch(function(){}).then(function() {
-    if (typeof _pacSetPortalAuth === 'function' && typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) {
+    : (typeof _supaSync_patients === 'function' ? _supaSync_patients() : Promise.resolve(false));
+  Promise.resolve(_syncP).catch(function(){ return false; }).then(function(ok) {
+    // Só troca o auth se o servidor CONFIRMOU o hash novo (a RPC devolve {error} sem
+    // lançar). Em falha, mantém o hash antigo — coerente com o servidor; o gate
+    // reaparece no próximo login e a paciente refaz com a senha temporária.
+    if (ok === true && typeof _pacSetPortalAuth === 'function' && typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) {
       _pacSetPortalAuth(p.email || _pacPortalAuth.email, hash);
     }
   });

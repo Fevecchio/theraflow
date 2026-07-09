@@ -186,11 +186,15 @@ function _syncRace(fn) {
   ]);
 }
 
-/* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos)
+/* Sync completo de pacientes para o Supabase (inclui metadata com dados ricos).
+ * Retorna true (confirmado no servidor) / false (falhou ou sem sessão).
  * opts.touch: chaves protegidas (escritas pelo paciente) que ESTA chamada pode
- * gravar — hoje só ['portalPasswordHash','pwdTemp'] no "Reenviar acesso" (C2). */
+ *   gravar (ex.: hash/pwdTemp no "Reenviar acesso", anamnese no salvar da ficha).
+ * opts.onlyId: restringe o batch a UM paciente. OBRIGATÓRIO junto com touch —
+ *   a RPC 016 aplica o touch ao batch INTEIRO; sem o filtro, um reenvio de acesso
+ *   do paciente A subiria hash/pwdTemp OBSOLETOS de todos os outros (revisão 09/07). */
 async function _supaSync_patients(opts) {
-  if (window._tfDemo) return; // demo não sobe nada (nem tem sessão p/ subir)
+  if (window._tfDemo) return false; // demo não sobe nada (nem tem sessão p/ subir)
   _setSyncStatus('syncing');
   var _syncedIds = []; // ids confirmados neste batch → limpar _pendingSync no sucesso (F2.2)
   try {
@@ -198,7 +202,8 @@ async function _supaSync_patients(opts) {
       const { data: { user } } = await supa.auth.getUser();
       // Sem sessão nada sobe — sinaliza e aborta ANTES do _setSyncStatus('ok') lá embaixo.
       if (!user) { _setSyncStatus('noauth'); throw new Error('_noauth'); }
-      const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]').filter(p => !p._isDemo);
+      let pats = JSON.parse(localStorage.getItem('tf_patients') || '[]').filter(p => !p._isDemo);
+      if (opts && opts.onlyId) pats = pats.filter(p => p.id === opts.onlyId);
       if (!pats.length) return;
       _syncedIds = pats.map(p => p.id).filter(Boolean);
       const rows = pats.map(p => ({
@@ -262,12 +267,18 @@ async function _supaSync_patients(opts) {
           p_rows: rows, p_touch: (opts && opts.touch) || null,
         });
         if (eR) {
-          // PGRST202 = função não existe (migration 016 ainda não aplicada) → legado.
-          if (eR.code === 'PGRST202' || /therapist_patients_sync/.test(eR.message || '')) _rpcOk = false;
-          else throw eR;
+          // SÓ PGRST202 (função não existe = migration 016 não aplicada) cai no
+          // legado. Casar por mensagem pegava erros REAIS que citam o nome da
+          // função (ex.: 42501 permission denied) → fallback silencioso com o
+          // clobber do C2 de volta (revisão 09/07). Qualquer outro erro propaga.
+          if (eR.code === 'PGRST202') {
+            console.warn('[TF] RPC therapist_patients_sync ausente (migration 016) — usando upsert legado.');
+            _rpcOk = false;
+          } else throw eR;
         } else _rpcOk = true;
       } catch(eRpc) {
-        if (!(eRpc && (eRpc.code === 'PGRST202' || /therapist_patients_sync/.test(eRpc.message || '')))) throw eRpc;
+        if (!(eRpc && eRpc.code === 'PGRST202')) throw eRpc;
+        console.warn('[TF] RPC therapist_patients_sync ausente (migration 016) — usando upsert legado.');
       }
       if (!_rpcOk) {
         // Legado (pré-016): upsert de linha inteira — sobrescreve o metadata TODO.
@@ -293,12 +304,14 @@ async function _supaSync_patients(opts) {
         if (_changed) localStorage.setItem('tf_patients', JSON.stringify(_ls));
       } catch(_) {}
     }
+    return true;
   } catch(e) {
-    if (e && e.message === '_noauth') return; // status 'noauth' já definido; não é erro de rede
+    if (e && e.message === '_noauth') return false; // status 'noauth' já definido; não é erro de rede
     _syncErrorCount++;
     _setSyncStatus('error');
     console.warn('[Supa] Sync patients falhou:', e.message);
     if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sincronização com nuvem falhou — dados salvos localmente. Verifique sua conexão.');
+    return false;
   }
 }
 

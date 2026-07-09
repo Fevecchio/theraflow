@@ -418,24 +418,18 @@ function saveDiaryLivre() {
   if (!text) { showToast('Escreva algo antes de salvar.'); return; }
   const now = new Date();
   const days = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const dateStr = days[now.getDay()] + ', ' + String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0') + ' · ' +
-    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  const list = document.getElementById('diary-livre-list');
-  const div = document.createElement('div');
-  div.className = 'fade-in';
-  div.style.cssText = 'background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--sage)';
-  var therapistFirst = (tfUserData.nome || 'Ana').split(' ')[0];
-  div.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between"><span>'+escHTML(dateStr)+'</span><span style="color:var(--sage);font-weight:600">✓ '+escHTML(therapistFirst)+' verá na sessão</span></div><div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(text)+'</div>';
-  // Remove empty state se existir
-  var emptyEl = list.querySelector('div[style*="Nenhum registro"]');
-  if (emptyEl) emptyEl.remove();
-  list.insertBefore(div, list.firstChild);
-  // Persistir no paciente
+  const dateStr = days[now.getDay()] + ', ' + String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0');
+  const horaStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  // Persistir no paciente — MESMO formato do portal (tipo/texto) e depois
+  // re-renderizar a lista inteira: inserir card manualmente após o unshift
+  // deixava os índices `ei` dos botões "Responder" já renderizados apontando
+  // para a entrada errada (reply ia parar em outro registro). Revisão 09/07.
   var pPortal = patients[currentPortalPatientIdx];
   if (pPortal) {
     if (!pPortal.diary) pPortal.diary = [];
-    pPortal.diary.unshift({ date: dateStr, text: text });
+    pPortal.diary.unshift({ tipo: 'livre', texto: text, date: dateStr, hora: horaStr, ts: Date.now() });
     salvarPacientes();
+    if (typeof renderDiarioLivre === 'function') renderDiarioLivre(pPortal);
   }
   ta.value = '';
   updateDiaryCount();
@@ -451,49 +445,11 @@ function selectEmoTCC(btn, emocao) {
   tccEmocaoSelecionada = emocao;
 }
 
-function saveDiaryTCC() {
-  const sit = document.getElementById('tcc-situacao').value.trim();
-  const pen = document.getElementById('tcc-pensamento').value.trim();
-  const alt = document.getElementById('tcc-alternativo').value.trim();
-  const intVal = document.getElementById('tcc-intensidade-val').textContent;
-  if (!sit || !pen) { showToast('Preencha ao menos a situação e o pensamento.'); return; }
-  const now = new Date();
-  const days = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const dateStr = days[now.getDay()] + ', ' + String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0') + ' · ' +
-    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  const emoBadge = tccEmocaoSelecionada
-    ? '<span style="background:var(--purple-light);color:var(--purple);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">'+escHTML(tccEmocaoSelecionada)+' · '+escHTML(intVal)+'</span>'
-    : '';
-  const altBlock = alt
-    ? '<div style="font-size:12px;color:var(--sage);background:var(--sage-light);border-radius:6px;padding:8px 10px"><span style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.4px;opacity:.7">Alternativa</span><br>'+escHTML(alt)+'</div>'
-    : '';
-  const div = document.createElement('div');
-  div.className = 'fade-in';
-  div.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid var(--purple)';
-  const _nomeT2 = (tfUserData?.nome || '').split(' ')[0] || 'sua terapeuta';
-  div.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between"><span>'+escHTML(dateStr)+'</span><span class="therapist-label-first" style="color:var(--sage);font-weight:600">✓ '+escHTML(_nomeT2)+' verá na sessão</span></div><div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px"><span style="font-weight:700;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.4px">Situação</span><br><span style="color:var(--ink-soft)">'+escHTML(sit)+'</span></div><div style="font-size:12px"><span style="font-weight:700;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.4px">Pensamento automático</span><br><span style="color:var(--ink-soft)">"'+escHTML(pen)+'"</span></div>'+(emoBadge?'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+emoBadge+'</div>':'')+altBlock+'</div>';
-  document.getElementById('diary-tcc-list').insertBefore(div, document.getElementById('diary-tcc-list').firstChild);
-  ['tcc-situacao','tcc-pensamento','tcc-alternativo'].forEach(id => document.getElementById(id).value = '');
-  document.querySelectorAll('.tcc-emocao-btn').forEach(b => { b.style.background='#fff'; b.style.color='var(--ink)'; b.style.borderColor='var(--border)'; });
-  // Persistir entrada TCC no paciente
-  var pTcc = patients[currentPortalPatientIdx];
-  if (pTcc) {
-    if (!pTcc.diary) pTcc.diary = [];
-    pTcc.diary.unshift({
-      date: dateStr,
-      text: sit,
-      tipo: 'tcc',
-      pensamento: pen,
-      emocao: tccEmocaoSelecionada,
-      intensidade: intVal,
-      alternativa: alt
-    });
-    salvarPacientes();
-  }
-  tccEmocaoSelecionada = '';
-  updateDiaryCount();
-  showToast('Registro TCC salvo. 🧠');
-}
+// saveDiaryTCC (compose TCC estático da prévia) foi REMOVIDO — código morto: o
+// painel que o chamava (ids tcc-situacao/diary-tcc-list) é substituído inteiro
+// por renderDiarioPortal (js/12), cujo form usa esp-campo-* + saveDiaryEsp.
+// Entradas legadas tipo:'tcc' que ele criou seguem renderizadas (ver
+// _renderDiarioCard e a lista especializada da prévia).
 
 function updateDiaryCount() {
   const p = patients[currentPortalPatientIdx];
@@ -811,9 +767,11 @@ function _pacForcarNovaSenha(p, idx) {
     // valida o hash que o servidor ainda tem (o temporário). Com o auth novo antes
     // do sync, a RPC nega (403) e a senha nova nunca persiste no servidor.
     var _syncP = (typeof _supaPatientSync === 'function') ? _supaPatientSync()
-      : (typeof _supaSync_patients === 'function' ? _supaSync_patients() : Promise.resolve());
-    Promise.resolve(_syncP).catch(function(){}).then(function() {
-      if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth && typeof _pacSetPortalAuth === 'function') {
+      : (typeof _supaSync_patients === 'function' ? _supaSync_patients() : Promise.resolve(false));
+    Promise.resolve(_syncP).catch(function(){ return false; }).then(function(ok) {
+      // Só troca o auth com o hash novo CONFIRMADO no servidor (ver nota no
+      // _supaPatientSync: {error} não lança). Falhou → mantém o antigo, coerente.
+      if (ok === true && typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth && typeof _pacSetPortalAuth === 'function') {
         _pacSetPortalAuth(p.email || _pacPortalAuth.email, hash);
       }
     });
@@ -1631,13 +1589,43 @@ async function pacConfirmarAlteracaoSenha() {
   var btnSalvar = document.getElementById('pac-senha-salvar-btn');
   if (btnSalvar) { btnSalvar.textContent = 'Salvando…'; btnSalvar.disabled = true; }
 
-  // Salva nova senha
+  // Salva nova senha — no caminho RPC-login, PRIMEIRO confirma no servidor e só
+  // então compromete o estado local + _pacPortalAuth (mesma classe do fix 0e772bb:
+  // trocar o auth antes/sem confirmação deixa cliente e servidor com hashes
+  // diferentes → todas as RPCs seguintes 403 até relogar).
   var hashNova = await _portalHash(nova);
+  var _emailUpd = p.email || '';
+  var _ehRpcLogin = (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth);
+
+  if (_ehRpcLogin && _emailUpd && typeof supaPatient !== 'undefined') {
+    var _updOk = false;
+    try {
+      var _rUpd = await supaPatient.rpc('portal_update_password', {
+        p_email: _emailUpd, p_old_hash: hashAtual, p_new_hash: hashNova
+      });
+      _updOk = !(_rUpd && _rUpd.error) && _rUpd.data !== false;
+    } catch(_) { _updOk = false; }
+    if (!_updOk) {
+      if (btnSalvar) { btnSalvar.textContent = 'Salvar nova senha'; btnSalvar.disabled = false; }
+      errEl.textContent = 'Não foi possível salvar a nova senha (conexão?). Sua senha atual continua valendo — tente de novo.';
+      errEl.style.display = '';
+      return;
+    }
+  } else if (_emailUpd && typeof supaPatient !== 'undefined') {
+    // Caminho conta Auth (sem _pacPortalAuth): comportamento pré-existente,
+    // best-effort — a validação da senha foi via signInWithPassword acima.
+    try {
+      supaPatient.rpc('portal_update_password', {
+        p_email: _emailUpd, p_old_hash: hashAtual, p_new_hash: hashNova
+      }).then(null, function(){});
+    } catch(_) {}
+  }
+
   p.portalPasswordHash = hashNova;
   p.portalPassword = null;
   p.pwdTemp = false; // senha agora é pessoal (F3.2)
   // Atualiza o hash usado pelas RPCs de chat (senão o chat para de autorizar após trocar a senha)
-  if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) _pacSetPortalAuth(p.email || _pacPortalAuth.email, hashNova);
+  if (_ehRpcLogin) _pacSetPortalAuth(p.email || _pacPortalAuth.email, hashNova);
   // Atualiza patients[] garantindo que p está no array (RPC login não popula patients[])
   if (typeof patients !== 'undefined') {
     var _pIdx = patients.findIndex(function(q){ return q.id === p.id || (q.email && q.email === p.email); });
@@ -1649,18 +1637,6 @@ async function pacConfirmarAlteracaoSenha() {
     }
   }
   try { localStorage.setItem('tf_patients', JSON.stringify(typeof patients !== 'undefined' && patients.length ? patients : [p])); } catch(_) {}
-
-  // Atualiza Supabase via RPC (funciona sem sessão de auth — SECURITY DEFINER)
-  var _emailUpd = p.email || '';
-  if (_emailUpd && typeof supaPatient !== 'undefined') {
-    (function() {
-      try {
-        supaPatient.rpc('portal_update_password', {
-          p_email: _emailUpd, p_old_hash: hashAtual, p_new_hash: hashNova
-        }).then(null, function(){});
-      } catch(_) {}
-    })();
-  }
 
   if (btnSalvar) { btnSalvar.textContent = 'Salvar nova senha'; btnSalvar.disabled = false; }
   okEl.style.display = '';
@@ -1850,9 +1826,13 @@ function _renderDiarioCard(entrada, listId, prepend) {
     card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">'+escHTML(entrada.date||'')+(entrada.hora?' · '+escHTML(entrada.hora):'')+'</div>'
       + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.texto || entrada.text || '')+'</div>';
   } else {
+    // esp (portal) usa `campos`; 'tcc' legado (compose antigo) usa campos soltos.
+    var _linhas = entrada.campos || [entrada.text, entrada.pensamento,
+      (entrada.emocao ? entrada.emocao + (entrada.intensidade ? ' · ' + entrada.intensidade : '') : null),
+      entrada.alternativa].filter(Boolean);
     card.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid var(--sage)';
-    card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">'+escHTML(entrada.date)+'</div>'
-      + (entrada.campos||[]).map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">'+escHTML(c)+'</div>'; }).join('');
+    card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">'+escHTML(entrada.date||'')+'</div>'
+      + _linhas.map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">'+escHTML(c)+'</div>'; }).join('');
   }
   if (prepend) list.insertBefore(card, list.firstChild);
   else list.appendChild(card);
@@ -1865,9 +1845,10 @@ function _renderDiarioExistente(p) {
   if (livre) livre.innerHTML = '';
   if (esp)   esp.innerHTML   = '';
   diary.forEach(function(e) {
-    // Entradas antigas sem `tipo` (formato legado, campo .text) contam como livres.
+    // Entradas antigas sem `tipo` (formato legado, campo .text) contam como livres;
+    // 'tcc' (compose antigo da prévia) conta como especializada.
     if ((e.tipo === 'livre' || !e.tipo) && livre) _renderDiarioCard(e, 'pac-diary-livre-list', false);
-    else if (e.tipo === 'esp' && esp) _renderDiarioCard(e, 'pac-diary-esp-list', false);
+    else if ((e.tipo === 'esp' || e.tipo === 'tcc') && esp) _renderDiarioCard(e, 'pac-diary-esp-list', false);
   });
 }
 

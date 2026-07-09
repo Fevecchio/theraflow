@@ -69,18 +69,58 @@ async function _supaLoadUserData(userId) {
   try {
     var _prevOwner = localStorage.getItem('tf_owner_uid');
     if (_prevOwner && _prevOwner !== userId) {
+      // O que NUNCA sincroniza (local-only: captação, bloqueios, reflexões,
+      // check-ins, sequência de recibos) e pacientes offline pendentes NÃO podem
+      // ser deletados — seriam perda PERMANENTE (não estão no Supabase do dono).
+      // Vão para um stash por uid e são devolvidos quando o dono anterior voltar.
+      try {
+        var _stash = {};
+        ['tf_captacao','tf_bloqueios','tf_reflections','tf_checkin_terapeuta','tf_recibo_seq']
+          .forEach(function(k){ var v = localStorage.getItem(k); if (v !== null) _stash[k] = v; });
+        var _pend = JSON.parse(localStorage.getItem('tf_patients') || '[]')
+          .filter(function(q){ return q && q._pendingSync && !q._isDemo; });
+        if (_pend.length) _stash.__pendingPatients = _pend;
+        if (Object.keys(_stash).length) localStorage.setItem('tf_switch_stash_' + _prevOwner, JSON.stringify(_stash));
+      } catch(_) {}
       ['tf_patients','tf_charges','tf_tasks','tf_appointments','tf_captacao',
        'tf_reflections','tf_checkin_terapeuta','tf_bloqueios','tf_recibo_seq',
-       'tf_last_briefing','tf_lk_draft','tf_marcos_vistos','tf_portal_new_data']
+       'tf_last_briefing','tf_lk_draft','tf_marcos_vistos','tf_portal_new_data','tf_account']
         .forEach(function(k){ localStorage.removeItem(k); });
       Object.keys(localStorage).forEach(function(k){ if (k.indexOf('tf_bc_') === 0) localStorage.removeItem(k); });
       try { if (typeof patients !== 'undefined') patients.splice(0, patients.length); } catch(_) {}
       try { if (typeof charges  !== 'undefined') charges.splice(0, charges.length); } catch(_) {}
       try { if (typeof tasks    !== 'undefined') tasks.splice(0, tasks.length); } catch(_) {}
       try { if (typeof appointments !== 'undefined') appointments.splice(0, appointments.length); } catch(_) {}
-      console.warn('[TF] Conta diferente neste navegador — dados locais da conta anterior descartados.');
+      // Globais que só carregam no parse — sem o reset, a conta nova herdaria
+      // bloqueios/leads da anterior em memória (e re-persistiria no 1º save).
+      try { if (typeof bloqueios !== 'undefined') bloqueios.splice(0, bloqueios.length); } catch(_) {}
+      try { if (typeof captacaoLeads !== 'undefined') captacaoLeads.splice(0, captacaoLeads.length); } catch(_) {}
+      console.warn('[TF] Conta diferente neste navegador — dados locais da conta anterior guardados em stash e removidos.');
     }
     localStorage.setItem('tf_owner_uid', userId);
+    // Dono voltou? Devolve o stash dele (local-only + pacientes offline pendentes).
+    var _meuStashRaw = localStorage.getItem('tf_switch_stash_' + userId);
+    if (_meuStashRaw) {
+      var _meu = JSON.parse(_meuStashRaw);
+      Object.keys(_meu).forEach(function(k) {
+        if (k === '__pendingPatients') {
+          var _cur = JSON.parse(localStorage.getItem('tf_patients') || '[]');
+          var _ids = new Set(_cur.map(function(q){ return q.id; }));
+          _meu.__pendingPatients.forEach(function(q){ if (!_ids.has(q.id)) _cur.push(q); });
+          localStorage.setItem('tf_patients', JSON.stringify(_cur));
+        } else localStorage.setItem(k, _meu[k]);
+      });
+      localStorage.removeItem('tf_switch_stash_' + userId);
+      try {
+        if (typeof bloqueios !== 'undefined') {
+          var _b = JSON.parse(localStorage.getItem('tf_bloqueios') || '[]');
+          bloqueios.splice(0, bloqueios.length);
+          Array.prototype.push.apply(bloqueios, _b);
+        }
+      } catch(_) {}
+      try { if (typeof carregarCaptacao === 'function') carregarCaptacao(); } catch(_) {}
+      console.warn('[TF] Stash da conta devolvido (dados local-only restaurados).');
+    }
   } catch(_) {}
   try {
     const [{ data: profile }, { data: pats }, { data: chgs }, { data: tsks }, { data: appts }] = await Promise.all([

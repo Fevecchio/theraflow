@@ -345,11 +345,13 @@ function loginPaciente() {
         if (p.portalPassword) return p.portalPassword === senha;
         return false;
       });
-      // Migra automaticamente conta antiga para hash após login bem-sucedido
+      // Migra automaticamente conta antiga para hash após login bem-sucedido.
+      // touch+onlyId: sem isso a RPC 016 descartaria o hash migrado (chave protegida)
+      // e ele nunca chegaria ao servidor. Caminho quase morto (exige plaintext legado).
       if (idx !== -1 && !pacs[idx].portalPasswordHash) {
         pacs[idx].portalPasswordHash = senhaHash;
         try { localStorage.setItem('tf_patients', JSON.stringify(pacs)); } catch(_) {}
-        if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(() => {});
+        if (typeof _supaSync_patients === 'function') _supaSync_patients({ touch: ['portalPasswordHash'], onlyId: pacs[idx].id }).catch(() => {});
       }
       if (idx !== -1) {
         _loggedPatientIdx = idx;
@@ -998,8 +1000,10 @@ function salvarAnamnese(idx) {
   // Atualiza status bar
   _popularAnamnese(idx);
 
-  // Sync terapeuta
-  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+  // Sync terapeuta. touch: anamnese é chave protegida na RPC 016/017 (o paciente
+  // também a escreve pelo portal — sem o touch, esta edição intencional do
+  // terapeuta seria descartada e nunca chegaria ao servidor).
+  if (typeof _supaSync_patients === 'function') _supaSync_patients({ touch: ['anamnese'], onlyId: p.id }).catch(function(){});
 }
 
 function ativarAnamnesePaciente(idx) {
@@ -1015,8 +1019,9 @@ function ativarAnamnesePaciente(idx) {
   localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof patients !== 'undefined' && patients[idx]) patients[idx].portalAnamneseAtiva = true;
   if (typeof showToast === 'function') showToast('📤 Anamnese enviada! O paciente verá no portal.');
-  // Sync com Supabase para que o portal do paciente receba a flag
-  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
+  // Sync com Supabase para que o portal do paciente receba a flag (touch: anamnese
+  // é protegida na 016/017; portalAnamneseAtiva não é protegida e vai no patch normal)
+  if (typeof _supaSync_patients === 'function') _supaSync_patients({ touch: ['anamnese'], onlyId: p.id }).catch(function(){});
 }
 
 // ─── ANAMNESE — PACIENTE (portal) ────────────────────────────────────

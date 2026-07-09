@@ -302,7 +302,16 @@ async function compartilharAcessoPortal(i) {
     // Sync antes para garantir que o paciente existe no banco. touch: este é o
     // ÚNICO fluxo em que o terapeuta grava hash/pwdTemp de propósito (a RPC 016
     // descarta essas chaves de qualquer sync rotineiro — C2/staleness).
-    await _supaSync_patients({ touch: ['portalPasswordHash', 'pwdTemp'] }).catch(() => {});
+    // onlyId: o touch vale p/ o batch INTEIRO na RPC — sem restringir ao paciente
+    // deste reenvio, subiria hash/pwdTemp obsoletos dos OUTROS pacientes (podendo
+    // matar a senha pessoal de alguém não relacionado). Revisão 09/07.
+    // Falhou o sync → aborta com aviso honesto: sem o hash no servidor a paciente
+    // não conseguiria logar via RPC e o gate de troca de senha nunca dispararia.
+    var _okAcesso = await _supaSync_patients({ touch: ['portalPasswordHash', 'pwdTemp'], onlyId: p.id }).catch(() => false);
+    if (_okAcesso !== true) {
+      showToast('⚠ Não foi possível ativar o acesso agora (conexão?). Tente de novo em instantes — nada foi enviado.');
+      return;
+    }
     try {
       var r = await fetchWithTimeout('/api/invite-patient', {
         method: 'POST',
@@ -535,12 +544,21 @@ async function _supaPatientSync() {
   // Autoriza por email+hash (login RPC) OU pela sessão Auth (a RPC aceita os dois).
   var _auth = (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth)
     ? _pacPortalAuth : { email: p.email || '', hash: null };
+  // Retorna true/false: o supabase-js NÃO lança em erro de RPC ({error} no retorno),
+  // então o catch sozinho era morto — falha de rede/403 passava como sucesso e os
+  // fluxos de senha trocavam _pacPortalAuth sem o servidor ter recebido o hash novo.
   try {
-    await supaPatient.rpc('portal_patient_sync', {
+    var _r = await supaPatient.rpc('portal_patient_sync', {
       p_email: _auth.email, p_hash: _auth.hash, p_patch: patch,
     });
+    if (_r && _r.error) {
+      console.warn('[supaPatient] sync recusado:', _r.error.message);
+      return false;
+    }
+    return true;
   } catch(e) {
     console.warn('[supaPatient] sync falhou:', e.message);
+    return false;
   }
 }
 
