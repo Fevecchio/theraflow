@@ -495,44 +495,42 @@ function salvarPacientes() {
   }
 }
 
-/* Sync de dados do paciente de volta para o Supabase (sessão do paciente) */
+/* Sync de dados do paciente de volta para o Supabase (sessão do paciente).
+   MERGE via RPC portal_patient_sync (migration 015): envia SÓ o que o paciente
+   edita; o servidor mescla e PRESERVA os campos do terapeuta (prontuarioNotes,
+   fin, forma_pagamento, portalDica/Mensagem…). Antes fazia UPDATE do metadata
+   inteiro e, como o paciente carrega enxuto (F3.1), apagava o prontuário. */
 async function _supaPatientSync() {
   if (!_loggedPatientData) return; // Não executar no contexto do terapeuta
   const p = _loggedPatientData;
   if (!p || !p.id) return;
+  var patch = {
+    moodHistory: p.moodHistory || [],
+    moodNotes: p.moodNotes || [],
+    diary: p.diary || [],
+    metas: p.metas || [],
+    portalMetas: p.portalMetas || [],
+    exercises: p.exercises || [],
+    materials: p.materials || [],
+    mood: (p.mood != null ? p.mood : null),
+    _moodLastDate: p._moodLastDate || null,
+    checkInStreak: p.checkInStreak || 0,
+    lastCheckInDate: p.lastCheckInDate || null,
+    readMaterials: p.readMaterials || [],
+    portalNota: p.portalNota || null,
+    portalNotifHour: p.portalNotifHour || null,
+    pwdTemp: p.pwdTemp || false, // troca de senha do paciente limpa a flag (F3.2)
+  };
+  // Só inclui se o paciente realmente tem o valor (não sobrescrever com vazio).
+  if (p.portalPasswordHash) patch.portalPasswordHash = p.portalPasswordHash;
+  if (p.anamnese != null) patch.anamnese = p.anamnese;
+  // Autoriza por email+hash (login RPC) OU pela sessão Auth (a RPC aceita os dois).
+  var _auth = (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth)
+    ? _pacPortalAuth : { email: p.email || '', hash: null };
   try {
-    await supaPatient.from('patients').update({
-      metadata: {
-        moodHistory: p.moodHistory || [],
-        moodNotes: p.moodNotes || [],
-        prontuarioNotes: p.prontuarioNotes || [],
-        exercises: p.exercises || [],
-        materials: p.materials || [],
-        diary: p.diary || [],
-        metas: p.metas || [],
-        portalMetas: p.portalMetas || [],
-        appointments: p.appointments || [],
-        sessionLink: p.sessionLink || null,
-        sessionLinkAt: p.sessionLinkAt || null,
-        _moodLastDate: p._moodLastDate || null,
-        mood: p.mood || null,
-        fin: p.fin || null,
-        forma_pagamento: p.forma_pagamento || null,
-        portalPasswordHash: p.portalPasswordHash || null,
-        pwdTemp: p.pwdTemp || false, // troca de senha do paciente limpa a flag (F3.2)
-        checkInStreak: p.checkInStreak || 0,
-        lastCheckInDate: p.lastCheckInDate || null,
-        readMaterials: p.readMaterials || [],
-        portalNota: p.portalNota || null,
-        portalNotifHour: p.portalNotifHour || null,
-        // Autoradas pelo terapeuta — incluídas aqui p/ o sync do PACIENTE não as apagar
-        // (esta lista também sobrescreve o metadata inteiro). União com _supaSync_patients.
-        portalDica: p.portalDica || null,
-        portalMensagem: p.portalMensagem || null,
-        anamnese: p.anamnese || null,
-        portalAnamneseAtiva: p.portalAnamneseAtiva || false,
-      }
-    }).eq('id', p.id);
+    await supaPatient.rpc('portal_patient_sync', {
+      p_email: _auth.email, p_hash: _auth.hash, p_patch: patch,
+    });
   } catch(e) {
     console.warn('[supaPatient] sync falhou:', e.message);
   }
