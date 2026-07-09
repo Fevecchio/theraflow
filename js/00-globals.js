@@ -62,6 +62,26 @@ var ABORDAGEM_KEY_MAP = {
 async function _supaLoadUserData(userId) {
   if (_loadingUserData) return;
   _loadingUserData = true;
+  // Guard de TROCA DE CONTA no mesmo navegador: os dados locais pertencem ao dono
+  // anterior (tf_owner_uid). Mesclá-los seria (a) vazamento de dados clínicos entre
+  // contas e (b) sync quebrado — o upsert em batch leva 403 do RLS (linhas de outro
+  // uid) e NADA sobe, com o status ainda "Sincronizado". Achado no teste de 09/07.
+  try {
+    var _prevOwner = localStorage.getItem('tf_owner_uid');
+    if (_prevOwner && _prevOwner !== userId) {
+      ['tf_patients','tf_charges','tf_tasks','tf_appointments','tf_captacao',
+       'tf_reflections','tf_checkin_terapeuta','tf_bloqueios','tf_recibo_seq',
+       'tf_last_briefing','tf_lk_draft','tf_marcos_vistos','tf_portal_new_data']
+        .forEach(function(k){ localStorage.removeItem(k); });
+      Object.keys(localStorage).forEach(function(k){ if (k.indexOf('tf_bc_') === 0) localStorage.removeItem(k); });
+      try { if (typeof patients !== 'undefined') patients.splice(0, patients.length); } catch(_) {}
+      try { if (typeof charges  !== 'undefined') charges.splice(0, charges.length); } catch(_) {}
+      try { if (typeof tasks    !== 'undefined') tasks.splice(0, tasks.length); } catch(_) {}
+      try { if (typeof appointments !== 'undefined') appointments.splice(0, appointments.length); } catch(_) {}
+      console.warn('[TF] Conta diferente neste navegador — dados locais da conta anterior descartados.');
+    }
+    localStorage.setItem('tf_owner_uid', userId);
+  } catch(_) {}
   try {
     const [{ data: profile }, { data: pats }, { data: chgs }, { data: tsks }, { data: appts }] = await Promise.all([
       supa.from('users').select('*').eq('id', userId).single(),
