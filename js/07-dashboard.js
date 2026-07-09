@@ -393,22 +393,6 @@ function _renderDashInsights() {
   }).join('');
 }
 
-function aprovarNota(btn, paciente) {
-  const item = btn.closest('.list-item');
-  if (item) {
-    item.style.transition = 'opacity .3s';
-    item.style.opacity = '0';
-    setTimeout(() => {
-      item.remove();
-      showToast(`✓ Nota de ${paciente} aprovada e salva.`);
-      // Atualiza contador
-      const pendentes = document.querySelectorAll('#page-dashboard .list-item[style*="border-left:3px solid var(--amber)"]').length;
-      const statVal = document.querySelector('#dashboard-stats .stat-value[style*="amber"]');
-      if (statVal) statVal.textContent = pendentes || '0';
-    }, 300);
-  }
-}
-
 function checkFirstPatientBanner() {
   const banner = document.getElementById('first-patient-banner');
   const stats = document.getElementById('dashboard-stats');

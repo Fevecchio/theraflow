@@ -1069,62 +1069,6 @@ function createNewPlan() {
     : '💳 Cobrança criada para ' + _firstName(nome) + ' — ' + fmtMoedaInt(novaCobranca.value));
 }
 
-function editPlanField(el, fieldId) {
-  const currentText = el.textContent.trim();
-  const isValue = fieldId.includes('valor') || fieldId.includes('unit');
-  const isQtd = fieldId.includes('qtd');
-  const input = document.createElement('input');
-  input.className = 'fin-editable-input';
-  input.style.fontSize = isValue && el.style.fontSize ? el.style.fontSize : 'inherit';
-  input.style.fontFamily = el.style.fontFamily || 'inherit';
-  input.style.fontWeight = el.style.fontWeight || 'inherit';
-  input.style.color = el.style.color || 'inherit';
-  if (isValue) {
-    input.type = 'number';
-    input.value = currentText.replace(/[^\d]/g, '');
-    input.style.width = '100px';
-  } else if (isQtd) {
-    input.type = 'number';
-    input.value = currentText;
-    input.min = '1';
-    input.max = '12';
-    input.style.width = '50px';
-  } else {
-    input.value = currentText;
-    input.style.width = '110px';
-  }
-  const parent = el.parentNode;
-  parent.replaceChild(input, el);
-  input.focus();
-  input.select();
-
-  const save = () => {
-    const newVal = input.value.trim();
-    const span = document.createElement('span');
-    span.className = 'fin-editable';
-    span.onclick = () => editPlanField(span, fieldId);
-    span.title = 'Clique para editar';
-    span.style.cssText = el.style.cssText;
-    if (isValue && newVal) {
-      span.textContent = 'R$' + parseInt(newVal);
-      showToast(`Valor atualizado para R$${parseInt(newVal)}.`);
-    } else if (isQtd && newVal) {
-      span.textContent = newVal;
-      showToast(`Quantidade de sessões atualizada para ${newVal}.`);
-    } else if (newVal) {
-      span.textContent = newVal;
-      showToast(`Data de vencimento atualizada para ${newVal}.`);
-    } else {
-      span.textContent = currentText;
-    }
-    parent.replaceChild(span, input);
-  };
-  input.addEventListener('blur', save);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); save(); }
-    if (e.key === 'Escape') { const span = document.createElement('span'); span.className = 'fin-editable'; span.onclick = () => editPlanField(span, fieldId); span.title = 'Clique para editar'; span.style.cssText = el.style.cssText; span.textContent = currentText; parent.replaceChild(span, input); }
-  });
-}
 
 // ── PORTAL DO PACIENTE ──
 const moodHistory = [6,5,null,7,4,6,5,7,6,null,8,6,7,6]; // last 14 days, null = not logged
