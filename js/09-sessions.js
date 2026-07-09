@@ -269,7 +269,7 @@ function startWherebySession() {
   const link = sp && sp.sessionLink;
   // Link /sala é o convite DA PACIENTE (auto-publicado pelo LiveKit) — nunca abrir como
   // sala do terapeuta (token errado/expirado → aba que não carrega).
-  if (!link || String(link).indexOf('/sala?') !== -1) {
+  if (!link || _isSalaLink(link)) {
     showToast('⚠ Adicione o link da videochamada na ficha do paciente antes de iniciar.');
     return;
   }

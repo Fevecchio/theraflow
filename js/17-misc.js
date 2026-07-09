@@ -192,7 +192,9 @@ function showSessionLink() {
       return;
     }
     const _first = _slNome.split(' ')[0];
-    const link = location.origin + '/sala?u=' + encodeURIComponent(window._lkUrl) +
+    // FRAGMENT (#) em vez de query: o token não vai ao servidor/logs nem vaza via
+    // Referer. sala.html lê o hash (compat com links ?u= antigos mantida). F3.3.
+    const link = location.origin + '/sala#u=' + encodeURIComponent(window._lkUrl) +
       '&t=' + encodeURIComponent(window._lkPatientToken) + '&n=' + encodeURIComponent(_first);
     return _renderSessionLinkModal(link, _slNome, true);
   }
@@ -239,7 +241,7 @@ function _salvarLinkNoPortal(link) {
   if (!p) return;
   p.sessionLink = link.startsWith('http') ? link : ('https://' + link);
   // Carimbo p/ o portal saber que o convite é "ao vivo" (só link real de /sala fresco).
-  if (p.sessionLink.indexOf('/sala?') !== -1) p.sessionLinkAt = new Date().toISOString();
+  if (_isSalaLink(p.sessionLink)) p.sessionLinkAt = new Date().toISOString();
   salvarPacientes(); // já sincroniza com o Supabase (debounce)
 }
 

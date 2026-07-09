@@ -101,7 +101,16 @@
 <script>
   var _room = null, _micOn = true, _camOn = true;
 
-  function _qs(k) { return new URLSearchParams(location.search).get(k); }
+  // Parâmetros vêm no FRAGMENT (#u=…&t=…) — não vai ao servidor/logs nem vaza via
+  // Referer (F3.3). Fallback p/ query string: links antigos já enviados a pacientes.
+  function _qs(k) {
+    try {
+      var h = new URLSearchParams((location.hash || '').replace(/^#\??/, ''));
+      var v = h.get(k);
+      if (v !== null && v !== '') return v;
+    } catch (_) {}
+    return new URLSearchParams(location.search).get(k);
+  }
 
   function _showScreen(id) {
     ['consent-screen','call-screen','msg-screen'].forEach(function(s){

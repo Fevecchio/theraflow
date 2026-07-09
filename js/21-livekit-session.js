@@ -154,7 +154,8 @@ function _lkPublishPortalLink(sp) {
   if (!sp || !window._lkUrl || !window._lkPatientToken) return;
   try {
     const first = (sp.name || 'Paciente').split(' ')[0];
-    sp.sessionLink = location.origin + '/sala?u=' + encodeURIComponent(window._lkUrl) +
+    // FRAGMENT (#): token fora da query → não vaza em logs/Referer (F3.3).
+    sp.sessionLink = location.origin + '/sala#u=' + encodeURIComponent(window._lkUrl) +
       '&t=' + encodeURIComponent(window._lkPatientToken) + '&n=' + encodeURIComponent(first);
     sp.sessionLinkAt = new Date().toISOString();
     // salvarPacientes já sincroniza com o Supabase (debounce 1,5s) — suficiente vs poll de 20s.

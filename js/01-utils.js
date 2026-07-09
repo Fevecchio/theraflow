@@ -108,6 +108,13 @@ function _wppLink(phone, texto) {
   return 'https://wa.me/' + (n || '') + (texto ? '?text=' + encodeURIComponent(texto) : '');
 }
 
+/* Link de sala de vídeo (/sala) — aceita o formato novo com FRAGMENT (/sala#u=…,
+ * que não vaza token em logs/Referer — F3.3) e o antigo com query (/sala?u=…,
+ * links já enviados a pacientes). Única fonte de verdade p/ "é link de sala?". */
+function _isSalaLink(link) {
+  return !!link && /\/sala[?#]/.test(String(link));
+}
+
 /* ── FETCH COM TIMEOUT ── */
 async function _apiAuthHeader() {
   try {

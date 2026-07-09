@@ -658,7 +658,7 @@ function _badgesGridHtml(p) {
 // detecta e entra. "Ao vivo" = link de /sala com token ainda fresco (TTL 3h).
 function _pacSessionLive(p) {
   var link = p && p.sessionLink;
-  if (!link || String(link).indexOf('/sala?') === -1) return false;
+  if (!link || !_isSalaLink(link)) return false;
   var at = p.sessionLinkAt ? Date.parse(p.sessionLinkAt) : 0;
   if (!at) return false; // sem carimbo → link antigo/legado, não é sessão ao vivo
   return (Date.now() - at) < 3 * 60 * 60 * 1000; // 3h = TTL do token da paciente
@@ -681,7 +681,7 @@ function _pacSessCardHtml(p) {
   var sessionLink = p.sessionLink || null;
   var live = _pacSessionLive(p);
   // Link /sala fora do ao-vivo = token expirado (efêmero) — não oferecer como botão legado.
-  var legacyLink = (sessionLink && String(sessionLink).indexOf('/sala?') === -1) ? sessionLink : null;
+  var legacyLink = (sessionLink && !_isSalaLink(sessionLink)) ? sessionLink : null;
   var _tn = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome
     : ((typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistNome) ? _loggedPatientData._therapistNome : 'Ana');
   var tFirst = _tn.split(' ')[0];
