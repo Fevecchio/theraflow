@@ -140,13 +140,22 @@ function tfTrack(event, props) {
 }
 
 /* ── REGISTRO DE CONSENTIMENTO (LGPD) ──
- * Grava o aceite em consent_logs via /api/consent (IP + user-agent capturados
- * no servidor). Best-effort: nunca bloqueia a UI nem lança erro — o localStorage
- * continua sendo a fonte que destrava o fluxo. Inclui o JWT do terapeuta quando
- * houver sessão (necessário só para 'termos_plataforma'). */
+ * Best-effort: nunca bloqueia a UI nem lança erro — o localStorage continua
+ * destravando o fluxo. Roteia por identidade (F3.5):
+ *  - PACIENTE logado via RPC/local (tem _pacPortalAuth, sem sessão Auth): grava
+ *    pela RPC portal_log_consent (migration 014), autenticada por email+hash —
+ *    não dá para forjar com um UUID qualquer.
+ *  - TERAPEUTA (ou termos_plataforma): POST /api/consent com o JWT. */
 async function _logConsent(tipo, opts) {
   opts = opts || {};
   try {
+    if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth && typeof supaPatient !== 'undefined') {
+      await supaPatient.rpc('portal_log_consent', {
+        p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash,
+        p_tipo: tipo, p_versao: opts.versao || '1.0',
+      });
+      return;
+    }
     var body = { tipo: tipo, versao: opts.versao || '1.0' };
     if (opts.patientId) body.patientId = opts.patientId;
     var headers = { 'Content-Type': 'application/json' };
