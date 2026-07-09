@@ -192,9 +192,11 @@ function showSessionLink() {
       return;
     }
     const _first = _slNome.split(' ')[0];
-    // FRAGMENT (#) em vez de query: o token não vai ao servidor/logs nem vaza via
-    // Referer. sala.html lê o hash (compat com links ?u= antigos mantida). F3.3.
-    const link = location.origin + '/sala#u=' + encodeURIComponent(window._lkUrl) +
+    // Link COMPARTILHADO (WhatsApp/copiar) usa QUERY (?): mensageiros linkificam o
+    // fragment (#) de forma imprevisível — em produção o token chegava truncado e a
+    // paciente via "Link expirado" (09/07). O formato # (F3.3, sem vazar em logs/
+    // Referer) fica no link do PORTAL (js/21), que não passa por mensageiro.
+    const link = location.origin + '/sala?u=' + encodeURIComponent(window._lkUrl) +
       '&t=' + encodeURIComponent(window._lkPatientToken) + '&n=' + encodeURIComponent(_first);
     return _renderSessionLinkModal(link, _slNome, true);
   }
