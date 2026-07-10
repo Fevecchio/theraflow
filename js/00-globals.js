@@ -202,18 +202,26 @@ async function _supaLoadUserData(userId) {
     if (chgs && chgs.length > 0) {
       const localChgs = JSON.parse(localStorage.getItem('tf_charges') || '[]');
       const supaChgIds = new Set(chgs.map(c => String(c.local_id || c.id)));
-      const restoredChgs = chgs.map(c => ({
-        ...(c.metadata || {}),
-        id: c.local_id || c.id,
-        // Mapeia patient_id (UUID) de volta para o nome do paciente
-        patient: (pats && pats.find(p => p.id === c.patient_id)?.name) || c.patient_id,
-        value: parseFloat(c.valor) || 0,
-        metodo: c.metodo,
-        status: c.status,
-        descricao: c.descricao,
-        date: c.due_date || null,
-        paidDate: c.paid_date || null,
-      }));
+      const restoredChgs = chgs.map(c => {
+        var _m = c.metadata || {};
+        return {
+          ...(_m),
+          id: c.local_id || c.id,
+          // Mapeia patient_id (UUID) de volta para o nome do paciente
+          patient: (pats && pats.find(p => p.id === c.patient_id)?.name) || c.patient_id,
+          value: parseFloat(c.valor) || 0,
+          // F4: a UI lê method/desc — reconstrói do metadata (com fallback às colunas).
+          method: _m.method || c.metodo || 'PIX',
+          desc: _m.desc || c.descricao || null,
+          session: (_m.session != null ? _m.session : null),
+          billing: _m.billing || null,
+          planLabel: _m.planLabel || null,
+          status: c.status,
+          date: c.due_date || null,
+          paidDate: c.paid_date || null,
+          deleted: false,
+        };
+      });
       // Preserva cobranças criadas offline
       const offlineChgs = localChgs.filter(c => c.id && !supaChgIds.has(String(c.id)));
       const mergedChgs = [...restoredChgs, ...offlineChgs];
@@ -227,10 +235,14 @@ async function _supaLoadUserData(userId) {
       const restoredTasks = tsks.map(t => ({
         id: t.local_id || t.id,
         titulo: t.titulo,
+        title: t.titulo, // a UI lê `title`
         status: t.status,
         prioridade: t.prioridade,
         dueDate: t.due_date,
         patientId: t.patient_id,
+        // M16: reconstrói o vínculo com o paciente (a UI mostra patientName) — antes
+        // toda tarefa virava "geral" em outro dispositivo.
+        patientName: (pats && pats.find(p => p.id === t.patient_id)?.name) || '',
       }));
       // Preserva tarefas criadas offline
       const offlineTsks = localTsks.filter(t => t.id && !supaTskIds.has(String(t.id)));

@@ -275,6 +275,10 @@ async function _supaSync_patients(opts) {
           _therapistNome: _terNome,
           _therapistWhatsapp: _terWpp,
           portalRevogado: p.portalRevogado ? true : false,
+          // Lote 3 (TEMA 6): campos que morriam no restore por não estarem no metadata.
+          planoEvolucao: p.planoEvolucao || null,
+          planoEvolucaoDate: p.planoEvolucaoDate || null,
+          nascimento: p.nascimento || null,
         },
       }));
       // Caminho preferido: RPC merge-aware (migration 016) — UPDATE vira MERGE do
@@ -345,7 +349,10 @@ async function _supaSync_charges() {
       if (!chgs.length) return;
       // Busca mapeamento de nome→id dos pacientes
       const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
-      const rows = chgs.map(c => ({
+      // Cobranças excluídas (soft-delete local) NÃO sobem — e o delete-diff abaixo
+      // as remove do servidor, para não ressuscitarem no próximo restore. F3.
+      const ativos = chgs.filter(c => !c.deleted);
+      const rows = ativos.map(c => ({
         local_id: String(c.id || ''),
         user_id: user.id,
         patient_id: (() => {
@@ -353,13 +360,38 @@ async function _supaSync_charges() {
           return p?.id || null;
         })(),
         valor: parseFloat(c.value) || 0,
-        metodo: c.metodo || 'PIX',
-        status: c.status || 'pendente',
-        descricao: c.descricao || null,
+        // F4: o app grava method/desc (não metodo/descricao) — mapeados aqui; os
+        // campos SEM coluna (session/billing/planLabel/initials/color) vão no metadata
+        // para o restore reconstruir a cobrança inteira (antes: tudo "PIX"/"—"/undefined).
+        metodo: c.method || c.metodo || 'PIX',
+        status: c.status || 'pending',
+        descricao: c.desc || c.descricao || null,
         due_date: c.date || null,
         paid_date: c.paidDate || null,
+        metadata: {
+          method: c.method || c.metodo || 'PIX',
+          desc: c.desc || c.descricao || null,
+          session: (c.session != null ? c.session : null),
+          billing: c.billing || null,
+          planLabel: c.planLabel || null,
+          initials: c.initials || null,
+          color: c.color || null,
+        },
       })).filter(r => r.patient_id);
-      if (rows.length) await supa.from('charges').upsert(rows, { onConflict: 'local_id' });
+      if (rows.length) {
+        const { error: upErr } = await supa.from('charges').upsert(rows, { onConflict: 'local_id' });
+        if (upErr) throw upErr;
+      }
+      // F3 delete-diff: remove do servidor as cobranças ausentes localmente (excluídas).
+      const localSet = new Set(rows.map(r => r.local_id));
+      const { data: remote, error: fErr } = await supa.from('charges').select('local_id').eq('user_id', user.id);
+      if (fErr) throw fErr;
+      const toDel = (remote || []).map(r => r.local_id).filter(id => id && !localSet.has(id));
+      for (let i = 0; i < toDel.length; i += 40) {
+        const chunk = toDel.slice(i, i + 40);
+        const { error: dErr } = await supa.from('charges').delete().eq('user_id', user.id).in('local_id', chunk);
+        if (dErr) throw dErr;
+      }
     });
   } catch(e) {
     _syncErrorCount++;
@@ -378,6 +410,7 @@ async function _supaSync_tasks() {
       if (!user) { _setSyncStatus('noauth'); return; }
       const tsks = JSON.parse(localStorage.getItem('tf_tasks') || '[]');
       if (!tsks.length) return;
+      const pats = JSON.parse(localStorage.getItem('tf_patients') || '[]');
       const rows = tsks.map(t => ({
         local_id: String(t.id || ''),
         user_id: user.id,
@@ -385,9 +418,22 @@ async function _supaSync_tasks() {
         status: t.status || 'aberta',
         prioridade: t.prioridade || 'media',
         due_date: t.dueDate || null,
-        patient_id: t.patientId || null,
+        // M16: a tarefa guarda patientName localmente → resolve o id p/ não perder o
+        // vínculo no round-trip (antes subia patientId inexistente = sempre null).
+        patient_id: t.patientId || (pats.find(p => p.name === t.patientName)?.id) || null,
       }));
-      await supa.from('tasks').upsert(rows, { onConflict: 'user_id,local_id' });
+      const { error: upErr } = await supa.from('tasks').upsert(rows, { onConflict: 'user_id,local_id' });
+      if (upErr) throw upErr;
+      // F3 delete-diff: tarefas excluídas localmente somem do servidor (não ressuscitam).
+      const localSet = new Set(rows.map(r => r.local_id));
+      const { data: remote, error: fErr } = await supa.from('tasks').select('local_id').eq('user_id', user.id);
+      if (fErr) throw fErr;
+      const toDel = (remote || []).map(r => r.local_id).filter(id => id && !localSet.has(id));
+      for (let i = 0; i < toDel.length; i += 40) {
+        const chunk = toDel.slice(i, i + 40);
+        const { error: dErr } = await supa.from('tasks').delete().eq('user_id', user.id).in('local_id', chunk);
+        if (dErr) throw dErr;
+      }
     });
   } catch(e) {
     _syncErrorCount++;
@@ -425,10 +471,24 @@ async function _supaSync_appointments() {
           meuInsight: a.meuInsight || null,
         },
       }));
-      // Upsert: nenhuma janela de perda — dados existentes são preservados até confirmação
-      const { error } = await supa.from('appointments')
-        .upsert(rows, { onConflict: 'user_id,local_id' });
-      if (error) throw error;
+      // Caminho preferido: RPC merge-aware (022) — preserva metadata.meuInsight
+      // escrito pela PACIENTE (o upsert legado sobrescrevia com a cópia stale). P6.
+      var _apptRpcOk = false;
+      try {
+        const { error: eR } = await supa.rpc('therapist_appointments_sync', { p_rows: rows });
+        if (eR) {
+          if (eR.code === 'PGRST202') { console.warn('[TF] RPC therapist_appointments_sync ausente (migration 022) — upsert legado.'); }
+          else throw eR;
+        } else _apptRpcOk = true;
+      } catch(eRpc) {
+        if (!(eRpc && eRpc.code === 'PGRST202')) throw eRpc;
+      }
+      if (!_apptRpcOk) {
+        // Legado (pré-022): upsert de linha inteira — sobrescreve o metadata todo.
+        const { error } = await supa.from('appointments')
+          .upsert(rows, { onConflict: 'user_id,local_id' });
+        if (error) throw error;
+      }
       // Remove linhas excluídas localmente: busca os IDs remotos e deleta os ausentes
       // com .in() em lotes. Evita a sintaxe .not(col,'in',array), que o supabase-js
       // serializa sem parênteses (local_id=not.in.a,b) e o PostgREST rejeita com 400.
