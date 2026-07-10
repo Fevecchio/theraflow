@@ -580,7 +580,8 @@ tr:last-child td { border-bottom: none; }
 .ai-panel.live #sess-nota-card { order: -2; }
 .ai-panel.live #sess-guia { order: -1; }
 .ai-panel.live #sess-historico { order: 2; }
-.ai-panel.live #session-ai-note { min-height: 220px; font-size: 13px; }
+/* !important: vence o min-height/font-size inline do textarea no modo sessão */
+.ai-panel.live #session-ai-note { min-height: 220px !important; font-size: 13px !important; }
 /* Indicador de captura ao vivo (confiança: o áudio ESTÁ sendo gravado) */
 .sess-capture { display: flex; align-items: center; gap: 9px; background: var(--sage-light); border: 1px solid var(--sage-mid); border-radius: var(--radius); font-size: 12.5px; color: var(--sage-800); padding: 10px 14px; }
 .sess-capture .sess-cap-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: sessCapPulse 1.6s ease-out infinite; flex-shrink: 0; }
