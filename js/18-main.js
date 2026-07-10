@@ -63,6 +63,9 @@ function _lancarApp() {
   carregarPacientes();
   carregarAppointments();
   charges = carregarCharges();
+  // Planos mensais: gera a cobrança do mês corrente no boot (sem cron) — o
+  // gancho pós-login (js/00) cobre o restore; este cobre o app já logado.
+  try { if (typeof _gerarCobrancasDosPlanos === 'function') _gerarCobrancasDosPlanos(); } catch(e) {}
   aplicarDadosNoApp();
   checkFirstPatientBanner();
   atualizarTrialUI();

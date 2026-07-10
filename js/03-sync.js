@@ -376,6 +376,10 @@ async function _supaSync_charges() {
           planLabel: c.planLabel || null,
           initials: c.initials || null,
           color: c.color || null,
+          // Vínculo com o plano mensal (entidade em users.settings) — o restore
+          // espalha o metadata de volta, preservando o dedup por plano+mês.
+          planId: c.planId || null,
+          planMes: c.planMes || null,
         },
       })).filter(r => r.patient_id);
       if (rows.length) {
@@ -530,6 +534,7 @@ function _supaSync_settings() {
         var settings = {};
         try { settings.bloqueios = JSON.parse(localStorage.getItem('tf_bloqueios') || '[]'); } catch(_) { settings.bloqueios = []; }
         try { settings.horarios  = JSON.parse(localStorage.getItem('tf_horarios')  || 'null'); } catch(_) { settings.horarios = null; }
+        try { settings.plans     = JSON.parse(localStorage.getItem('tf_plans')     || '[]'); } catch(_) { settings.plans = []; }
         const { error } = await supa.from('users').update({ settings: settings }).eq('id', user.id);
         if (error) throw error;
       });

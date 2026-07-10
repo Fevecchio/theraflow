@@ -96,7 +96,7 @@ async function _supaLoadUserData(userId) {
       // protege edições feitas offline que ainda não subiram.
       try {
         var _stash = {};
-        ['tf_captacao','tf_bloqueios','tf_horarios','tf_reflections','tf_checkin_terapeuta','tf_recibo_seq']
+        ['tf_captacao','tf_bloqueios','tf_horarios','tf_plans','tf_reflections','tf_checkin_terapeuta','tf_recibo_seq']
           .forEach(function(k){ var v = localStorage.getItem(k); if (v !== null) _stash[k] = v; });
         var _pend = JSON.parse(localStorage.getItem('tf_patients') || '[]')
           .filter(function(q){ return q && q._pendingSync && !q._isDemo; });
@@ -104,7 +104,7 @@ async function _supaLoadUserData(userId) {
         if (Object.keys(_stash).length) localStorage.setItem('tf_switch_stash_' + _prevOwner, JSON.stringify(_stash));
       } catch(_) {}
       ['tf_patients','tf_charges','tf_tasks','tf_appointments','tf_captacao',
-       'tf_reflections','tf_checkin_terapeuta','tf_bloqueios','tf_horarios','tf_recibo_seq',
+       'tf_reflections','tf_checkin_terapeuta','tf_bloqueios','tf_horarios','tf_plans','tf_recibo_seq',
        'tf_last_briefing','tf_lk_draft','tf_marcos_vistos','tf_portal_new_data','tf_account']
         .forEach(function(k){ localStorage.removeItem(k); });
       Object.keys(localStorage).forEach(function(k){ if (k.indexOf('tf_bc_') === 0) localStorage.removeItem(k); });
@@ -113,8 +113,9 @@ async function _supaLoadUserData(userId) {
       try { if (typeof tasks    !== 'undefined') tasks.splice(0, tasks.length); } catch(_) {}
       try { if (typeof appointments !== 'undefined') appointments.splice(0, appointments.length); } catch(_) {}
       // Globais que só carregam no parse — sem o reset, a conta nova herdaria
-      // bloqueios/leads da anterior em memória (e re-persistiria no 1º save).
+      // bloqueios/planos/leads da anterior em memória (e re-persistiria no 1º save).
       try { if (typeof bloqueios !== 'undefined') bloqueios.splice(0, bloqueios.length); } catch(_) {}
+      try { if (typeof plans !== 'undefined') plans.splice(0, plans.length); } catch(_) {}
       try { if (typeof captacaoLeads !== 'undefined') captacaoLeads.splice(0, captacaoLeads.length); } catch(_) {}
       console.warn('[TF] Conta diferente neste navegador — dados locais da conta anterior guardados em stash e removidos.');
     }
@@ -137,6 +138,13 @@ async function _supaLoadUserData(userId) {
           var _b = JSON.parse(localStorage.getItem('tf_bloqueios') || '[]');
           bloqueios.splice(0, bloqueios.length);
           Array.prototype.push.apply(bloqueios, _b);
+        }
+      } catch(_) {}
+      try {
+        if (typeof plans !== 'undefined') {
+          var _pl = JSON.parse(localStorage.getItem('tf_plans') || '[]');
+          plans.splice(0, plans.length);
+          Array.prototype.push.apply(plans, _pl);
         }
       } catch(_) {}
       try { if (typeof carregarCaptacao === 'function') carregarCaptacao(); } catch(_) {}
@@ -193,9 +201,17 @@ async function _supaLoadUserData(userId) {
           }
         }
         if (_st.horarios) localStorage.setItem('tf_horarios', JSON.stringify(_st.horarios));
-        if (!Array.isArray(_st.bloqueios) && !_st.horarios) {
+        if (Array.isArray(_st.plans)) {
+          localStorage.setItem('tf_plans', JSON.stringify(_st.plans));
+          if (typeof plans !== 'undefined') {
+            plans.splice(0, plans.length);
+            Array.prototype.push.apply(plans, _st.plans);
+          }
+        }
+        if (!Array.isArray(_st.bloqueios) && !_st.horarios && !Array.isArray(_st.plans)) {
           var _temLocal = (localStorage.getItem('tf_bloqueios') || '[]') !== '[]'
-            || !!localStorage.getItem('tf_horarios');
+            || !!localStorage.getItem('tf_horarios')
+            || (localStorage.getItem('tf_plans') || '[]') !== '[]';
           if (_temLocal && typeof _supaSync_settings === 'function') _supaSync_settings();
         }
       } catch(_) {}
@@ -319,6 +335,9 @@ async function _supaLoadUserData(userId) {
       const localAppts = JSON.parse(localStorage.getItem('tf_appointments') || '[]');
       if (localAppts.length > 0) _supaSync_appointments().catch(() => {});
     }
+    // Planos mensais: com planos (settings) e cobranças já restaurados, gera a
+    // cobrança do mês corrente que ainda não existe — é o gancho "sem cron" do login.
+    try { if (typeof _gerarCobrancasDosPlanos === 'function') _gerarCobrancasDosPlanos(); } catch(_) {}
   } catch(e) {
     console.warn('[Supa] Erro ao carregar dados:', e.message);
   } finally {

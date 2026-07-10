@@ -210,9 +210,46 @@ function switchFinTab(el, tabId) {
 function renderFinPlanos() {
   var el = document.getElementById('fin-planos-content');
   if (!el) return;
+
+  // ── Bloco "Planos mensais" (entidades geríveis: pausar/retomar/cancelar) ──
+  var planosHtml = '';
+  if (Array.isArray(plans) && plans.length) {
+    var statusCfg = {
+      ativo:     { label: 'Ativo',     cor: 'var(--sage)',  bg: 'var(--sage-light)' },
+      pausado:   { label: 'Pausado',   cor: '#c97d2e',      bg: '#fdf3e7' },
+      cancelado: { label: 'Cancelado', cor: 'var(--muted)', bg: '#f0f0f0' },
+    };
+    planosHtml += '<div style="margin-bottom:20px">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Planos mensais</div>'
+      + '<div style="display:grid;gap:10px">';
+    plans.forEach(function(pl) {
+      if (!pl) return;
+      var st = statusCfg[pl.status] || statusCfg.ativo;
+      var acoes = '';
+      if (pl.status === 'ativo') {
+        acoes = '<button class="btn btn-secondary btn-sm" onclick="pausarPlano(\'' + pl.id + '\')">⏸ Pausar</button>'
+          + '<button class="btn btn-secondary btn-sm" onclick="cancelarPlano(\'' + pl.id + '\')">✕ Cancelar</button>';
+      } else if (pl.status === 'pausado') {
+        acoes = '<button class="btn btn-secondary btn-sm" onclick="retomarPlano(\'' + pl.id + '\')">▶ Retomar</button>'
+          + '<button class="btn btn-secondary btn-sm" onclick="cancelarPlano(\'' + pl.id + '\')">✕ Cancelar</button>';
+      } else {
+        acoes = '<button class="btn btn-secondary btn-sm" onclick="removerPlano(\'' + pl.id + '\')">🗑 Remover</button>';
+      }
+      planosHtml += '<div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap' + (pl.status === 'cancelado' ? ';opacity:.6' : '') + '">'
+        + '<div style="flex:1;min-width:160px">'
+          + '<div style="font-weight:600;font-size:14px">' + escHTML(pl.patient) + '</div>'
+          + '<div style="font-size:12px;color:var(--muted)">' + pl.sessoesMes + ' sessões/mês · ' + fmtMoedaInt(pl.valor) + '/mês · vence dia ' + pl.diaVenc + '</div>'
+        + '</div>'
+        + '<span style="font-size:11px;font-weight:700;color:' + st.cor + ';background:' + st.bg + ';border-radius:6px;padding:3px 9px">' + st.label + '</span>'
+        + '<div style="display:flex;gap:6px">' + acoes + '</div>'
+        + '</div>';
+    });
+    planosHtml += '</div></div>';
+  }
+
   var ativos = charges.filter(function(c){ return !c.deleted; });
   if (!ativos.length) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Nenhuma cobrança cadastrada ainda.</div>';
+    el.innerHTML = planosHtml + '<div style="text-align:center;padding:40px;color:var(--muted)">Nenhuma cobrança cadastrada ainda.</div>';
     return;
   }
   // agrupar por paciente
@@ -259,7 +296,7 @@ function renderFinPlanos() {
     html += '</div>';
   });
   html += '</div>';
-  el.innerHTML = html;
+  el.innerHTML = planosHtml + html;
 }
 
 function renderFinFluxo() {
@@ -707,6 +744,7 @@ function lembreteInadimplentes() {
 }
 
 function initFinanceiro() {
+  _gerarCobrancasDosPlanos(); // planos mensais: gera a cobrança do mês se ainda não existe
   _popularMesesFinanceiro();
   var sel = document.getElementById('fin-month-select');
   var mesAtual = sel ? sel.value : null;
@@ -1038,6 +1076,126 @@ function switchPlanType(type) {
   document.getElementById('plan-create-btn').textContent = type === 'mensal' ? 'Criar plano' : 'Criar cobrança';
 }
 
+/* ── PLANOS MENSAIS (entidade) ──
+ * Decisão do usuário 09/07: o plano é uma entidade — gera a cobrança do mês
+ * automaticamente na entrada do app/financeiro (sem cron) e é gerenciável
+ * (pausar/retomar/cancelar). Vive em tf_plans e sincroniza via users.settings
+ * (migration 024, LWW — só o terapeuta edita), junto com bloqueios/horários. */
+var plans = [];
+try { plans = JSON.parse(localStorage.getItem('tf_plans') || '[]'); } catch(e) { plans = []; }
+
+function salvarPlanos() {
+  // Demo não persiste nem sobe: um plano criado brincando na demo geraria
+  // cobrança REAL todo mês na conta de verdade (mesmo padrão do F5/charges).
+  if (window._tfDemo) return;
+  try { localStorage.setItem('tf_plans', JSON.stringify(plans)); } catch(e) {}
+  if (typeof _supaSync_settings === 'function') _supaSync_settings();
+}
+
+function _mesKeyAtual() {
+  var h = new Date();
+  return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0');
+}
+
+/* Id numérico determinístico da cobrança do mês: mesmo plano+mês → mesmo id em
+ * qualquer dispositivo (o UNIQUE de charges.local_id no banco descarta a
+ * duplicata se dois devices gerarem em paralelo). */
+function _planChargeId(plan, mesKey) {
+  var parts = mesKey.split('-');
+  var mesesDesde2020 = (parseInt(parts[0]) - 2020) * 12 + (parseInt(parts[1]) - 1);
+  return plan.id * 100 + (mesesDesde2020 % 100);
+}
+
+function _novaCobrancaDoPlano(pl, mesKey) {
+  var parts = mesKey.split('-');
+  var diaVenc = Math.min(Math.max(parseInt(pl.diaVenc) || 5, 1), 28);
+  var p = (typeof patients !== 'undefined' ? patients : []).find(function(x){ return x.name === pl.patient; });
+  return {
+    id: _planChargeId(pl, mesKey), planId: pl.id, planMes: mesKey,
+    patient: pl.patient,
+    initials: p ? p.initials : (pl.patient || '?').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase(),
+    color: p ? p.color : '#4a7c59',
+    value: pl.valor, date: parts[0] + '-' + parts[1] + '-' + String(diaVenc).padStart(2, '0'),
+    status: 'pending', deleted: false,
+    billing: 'mensal', planLabel: pl.sessoesMes + ' sessões/mês', session: pl.sessoesMes + 'x/mês',
+    method: 'PIX',
+  };
+}
+
+/* Gera as cobranças do mês corrente dos planos ativos. Idempotente — chamado no
+ * boot (js/18), no restore pós-login (js/00) e ao entrar no Financeiro. */
+function _gerarCobrancasDosPlanos() {
+  if (window._tfDemo) return;
+  if (!Array.isArray(plans) || !plans.length) return;
+  var mesKey = _mesKeyAtual();
+  var geradas = 0, mudou = false;
+  plans.forEach(function(pl) {
+    if (!pl || pl.status !== 'ativo') return;
+    if (pl.ultimoMesGerado && pl.ultimoMesGerado >= mesKey) return;
+    var chargeId = _planChargeId(pl, mesKey);
+    // Guard local além do UNIQUE do banco: se a cobrança deste plano+mês já
+    // existe (inclusive excluída pelo usuário), só marca o mês — não ressuscita.
+    // Ids restaurados do Supabase voltam como string (local_id) → comparar por String.
+    var jaExiste = charges.some(function(c) {
+      return c && (String(c.id) === String(chargeId) || (c.planMes === mesKey && String(c.planId) === String(pl.id)));
+    });
+    if (!jaExiste) { charges.push(_novaCobrancaDoPlano(pl, mesKey)); geradas++; }
+    pl.ultimoMesGerado = mesKey;
+    mudou = true;
+  });
+  if (mudou) {
+    salvarPlanos();
+    if (typeof salvarCharges === 'function') salvarCharges();
+    if (geradas && typeof showToast === 'function') {
+      showToast('📅 ' + geradas + (geradas === 1 ? ' cobrança do mês gerada' : ' cobranças do mês geradas') + ' pelos planos mensais.');
+    }
+  }
+}
+
+function _getPlano(id) {
+  return plans.find(function(pl){ return pl && String(pl.id) === String(id); }) || null;
+}
+
+function pausarPlano(id) {
+  var pl = _getPlano(id);
+  if (!pl) return;
+  pl.status = 'pausado';
+  salvarPlanos();
+  renderFinPlanos();
+  showToast('⏸ Plano de ' + _firstName(pl.patient) + ' pausado — nenhuma cobrança nova até retomar.');
+}
+
+function retomarPlano(id) {
+  var pl = _getPlano(id);
+  if (!pl) return;
+  pl.status = 'ativo';
+  salvarPlanos();
+  _gerarCobrancasDosPlanos(); // gera o mês corrente se ainda não existir (meses pausados não são retroativos)
+  renderFinPlanos();
+  if (typeof renderCharges === 'function') renderCharges();
+  if (typeof atualizarStatsFinanceiro === 'function') atualizarStatsFinanceiro();
+  showToast('▶ Plano de ' + _firstName(pl.patient) + ' retomado.');
+}
+
+function cancelarPlano(id) {
+  var pl = _getPlano(id);
+  if (!pl) return;
+  if (!confirm('Cancelar o plano mensal de ' + pl.patient + '? As cobranças já geradas são mantidas; nenhuma nova será criada.')) return;
+  pl.status = 'cancelado';
+  salvarPlanos();
+  renderFinPlanos();
+  showToast('✕ Plano de ' + _firstName(pl.patient) + ' cancelado.');
+}
+
+function removerPlano(id) {
+  var pl = _getPlano(id);
+  if (!pl) return;
+  if (!confirm('Remover o registro do plano cancelado de ' + pl.patient + ' da lista?')) return;
+  plans = plans.filter(function(x){ return String(x.id) !== String(id); });
+  salvarPlanos();
+  renderFinPlanos();
+}
+
 function createNewPlan() {
   var isMensal = document.getElementById('ptype-mensal').classList.contains('selected');
   var nome = (document.getElementById('plan-paciente-select') || {}).value || '';
@@ -1052,17 +1210,23 @@ function createNewPlan() {
     var valor = _parseValorBR((document.getElementById('plan-valor-pacote') || {}).value);
     var venc = (document.getElementById('plan-vencimento') || {}).value || 'Dia 5';
     if (valor <= 0) { showToast('Informe o valor do pacote.', 'warning'); return; }
+    // Um plano ATIVO por paciente — evita cobrança dupla silenciosa.
+    var jaTemPlano = plans.some(function(pl){ return pl && pl.patient === nome && pl.status === 'ativo'; });
+    if (jaTemPlano) { showToast('⚠ ' + _firstName(nome) + ' já tem um plano mensal ativo. Cancele-o na aba "Planos e pacientes" antes de criar outro.'); return; }
     // Vencimento: usa o "Dia X" no mês corrente (ou próximo mês se já passou).
     var diaVenc = parseInt((venc.match(/\d+/) || ['5'])[0]) || 5;
     var hoje = new Date();
     var dtVenc = new Date(hoje.getFullYear(), hoje.getMonth(), diaVenc);
     if (dtVenc < hoje) dtVenc.setMonth(dtVenc.getMonth() + 1);
-    novaCobranca = {
-      id: Date.now(), patient: nome, initials: _initials, color: _color,
-      value: valor, date: localDateISO(dtVenc), status: 'pending', deleted: false,
-      billing: 'mensal', planLabel: sessoes + ' sessões/mês', session: sessoes + 'x/mês',
-      method: 'PIX',
+    // Cria a ENTIDADE plano (recorre todo mês) + a 1ª cobrança, do mês do vencimento.
+    var mesGerado = dtVenc.getFullYear() + '-' + String(dtVenc.getMonth() + 1).padStart(2, '0');
+    var plano = {
+      id: Date.now(), patient: nome, sessoesMes: sessoes, valor: valor,
+      diaVenc: diaVenc, status: 'ativo', criadoEm: hojeISO(), ultimoMesGerado: mesGerado,
     };
+    plans.push(plano);
+    salvarPlanos();
+    novaCobranca = _novaCobrancaDoPlano(plano, mesGerado);
   } else {
     var valorA = _parseValorBR((document.getElementById('plan-valor-sessao') || {}).value);
     var dataA = (document.getElementById('fin-plano-data') || {}).value;
@@ -1082,7 +1246,7 @@ function createNewPlan() {
   renderCharges();
   if (typeof atualizarStatsFinanceiro === 'function') atualizarStatsFinanceiro();
   showToast(isMensal
-    ? '📅 Plano mensal criado para ' + _firstName(nome) + ' — ' + fmtMoedaInt(novaCobranca.value) + '/mês'
+    ? '📅 Plano mensal criado para ' + _firstName(nome) + ' — ' + fmtMoedaInt(novaCobranca.value) + '/mês. A cobrança de cada mês é gerada automaticamente.'
     : '💳 Cobrança criada para ' + _firstName(nome) + ' — ' + fmtMoedaInt(novaCobranca.value));
 }
 
