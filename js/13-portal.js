@@ -766,7 +766,7 @@ function _pacForcarNovaSenha(p, idx) {
   ov = document.createElement('div');
   ov.id = 'pac-force-pwd-overlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,30,24,.78);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px';
-  ov.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:380px;width:100%;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit">'
+  ov.innerHTML = '<div style="background:var(--white);border-radius:16px;max-width:380px;width:100%;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit">'
     + '<div style="font-size:19px;font-weight:700;color:#1a2a1e;margin-bottom:6px">Crie sua senha de acesso 🔐</div>'
     + '<div style="font-size:13px;color:#5a6b60;line-height:1.5;margin-bottom:16px">Por segurança, defina uma senha pessoal para continuar. A senha temporária que você recebeu deixa de valer.</div>'
     + '<input id="pac-fps-1" type="password" placeholder="Nova senha (mín. 6 caracteres)" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
@@ -927,9 +927,9 @@ function renderPatientApp(idx, pacs) {
 
   // ── Técnica do dia ──
   var tecnica = _getTecnicaDia(p.abordagem || 'default');
-  var tecnicaHtml = '<div style="background:linear-gradient(135deg,#edf7f1,#f4fbf7);border:1px solid rgba(74,124,89,.2);border-radius:14px;padding:18px 20px">'
-    + '<div style="font-size:11px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚡ Técnica do dia</div>'
-    + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px">'+tecnica.icone+' '+escHTML(tecnica.titulo)+'</div>'
+  var tecnicaHtml = '<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)">'
+    + '<div style="font-family:\'Instrument Serif\',serif;font-size:15.5px;color:var(--sage-dark);margin-bottom:6px">Técnica do dia</div>'
+    + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px">'+escHTML(tecnica.titulo)+'</div>'
     + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">'+escHTML(tecnica.instrucao)+'</div>'
   + '</div>';
 
@@ -949,10 +949,10 @@ function renderPatientApp(idx, pacs) {
   // ── Notificações ──
   var notifPermStatus = (typeof Notification !== 'undefined') ? Notification.permission : 'not-supported';
   var notifHora = p.portalNotifHour || '20';
-  var notifHtml = '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px">'
+  var notifHtml = '<div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 18px">'
     + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">Lembrete de check-in diário</div>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
-      + '<select id="pac-notif-hora" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff">'
+      + '<select id="pac-notif-hora" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:var(--white)">'
         + [7,8,9,12,18,19,20,21,22].map(function(h){ return '<option value="'+h+'"'+(h===parseInt(notifHora)?' selected':'')+'>'+h+'h</option>'; }).join('')
       + '</select>'
       + '<button onclick="pacAtivarNotificacoes('+idx+')" class="btn btn-secondary btn-sm">Ativar lembrete</button>'
@@ -1239,7 +1239,7 @@ function _pacRenderChatBlock(p, msgs, idx) {
   }).join('');
   if (!thread) thread = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px 0">Nenhuma mensagem ainda.<br>'+escHTML(_tFirst)+' pode te enviar dicas e lembretes aqui.</div>';
 
-  return '<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)">'
+  return '<div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)">'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
     + '<div style="width:28px;height:28px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-family:\'Instrument Serif\',serif;flex-shrink:0">'+_tInit+'</div>'
     + '<div><div style="font-size:12px;font-weight:600;color:var(--ink)">'+escHTML(_tFirst)+'</div><div style="font-size:10px;color:var(--muted)">mensagens entre sessões</div></div>'
@@ -1248,7 +1248,7 @@ function _pacRenderChatBlock(p, msgs, idx) {
     + '<div class="chat-thread" id="pac-chat-thread">'+thread+'</div>'
     + '<div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">'
     + '<input id="pac-chat-input" type="text" placeholder="Escreva para '+escHTML(_tFirst)+'…" '
-    + 'style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none;background:#fafaf8;color:var(--ink)" '
+    + 'style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none;background:var(--bg);color:var(--ink)" '
     + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'" '
     + 'onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();pacEnviarMensagem('+idx+')}">'
     + '<button onclick="pacEnviarMensagem('+idx+')" style="background:var(--sage);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Enviar</button>'
@@ -1343,7 +1343,7 @@ var DIARY_CONFIG = {
             <span style="font-size:13.5px;font-weight:600;color:var(--ink)">Emoção e intensidade</span>
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px">
-            ${['😰 Ansiedade','😢 Tristeza','😤 Raiva','😳 Vergonha','😨 Medo'].map(e=>`<button onclick="selectEmoTCC(this,'${e.split(' ')[1]}')" class="tcc-emocao-btn" style="padding:9px 6px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:12.5px;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;line-height:1.4">${e}</button>`).join('')}
+            ${['😰 Ansiedade','😢 Tristeza','😤 Raiva','😳 Vergonha','😨 Medo'].map(e=>`<button onclick="selectEmoTCC(this,'${e.split(' ')[1]}')" class="tcc-emocao-btn" style="padding:9px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12.5px;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;line-height:1.4">${e}</button>`).join('')}
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <span style="font-size:12px;color:var(--muted)">Intensidade</span>
@@ -1518,8 +1518,8 @@ function renderPatientDiario(p, idx) {
   }
   panelHumor += '</div>';
 
-  var tabs = '<div style="display:flex;border-bottom:1px solid var(--border);background:#fafbfa">'
-    + '<button id="pac-diary-tab-livre" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'livre\')" style="flex:1;font-weight:600;border:none;background:#fff;color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit">Registro livre</button>'
+  var tabs = '<div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg)">'
+    + '<button id="pac-diary-tab-livre" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'livre\')" style="flex:1;font-weight:600;border:none;background:var(--white);color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit">Registro livre</button>'
     + (tabLabel ? '<button id="pac-diary-tab-esp" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'esp\')" style="flex:1;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">'+tabLabel+'</button>' : '')
     + '<button id="pac-diary-tab-humor" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'humor\')" style="flex:1;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">Humor</button>'
     + '</div>';
@@ -1868,7 +1868,7 @@ function _renderDiarioCard(entrada, listId, prepend) {
   // Resposta do terapeuta (entry.reply, escrita na prévia) — antes NUNCA era
   // renderizada p/ a paciente. Lote 2 (P5).
   var _replyHtml = entrada.reply
-    ? '<div style="margin-top:10px;padding:10px 12px;background:#fff;border-radius:8px;border-left:3px solid var(--purple)">'
+    ? '<div style="margin-top:10px;padding:10px 12px;background:var(--white);border-radius:8px;border-left:3px solid var(--purple)">'
       + '<div style="font-size:10px;color:var(--purple);font-weight:700;margin-bottom:4px">✦ Resposta da sua terapeuta</div>'
       + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.reply)+'</div></div>'
     : '';
