@@ -1026,15 +1026,15 @@ function selecionarProntuario(i, el) {
     tabNotas.innerHTML = '<div style="display:flex;flex-direction:column;gap:12px"></div>';
   }
 
-  // Atualiza ficha clínica com dados reais do paciente
+  // Atualiza ficha clínica com dados reais do paciente. Frequência/Medicamentos
+  // saíram (F4.6 #9): eram "—" fixo, nunca editáveis — os índices casam com o
+  // HTML enxuto de tab-ficha (CID, Abordagem, Queixa).
   const tabFicha = document.getElementById('tab-ficha');
   if (tabFicha) {
     const fields = tabFicha.querySelectorAll('.form-group');
     if (fields[0]) fields[0].innerHTML = `<label>CID principal</label><div style="font-size:14px;padding:9px 0">${p.cid !== '—' ? escHTML(p.cid) : 'Não informado'}</div>`;
     if (fields[1]) fields[1].innerHTML = `<label>Abordagem</label><div style="font-size:14px;padding:9px 0">${escHTML(p.abordagem || '—')}</div>`;
-    if (fields[2]) fields[2].innerHTML = `<label>Frequência</label><div style="font-size:14px;padding:9px 0">—</div>`;
-    if (fields[3]) fields[3].innerHTML = `<label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">${escHTML(p.notes || '—')}</div>`;
-    if (fields[4]) fields[4].innerHTML = `<label>Medicamentos</label><div style="font-size:14px;padding:9px 0">—</div>`;
+    if (fields[2]) fields[2].innerHTML = `<label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">${escHTML(p.notes || '—')}</div>`;
   }
 
   // ── Painel de evolução (sparkline de humor + stats)

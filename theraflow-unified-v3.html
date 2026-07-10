@@ -995,16 +995,17 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <!-- Notas reais injetadas por renderProntuario (js/14); empty-state quando vazio. -->
         <div style="display:flex;flex-direction:column;gap:12px"></div>
       </div>
+      <!-- Ficha clínica: valores reais entram via renderProntuario (js/14); sem
+           placeholders demo no HTML (flashavam CID/queixa falsos em conta real).
+           Frequência/Medicamentos removidos — eram "—" fixo, nunca editáveis (F4.6 #9). -->
       <div id="tab-ficha" style="display:none">
         <div class="grid-2">
           <div>
-            <div class="form-group"><label>CID principal</label><div style="font-size:14px;padding:9px 0">F41.1 — TAG</div></div>
-            <div class="form-group"><label>Abordagem</label><div style="font-size:14px;padding:9px 0">TCC</div></div>
-            <div class="form-group"><label>Frequência</label><div style="font-size:14px;padding:9px 0">Semanal — terças às 09h</div></div>
+            <div class="form-group"><label>CID principal</label><div style="font-size:14px;padding:9px 0">—</div></div>
+            <div class="form-group"><label>Abordagem</label><div style="font-size:14px;padding:9px 0">—</div></div>
           </div>
           <div>
-            <div class="form-group"><label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">Ansiedade relacionada ao desempenho profissional. Insônia e pensamentos ruminativos.</div></div>
-            <div class="form-group"><label>Medicamentos</label><div style="font-size:14px;padding:9px 0">Escitalopram 10mg</div></div>
+            <div class="form-group"><label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">—</div></div>
           </div>
         </div>
       </div>
