@@ -265,6 +265,15 @@ async function compartilharAcessoPortal(i) {
   var p = patients[i];
   if (!p) return;
 
+  // O login do portal (Auth, RPC e local) exige EMAIL. Sem email, o convite ia pelo
+  // WhatsApp com "Email: seu email" + senha que não logam em lugar nenhum. Bloqueia
+  // e pede o email primeiro. Lote 2 (P12).
+  if (!p.email || !p.email.trim()) {
+    showToast('⚠ Cadastre o email de ' + _firstName(p.name) + ' antes de enviar o acesso — o login do portal usa o email.');
+    if (typeof showEditarPaciente === 'function') showEditarPaciente(i);
+    return;
+  }
+
   // Garante UUID no paciente (necessário para Supabase)
   if (!p.id) {
     p.id = crypto.randomUUID();
@@ -395,9 +404,13 @@ async function revogarPortalPaciente(i) {
       .update({ portal_active: false })
       .eq('patient_id', p.id)
       .eq('therapist_id', therapistId);
+    // portalRevogado sobe ao metadata (Lote 2 P4): a RPC 020 nega o login/chat/sync
+    // do paciente RPC também — antes a revogação só valia p/ o caminho Auth (RLS).
     p.portalRevogado = true;
     salvarPacientes();
+    if (typeof _supaSync_patients === 'function') { try { await _supaSync_patients({ onlyId: p.id }); } catch(_){} }
     showToast('Acesso de ' + nome + ' ao portal desativado.');
+    if (typeof selectPatient === 'function') selectPatient(i); // atualiza o card do acesso
   } catch(e) {
     showToast('Erro ao desativar portal: ' + (e.message || 'tente novamente'));
   }
@@ -1423,25 +1436,15 @@ function selectPatient(i, el) {
   renderPatientDetailShell(i);
   selectPatientTab(currentPatientTab);
 
-  // Após renderizar o painel, carrega mensagens e inicia poll
+  // Chat removido (Lote 2 P3): carrega o histórico UMA vez (read-only) — sem poll,
+  // já que a paciente não envia mais pelo app.
   (function() {
     var _pId = p.id;
     if (!_pId) return;
     _supaFetchMessages(_pId, supa).then(function(msgs) {
       var sec = document.getElementById('pac-chat-section-' + i);
       if (sec) sec.innerHTML = renderChatTerapeuta(i, msgs);
-      var badge = document.getElementById('pac-msg-badge-' + _pId);
-      var cnt = _countUnread(_pId, 'therapist');
-      if (badge) { badge.style.display = cnt > 0 ? 'inline-flex' : 'none'; badge.textContent = cnt; }
-    });
-    _startMsgPoll(_pId, function(msgs) {
-      var sec = document.getElementById('pac-chat-section-' + i);
-      if (sec) sec.innerHTML = renderChatTerapeuta(i, msgs);
-      var badge = document.getElementById('pac-msg-badge-' + _pId);
-      var cnt = _countUnread(_pId, 'therapist');
-      if (badge) { badge.style.display = cnt > 0 ? 'inline-flex' : 'none'; badge.textContent = cnt; }
-    });
-    _supaMarkRead(_pId, 'patient', supa).catch(function(){});
+    }).catch(function(){});
   })();
 }
 
@@ -1563,21 +1566,19 @@ function renderChatTerapeuta(i, msgs) {
       + '<span class="chat-ts" style="'+(isT?'text-align:right':'')+'">'+ts+(isT?'':(!m.read_at?' · não lida':''))+'</span>'
       + '</div>';
   }).join('');
-  if (!thread) thread = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0">Nenhuma mensagem ainda. Envie uma dica ou lembrete para '+escHTML(_firstName2(p.name))+'.</div>';
-
+  // O chat bidirecional foi removido (Lote 2 P3, decisão do usuário): a paciente não
+  // envia mais pelo app. Se houver histórico, mostra READ-ONLY; o canal ativo agora
+  // é a "Mensagem da semana" (1-via, visível no portal) e o WhatsApp.
+  if (!thread) {
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Mensagens</div>'
+      + '<div style="font-size:12.5px;color:var(--muted);line-height:1.5">O chat pelo app foi descontinuado. Para falar com '+escHTML(_firstName2(p.name))+', use a <strong>Mensagem da semana</strong> no Portal (ela vê entre as sessões) ou o WhatsApp.</div>'
+      + '</div>';
+  }
   return '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Mensagens</div>'
-    + (unread > 0 ? '<span style="background:var(--sage);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:2px 7px">'+unread+' nova'+(unread>1?'s':'')+'</span>' : '')
-    + '</div>'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Mensagens (histórico)</div>'
     + '<div class="chat-thread" id="chat-thread-t-'+i+'">'+thread+'</div>'
-    + '<div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">'
-    + '<input id="chat-input-t-'+i+'" type="text" placeholder="Envie uma mensagem para '+escHTML(_firstName2(p.name))+'…" '
-    + 'style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none" '
-    + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'" '
-    + 'onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();terapeutaEnviarMensagem('+i+')}">'
-    + '<button onclick="terapeutaEnviarMensagem('+i+')" style="background:var(--sage);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Enviar</button>'
-    + '</div>'
+    + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);line-height:1.5">O chat pelo app foi descontinuado — use a <strong>Mensagem da semana</strong> no Portal ou o WhatsApp.</div>'
     + '</div>';
 }
 

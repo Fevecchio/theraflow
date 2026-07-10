@@ -399,7 +399,8 @@ function loginPaciente() {
     var _leanMeta = ['moodHistory','moodNotes','exercises','materials','diary','metas','portalMetas',
       'appointments','sessionLink','sessionLinkAt','_moodLastDate','mood','checkInStreak',
       'lastCheckInDate','readMaterials','portalNota','portalNotifHour','portalDica',
-      'portalMensagem','anamnese','portalAnamneseAtiva','pwdTemp'];
+      'portalMensagem','anamnese','portalAnamneseAtiva','pwdTemp',
+      'next','nextTime','_therapistNome','_therapistWhatsapp']; // Lote 2 P1/P2/P7
     var _leanSel = 'id,name,email,phone,age,cidade,abordagem,status,sessions_count,valor_sessao,progress,'
       + _leanMeta.map(function(k){ return 'metadata->' + k; }).join(',');
     var patResult = await supaPatient.from('patients')
@@ -592,11 +593,15 @@ function pacToggleSolicitarSessao() {
 
 function pacEnviarSolicitacaoSessao(nomePaciente) {
   var msg = (document.getElementById('pac-solicitar-msg').value || '').trim();
-  // Pega WhatsApp do terapeuta salvo em tf_account
-  var wppTerapeuta = '';
-  try { wppTerapeuta = JSON.parse(localStorage.getItem('tf_account') || '{}').whatsapp || ''; } catch(e) {}
+  // WhatsApp do terapeuta: no portal REMOTO vem no metadata da paciente
+  // (_therapistWhatsapp, migration 020) — o tf_account do terapeuta NÃO existe no
+  // celular dela; só é fallback no preview do próprio terapeuta. Lote 2 (P2).
+  var wppTerapeuta = (typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistWhatsapp) || '';
   if (!wppTerapeuta) {
-    showToast('WhatsApp do terapeuta não configurado. Peça para ele cadastrar em Perfil.');
+    try { wppTerapeuta = JSON.parse(localStorage.getItem('tf_account') || '{}').whatsapp || ''; } catch(e) {}
+  }
+  if (!wppTerapeuta) {
+    showToast('Ainda não é possível enviar — seu terapeuta precisa cadastrar o WhatsApp dele.');
     return;
   }
   var texto = 'Olá! Sou ' + nomePaciente + ', sua paciente pelo TheraFlow. 🌿\n\n'
@@ -728,8 +733,12 @@ function _getTecnicaDia(abordagem) {
 
 // ─── EMERGÊNCIA ──────────────────────────────────────────────────────
 function pacEmergencia() {
+  // WhatsApp do terapeuta pelo metadata da paciente (portal remoto) — tf_account é
+  // fallback só no preview do terapeuta. Sem isso o botão de apoio some no celular. Lote 2 (P2).
   var wppTerapeuta = '';
-  try { wppTerapeuta = _wppNumero(JSON.parse(localStorage.getItem('tf_account')||'{}').whatsapp) || ''; } catch(e){}
+  var _wRaw = (typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistWhatsapp) || '';
+  if (!_wRaw) { try { _wRaw = JSON.parse(localStorage.getItem('tf_account')||'{}').whatsapp || ''; } catch(e){} }
+  try { wppTerapeuta = _wppNumero(_wRaw) || ''; } catch(e){ wppTerapeuta = ''; }
   var overlay = document.createElement('div');
   overlay.className = 'pac-emergency-overlay';
   overlay.id = 'pac-emergency-overlay';
@@ -758,8 +767,8 @@ function pacEmergencia() {
     + (wppTerapeuta
         ? '<a href="https://wa.me/'+wppTerapeuta+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box">💬 Chamar minha terapeuta no WhatsApp</a>'
         : '<div style="text-align:center;font-size:13px;color:var(--muted);padding:8px 0">Entre em contato com sua terapeuta se precisar de apoio imediato.</div>')
-    + '<button onclick="_revealEmgChat()" style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:#fff;border:1.5px solid var(--sage);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--sage)">💬 Conversar no chat</button>'
-    + '<div id="pac-chat-block" style="display:none;margin-top:16px"></div>'
+    // Chat in-app do paciente REMOVIDO (decisão do usuário 09/07): o contato com a
+    // terapeuta é via WhatsApp; a "mensagem da semana" segue como canal 1-via. Lote 2 (P3).
     + '</div>';
   document.body.appendChild(overlay);
   setTimeout(function(){ pacToggleRespiracao(); }, 600);
@@ -813,7 +822,7 @@ function pacIniciarRespiracao() {
     if (ctr) ctr.textContent = ct;
     if (ct <= 0) {
       fi = (fi+1)%fases.length;
-      if (fi === 0) { _cycles++; if (_cycles === 1) _revealEmgChat(); }
+      if (fi === 0) { _cycles++; }
       aplicar();
     }
   }, 1000);
@@ -824,17 +833,8 @@ function pacPararRespiracao() {
   if (_breathInterval) { clearInterval(_breathInterval); _breathInterval = null; }
   var ring = document.getElementById('emg-breath-ring');
   if (ring) ring.className = 'breath-ring';
-  _revealEmgChat();
 }
-
-function _revealEmgChat() {
-  var chatWrap = document.getElementById('pac-chat-block');
-  if (!chatWrap || chatWrap.style.display !== 'none') return;
-  chatWrap.style.display = '';
-  if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData && typeof _pacInitChat === 'function') {
-    _pacInitChat(_loggedPatientIdx, _loggedPatientData);
-  }
-}
+// _revealEmgChat removido junto com o chat in-app do paciente (Lote 2 P3).
 
 // ─── MATERIAIS ───────────────────────────────────────────────────────
 function pacMarcarMaterialLido(idx, mid) {

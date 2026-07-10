@@ -1139,10 +1139,9 @@ function renderPatientApp(idx, pacs) {
   /* ══ BOTTOM NAV ══ */
   + '<div class="pac-bottom-nav">'
     + [['home','Início',_navIconHome],['ex','Exercícios',_navIconEx],['diary','Diário',_navIconDiary],['me','Perfil',_navIconMe]].map(function(t){
-        var isHome = t[0] === 'home';
+        // dot de mensagem removido junto com o chat do paciente (Lote 2 P3)
         return '<button class="pac-nav-btn'+(t[0]==='home'?' active':'')+'" id="pac-nav-'+t[0]+'" onclick="pacNavTo(\''+t[0]+'\')">'
           + '<div class="pac-nav-icon" style="position:relative">'+t[2]
-          + (isHome ? '<span id="pac-msg-dot" style="display:none;position:absolute;top:-3px;right:-4px;width:8px;height:8px;border-radius:50%;background:#e53e3e;border:1.5px solid #fff"></span>' : '')
           + '</div><span>'+t[1]+'</span></button>';
       }).join('')
   + '</div>';
@@ -1156,9 +1155,21 @@ function renderPatientApp(idx, pacs) {
 /* Resolve paciente de tf_patients OU de _loggedPatientData (contexto standalone /paciente) */
 function _pacGetP(idx) {
   var pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
-  if (pacs[idx]) return { p: pacs[idx], pacs: pacs, fromLS: true, idx: idx };
   var ldp = (typeof _loggedPatientData !== 'undefined') ? _loggedPatientData : null;
-  if (ldp) return { p: ldp, pacs: [ldp], fromLS: false, idx: 0 };
+  // Paciente REALMENTE logada (portal remoto): sempre ELA, casada por id/email — nunca
+  // o índice cru. Em navegador compartilhado, tf_patients[idx] é o paciente do
+  // TERAPEUTA naquela posição → humor/diário/exercício iam pro registro errado
+  // e contaminavam a paciente via sync. P8 (Lote 2).
+  if (ldp) {
+    var li = pacs.findIndex(function(q){
+      return (ldp.id && q.id === ldp.id)
+        || (ldp.email && q.email && String(q.email).toLowerCase() === String(ldp.email).toLowerCase());
+    });
+    if (li !== -1) return { p: pacs[li], pacs: pacs, fromLS: true, idx: li };
+    return { p: ldp, pacs: [ldp], fromLS: false, idx: 0 };
+  }
+  // Preview do terapeuta (sem paciente logada): índice na lista dele.
+  if (pacs[idx]) return { p: pacs[idx], pacs: pacs, fromLS: true, idx: idx };
   return null;
 }
 
@@ -1821,10 +1832,18 @@ function _renderDiarioCard(entrada, listId, prepend) {
   var list = document.getElementById(listId);
   if (!list) return;
   var card = document.createElement('div');
+  // Resposta do terapeuta (entry.reply, escrita na prévia) — antes NUNCA era
+  // renderizada p/ a paciente. Lote 2 (P5).
+  var _replyHtml = entrada.reply
+    ? '<div style="margin-top:10px;padding:10px 12px;background:#fff;border-radius:8px;border-left:3px solid var(--purple)">'
+      + '<div style="font-size:10px;color:var(--purple);font-weight:700;margin-bottom:4px">✦ Resposta da sua terapeuta</div>'
+      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.reply)+'</div></div>'
+    : '';
   if (entrada.tipo !== 'esp') {
     card.style.cssText = 'background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--sage)';
     card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">'+escHTML(entrada.date||'')+(entrada.hora?' · '+escHTML(entrada.hora):'')+'</div>'
-      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.texto || entrada.text || '')+'</div>';
+      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.texto || entrada.text || '')+'</div>'
+      + _replyHtml;
   } else {
     // esp (portal) usa `campos`; 'tcc' legado (compose antigo) usa campos soltos.
     var _linhas = entrada.campos || [entrada.text, entrada.pensamento,
@@ -1832,7 +1851,8 @@ function _renderDiarioCard(entrada, listId, prepend) {
       entrada.alternativa].filter(Boolean);
     card.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid var(--sage)';
     card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">'+escHTML(entrada.date||'')+'</div>'
-      + _linhas.map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">'+escHTML(c)+'</div>'; }).join('');
+      + _linhas.map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:4px">'+escHTML(c)+'</div>'; }).join('')
+      + _replyHtml;
   }
   if (prepend) list.insertBefore(card, list.firstChild);
   else list.appendChild(card);
@@ -2040,11 +2060,5 @@ function pacNavTo(tab) {
       if (_pMe) _trajWrap.innerHTML = renderTrajetoriaPortal(_pMe, _idxMe);
     }
   }
-  // Ao voltar para Home, marca mensagens da terapeuta como lidas
-  if (tab === 'home' && _loggedPatientData && _loggedPatientData.id) {
-    var pid = _loggedPatientData.id;
-    _pacMarkRead(pid).then(function() {
-      _pacUpdateMsgDot(pid);
-    }).catch(function(){});
-  }
+  // (chat do paciente removido — Lote 2 P3: nada de marcar lida / atualizar dot)
 }

@@ -206,6 +206,19 @@ async function _supaSync_patients(opts) {
       if (opts && opts.onlyId) pats = pats.filter(p => p.id === opts.onlyId);
       if (!pats.length) return;
       _syncedIds = pats.map(p => p.id).filter(Boolean);
+      // Próxima sessão de cada paciente (p.next) recalculada agora, e identidade do
+      // terapeuta lida do perfil — ambos vão ao metadata p/ o portal REMOTO mostrar
+      // "próxima sessão" e o nome/WhatsApp reais (Lote 2 P1/P2/P7).
+      if (typeof _recalcNextSessions === 'function') { try { _recalcNextSessions(); } catch(_){} }
+      // _recalcNextSessions muta patients[] em memória (não o `pats` do localStorage) →
+      // mapa id→next a partir do array vivo.
+      var _nextById = {};
+      if (typeof patients !== 'undefined' && Array.isArray(patients)) {
+        patients.forEach(function(q){ if (q && q.id) _nextById[q.id] = q.next || null; });
+      }
+      var _accSync = {}; try { _accSync = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch(_){}
+      var _terNome = _accSync.nome || (typeof tfUserData !== 'undefined' && tfUserData ? tfUserData.nome : '') || '';
+      var _terWpp  = _accSync.whatsapp || '';
       const rows = pats.map(p => ({
         id: p.id || undefined,
         user_id: user.id,
@@ -256,6 +269,12 @@ async function _supaSync_patients(opts) {
           portalMensagem: p.portalMensagem || null,
           anamnese: p.anamnese || null,
           portalAnamneseAtiva: p.portalAnamneseAtiva || false,
+          // Portal remoto (Lote 2): próxima sessão + identidade do terapeuta + revogação.
+          // Campos do TERAPEUTA (não do paciente) — a RPC 020 os devolve no login.
+          next: (p.id && _nextById[p.id]) ? _nextById[p.id] : (p.next || null),
+          _therapistNome: _terNome,
+          _therapistWhatsapp: _terWpp,
+          portalRevogado: p.portalRevogado ? true : false,
         },
       }));
       // Caminho preferido: RPC merge-aware (migration 016) — UPDATE vira MERGE do
