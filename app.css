@@ -2034,8 +2034,8 @@ select:hover { border-color: #d8d3c2; }
 .pac-week-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow); }
 
 /* Exercise cards v2 */
-.pac-ex-card-v2 { background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:13px 14px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); }
-.pac-ex-card-v2.done { border-color:var(--sage-100); opacity:.65; }
+.pac-ex-card-v2 { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:13px 14px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); }
+.pac-ex-card-v2.done { border-color:var(--border); background:var(--bg); opacity:.75; box-shadow:none; }
 .pac-ex-icon { width:42px; height:42px; border-radius:11px; background:var(--sage-50); border:1px solid var(--sage-100); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .15s; }
 .pac-ex-icon.done { background:var(--sage); border-color:var(--sage-700); }
 .pac-ex-time { font-size:11px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:4px; }
