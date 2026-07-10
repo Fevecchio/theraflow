@@ -340,17 +340,20 @@ function renderMoodHistory() {
     return '<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">'+lbl+'</div>';
   }).join('');
 
-  // Emojis nos pontos (igual ao gráfico do diário de humor)
-  var circlesHtml = points.map(function(pt){
-    var emoji = _normMoodEmoji(pt.entry);
-    return '<text x="'+pt.x.toFixed(1)+'" y="'+(pt.y+5).toFixed(1)+'" font-size="13" text-anchor="middle" style="user-select:none"><title>'+pt.val+'/10</title>'+emoji+'</text>';
+  // Redesign: pontos na COR da escala de humor (emoji saiu da linha — vive nos
+  // dados e nas visões do terapeuta). Último ponto enfatizado.
+  var circlesHtml = points.map(function(pt, i){
+    var cor = getMoodColor(pt.val);
+    var ultimo = i === points.length - 1;
+    return '<circle cx="'+pt.x.toFixed(1)+'" cy="'+pt.y.toFixed(1)+'" r="'+(ultimo?4:2.8)+'" fill="'+cor+'"'
+      + (ultimo ? ' stroke="#fff" stroke-width="1.5"' : '') + '><title>'+pt.val+'/10</title></circle>';
   }).join('');
 
   // Referências horizontais
   var refLines = [3,5,7].map(function(v){
     var y = H - PAD - ((v/10)*(H-PAD*2));
-    return '<line x1="'+PAD+'" y1="'+y+'" x2="'+(W-PAD)+'" y2="'+y+'" stroke="#e0e3e0" stroke-dasharray="3,3" stroke-width="1"/>'
-      + '<text x="'+(W-PAD+2)+'" y="'+(y+3)+'" font-size="8" fill="#bbb">'+v+'</text>';
+    return '<line x1="'+PAD+'" y1="'+y+'" x2="'+(W-PAD)+'" y2="'+y+'" stroke="#E8E2D8" stroke-dasharray="3,3" stroke-width="1"/>'
+      + '<text x="'+(W-PAD+2)+'" y="'+(y+3)+'" font-size="8" fill="#9A948A">'+v+'</text>';
   }).join('');
 
   var _chartHtml =
@@ -361,8 +364,8 @@ function renderMoodHistory() {
     + '</div>'
     + '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:70px;overflow:visible">'
       + refLines
-      + (areaPath ? '<path d="'+areaPath+'" fill="rgba(74,124,89,.08)"/>' : '')
-      + (polyline.includes(',') ? '<polyline points="'+polyline+'" fill="none" stroke="#4a7c59" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>' : '')
+      + (areaPath ? '<path d="'+areaPath+'" fill="rgba(74,122,99,.07)"/>' : '')
+      + (polyline.includes(',') ? '<polyline points="'+polyline+'" fill="none" stroke="#4A7A63" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>' : '')
       + circlesHtml
     + '</svg>'
     + '<div style="display:flex;margin-top:4px">'+labelsHtml+'</div>'
@@ -411,9 +414,9 @@ function _pacWeekDotsHtml(p) {
   });
   dias = Math.min(dias, 7);
   var cheios = '●'.repeat(dias), vazios = '○'.repeat(7 - dias);
-  var frase = dias === 0 ? 'Um registro quando puder — cada um conta.'
-    : dias === 7 ? 'Uma semana inteira de registros.'
-    : 'Cada registro conta, no seu ritmo.';
+  var frase = dias === 0 ? 'um registro quando puder, cada um conta.'
+    : dias === 7 ? 'uma semana inteira de registros.'
+    : 'cada registro conta, no seu ritmo.';
   return '<div class="pac-week-dots">Esta semana: <b>' + cheios + '</b><i>' + vazios + '</i> — ' + frase + '</div>';
 }
 
@@ -475,7 +478,7 @@ function saveDiaryLivre() {
   }
   ta.value = '';
   updateDiaryCount();
-  showToast('Registro salvo. ' + (tfUserData.nome || 'Ana').split(' ')[0] + ' verá na próxima sessão. 🌿');
+  showToast('Registro salvo. ' + (tfUserData.nome || 'Ana').split(' ')[0] + ' verá na próxima sessão.');
 }
 
 let tccEmocaoSelecionada = '';
@@ -842,7 +845,7 @@ function renderPatientApp(idx, pacs) {
   // atualiza só esse card in-place quando a terapeuta inicia/encerra a videochamada).
 
   // Mensagem do terapeuta
-  var msgTexto = p.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos. 🌿';
+  var msgTexto = p.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos.';
 
   // Exercícios
   var exercicios = p.exercises || [];
@@ -947,7 +950,7 @@ function renderPatientApp(idx, pacs) {
   var notifPermStatus = (typeof Notification !== 'undefined') ? Notification.permission : 'not-supported';
   var notifHora = p.portalNotifHour || '20';
   var notifHtml = '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px">'
-    + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">🔔 Lembrete de check-in diário</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">Lembrete de check-in diário</div>'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
       + '<select id="pac-notif-hora" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff">'
         + [7,8,9,12,18,19,20,21,22].map(function(h){ return '<option value="'+h+'"'+(h===parseInt(notifHora)?' selected':'')+'>'+h+'h</option>'; }).join('')
@@ -964,7 +967,7 @@ function renderPatientApp(idx, pacs) {
   if (p.portalAnamneseAtiva) {
     var _ana = p.anamnese || {};
     anamnesePortalHtml = '<div class="patient-section-card" id="pac-anamnese-secao">'
-      + '<div class="patient-section-header"><div class="patient-section-title">📋 Formulário de anamnese</div></div>'
+      + '<div class="patient-section-header"><div class="patient-section-title">Formulário de anamnese</div></div>'
       + '<div class="patient-section-body">'
         + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.6">Sua terapeuta precisa de algumas informações. Preencha com calma — tudo é confidencial.</div>'
         + '<div class="form-group" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">O que te traz para a terapia?</label><textarea id="pac-ana-queixa" rows="3" placeholder="Descreva com suas palavras…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.queixaPrincipal||'') + '</textarea></div>'
@@ -985,7 +988,20 @@ function renderPatientApp(idx, pacs) {
     : ((typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistNome) ? _loggedPatientData._therapistNome : 'Ana');
   var _therapistFirst = _therapistName.split(' ')[0];
   var _therapistInitial = _therapistFirst.charAt(0).toUpperCase();
-  var _tagEmojis = { tcc:'📓', relaxa:'🧘', diario:'📊', exposicao:'🎯', mindfulness:'🌱', outro:'💡' };
+  // Redesign: ícones de traço (Lucide-like) no lugar dos emojis por tag — um
+  // único tom (sage) via CSS .pac-ex-tagicon; a tag diferencia pela FORMA.
+  var _tagIconPaths = {
+    tcc:         '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M8 7h8M8 11h5"/>',
+    relaxa:      '<path d="M3 8c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 4-2"/><path d="M3 14c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 4-2"/>',
+    diario:      '<path d="M3 20h18"/><path d="M6 20v-7M11 20V9M16 20v-4M21 20V6"/>',
+    exposicao:   '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".5"/>',
+    mindfulness: '<path d="M12 21c-5 0-8-3.5-8-8 0-5.5 4-9.5 8-11 4 1.5 8 5.5 8 11 0 4.5-3 8-8 8z"/><path d="M12 21V8"/>',
+    outro:       '<circle cx="12" cy="10" r="6"/><path d="M10 19h4M11 22h2"/>',
+  };
+  function _tagIconSvg(tag) {
+    return '<svg class="pac-ex-tagicon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
+      + (_tagIconPaths[tag] || _tagIconPaths.outro) + '</svg>';
+  }
   var _navIconHome  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>';
   var _navIconEx    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="3" height="10" rx="1"/><rect x="19" y="7" width="3" height="10" rx="1"/><path d="M5 12h14"/></svg>';
   var _navIconDiary = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>';
@@ -996,23 +1012,23 @@ function renderPatientApp(idx, pacs) {
   var _exListHtml = exercicios.length === 0
     ? '<div style="color:var(--muted);font-size:13px;text-align:center;padding:32px 16px">Nenhum exercício atribuído ainda.</div>'
     : exercicios.map(function(ex) {
-        var _em = _tagEmojis[ex.tag] || '📋';
         var _done = ex.done || (ex.concluidos || 0) >= (ex.total || 1);
         var total = ex.total || 1, conc = ex.concluidos || 0;
         var pctEx = total > 1 ? Math.min(100, Math.round(conc / total * 100)) : 0;
         var prazoStr = '';
-        if (ex.prazo) { var diasR = Math.ceil((new Date(ex.prazo) - new Date()) / 86400000); prazoStr = diasR < 0 ? ' · <span style="color:var(--red)">⚠ Vencido</span>' : diasR === 0 ? ' · <span style="color:var(--amber)">⏰ Hoje</span>' : ' · ' + diasR + 'd'; }
+        if (ex.prazo) { var diasR = Math.ceil((new Date(ex.prazo) - new Date()) / 86400000); prazoStr = diasR < 0 ? ' · <span style="color:var(--red)">prazo passou</span>' : diasR === 0 ? ' · <span style="color:var(--amber)">para hoje</span>' : ' · ' + diasR + 'd'; }
+        // Redesign: sem riscado (concluir não "anula" o que foi feito) — done fica quieto.
         return '<div class="pac-ex-card-v2' + (_done ? ' done' : '') + '">'
           + '<div class="pac-ex-icon' + (_done ? ' done' : '') + '" data-tag="' + (ex.tag||'outro') + '" onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" style="cursor:pointer">'
-            + (_done ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>' : '<span style="font-size:20px">' + _em + '</span>')
+            + (_done ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>' : _tagIconSvg(ex.tag||'outro'))
           + '</div>'
           + '<div style="flex:1;min-width:0">'
-            + '<div style="font-size:14px;font-weight:' + (_done ? '400' : '500') + ';color:' + (_done ? 'var(--muted)' : 'var(--ink)') + ';text-decoration:' + (_done ? 'line-through' : 'none') + '">' + escHTML(ex.title) + '</div>'
-            + '<div class="pac-ex-time"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ' + escHTML((ex.desc || '').slice(0,40)) + prazoStr + '</div>'
-            + (total > 1 ? '<div style="margin-top:5px;height:4px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:' + pctEx + '%;height:100%;background:' + (pctEx >= 100 ? 'var(--sage)' : 'var(--amber)') + ';border-radius:3px"></div></div>' : '')
+            + '<div style="font-size:14px;font-weight:' + (_done ? '400' : '500') + ';color:' + (_done ? 'var(--muted)' : 'var(--ink)') + '">' + escHTML(ex.title) + '</div>'
+            + '<div class="pac-ex-time">' + escHTML((ex.desc || '').slice(0,40)) + prazoStr + '</div>'
+            + (total > 1 ? '<div style="margin-top:5px;height:3px;background:var(--line-2);border-radius:2px;overflow:hidden"><div style="width:' + pctEx + '%;height:100%;background:var(--sage);border-radius:2px"></div></div>' : '')
           + '</div>'
-          + (total > 1 && !_done ? '<button onclick="pacIncrementarEx(' + idx + ',' + ex.id + ')" style="background:var(--sage-50);border:1px solid var(--sage-100);border-radius:6px;cursor:pointer;font-size:11px;padding:4px 8px;color:var(--sage);font-weight:600;margin-right:6px;flex-shrink:0">+1</button>' : '')
-          + '<button onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" class="pac-ex-btn' + (_done ? ' done' : '') + '">' + (_done ? 'Feito ✓' : 'Iniciar') + '</button>'
+          + (total > 1 && !_done ? '<button onclick="pacIncrementarEx(' + idx + ',' + ex.id + ')" style="background:var(--sage-light);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11.5px;padding:4px 9px;color:var(--sage-dark);font-weight:600;margin-right:6px;flex-shrink:0">+1</button>' : '')
+          + '<button onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" class="pac-ex-btn' + (_done ? ' done' : '') + '">' + (_done ? 'Feito' : 'Abrir') + '</button>'
         + '</div>';
       }).join('');
 
@@ -1020,15 +1036,14 @@ function renderPatientApp(idx, pacs) {
   var _topExHtml = exercicios.slice(0,2).length === 0
     ? '<div style="font-size:13px;color:var(--muted);text-align:center;padding:16px 0">Nenhum exercício atribuído ainda.</div>'
     : exercicios.slice(0,2).map(function(ex) {
-        var _em = _tagEmojis[ex.tag] || '📋';
         var _done = ex.done || (ex.concluidos || 0) >= (ex.total || 1);
         return '<div class="pac-ex-card-v2' + (_done ? ' done' : '') + '" style="margin-bottom:10px">'
           + '<div class="pac-ex-icon' + (_done ? ' done' : '') + '" data-tag="' + (ex.tag||'outro') + '" onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" style="cursor:pointer">'
-            + (_done ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>' : '<span style="font-size:20px">' + _em + '</span>')
+            + (_done ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>' : _tagIconSvg(ex.tag||'outro'))
           + '</div>'
-          + '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:' + (_done ? '400' : '500') + ';color:' + (_done ? 'var(--muted)' : 'var(--ink)') + ';text-decoration:' + (_done ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHTML(ex.title) + '</div>'
-            + '<div class="pac-ex-time"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ' + escHTML((ex.desc || '—').slice(0,35)) + '</div></div>'
-          + '<button onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" class="pac-ex-btn' + (_done ? ' done' : '') + '">' + (_done ? 'Feito ✓' : 'Iniciar') + '</button>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:' + (_done ? '400' : '500') + ';color:' + (_done ? 'var(--muted)' : 'var(--ink)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHTML(ex.title) + '</div>'
+            + '<div class="pac-ex-time">' + escHTML((ex.desc || '—').slice(0,35)) + '</div></div>'
+          + '<button onclick="pacToggleEx(' + idx + ',' + ex.id + ',\'' + escHTML(p.name) + '\')" class="pac-ex-btn' + (_done ? ' done' : '') + '">' + (_done ? 'Feito' : 'Abrir') + '</button>'
         + '</div>';
       }).join('');
 
@@ -1109,9 +1124,9 @@ function renderPatientApp(idx, pacs) {
   /* ══ TAB EXERCÍCIOS ══ */
   + '<div id="pac-tab-ex" class="pac-tab-content" style="display:none">'
     + '<div style="padding:20px 16px 14px"><div style="font-family:\'Instrument Serif\',serif;font-size:24px;color:var(--ink)">Exercícios</div><div style="font-size:13px;color:var(--muted);margin-top:3px">Recomendados por ' + escHTML(_therapistFirst) + ' · esta semana</div></div>'
-    + (exercicios.length > 0 ? '<div style="padding:0 16px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--muted)">'+exDone+' de '+exercicios.length+' concluídos</span><span style="font-size:12px;font-weight:600;color:var(--sage)">'+_exPct+'%</span></div><div style="height:5px;border-radius:3px;background:var(--border);overflow:hidden"><div style="width:'+_exPct+'%;height:100%;background:var(--sage);border-radius:3px"></div></div></div>' : '')
+    + (exercicios.length > 0 ? '<div style="padding:0 16px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12.5px;color:var(--muted)">'+exDone+' de '+exercicios.length+' concluídos</span></div><div style="height:3px;border-radius:2px;background:var(--line-2);overflow:hidden"><div style="width:'+_exPct+'%;height:100%;background:var(--sage);border-radius:2px"></div></div></div>' : '')
     + '<div id="pac-ex-list" style="padding:0 16px;display:flex;flex-direction:column;gap:10px">' + _exListHtml + '</div>'
-    + '<div style="padding:14px 16px 0"><div style="background:var(--sage-50);border:1px solid var(--sage-100);border-radius:16px;padding:14px 16px"><div style="font-size:11px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">💡 Dica da semana</div><div style="font-size:13px;color:#4a5568;line-height:1.6;font-style:italic">&#8220;'+escHTML(dica)+'&#8221;</div><div style="font-size:11px;color:var(--muted);margin-top:6px">— '+escHTML(_therapistFirst)+'</div></div></div>'
+    + '<div style="padding:14px 16px 0"><div style="background:var(--sage-light);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px"><div style="font-family:\'Instrument Serif\',serif;font-size:15.5px;color:var(--sage-dark);margin-bottom:6px">Dica da semana</div><div style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;font-style:italic">&#8220;'+escHTML(dica)+'&#8221;</div><div style="font-size:12px;color:var(--muted);margin-top:6px">— '+escHTML(_therapistFirst)+'</div></div></div>'
     + '<div style="padding:14px 16px 0">' + tecnicaHtml + '</div>'
   + '</div>'  /* /pac-tab-ex */
 
@@ -1127,15 +1142,16 @@ function renderPatientApp(idx, pacs) {
   /* ══ TAB PERFIL ══ */
   + '<div id="pac-tab-me" class="pac-tab-content" style="display:none">'
     + _profileTopHtml
-    + '<div style="padding:0 16px 14px">' + badgesHtml + '</div>'
-    + (metas.length > 0 ? '<div style="padding:0 16px 14px"><div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">🎯 Minhas metas</div></div><div class="patient-section-body" id="pac-metas-list">'+metasHtml+'</div></div></div>' : '')
+    /* Redesign (tom compassivo aprovado): grade de conquistas bloqueadas removida —
+       troféu cinza cobra; a constância vive nos pontos da semana da home. */
+    + (metas.length > 0 ? '<div style="padding:0 16px 14px"><div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">Minhas metas</div></div><div class="patient-section-body" id="pac-metas-list">'+metasHtml+'</div></div></div>' : '')
     + (matsHtml ? '<div style="padding:0 16px 14px">' + matsHtml + '</div>' : '')
     + '<div id="pac-traj-wrap" style="padding:0 16px 14px">' + jornadaHtml + '</div>'
     + (anamnesePortalHtml ? '<div style="padding:0 16px 14px">' + anamnesePortalHtml + '</div>' : '')
     + '<div style="padding:0 16px 14px">' + notifHtml + '</div>'
     + '<div style="padding:0 16px 20px"><div class="patient-section-card">'
       + '<div class="patient-section-header" style="cursor:pointer" onclick="pacToggleAlterarSenha()">'
-        + '<div class="patient-section-title">🔑 Alterar senha</div>'
+        + '<div class="patient-section-title">Alterar senha</div>'
         + '<div id="pac-senha-chevron" style="font-size:11px;color:var(--muted);transition:transform .2s">▼</div>'
       + '</div>'
       + '<div id="pac-alterar-senha-form" style="display:none;padding:4px 0 8px">'
@@ -1503,9 +1519,9 @@ function renderPatientDiario(p, idx) {
   panelHumor += '</div>';
 
   var tabs = '<div style="display:flex;border-bottom:1px solid var(--border);background:#fafbfa">'
-    + '<button id="pac-diary-tab-livre" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'livre\')" style="flex:1;font-weight:600;border:none;background:#fff;color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit">✏️ Registro livre</button>'
+    + '<button id="pac-diary-tab-livre" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'livre\')" style="flex:1;font-weight:600;border:none;background:#fff;color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit">Registro livre</button>'
     + (tabLabel ? '<button id="pac-diary-tab-esp" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'esp\')" style="flex:1;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">'+tabLabel+'</button>' : '')
-    + '<button id="pac-diary-tab-humor" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'humor\')" style="flex:1;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">📈 Humor</button>'
+    + '<button id="pac-diary-tab-humor" class="pac-diary-sub-tab" onclick="pacSwitchDiary(\'humor\')" style="flex:1;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit">Humor</button>'
     + '</div>';
 
   var panelLivre = '<div id="pac-diary-livre" style="padding:16px 18px">'
@@ -1761,7 +1777,7 @@ function pacSalvarNotaRapida(idx) {
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
   var wrap = document.getElementById('pac-quick-note-wrap');
   if (wrap) wrap.style.display = 'none';
-  showToast('Nota salva. 🌿');
+  showToast('Nota salva.');
 }
 
 function pacToggleEx(pidx, exId, patientName) {

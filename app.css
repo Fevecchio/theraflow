@@ -2052,25 +2052,21 @@ select:hover { border-color: #d8d3c2; }
 /* Abas do diário (Registro livre / aba esp / Humor) */
 .pac-diary-sub-tab { padding: 10px 6px; font-size: 13px; white-space: nowrap; }
 @media (max-width: 420px) { .pac-diary-sub-tab { font-size: 11px; padding: 9px 4px; } }
+/* Redesign: prompts do diário do PACIENTE em serifa editorial (tom de caderno,
+   não de formulário) — só no portal; a prévia do terapeuta mantém labels de UI. */
+#pac-tab-diary .diary-label { font-family:'Instrument Serif',serif; font-size:15.5px; text-transform:none; letter-spacing:0; color:var(--ink); font-weight:400; margin-bottom:7px; }
+#pac-tab-diary .diary-ta { font-size:14px; background:var(--bg); border-width:1px; }
 
 /* Emoji do check-in */
 .pac-mood-em { font-size: 24px; line-height: 1; display: inline-block; transition: transform .2s; }
 .pac-mood-selected .pac-mood-em { transform: scale(1.3); }
 .pac-mood-selected { border-color: var(--sage) !important; background: var(--sage-50) !important; box-shadow: 0 0 0 3px var(--sage-100); }
 
-/* ── Ícones de exercício coloridos por abordagem ── */
-.pac-ex-icon[data-tag="tcc"]         { background:#e8f0fe; border-color:#c5d5fb; }
-.pac-ex-icon[data-tag="relaxa"]      { background:#e6f5ec; border-color:#b3ddc7; }
-.pac-ex-icon[data-tag="diario"]      { background:#f3e8fd; border-color:#d9b3f7; }
-.pac-ex-icon[data-tag="exposicao"]   { background:#fff3e0; border-color:#ffd180; }
-.pac-ex-icon[data-tag="mindfulness"] { background:#e3f2fd; border-color:#90caf9; }
-.pac-ex-icon[data-tag="outro"]       { background:var(--sage-50); border-color:var(--sage-100); }
-/* Estado done sobrescreve a cor da abordagem */
-.pac-ex-icon.done { background:var(--sage) !important; border-color:var(--sage-700) !important; }
-
-/* ── Streak pill refinado ── */
-.pac-streak-pill { background:linear-gradient(135deg,#fff8ec,#fffcf4); border:1px solid rgba(201,125,46,.3); color:#c97d2e; font-weight:700; font-size:13px; }
-.pac-streak-pill span:first-child { font-size:18px; }
+/* ── Ícones de exercício MONOCROMÁTICOS (redesign: fim da sub-paleta pastel
+   multicolorida — a hierarquia vem do conteúdo, não de 5 cores gritando). ── */
+.pac-ex-icon { background:var(--sage-light) !important; border-color:var(--border) !important; }
+.pac-ex-icon svg.pac-ex-tagicon { stroke:var(--sage-dark); }
+.pac-ex-icon.done { background:var(--sage) !important; border-color:var(--sage) !important; }
 
 /* ── Barra de jornada (Sua jornada) ── */
 .pac-week-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow); }

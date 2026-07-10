@@ -1471,14 +1471,14 @@ function salvarRespostaDiario(pidx, entryIdx) {
 function renderMensagemPortal() {
   const p = patients[currentPortalPatientIdx] || patients[0];
   if (!p) return;
-  const texto = p.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos. Estou aqui se precisar. 🌿';
+  const texto = p.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos. Estou aqui se precisar.';
   const view = document.getElementById('portal-mensagem-view');
   if (view) view.textContent = texto;
 }
 
 function editarMensagemPortal() {
   const p = patients[currentPortalPatientIdx] || patients[0];
-  const texto = p?.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos. Estou aqui se precisar. 🌿';
+  const texto = p?.portalMensagem || 'Boa semana! Lembre-se de praticar os exercícios que combinamos. Estou aqui se precisar.';
   const input = document.getElementById('portal-mensagem-input');
   if (input) input.value = texto;
   document.getElementById('portal-mensagem-view').style.display = 'none';
