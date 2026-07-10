@@ -118,10 +118,15 @@ async function _init2FACard() {
     if (statusEl) statusEl.innerHTML = '<span style="color:var(--sage);font-weight:600">✓ Ativado</span> — seu login pede um código do app autenticador.';
     if (btnAtivar) btnAtivar.style.display = 'none';
     if (btnDesativar) btnDesativar.style.display = 'inline-flex';
+    _tfaRenderBackupRow();
   } else {
     if (statusEl) statusEl.innerHTML = '<span style="color:var(--muted)">Desativado.</span> Adicione uma camada extra de segurança ao seu acesso.';
     if (btnAtivar) btnAtivar.style.display = 'inline-flex';
     if (btnDesativar) btnDesativar.style.display = 'none';
+    const row = document.getElementById('tfa-backup-row');
+    if (row) row.style.display = 'none';
+    const area = document.getElementById('tfa-backup-area');
+    if (area) area.style.display = 'none';
   }
 }
 
@@ -175,6 +180,9 @@ async function confirmar2FA() {
     tfTrack('2fa_enabled');
     showToast('✓ Autenticação em dois fatores ativada!');
     _init2FACard();
+    // Gera os códigos de backup na hora (a sessão acabou de virar aal2) — sem
+    // eles, perder o celular = perder a conta (T-A8).
+    gerarBackupCodes(null);
   } catch (e) {
     if (err) { err.textContent = '⚠ Erro ao confirmar. Tente novamente.'; err.style.display = 'block'; }
   }
@@ -202,5 +210,128 @@ async function desativar2FA() {
     _init2FACard();
   } catch (e) {
     showToast('⚠ Erro ao desativar. Tente novamente.');
+  }
+}
+
+/* ── CÓDIGOS DE BACKUP (T-A8) ──
+ * Gerados no servidor (/api/2fa-recovery, service role) e mostrados UMA vez.
+ * Usar um código no login desenrola o TOTP — a conta não morre com o celular. */
+
+async function _tfaBackupStatus() {
+  try {
+    const r = await fetchWithTimeout('/api/2fa-recovery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
+      body: JSON.stringify({ action: 'status' }),
+    }, 15000);
+    const d = await r.json();
+    return (r.ok && d.ok) ? Number(d.remaining || 0) : null;
+  } catch (e) { return null; }
+}
+
+/* Linha "Códigos de backup: N restantes" no card do Perfil (2FA ativo). */
+async function _tfaRenderBackupRow() {
+  const row = document.getElementById('tfa-backup-row');
+  const info = document.getElementById('tfa-backup-info');
+  if (!row || !info) return;
+  row.style.display = 'flex';
+  info.textContent = 'Códigos de backup: verificando…';
+  const n = await _tfaBackupStatus();
+  if (n === null) { info.textContent = 'Códigos de backup: indisponível no momento.'; return; }
+  if (n === 0) {
+    info.innerHTML = '<span style="color:#c0392b;font-weight:600">Nenhum código de backup.</span> Gere agora — sem eles, perder o celular = perder o acesso.';
+  } else {
+    info.textContent = 'Códigos de backup: ' + n + ' restante' + (n === 1 ? '' : 's') + '.';
+  }
+}
+
+/* Gera (ou regenera) os 10 códigos e os exibe no card. Exige sessão aal2. */
+async function gerarBackupCodes(btn) {
+  const area = document.getElementById('tfa-backup-area');
+  if (btn) { btn.disabled = true; btn.textContent = 'Gerando…'; }
+  try {
+    const r = await fetchWithTimeout('/api/2fa-recovery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
+      body: JSON.stringify({ action: 'generate' }),
+    }, 15000);
+    const d = await r.json().catch(function () { return {}; });
+    if (!r.ok || !d.ok || !Array.isArray(d.codes)) {
+      showToast('⚠ ' + (d.error || 'Não foi possível gerar os códigos. Tente novamente.'));
+      return;
+    }
+    tfTrack('2fa_backup_codes_generated');
+    if (area) {
+      const grid = d.codes.map(function (c) {
+        return '<div style="font-family:monospace;font-size:15px;font-weight:600;letter-spacing:1px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">' + c + '</div>';
+      }).join('');
+      area.innerHTML =
+        '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px">🔑 Seus códigos de backup</div>' +
+        '<div style="font-size:12.5px;color:#c0392b;margin-bottom:12px">Guarde-os em um lugar seguro (gerenciador de senhas, papel). Eles aparecem <strong>só esta vez</strong> — cada um funciona uma única vez e substitui o código do app se você perder o celular.</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">' + grid + '</div>' +
+        '<button class="btn btn-secondary btn-sm" onclick="_tfaCopyBackupCodes(this)">📋 Copiar códigos</button>';
+      area.dataset.codes = d.codes.join('\n');
+      area.style.display = 'block';
+    }
+    _tfaRenderBackupRow();
+  } catch (e) {
+    showToast('⚠ Erro de conexão ao gerar os códigos.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Gerar novos códigos'; }
+  }
+}
+
+function _tfaCopyBackupCodes(btn) {
+  const area = document.getElementById('tfa-backup-area');
+  const txt = (area && area.dataset.codes) || '';
+  if (!txt) return;
+  navigator.clipboard.writeText('Códigos de backup TheraFlow (uso único):\n' + txt).then(function () {
+    if (btn) { btn.textContent = '✓ Copiado'; setTimeout(function () { btn.textContent = '📋 Copiar códigos'; }, 2000); }
+  }).catch(function () { showToast('⚠ Não foi possível copiar. Anote manualmente.'); });
+}
+
+/* ── RESGATE NO LOGIN (perdi o celular) ── */
+function _toggleBackupLogin() {
+  const box = document.getElementById('tfa-backup-login');
+  if (!box) return;
+  const aberto = box.style.display !== 'none';
+  box.style.display = aberto ? 'none' : 'block';
+  if (!aberto) {
+    const inp = document.getElementById('tfa-backup-code');
+    if (inp) { inp.value = ''; setTimeout(function () { inp.focus(); }, 100); }
+  }
+}
+
+async function _verifyBackupLogin() {
+  const inp = document.getElementById('tfa-backup-code');
+  const err = document.getElementById('tfa-login-error');
+  const btn = document.getElementById('btn-tfa-backup');
+  const code = ((inp && inp.value) || '').trim();
+  if (code.replace(/[^A-Za-z0-9]/g, '').length !== 8) {
+    if (err) { err.textContent = '⚠ O código de backup tem 8 caracteres (ex.: ABCD-2345).'; err.style.display = 'block'; }
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando…'; }
+  if (err) err.style.display = 'none';
+  try {
+    const r = await fetchWithTimeout('/api/2fa-recovery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
+      body: JSON.stringify({ action: 'redeem', code: code }),
+    }, 15000);
+    const d = await r.json().catch(function () { return {}; });
+    if (!r.ok || !d.ok) {
+      if (err) { err.textContent = '⚠ ' + (d.error || 'Código inválido ou já usado.'); err.style.display = 'block'; }
+      if (inp) { inp.value = ''; inp.focus(); }
+      return;
+    }
+    tfTrack('2fa_backup_code_redeemed');
+    showToast('✓ Código aceito. O 2FA foi desativado — reative no Perfil com o novo dispositivo.');
+    const uid = _tfaPendingUid; _tfaPendingUid = null;
+    _finishLogin(uid);
+  } catch (e) {
+    if (err) { err.textContent = '⚠ Erro de conexão. Tente novamente.'; err.style.display = 'block'; }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Usar código de backup →'; }
   }
 }

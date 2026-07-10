@@ -350,6 +350,12 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div id="tfa-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-top:12px"></div>
         <button class="btn btn-primary btn-full btn-lg" onclick="_verifyMfaLogin()" id="btn-tfa-verify" style="width:100%;justify-content:center;margin-top:16px">Verificar e entrar →</button>
         <button class="btn btn-secondary btn-full" onclick="_cancelMfaChallenge()" style="width:100%;justify-content:center;font-size:13px;margin-top:10px">Cancelar</button>
+        <button onclick="_toggleBackupLogin()" style="width:100%;background:none;border:none;color:var(--sage);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:14px;text-decoration:underline">Perdi o acesso ao app autenticador</button>
+        <div id="tfa-backup-login" style="display:none;margin-top:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px">
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Digite um dos seus <strong>códigos de backup</strong>. Ele desativa o 2FA desta conta — reative depois no Perfil com o novo dispositivo.</div>
+          <input id="tfa-backup-code" class="form-input" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX" style="text-align:center;letter-spacing:3px;font-size:16px;font-weight:600;font-family:monospace" onkeydown="if(event.key==='Enter')_verifyBackupLogin()"/>
+          <button class="btn btn-secondary btn-full" onclick="_verifyBackupLogin()" id="btn-tfa-backup" style="width:100%;justify-content:center;margin-top:10px">Usar código de backup →</button>
+        </div>
       </div>
 
     </div><!-- fim ob-card-body -->
@@ -2105,6 +2111,13 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <button class="btn btn-secondary btn-sm" onclick="cancelar2FAEnroll()">Cancelar</button>
           </div>
         </div>
+
+        <!-- Códigos de backup (T-A8) -->
+        <div id="tfa-backup-row" style="display:none;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;flex-wrap:wrap">
+          <span id="tfa-backup-info" style="font-size:13px;color:var(--muted)"></span>
+          <button class="btn btn-secondary btn-sm" onclick="gerarBackupCodes(this)">Gerar novos códigos</button>
+        </div>
+        <div id="tfa-backup-area" style="display:none;margin-top:12px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px"></div>
       </div>
 
       <!-- Aparência -->

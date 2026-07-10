@@ -488,10 +488,10 @@ async function pacEsqueciSenha() {
   }
   _pacShowLoginMsg('Se houver uma conta com este email, enviamos um link para redefinir a senha. Confira sua caixa de entrada e o spam.', 'info');
   try {
-    await fetch('/api/request-patient-reset', {
+    await fetch('/api/patient-reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email }),
+      body: JSON.stringify({ action: 'request', email: email }),
     });
   } catch (e) {
     // Preview local (serve.js) não roda /api — a mensagem neutra já foi exibida.
@@ -518,10 +518,10 @@ async function pacConfirmarReset() {
 
   if (btn) { btn.textContent = 'Salvando…'; btn.disabled = true; }
   try {
-    var r = await fetch('/api/confirm-patient-reset', {
+    var r = await fetch('/api/patient-reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: token, newPassword: nova }),
+      body: JSON.stringify({ action: 'confirm', token: token, newPassword: nova }),
     });
     var data = {};
     try { data = await r.json(); } catch(_) {}

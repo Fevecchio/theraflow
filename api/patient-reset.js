@@ -1,6 +1,11 @@
 /**
- * TheraFlow — Serverless Function: Solicitar redefinição de senha do paciente
- * Deploy: Vercel → /api/request-patient-reset  (Node.js runtime)
+ * TheraFlow — Serverless Function: Redefinição de senha do paciente
+ * Deploy: Vercel → /api/patient-reset  (Node.js runtime)
+ *
+ * Consolida os antigos /api/request-patient-reset e /api/confirm-patient-reset
+ * num único endpoint (limite de 12 funções do plano Hobby). O corpo escolhe:
+ *   { action: 'request', email }              → envia o email com o link
+ *   { action: 'confirm', token, newPassword } → grava a nova senha
  *
  * Fluxo de auto-recuperação do portal do paciente. O paciente pode logar sem
  * conta Supabase Auth (RPC portal_patient_login), então não usamos o
@@ -8,11 +13,12 @@
  * apenas o SHA-256 dele DENTRO do metadata do próprio paciente (tabela
  * `patients`, que já existe) — sem precisar de tabela/migration nova.
  *
- * Sempre responde { ok: true } — não revela se o email existe (anti-enumeração).
+ * 'request' sempre responde { ok: true } — não revela se o email existe
+ * (anti-enumeração).
  *
  * Env vars (Vercel):
  *   SUPABASE_SERVICE_ROLE_KEY  (obrigatória — ignora RLS)
- *   RESEND_API_KEY             (obrigatória — envio do email)
+ *   RESEND_API_KEY             (obrigatória p/ 'request' — envio do email)
  *   RESEND_FROM                (opcional — default onboarding@resend.dev)
  */
 
@@ -50,6 +56,11 @@ function supaHeaders(serviceKey) {
 
 function sha256(s) {
   return crypto.createHash('sha256').update(s).digest('hex');
+}
+
+// Mesmo algoritmo do _portalHash (js/17-misc.js): SHA-256 de 'tf-portal:'+senha, hex
+function portalHash(senha) {
+  return sha256('tf-portal:' + senha);
 }
 
 // Escapa o nome (controlado pelo terapeuta) antes de injetar no HTML do email.
@@ -113,13 +124,8 @@ function tmplReset({ pacienteNome, resetUrl }) {
 </html>`;
 }
 
-export default async function handler(req, res) {
-  const origin = req.headers.origin || '';
-  setCors(res, origin);
-
-  if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
+/* ── action: 'request' ── */
+async function handleRequest(req, res, origin) {
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
   // Erro de CONFIGURAÇÃO (independe do email existir → não vaza enumeração).
@@ -214,4 +220,99 @@ export default async function handler(req, res) {
     console.error('[reset-request] Erro:', e.message);
     return res.status(200).json({ ok: true }); // sempre neutro
   }
+}
+
+/* ── action: 'confirm' ── */
+async function handleConfirm(req, res) {
+  const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SERVICE_KEY) {
+    console.error('[reset-confirm] SUPABASE_SERVICE_ROLE_KEY ausente');
+    return res.status(500).json({ error: 'Service misconfigured' });
+  }
+
+  const { token, newPassword } = req.body || {};
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({ error: 'Token ausente' });
+  }
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 6) {
+    return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres.' });
+  }
+  const senha = newPassword.trim();
+
+  const hdrs = supaHeaders(SERVICE_KEY);
+  const tokenHash = sha256(token);
+
+  try {
+    // 1) Acha paciente(s) cujo metadata.resetTokenHash bate com o token
+    const pr = await fetch(
+      `${SUPA_URL}/rest/v1/patients?metadata->>resetTokenHash=eq.${encodeURIComponent(tokenHash)}&select=id,email,metadata&limit=5`,
+      { headers: hdrs }
+    );
+    const pacientes = pr.ok ? await pr.json() : [];
+    if (!Array.isArray(pacientes) || pacientes.length === 0) {
+      return res.status(400).json({ error: 'Link inválido ou expirado. Solicite um novo.' });
+    }
+
+    // 2) Valida expiração (1h)
+    const exp = Number((pacientes[0].metadata || {}).resetTokenExp || 0);
+    if (!exp || Date.now() > exp) {
+      return res.status(400).json({ error: 'Link expirado. Solicite uma nova redefinição.' });
+    }
+
+    const newHash = portalHash(senha);
+
+    // 3) Grava a nova senha e LIMPA o token (uso único) em cada paciente
+    for (const p of pacientes) {
+      const merged = Object.assign({}, (p.metadata || {}), {
+        portalPasswordHash: newHash,
+        portalPassword: null,
+        pwdTemp: false, // senha definida pelo próprio paciente no reset (F3.2)
+        resetTokenHash: null,
+        resetTokenExp: null,
+        resetRequestedAt: null,
+      });
+      await fetch(`${SUPA_URL}/rest/v1/patients?id=eq.${p.id}`, {
+        method: 'PATCH',
+        headers: { ...hdrs, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ metadata: merged }),
+      });
+
+      // 4) Se houver conta Auth vinculada, atualiza a senha lá também (best-effort)
+      try {
+        const lr = await fetch(
+          `${SUPA_URL}/rest/v1/patient_users?patient_id=eq.${p.id}&select=auth_user_id&limit=1`,
+          { headers: hdrs }
+        );
+        const links = lr.ok ? await lr.json() : [];
+        if (Array.isArray(links) && links.length > 0 && links[0].auth_user_id) {
+          await fetch(`${SUPA_URL}/auth/v1/admin/users/${links[0].auth_user_id}`, {
+            method: 'PUT',
+            headers: hdrs,
+            body: JSON.stringify({ password: senha }),
+          });
+        }
+      } catch (e) {
+        console.warn('[reset-confirm] Auth update best-effort falhou:', e.message);
+      }
+    }
+
+    console.log('[reset-confirm] Senha redefinida (', pacientes.length, 'registro(s) ).');
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error('[reset-confirm] Erro:', e.message);
+    return res.status(500).json({ error: 'Erro interno ao redefinir a senha.' });
+  }
+}
+
+export default async function handler(req, res) {
+  const origin = req.headers.origin || '';
+  setCors(res, origin);
+
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const action = ((req.body || {}).action || '').trim();
+  if (action === 'request') return handleRequest(req, res, origin);
+  if (action === 'confirm') return handleConfirm(req, res);
+  return res.status(400).json({ error: 'action inválida (use request|confirm)' });
 }
