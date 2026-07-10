@@ -6,6 +6,7 @@
     { "source": "/app", "destination": "/theraflow-unified-v3.html" },
     { "source": "/paciente", "destination": "/paciente.html" },
     { "source": "/sala", "destination": "/sala.html" },
+    { "source": "/seguranca", "destination": "/seguranca.html" },
     { "source": "/termos", "destination": "/termos.html" },
     { "source": "/privacidade", "destination": "/privacidade.html" },
     { "source": "/", "destination": "/landing.html" }

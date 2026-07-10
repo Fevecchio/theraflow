@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Segurança e Ética — TheraFlow</title>
+<meta name="description" content="Como o TheraFlow trata gravação, consentimento, sigilo e dados clínicos. Consentimento registrado, áudio não armazenado, LGPD e alinhamento às resoluções do CFP."/>
+<meta name="theme-color" content="#4A7A63"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234a7c59'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-family='serif' fill='white'>T</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sage: #4A7A63; --sage-dark: #3D6653; --sage-light: #EAF1EC; --sage-mid: #8FB89C;
+  --ink: #2B2A26; --ink-soft: #4A4842; --muted: #6B675F;
+  --border: #E8E2D8; --bg: #FAF7F2; --white: #ffffff;
+  --amber: #B8762A; --red: #B3564A;
+  --radius: 12px; --radius-lg: 16px;
+  --shadow: 0 1px 3px rgba(43,42,38,.07);
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', sans-serif; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+a { color: var(--sage-dark); }
+h1, h2, h3 { font-family: 'Instrument Serif', serif; font-weight: 400; letter-spacing: -.3px; line-height: 1.2; }
+nav { position: sticky; top: 0; z-index: 100; background: rgba(250,247,242,.92); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 24px; }
+.nav-inner { max-width: 880px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 62px; }
+.nav-logo { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--ink); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.nav-logo-mark { width: 30px; height: 30px; background: var(--sage); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; }
+.nav-back { font-size: 14px; color: var(--muted); text-decoration: none; }
+.nav-back:hover { color: var(--sage-dark); }
+main { max-width: 720px; margin: 0 auto; padding: 56px 24px 96px; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--sage); font-weight: 600; }
+h1 { font-size: clamp(30px, 5vw, 42px); margin: 10px 0 14px; }
+.lead { font-size: 17px; color: var(--ink-soft); max-width: 560px; }
+section { margin-top: 52px; }
+h2 { font-size: 25px; margin-bottom: 12px; }
+p { margin-bottom: 12px; color: var(--ink-soft); font-size: 15px; }
+strong { color: var(--ink); }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; box-shadow: var(--shadow); }
+.flow { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.flow-step { display: flex; gap: 14px; align-items: flex-start; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.flow-num { font-family: 'Instrument Serif', serif; font-size: 18px; color: var(--sage-dark); flex-shrink: 0; width: 22px; }
+.flow-step b { display: block; font-size: 14.5px; color: var(--ink); margin-bottom: 2px; }
+.flow-step span { font-size: 13.5px; color: var(--muted); }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+@media (max-width: 620px) { .duo { grid-template-columns: 1fr; } }
+.duo .card h3 { font-size: 17px; margin-bottom: 8px; }
+.duo .card ul { padding-left: 18px; }
+.duo .card li { font-size: 14px; color: var(--ink-soft); margin-bottom: 6px; }
+.faz h3 { color: var(--sage-dark); }
+.naofaz h3 { color: var(--red); }
+details { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 10px; }
+details summary { font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+details summary::after { content: '+'; font-family: 'Instrument Serif', serif; font-size: 20px; color: var(--sage); }
+details[open] summary::after { content: '–'; }
+details p { margin: 10px 0 2px; font-size: 14px; }
+.cta { margin-top: 64px; background: var(--sage-light); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; text-align: center; }
+.cta h2 { margin-bottom: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 13px 26px; border-radius: 11px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; background: var(--sage); color: #fff; text-decoration: none; margin-top: 14px; }
+.btn:hover { background: var(--sage-dark); }
+footer { border-top: 1px solid var(--border); padding: 24px; text-align: center; font-size: 13px; color: var(--muted); }
+footer a { margin: 0 8px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="/"><span class="nav-logo-mark">T</span>TheraFlow</a>
+    <a class="nav-back" href="/">← Voltar ao início</a>
+  </div>
+</nav>
+
+<main>
+  <span class="eyebrow">Segurança &amp; Ética</span>
+  <h1>As perguntas que você faria antes de gravar uma sessão — respondidas antes.</h1>
+  <p class="lead">Você cuida do que há de mais sensível: a fala de outra pessoa em sofrimento. Esta página explica, sem juridiquês, como o TheraFlow trata consentimento, áudio, sigilo e dados — e o que a IA faz e nunca faz.</p>
+
+  <section>
+    <h2>1 · Consentimento vem antes de tudo</h2>
+    <p>Nenhuma sessão é gravada sem que a paciente <strong>aceite explicitamente, na própria sala</strong>, antes de entrar. O aceite fica <strong>registrado com data e hora</strong> em uma trilha de consentimentos — do uso da plataforma, da gravação e do uso de IA, separadamente.</p>
+    <p><strong>E se a paciente não aceitar?</strong> A sessão acontece normalmente, sem gravação. Você escreve a nota como sempre escreveu — a escolha dela nunca vira atrito no atendimento.</p>
+  </section>
+
+  <section>
+    <h2>2 · O caminho do áudio (curto de propósito)</h2>
+    <div class="flow">
+      <div class="flow-step"><div class="flow-num">1</div><div><b>A sessão acontece</b><span>O áudio é capturado com o consentimento registrado de ambos.</span></div></div>
+      <div class="flow-step"><div class="flow-num">2</div><div><b>Vira texto</b><span>O áudio é convertido em transcrição por IA — e <strong>não é armazenado</strong>: o TheraFlow não guarda gravações de sessão em nenhum servidor.</span></div></div>
+      <div class="flow-step"><div class="flow-num">3</div><div><b>Vira rascunho de nota</b><span>A transcrição gera um rascunho de evolução no formato da sua abordagem.</span></div></div>
+      <div class="flow-step"><div class="flow-num">4</div><div><b>Você revisa e assina</b><span>Nada entra no prontuário sem passar por você. A nota é sua, o julgamento clínico é seu.</span></div></div>
+    </div>
+    <p>O que permanece no sistema é o que você decidir salvar: a nota revisada, no prontuário da paciente, acessível apenas pela sua conta.</p>
+  </section>
+
+  <section>
+    <h2>3 · O que a IA faz — e o que ela nunca faz</h2>
+    <div class="duo">
+      <div class="card faz">
+        <h3>A IA faz</h3>
+        <ul>
+          <li>Transcreve a sessão e estrutura um rascunho de nota na sua abordagem (TCC, Psicanálise, Sistêmica…)</li>
+          <li>Resume a semana da paciente (check-ins e diário do portal) num briefing pré-sessão</li>
+          <li>Aponta padrões nos registros para você considerar</li>
+        </ul>
+      </div>
+      <div class="card naofaz">
+        <h3>A IA nunca faz</h3>
+        <ul>
+          <li>Diagnóstico — isso é ato privativo seu</li>
+          <li>Conduta clínica ou decisão sobre o tratamento</li>
+          <li>Contato com a paciente em seu nome</li>
+          <li>Treinamento de modelos com seus dados — nossos fornecedores de IA não utilizam o conteúdo enviado para treinar seus modelos</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>4 · Seus dados, suas regras</h2>
+    <p><strong>Criptografia</strong> em trânsito e em repouso; cada conta acessa <strong>apenas os próprios pacientes</strong>, com isolamento aplicado no banco de dados (não só na interface). Autenticação em dois fatores disponível, com códigos de recuperação.</p>
+    <p><strong>LGPD:</strong> você é o controlador dos dados clínicos dos seus pacientes; o TheraFlow atua como operador. Exportação completa a qualquer momento, exclusão definitiva quando solicitada e canal de privacidade direto — sem fidelidade, sem retenção de reféns: <em>se um dia quiser sair, você sai com tudo</em>.</p>
+  </section>
+
+  <section>
+    <h2>5 · Alinhamento com o CFP</h2>
+    <p>O TheraFlow foi construído considerando as resoluções do Conselho Federal de Psicologia sobre <strong>registro documental</strong> (prontuário como responsabilidade do profissional, sob sigilo) e sobre a <strong>prestação de serviços psicológicos por meios tecnológicos</strong>. Na prática: a plataforma organiza e protege seus registros — a titularidade, o sigilo e a decisão clínica permanecem integralmente com você, como o Código de Ética exige.</p>
+  </section>
+
+  <section>
+    <h2>Perguntas diretas, respostas diretas</h2>
+    <details>
+      <summary>O áudio da sessão fica gravado em algum lugar?</summary>
+      <p>Não. O áudio existe apenas durante o processamento da transcrição e não é armazenado pelo TheraFlow. O que fica é o texto — e só depois de você revisar e salvar.</p>
+    </details>
+    <details>
+      <summary>Quem consegue ler minhas notas clínicas?</summary>
+      <p>Você. O isolamento por conta é aplicado no nível do banco de dados; nem outros terapeutas da plataforma nem o portal do paciente têm acesso ao prontuário. O paciente vê apenas o que você compartilha ativamente (resumos, exercícios, mensagens).</p>
+    </details>
+    <details>
+      <summary>E se minha paciente não quiser ser gravada?</summary>
+      <p>Nada muda no atendimento: a sessão acontece sem gravação e você registra a evolução manualmente, como sempre. O consentimento é por sessão e pode ser recusado sem qualquer consequência.</p>
+    </details>
+    <details>
+      <summary>Posso sair da plataforma e levar tudo?</summary>
+      <p>Sim, a qualquer momento: prontuários, notas e registros são exportáveis, e o cancelamento não tem fidelidade nem multa. Consideramos isso requisito ético, não cortesia.</p>
+    </details>
+    <details>
+      <summary>Meus dados treinam a IA de vocês?</summary>
+      <p>Não. Os fornecedores de IA que processam transcrição e notas não utilizam o conteúdo enviado para treinar seus modelos, e o TheraFlow não vende nem compartilha dados clínicos com terceiros.</p>
+    </details>
+  </section>
+
+  <div class="cta">
+    <h2>Transparência também é cuidado clínico.</h2>
+    <p style="max-width:460px;margin:0 auto">Experimente com 20 sessões gratuitas — e cobre da gente, em qualquer momento, o padrão que esta página promete.</p>
+    <a class="btn" href="/app">Experimentar grátis — 20 sessões</a>
+  </div>
+</main>
+
+<footer>
+  <a href="/termos">Termos de uso</a> · <a href="/privacidade">Privacidade</a> · <a href="/">Início</a>
+  <p style="margin-top:8px">Dúvidas sobre privacidade e proteção de dados: fale com nosso encarregado (DPO) pelo canal indicado na Política de Privacidade.</p>
+</footer>
+
+</body>
+</html>
