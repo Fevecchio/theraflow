@@ -47,6 +47,16 @@ async function verifySupabaseJWT(req, serviceKey) {
   } catch(e) { return null; }
 }
 
+/* LGPD: trilha de auditoria (audit_logs) — fire-and-forget; falha aqui NUNCA
+ * derruba a request. Inserts só via service role (RLS sem policy de insert). */
+function _audit(serviceKey, entry) {
+  return fetch(`${SUPA_URL}/rest/v1/audit_logs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Prefer: 'return=minimal' },
+    body: JSON.stringify(entry),
+  }).catch(() => {});
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   setCors(res, origin);
@@ -161,5 +171,10 @@ export default async function handler(req, res) {
     console.log('[invite-patient] Paciente criado:', patientId, '→', authUserId);
   }
 
+  _audit(SERVICE_KEY, {
+    user_id: caller.id, patient_id: patientId, acao: 'portal_access_granted',
+    detalhes: { via: 'invite-patient' },
+    ip: (req.headers['x-forwarded-for'] || '').split(',')[0] || null,
+  });
   return res.status(200).json({ ok: true, authUserId });
 }

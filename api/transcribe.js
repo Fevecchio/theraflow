@@ -142,6 +142,17 @@ export default async function handler(req, res) {
       console.error('[transcribe] Groq HTTP', r.status, errTxt.slice(0, 200));
       return res.status(502).json({ error: `Groq ${r.status}: ${errTxt.slice(0, 200)}` });
     }
+    // LGPD: trilha de auditoria do ato mais sensível (processamento de áudio de
+    // sessão) — fire-and-forget, nunca derruba a transcrição. Só metadados: o
+    // conteúdo não entra no log.
+    try {
+      const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      fetch(`${SUPA_URL}/rest/v1/audit_logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: svc, Authorization: `Bearer ${svc}`, Prefer: 'return=minimal' },
+        body: JSON.stringify({ user_id: user.id, acao: 'session_transcribed', detalhes: { segments: !!wantSegments } }),
+      }).catch(() => {});
+    } catch (_) {}
     if (wantSegments) {
       const j = await r.json(); // verbose_json → { text, segments: [{start,end,text,no_speech_prob,...}] }
       const segments = Array.isArray(j.segments)

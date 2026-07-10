@@ -143,7 +143,17 @@ async function handleGenerate(res, uid, aal, hdrs) {
     return res.status(500).json({ error: 'Não foi possível gerar os códigos. Tente novamente.' });
   }
   console.log('[2fa-recovery] 10 códigos gerados para', uid);
+  _audit(hdrs, { user_id: uid, acao: '2fa_backup_generated', detalhes: { qtd: 10 } });
   return res.status(200).json({ ok: true, codes });
+}
+
+/* LGPD: trilha de auditoria — fire-and-forget, nunca derruba a request. */
+function _audit(hdrs, entry) {
+  return fetch(`${SUPA_URL}/rest/v1/audit_logs`, {
+    method: 'POST',
+    headers: { ...hdrs, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    body: JSON.stringify(entry),
+  }).catch(() => {});
 }
 
 /* ── status ── */
@@ -207,6 +217,7 @@ async function handleRedeem(req, res, uid, hdrs) {
   if (!up.ok) console.error('[2fa-recovery] redeem: marcar usado falhou (2FA já removido):', up.status);
 
   console.log('[2fa-recovery] Código de backup usado; TOTP desenrolado para', uid);
+  _audit(hdrs, { user_id: uid, acao: '2fa_backup_redeemed', detalhes: { ip: clientIp(req) } });
   return res.status(200).json({ ok: true, factorsRemoved: totp.length });
 }
 

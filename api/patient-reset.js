@@ -297,6 +297,19 @@ async function handleConfirm(req, res) {
     }
 
     console.log('[reset-confirm] Senha redefinida (', pacientes.length, 'registro(s) ).');
+    // LGPD: trilha de auditoria — fire-and-forget, nunca derruba a request.
+    try {
+      const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      fetch(`${SUPA_URL}/rest/v1/audit_logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: svc, Authorization: `Bearer ${svc}`, Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          patient_id: pacientes[0]?.id || null, acao: 'patient_password_reset',
+          detalhes: { via: 'patient-reset/confirm', registros: pacientes.length },
+          ip: (req.headers['x-forwarded-for'] || '').split(',')[0] || null,
+        }),
+      }).catch(() => {});
+    } catch (_) {}
     return res.status(200).json({ ok: true });
   } catch (e) {
     console.error('[reset-confirm] Erro:', e.message);

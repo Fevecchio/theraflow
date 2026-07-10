@@ -956,7 +956,7 @@ function renderPatientApp(idx, pacs) {
       + '</select>'
       + '<button onclick="pacAtivarNotificacoes('+idx+')" class="btn btn-secondary btn-sm">Ativar lembrete</button>'
       + '<div id="pac-notif-status" style="font-size:12px;color:var(--muted);flex:1">'
-        + (notifPermStatus === 'granted' ? '✓ Notificações ativas' : 'Receba um toque diário para registrar seu humor')
+        + (notifPermStatus === 'granted' ? '✓ Lembrete ativo — funciona com o portal aberto no navegador' : 'Um toque diário para registrar seu humor (funciona com o portal aberto)')
       + '</div>'
     + '</div>'
   + '</div>';
@@ -1699,11 +1699,13 @@ function pacSalvarMood(idx) {
 
   if (!p.moodNotes) p.moodNotes = [];
   p.moodNotes.push({ date: dataStr, val: val, nota: nota });
-  if (p.moodNotes.length > 30) p.moodNotes = p.moodNotes.slice(-30);
+  if (p.moodNotes.length > 60) p.moodNotes = p.moodNotes.slice(-60);
 
   if (!p.moodHistory) p.moodHistory = [];
   p.moodHistory.push({ value: val, emoji: _pacSelectedMoodEmoji || '😐', date: dataStr });
-  if (p.moodHistory.length > 12) p.moodHistory = p.moodHistory.slice(-12);
+  // Cap 60 (era 12): 12 tornava o "últimos 14 dias" do gráfico aritmeticamente
+  // impossível e inviabiliza histórico longo ("pixels"). 60 registros ≈ 2 meses.
+  if (p.moodHistory.length > 60) p.moodHistory = p.moodHistory.slice(-60);
 
   p.mood = val;
   var _lastMv = _normMoodVal(p.moodHistory[p.moodHistory.length-1]);
