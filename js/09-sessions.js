@@ -119,7 +119,16 @@ function _popularSelectPaciente() {
 
 function trocarPacienteSessao(newIdx) {
   if (newIdx < 0 || newIdx >= patients.length) return;
+  // Sessão ao vivo em andamento: trocar o paciente aqui mandaria nota, presença,
+  // cobrança e resumo do portal para o prontuário ERRADO ao encerrar. Lote 1.
+  if (typeof _lkRoom !== 'undefined' && _lkRoom) {
+    var selRb = document.getElementById('session-patient-select');
+    if (selRb) selRb.value = String(currentSessionPatientIdx); // desfaz visualmente
+    if (typeof showToast === 'function') showToast('⚠ Encerre a sessão atual antes de trocar de paciente.');
+    return;
+  }
   currentSessionPatientIdx = newIdx;
+  currentSessionApptId = null; // agendamento rastreado era do paciente anterior (Lote 1)
   var sp = patients[newIdx];
   // Sincroniza o select visualmente
   var sel = document.getElementById('session-patient-select');
@@ -221,9 +230,13 @@ function _renderSessLocalFallback(p) {
   var temas = typeof buildThemes === 'function' ? buildThemes(p) : [];
   var temasStr = temas.slice(0,3).map(function(t){ return t.label + ' (' + t.freq + '×)'; }).join(', ') || '—';
   var html2 = '<div class="insight-item"><span class="insight-icon">🔁</span><span>Temas: ' + escHTML(temasStr) + '</span></div>';
-  var metasArr = Array.isArray(p.metas) ? p.metas.filter(function(m){ return m && m.texto; }).slice(0,2) : [];
+  // Metas reais vivem em p.portalMetas[].text (p.metas[].texto nunca é escrito —
+  // por isso os objetivos terapêuticos nunca apareciam aqui). Lote 1.
+  var _metasSrc = (Array.isArray(p.portalMetas) && p.portalMetas.length) ? p.portalMetas
+    : (Array.isArray(p.metas) ? p.metas : []);
+  var metasArr = _metasSrc.filter(function(m){ return m && (m.text || m.texto); }).slice(0,2);
   if (metasArr.length) {
-    html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(metasArr.map(function(m){ return m.texto; }).join(' · ').substring(0,100)) + '</span></div>';
+    html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(metasArr.map(function(m){ return m.text || m.texto; }).join(' · ').substring(0,100)) + '</span></div>';
   } else if (typeof p.metas === 'string' && p.metas.trim()) {
     html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(p.metas.substring(0,100)) + '</span></div>';
   }
@@ -672,7 +685,11 @@ function _stripMd(txt) {
 async function _gerarResumoPortalIA(sp, noteText) {
   if (!noteText || !noteText.trim()) return null;
   var plainNote = noteText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 900);
-  var metas = (sp.metas || []).filter(function(m){ return m.texto; }).slice(0, 3).map(function(m){ return m.texto; }).join('; ');
+  // Metas reais = portalMetas[].text (p.metas[].texto nunca é escrito) — sem isto
+  // os objetivos terapêuticos nunca chegavam ao prompt da IA. Lote 1.
+  var metas = ((sp.portalMetas && sp.portalMetas.length ? sp.portalMetas : sp.metas) || [])
+    .filter(function(m){ return m && (m.text || m.texto); }).slice(0, 3)
+    .map(function(m){ return m.text || m.texto; }).join('; ');
   var system = 'Você é um assistente que transforma notas clínicas de psicologia em resumos acessíveis para o próprio paciente ler. Nunca use jargão clínico. Seja caloroso, direto e encorajador. Máximo 3 frases curtas. Responda em português brasileiro.';
   var user = 'Abordagem: ' + (sp.abordagem || 'Psicologia Clínica') + '.'
     + (metas ? ' Objetivos terapêuticos: ' + metas + '.' : '')
@@ -807,9 +824,14 @@ function indexPostSession() {
   // Marca appointment de hoje como 'compareceu' automaticamente
   if (typeof appointments !== 'undefined' && sp) {
     var hojeIso2 = hojeISO();
-    // Usa o apptId rastreado ao iniciar sessão se disponível; evita marcar sessão errada em dias com 2 agendamentos
+    // Usa o apptId rastreado ao iniciar sessão se disponível; evita marcar sessão errada em dias com 2 agendamentos.
+    // Guard: só se o appointment for DESTE paciente — o id é setado no popup do dia
+    // (js/08) e vazava entre sessões, marcando presença no agendamento de outro. Lote 1.
     var apptHoje = (typeof currentSessionApptId !== 'undefined' && currentSessionApptId)
-      ? appointments.find(function(a){ return String(a.id) === String(currentSessionApptId); })
+      ? appointments.find(function(a){
+          return String(a.id) === String(currentSessionApptId)
+            && (a.patientIdx === currentSessionPatientIdx || a.patientName === sp.name);
+        })
       : null;
     if (!apptHoje) {
       apptHoje = appointments.filter(function(a){
@@ -845,25 +867,32 @@ function indexPostSession() {
     _supaSync_patients().catch(function(){});
     currentSessionApptId = null;
   }
-  // ── Auto-cria cobrança pendente com valor configurado no perfil ──
+  // ── Auto-cria cobrança pendente (valor do PACIENTE > valor do perfil) ──
+  // MESMO shape e id NUMÉRICO do caminho da agenda (_criarCobrancaPresenca, js/08):
+  // o id string com hífen quebrava os onclick do financeiro (interpolam sem aspas)
+  // e o objeto sem initials/color/session/billing renderizava "undefined". Lote 1.
   if (sp) {
     try {
       var _profAcc = JSON.parse(localStorage.getItem('tf_account') || '{}');
-      var _valorSessao = parseFloat(_profAcc.valor_sessao) || 0;
+      var _valorSessao = parseFloat(sp.valorSessao || _profAcc.valor_sessao) || 0;
       var _isoCharge = hojeISO();
       // Evita cobrança duplicada se já existe uma para este paciente hoje
       var _jaTemCobranca = charges.some(function(c){ return c.patient === sp.name && c.date === _isoCharge && !c.deleted; });
       if (_valorSessao > 0 && !_jaTemCobranca) {
-        var _hojeCharge = new Date();
-        var _diaCharge = String(_hojeCharge.getDate()).padStart(2,'0') + '/' + String(_hojeCharge.getMonth()+1).padStart(2,'0') + '/' + _hojeCharge.getFullYear();
+        var _diaCharge = fmtDataBR(_isoCharge);
         charges.push({
-          id: Date.now() + '-' + Math.random().toString(36).slice(2,6),
+          id: Date.now(),
           patient: sp.name,
+          initials: sp.initials || sp.name.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase(),
+          color: sp.color || '#4a7c59',
           desc: 'Sessão ' + _diaCharge,
           value: _valorSessao,
           date: _isoCharge,
           status: 'pending',
-          deleted: false
+          deleted: false,
+          billing: 'avulso',
+          session: _diaCharge,
+          method: 'PIX',
         });
         salvarCharges();
         // Recalcula status financeiro do paciente

@@ -911,13 +911,24 @@ function _checkNotifPortal(p) {
 
 // ─── ANAMNESE — TERAPEUTA ─────────────────────────────────────────────
 
+// A aba Anamnese do painel de Pacientes COPIA o form de #tab-anamnese (que segue
+// existindo na página Prontuários legada, oculta) → os ids ana-* ficam DUPLICADOS
+// no DOM. getElementById pega o primeiro (a cópia oculta) → o terapeuta digitava
+// na cópia visível e o Salvar lia a oculta vazia, descartando tudo. Este resolvedor
+// prioriza a instância visível dentro de #patient-detail-tab-content. Lote 1 (T-A2).
+function _anaEl(id) {
+  var painel = document.getElementById('patient-detail-tab-content');
+  if (painel) { var e = painel.querySelector('#' + id); if (e) return e; }
+  return document.getElementById(id);
+}
+
 function _popularAnamnese(idx) {
   if (idx == null || idx === undefined) return;
   var p = (typeof patients !== 'undefined') ? patients[idx] : null;
   var ana = (p && p.anamnese) ? p.anamnese : {};
 
   function _set(id, val) {
-    var el = document.getElementById(id);
+    var el = _anaEl(id);
     if (!el) return;
     if (el.type === 'checkbox') el.checked = !!val;
     else el.value = val || '';
@@ -962,7 +973,7 @@ function salvarAnamnese(idx) {
   var p = pacs[idx]; if (!p) return;
 
   function _get(id) {
-    var el = document.getElementById(id);
+    var el = _anaEl(id); // instância VISÍVEL (ids ana-* duplicados com Prontuários) — T-A2
     if (!el) return '';
     return el.type === 'checkbox' ? el.checked : (el.value || '').trim();
   }

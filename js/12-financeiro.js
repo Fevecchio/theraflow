@@ -133,13 +133,15 @@ function renderCharges(mesFilter) {
         ? `<span class="tag tag-red tag-dot">${_dOpen}d atraso</span>`
         : `<span class="tag tag-amber tag-dot">Pendente${_dOpen?' · '+_dOpen+'d':''}</span>`;
 
+    // ids SEMPRE entre aspas nos onclick: cobranças antigas têm id string com hífen
+    // (interpolado cru virava SyntaxError e o botão morria em silêncio). Lote 1.
     const paidActions = c.status === 'paid'
       ? `<button class="charge-btn" onclick="event.stopPropagation();gerarReciboPDF(this)">📄 Recibo</button>
-         <button class="charge-btn" onclick="event.stopPropagation();undoPayment(${c.id})" style="color:var(--muted);font-size:11px" title="Desfazer pagamento">↩ Desfazer</button>`
+         <button class="charge-btn" onclick="event.stopPropagation();undoPayment('${c.id}')" style="color:var(--muted);font-size:11px" title="Desfazer pagamento">↩ Desfazer</button>`
       : `<button class="charge-btn charge-btn-wpp" onclick="event.stopPropagation();sendWppCharge('${c.id}')">📲 WhatsApp</button>
-         <button class="charge-btn charge-btn-check" onclick="event.stopPropagation();confirmPayment(this,${c.id})">✓ Pago</button>`;
+         <button class="charge-btn charge-btn-check" onclick="event.stopPropagation();confirmPayment(this,'${c.id}')">✓ Pago</button>`;
 
-    const deleteBtn = `<button class="charge-btn-delete" onclick="event.stopPropagation();deleteCharge(${c.id},this)" title="Excluir cobrança">✕</button>`;
+    const deleteBtn = `<button class="charge-btn-delete" onclick="event.stopPropagation();deleteCharge('${c.id}',this)" title="Excluir cobrança">✕</button>`;
 
     const billingBadge = c.billing === 'mensal'
       ? `<span class="plan-badge plan-badge-mensal" style="margin-left:6px">Mensal</span>`
@@ -160,8 +162,8 @@ function renderCharges(mesFilter) {
         <div class="patient-avatar" style="background:${c.color};color:#fff;width:30px;height:30px;font-size:10px">${c.initials}</div>
         <div><span class="patient-name" style="font-size:13.5px">${escHTML(c.patient||'')}</span><span class="patient-meta"> · ${escHTML(sessionLabel)}</span>${billingBadge}${timingLabel}</div>
       </div>
-      <span class="fin-editable" onclick="editField(this,${c.id},'date')" title="Clique para editar">${escHTML(c.date||'')}</span>
-      <span class="fin-editable" onclick="editField(this,${c.id},'value')" title="Clique para editar" style="font-weight:500">R$${escHTML(String(c.value))}</span>
+      <span class="fin-editable" onclick="editField(this,'${c.id}','date')" title="Clique para editar">${escHTML(c.date||'')}</span>
+      <span class="fin-editable" onclick="editField(this,'${c.id}','value')" title="Clique para editar" style="font-weight:500">R$${escHTML(String(c.value))}</span>
       <span style="font-size:12px;display:flex;align-items:center;gap:4px"><span style="color:#00BDAE">◉</span> ${escHTML(c.method||'PIX')}</span>
       ${statusTag}
       <div class="charge-actions">${paidActions}${deleteBtn}</div>
@@ -396,20 +398,23 @@ function renderFinInadimplencia() {
     html += '</div></div>';
     html += '<div style="display:flex;flex-direction:column;gap:5px">';
     if (wpp) {
-      html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppCharge(\'' + escHTML(c.patient||'') + '\',' + (parseFloat(c.value)||0).toFixed(0) + ')">📲 Cobrar</button>';
+      // Passa o ID da cobrança (a assinatura antiga nome+valor virou chargeId no
+      // F4.4 e este chamador ficou para trás — o botão de cobrar quem deve estava
+      // MORTO, com return silencioso). Lote 1.
+      html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppCharge(\'' + c.id + '\')">📲 Cobrar</button>';
     } else if (p && p.email) {
       html += '<a class="charge-btn charge-btn-wpp" href="mailto:' + escHTML(p.email) + '?subject=' + encodeURIComponent('Lembrete de pagamento') + '&body=' + encodeURIComponent('Olá ' + _firstName(c.patient||'') + ',\n\nPassando para lembrar sobre o pagamento de ' + fmtMoedaInt(parseFloat(c.value)||0) + ' referente à sua sessão de psicoterapia.\n\nQualquer dúvida, estou à disposição.') + '" style="text-decoration:none">📧 Email</a>';
     } else {
       html += '<span style="font-size:11px;color:var(--muted);padding:4px 0">Sem contato</span>';
     }
-    html += '<button class="charge-btn charge-btn-check" onclick="marcarPagoInad(' + c.id + ')">✓ Pago</button>';
+    html += '<button class="charge-btn charge-btn-check" onclick="marcarPagoInad(\'' + c.id + '\')">✓ Pago</button>';
     html += '</div></div>';
   });
   el.innerHTML = html;
 }
 
 function confirmPayment(btn, chargeId) {
-  const charge = charges.find(c => c.id === chargeId);
+  const charge = charges.find(c => String(c.id) === String(chargeId));
   if (charge) {
     charge._prevStatus = charge.status;
     charge.status = 'paid';
@@ -430,7 +435,7 @@ function confirmPayment(btn, chargeId) {
 }
 
 function undoPayment(chargeId) {
-  const charge = charges.find(c => c.id === chargeId);
+  const charge = charges.find(c => String(c.id) === String(chargeId));
   if (!charge) return;
   const prevStatus = charge._prevStatus || 'pending';
   const prevDays = charge._prevDaysOpen || 0;
@@ -444,7 +449,7 @@ function undoPayment(chargeId) {
 }
 
 function deleteCharge(chargeId, btn) {
-  const charge = charges.find(c => c.id === chargeId);
+  const charge = charges.find(c => String(c.id) === String(chargeId));
   if (!charge) return;
   const row = btn.closest('.charge-row');
   row.classList.add('charge-row-deleting');
@@ -460,7 +465,7 @@ function deleteCharge(chargeId, btn) {
 }
 
 function editField(el, chargeId, field) {
-  const charge = charges.find(c => c.id === chargeId);
+  const charge = charges.find(c => String(c.id) === String(chargeId));
   if (!charge) return;
   const currentVal = field === 'value' ? charge.value : charge.date;
   const displayVal = field === 'value' ? currentVal : currentVal;
@@ -990,7 +995,7 @@ function _abrirImpressao(html) {
 function gerarReciboPDF(btn) {
   const card = btn.closest('[data-charge-id]') || btn.closest('.card') || btn.parentElement;
   const chargeId = card ? parseInt(card.dataset.chargeId) : null;
-  const c = chargeId != null ? charges.find(ch => ch.id === chargeId) : null;
+  const c = chargeId != null ? charges.find(ch => String(ch.id) === String(chargeId)) : null;
   _abrirImpressao(_reciboDoc([_reciboCorpo(c, _reciboTerapeuta(), new Date().toLocaleDateString('pt-BR'))]));
 }
 

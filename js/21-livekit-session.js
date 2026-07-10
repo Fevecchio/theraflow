@@ -248,6 +248,12 @@ function _lkLoadSdk() {
 }
 
 async function startLiveKitSession() {
+  // Já há sessão ativa: re-iniciar descartaria os segmentos gravados e abriria uma
+  // segunda sala sem desconectar a primeira. Lote 1.
+  if (_lkRoom) {
+    if (typeof showToast === 'function') showToast('⚠ Já existe uma sessão em andamento — encerre-a antes de iniciar outra.');
+    return;
+  }
   let LK;
   try { LK = await _lkLoadSdk(); } catch (e) {
     if (typeof showToast === 'function') showToast('⚠ Não foi possível carregar a biblioteca de vídeo. Verifique a conexão e tente de novo.');

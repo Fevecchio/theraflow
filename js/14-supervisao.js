@@ -38,8 +38,10 @@ function gerarAlertasReais() {
 
   patients.forEach(function(p, i) {
     // ── 1. HUMOR DECLÍNIO (3+ check-ins em queda) ──────────────────────────
+    // _normMoodVal: o portal grava {value, emoji, date} — comparar o objeto cru
+    // fazia este alerta-núcleo NUNCA disparar com check-ins reais. Lote 1.
     if (p.moodHistory && p.moodHistory.length >= 3) {
-      var ult = p.moodHistory.slice(-3);
+      var ult = p.moodHistory.slice(-3).map(function(v){ return _normMoodVal(v); });
       var emQueda = ult[0] > ult[1] && ult[1] > ult[2];
       var baixo   = ult[2] <= 4;
       if (emQueda || baixo) {
@@ -445,7 +447,11 @@ function enviarLembreteAgenda(nomeCompleto) {
 // ── PRONTUÁRIO — ABA PLANO DE TRATAMENTO ─────────────────────────────────────
 function renderPlanoProntuario(idx) {
   var p = patients[idx !== undefined ? idx : currentPatientIdx];
-  var el = document.getElementById('tab-plano-content');
+  // #tab-plano-content é DUPLICADO (aba Plano do painel + página Prontuários legada);
+  // getElementById pegava a cópia oculta → o painel visível travava em "Carregando…".
+  // Prioriza a instância dentro do painel de Pacientes. Lote 1 (T-A2).
+  var _painel = document.getElementById('patient-detail-tab-content');
+  var el = (_painel && _painel.querySelector('#tab-plano-content')) || document.getElementById('tab-plano-content');
   if (!p || !el) return;
 
   var metas = (p.portalMetas || []);
@@ -455,8 +461,8 @@ function renderPlanoProntuario(idx) {
   var cid = p.cid !== '—' ? p.cid : '—';
   var sessoes = p.sessions || 0;
   var moodMedia = (p.moodHistory && p.moodHistory.length)
-    ? (p.moodHistory.reduce(function(a,b){ return a + (b||0); }, 0) / p.moodHistory.length).toFixed(1)
-    : null;
+    ? (p.moodHistory.reduce(function(a,b){ return a + _normMoodVal(b); }, 0) / p.moodHistory.length).toFixed(1)
+    : null; // _normMoodVal: portal grava {value,emoji} — soma crua dava NaN (Lote 1)
   var queixa = p.notes || '';
   var hoje = new Date().toLocaleDateString('pt-BR');
 
@@ -544,7 +550,7 @@ function exportarListaPacientesCSV() {
   const cabecalho = ['Nome','Status','Abordagem','CID','Cidade','Sessões','Progresso(%)','Humor Médio','Próxima Sessão','Financeiro'];
   const linhas = patients.map(function(p) {
     const moodMedia = (p.moodHistory && p.moodHistory.length)
-      ? (p.moodHistory.reduce(function(a,b){ return a + (b||0); }, 0) / p.moodHistory.length).toFixed(1)
+      ? (p.moodHistory.reduce(function(a,b){ return a + _normMoodVal(b); }, 0) / p.moodHistory.length).toFixed(1)
       : '—';
     return [
       '"' + (p.name || '').replace(/"/g,'""') + '"',
@@ -658,8 +664,8 @@ function exportarRelatorioEvolucao() {
   var crpT  = acc.crp || '';
   var hoje  = new Date().toLocaleDateString('pt-BR');
 
-  // Sparkline SVG
-  var mh = (p.moodHistory||[]).filter(function(v){return v!=null;});
+  // Sparkline SVG (_normMoodVal: entradas do portal são {value,emoji} — Lote 1)
+  var mh = (p.moodHistory||[]).filter(function(v){return v!=null;}).map(function(v){ return _normMoodVal(v); });
   var sparkSvg = '';
   if (mh.length >= 2) {
     var W=360, H=70, pad=8;
@@ -711,7 +717,11 @@ function exportarRelatorioEvolucao() {
 }
 
 function exportarProntuario() {
-  const p = patients[currentPatientIdx] || patients[0];
+  // Painel de Pacientes (currentPatientIdx) e página Prontuários legada
+  // (_currentProntuarioIdx) divergem; usa o do painel visível quando aberto. T-A2.
+  var _pIdx = (document.getElementById('page-pacientes') && document.getElementById('page-pacientes').classList.contains('active'))
+    ? currentPatientIdx : (typeof _currentProntuarioIdx !== 'undefined' ? _currentProntuarioIdx : currentPatientIdx);
+  const p = patients[_pIdx] || patients[currentPatientIdx] || patients[0];
   if (!p) { showToast('Selecione um paciente primeiro.'); return; }
 
   const terapeuta = tfUserData || {};
@@ -1031,7 +1041,8 @@ function selecionarProntuario(i, el) {
     var panelId = 'prontuario-evolucao-panel';
     var existing = document.getElementById(panelId);
     if (existing) existing.remove();
-    var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
+    var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; })
+      .map(function(v){ return _normMoodVal(v); }); // portal grava {value,emoji} — Lote 1
     var totalSessoes = p.sessions || 0;
     var prog = p.progress || 0;
     // Calcula taxa de presença
@@ -1296,15 +1307,17 @@ function atualizarMetricasSupervisao() {
   var _alertasReaisIds = new Set(gerarAlertasReais().filter(function(a){ return a.idx !== null; }).map(function(a){ return a.idx; }));
   const comAlerta = _alertasReaisIds.size;
   // comAtencao: pacientes com humor baixo (<5) ou em queda ou com falta recente
+  // (_normMoodVal: entradas do portal são {value,emoji} — comparação crua nunca batia. Lote 1)
   const comAtencao = patients.filter(function(p, i) {
-    var moodBaixo = p.moodHistory && p.moodHistory.length > 0 && p.moodHistory[p.moodHistory.length-1] < 5;
+    var moodBaixo = p.moodHistory && p.moodHistory.length > 0 && _normMoodVal(p.moodHistory[p.moodHistory.length-1]) < 5;
     var emQueda   = p.moodTrend === 'down';
     return moodBaixo || emQueda || p.status === 'Atenção';
   }).length;
   // emEvolucao: pacientes com >= 3 sessões e humor estável ou crescente
   const emEvolucao = patients.filter(function(p) {
     if ((p.sessions||0) < 3) return false;
-    var mh = (p.moodHistory||[]).filter(function(v){ return v !== null && v !== undefined; });
+    var mh = (p.moodHistory||[]).filter(function(v){ return v !== null && v !== undefined; })
+      .map(function(v){ return _normMoodVal(v); });
     if (mh.length >= 2) {
       var trend = mh[mh.length-1] - mh[0];
       return trend >= 0;

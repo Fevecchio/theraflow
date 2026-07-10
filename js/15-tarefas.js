@@ -17,8 +17,16 @@ function carregarTarefas() {
       return t;
     });
   } catch(e) { tasks = []; }
-  // demo tasks se vazio
-  if (tasks.length === 0) {
+  // Limpeza única: contas reais foram contaminadas pelas tarefas demo (semeadas sem
+  // guard e sincronizadas ao Supabase). Match estrito por id+título exatos. Lote 1.
+  if (!window._tfDemo && tasks.length) {
+    var _demoTitles = { 1:'Enviar recibo de março', 2:'Ligar — faltou à sessão', 3:'Preparar material TCC para amanhã', 4:'Renovar CRP', 5:'Agendar supervisão mensal' };
+    var _clean = tasks.filter(function(t){ return !(t && _demoTitles[t.id] === t.title); });
+    if (_clean.length !== tasks.length) { tasks = _clean; salvarTarefas(); }
+  }
+  // demo tasks se vazio — SÓ EM MODO DEMO: conta real recém-criada (ou que apagou
+  // tudo) via 5 tarefas falsas ("Camila Rocha"…) que ainda subiam ao Supabase. Lote 1.
+  if (tasks.length === 0 && window._tfDemo) {
     var hoje = new Date();
     var fmt = localDateISO;
     var ontem = new Date(hoje); ontem.setDate(hoje.getDate()-1);
@@ -30,7 +38,7 @@ function carregarTarefas() {
       { id: 4, title: 'Renovar CRP', patientName: '', dueDate: fmt(amanha), status: 'aberta', createdAt: fmt(hoje) },
       { id: 5, title: 'Agendar supervisão mensal', patientName: '', dueDate: '', status: 'aberta', createdAt: fmt(hoje) }
     ];
-    salvarTarefas();
+    // Demo NÃO persiste (salvarTarefas sobe ao Supabase) — vive só em memória.
   }
 }
 

@@ -575,10 +575,25 @@ function _calcDaysOpen(c) {
 }
 
 function carregarCharges() {
+  // Demo charges SÓ em modo demo: conta real recém-criada via ~R$2.690 de cobranças
+  // falsas ("Camila Rocha"…) no Financeiro/stats/CSV — e o 1º salvarCharges as
+  // persistia. Limpeza única remove as que já contaminaram contas reais (match
+  // estrito id 1-8 + nome demo + valor). Lote 1.
   try {
     const raw = localStorage.getItem('tf_charges');
-    return raw ? JSON.parse(raw) : _getDemoCharges();
-  } catch(e) { return _getDemoCharges(); }
+    if (!raw) return window._tfDemo ? _getDemoCharges() : [];
+    let list = JSON.parse(raw);
+    if (!window._tfDemo && Array.isArray(list) && list.length) {
+      const _demoKey = {};
+      _getDemoCharges().forEach(function(d){ _demoKey[d.id + '|' + d.patient + '|' + d.value] = true; });
+      const clean = list.filter(function(c){ return !(c && _demoKey[c.id + '|' + c.patient + '|' + c.value]); });
+      if (clean.length !== list.length) {
+        list = clean;
+        try { localStorage.setItem('tf_charges', JSON.stringify(list)); } catch(_) {}
+      }
+    }
+    return list;
+  } catch(e) { return window._tfDemo ? _getDemoCharges() : []; }
 }
 
 function salvarCharges() {
