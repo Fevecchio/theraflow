@@ -110,8 +110,10 @@ as $fn$
     ) t
     group by t.key
   ) m
+  -- 90 dias em ms como NUMERIC: `90 * 86400000` em int4 estoura (integer out of
+  -- range) e derrubava a RPC inteira na 1ª exclusão real (achado no E2E 10/07).
   where m.maxts is not null
-    and m.maxts > extract(epoch from now()) * 1000 - 90 * 86400000
+    and m.maxts > extract(epoch from now()) * 1000 - (90::numeric * 86400000)
 $fn$;
 
 -- União do objeto _tombs inteiro ({diary:{...}, exercises:{...}, ...}).
