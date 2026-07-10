@@ -307,9 +307,11 @@ function endWherebySession() {
 }
 
 function showPostSessionFlow() {
-  // ⚠️ TEATRO DEMO-ONLY: este modal exibe transcrição/análise HARDCODED ("confiança 94%",
-  // "CRENÇA NUCLEAR DETECTADA"). Só deve rodar no modo demo. Fora da demo, o encerramento
-  // vai para endLiveKitSession (fluxo real). Gate defensivo: (Auditoria 07/07 — crítico.)
+  // ⚠️ TEATRO DEMO-ONLY: este modal exibe transcrição/análise HARDCODED ("CRENÇA
+  // NUCLEAR DETECTADA") com selo "Exemplo ilustrativo". Só deve rodar no modo demo.
+  // Fora da demo, o encerramento vai para endLiveKitSession (fluxo real). Não
+  // inventar capacidades que o produto não tem (score de confiança, stack antiga
+  // Whereby/Whisper) — F4.6 item 12. Gate defensivo: (Auditoria 07/07 — crítico.)
   if (!window._tfDemo) { if (typeof endLiveKitSession === 'function') return endLiveKitSession(); return; }
   // Remove modal anterior se existir
   const existing = document.getElementById('modal-post-session');
@@ -338,7 +340,7 @@ function showPostSessionFlow() {
   modal.innerHTML = `
     <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
 
-      <!-- STEP 1: Whereby finalizando + Whisper processando -->
+      <!-- STEP 1: gravação finalizando + transcrição processando -->
       <div id="post-step-1" style="padding:36px 40px;text-align:center">
 
         <!-- Ícone animado -->
@@ -347,14 +349,14 @@ function showPostSessionFlow() {
           <div id="whisper-spin" style="position:absolute;inset:-4px;border-radius:50%;border:3px solid transparent;border-top-color:#4a7c59;animation:spin 1s linear infinite"></div>
         </div>
 
-        <div style="font-size:17px;font-weight:600;color:#1a1a1a;margin-bottom:6px" id="whisper-title">Whereby finalizando gravação…</div>
+        <div style="font-size:17px;font-weight:600;color:#1a1a1a;margin-bottom:6px" id="whisper-title">Finalizando gravação…</div>
         <div style="font-size:13px;color:#888;margin-bottom:6px" id="whisper-subtitle">Isso leva cerca de 1–2 minutos</div>
 
         <!-- Etapas visuais -->
         <div style="display:flex;flex-direction:column;gap:6px;text-align:left;margin:20px 0 22px">
           <div class="ps-step" id="ps-step-a" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#f8f8f8;font-size:13px;color:#aaa">
             <span id="ps-icon-a" style="font-size:15px">⏳</span>
-            <span>Whereby encerrando e comprimindo vídeo</span>
+            <span>Encerrando a chamada e processando o áudio</span>
           </div>
           <div class="ps-step" id="ps-step-b" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#f8f8f8;font-size:13px;color:#aaa">
             <span id="ps-icon-b" style="font-size:15px">⏳</span>
@@ -362,7 +364,7 @@ function showPostSessionFlow() {
           </div>
           <div class="ps-step" id="ps-step-c" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#f8f8f8;font-size:13px;color:#aaa">
             <span id="ps-icon-c" style="font-size:15px">⏳</span>
-            <span>Whisper transcrevendo ambos os lados (pt-BR)</span>
+            <span>Transcrevendo ambos os lados (pt-BR)</span>
           </div>
           <div class="ps-step" id="ps-step-d" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#f8f8f8;font-size:13px;color:#aaa">
             <span id="ps-icon-d" style="font-size:15px">⏳</span>
@@ -380,8 +382,8 @@ function showPostSessionFlow() {
         <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
           <div style="width:36px;height:36px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✅</div>
           <div style="flex:1">
-            <div style="font-weight:600;font-size:15px;color:#1a1a1a">Transcrição pronta · ${_durStr}</div>
-            <div style="font-size:12px;color:#888;margin-top:2px">Whereby + Whisper · ambos os lados · confiança 94% · revisão recomendada</div>
+            <div style="font-weight:600;font-size:15px;color:#1a1a1a">Transcrição pronta · ${_durStr} <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#faf0ff;border:1px solid #d8b4fe;border-radius:5px;padding:2px 7px;vertical-align:middle;margin-left:6px;white-space:nowrap">✦ Exemplo ilustrativo</span></div>
+            <div style="font-size:12px;color:#888;margin-top:2px">Transcrição da sessão · ambos os lados · revisão recomendada</div>
           </div>
           <button onclick="baixarTranscricao()" title="Baixar transcrição" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--muted);white-space:nowrap">📥 .txt</button>
         </div>
@@ -485,7 +487,7 @@ function showPostSessionFlow() {
 
   document.body.appendChild(modal);
 
-  // Anima etapas do fluxo Whereby → Whisper → Claude
+  // Anima etapas do fluxo gravação → transcrição → nota
   function _setStep(id, done) {
     const el = document.getElementById('ps-step-' + id);
     const ic = document.getElementById('ps-icon-' + id);
@@ -499,11 +501,11 @@ function showPostSessionFlow() {
     }
   }
 
-  // Etapa A: Whereby comprimindo
+  // Etapa A: processando gravação
   setTimeout(() => {
     _setStep('a', false);
     const t = document.getElementById('whisper-title');
-    if (t) t.textContent = 'Whereby comprimindo gravação…';
+    if (t) t.textContent = 'Processando gravação…';
   }, 300);
   setTimeout(() => { _setStep('a', true); _setStep('b', false); }, 1800);
 
@@ -511,15 +513,15 @@ function showPostSessionFlow() {
   setTimeout(() => {
     const t = document.getElementById('whisper-title');
     const s = document.getElementById('whisper-subtitle');
-    if (t) t.textContent = 'Gravação recebida · enviando para Whisper…';
+    if (t) t.textContent = 'Gravação recebida · enviando para transcrição…';
     if (s) s.textContent = 'Aguarde ~2 minutos para sessões longas';
   }, 2000);
   setTimeout(() => { _setStep('b', true); _setStep('c', false); }, 3400);
 
-  // Etapa C: Whisper transcrevendo
+  // Etapa C: transcrevendo
   setTimeout(() => {
     const t = document.getElementById('whisper-title');
-    if (t) t.textContent = 'Whisper transcrevendo (pt-BR)…';
+    if (t) t.textContent = 'Transcrevendo (pt-BR)…';
   }, 3600);
   setTimeout(() => { _setStep('c', true); _setStep('d', false); }, 5200);
 
