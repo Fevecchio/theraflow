@@ -68,6 +68,20 @@ async function readRawBody(req) {
   return Buffer.concat(chunks);
 }
 
+// Gate de plano (F14): trial esgotado não consome mais transcrição (Groq).
+async function planBlocksAI(userId) {
+  try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const r = await fetch(`${SUPA_URL}/rest/v1/users?id=eq.${userId}&select=plano,sessoes_usadas`, {
+      headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` },
+    });
+    if (!r.ok) return false;
+    const rows = await r.json();
+    const u = Array.isArray(rows) && rows[0];
+    return !!u && u.plano === 'trial' && (u.sessoes_usadas || 0) >= 20;
+  } catch (_) { return false; }
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   setCors(res, origin);
@@ -77,6 +91,9 @@ export default async function handler(req, res) {
 
   const user = await verifySupabaseJWT(req);
   if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
+  if (await planBlocksAI(user.id)) {
+    return res.status(402).json({ error: 'Trial esgotado. Assine o Pro para continuar usando a IA.' });
+  }
 
   // Rate-limit: transcrição é cara (Groq). 45/min/usuário: com a segmentação (~4min
   // por segmento, 2 faixas), uma sessão de 80min gera ~40 segmentos processados em

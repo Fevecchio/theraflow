@@ -32,6 +32,25 @@ async function assinarPro(btn) {
   }
 }
 
+/* Abre o Stripe Billing Portal (gerenciar/cancelar assinatura). Decisão #5 (B-A4). */
+async function gerenciarAssinatura(btn) {
+  try {
+    if (btn) { btn.disabled = true; var _t = btn.textContent; btn.textContent = 'Abrindo…'; }
+    const res = await fetchWithTimeout('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
+      body: JSON.stringify({ portal: true }),
+    }, 20000);
+    const data = await res.json();
+    if (data.url) { window.location.href = data.url; return; }
+    showToast(data.error || 'Não foi possível abrir o gerenciamento da assinatura.');
+    if (btn) { btn.disabled = false; btn.textContent = _t; }
+  } catch(e) {
+    showToast('Erro ao abrir o gerenciamento. Tente novamente.');
+    if (btn) { btn.disabled = false; }
+  }
+}
+
 /* ── SUPABASE CLIENT ── */
 const _SUPA_URL = 'https://hkryvbyoviejdjlzfehm.supabase.co';
 const _SUPA_KEY = 'sb_publishable_ovqMsOm88TvulTD4eYTp0w_gCXoFDSl';

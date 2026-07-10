@@ -61,37 +61,54 @@ async function supaGet(path) {
   return res.json();
 }
 
+async function _patchUser(userId, body) {
+  await fetch(`${SUPA_URL}/rest/v1/users?id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+// Aplica o crédito de R$89 ao indicador SE elegível. Recompensa ÚNICA (decisão do
+// usuário — não acumulativa): só credita quando o indicador JÁ tem stripe_customer_id
+// (senão o balance não teria onde ser aplicado) e ainda não foi recompensado. A flag
+// referral_rewarded só vira true APÓS o crédito — antes ela era marcada primeiro e,
+// se o indicador ainda estivesse em trial (sem customer), a recompensa era QUEIMADA
+// sem crédito nenhum. Idempotente por referral_rewarded.
+async function applyReferralCreditIfEligible(stripe, referrerId) {
+  try {
+    const referrer = await supaGet(`users?id=eq.${referrerId}&select=referral_rewarded,stripe_customer_id,referral_count`);
+    const r = referrer?.[0];
+    if (!r || r.referral_rewarded) return;
+    if (!(r.referral_count > 0)) return;      // nenhum indicado assinou ainda
+    if (!r.stripe_customer_id) return;        // sem customer → deixa PENDENTE (aplica quando ele assinar)
+    await stripe.customers.createBalanceTransaction(r.stripe_customer_id, {
+      amount: -8900,
+      currency: 'brl',
+      description: 'Bônus de indicação — 1 mês grátis TheraFlow Pro',
+    });
+    await _patchUser(referrerId, { referral_rewarded: true });
+    console.log(`[webhook] referral reward APLICADO: referrerId=${referrerId}`);
+  } catch (err) {
+    console.warn('[webhook] applyReferralCredit error:', err.message);
+  }
+}
+
+// Chamado quando um usuário INDICADO assina: conta a indicação e tenta creditar.
 async function supaReferralReward(stripe, newUserId) {
   try {
     const rows = await supaGet(`users?id=eq.${newUserId}&select=referred_by`);
     const referrerId = rows?.[0]?.referred_by;
     if (!referrerId) return;
-
-    const referrer = await supaGet(`users?id=eq.${referrerId}&select=referral_rewarded,stripe_customer_id,referral_count`);
-    const r = referrer?.[0];
-    if (!r || r.referral_rewarded) return;
-
-    // Marca recompensado PRIMEIRO (idempotência: evita duplo crédito em webhook replay)
-    await fetch(`${SUPA_URL}/rest/v1/users?id=eq.${referrerId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Prefer': 'return=minimal',
-      },
-      body: JSON.stringify({ referral_rewarded: true, referral_count: (r.referral_count || 0) + 1 }),
-    });
-
-    // Aplica crédito de R$89 no Stripe após garantir flag no banco
-    if (r.stripe_customer_id) {
-      await stripe.customers.createBalanceTransaction(r.stripe_customer_id, {
-        amount: -8900,
-        currency: 'brl',
-        description: 'Bônus de indicação — 1 mês grátis TheraFlow Pro',
-      });
-    }
-    console.log(`[webhook] referral reward: referrerId=${referrerId} newUser=${newUserId}`);
+    const referrer = await supaGet(`users?id=eq.${referrerId}&select=referral_count`);
+    const cnt = referrer?.[0]?.referral_count || 0;
+    await _patchUser(referrerId, { referral_count: cnt + 1 });
+    await applyReferralCreditIfEligible(stripe, referrerId);
   } catch (err) {
     console.warn('[webhook] referral reward error:', err.message);
   }
@@ -127,7 +144,11 @@ export default async function handler(req, res) {
       if (supaId) {
         await supaUpdatePlan(supaId, 'pro', session.customer);
         console.log(`[webhook] plano=pro para supaId=${supaId}`);
+        // Este usuário assinou: (a) se ele foi INDICADO, conta+credita o indicador;
+        // (b) se ELE indicou alguém e a recompensa estava PENDENTE (não tinha customer
+        // até agora), aplica agora que ganhou stripe_customer_id. Decisão #6.
         await supaReferralReward(stripe, supaId);
+        await applyReferralCreditIfEligible(stripe, supaId);
       }
     }
 

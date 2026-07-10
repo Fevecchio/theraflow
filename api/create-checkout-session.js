@@ -20,6 +20,7 @@ const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
   'https://theraflow.com.br',
   'https://www.theraflow.com.br',
+  'https://app.theraflow.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];
@@ -55,6 +56,25 @@ export default async function handler(req, res) {
   if (!email) return res.status(400).json({ error: 'Sua conta está sem email. Refaça o login e tente de novo.' });
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const APP = process.env.APP_URL || 'https://theraflow-one.vercel.app';
+
+  // ── B-A4: Billing Portal (gerenciar/cancelar assinatura pelo app) ──
+  // Sem função nova (12/12 no Hobby): branch {portal:true} no mesmo endpoint.
+  if (req.body && req.body.portal) {
+    try {
+      const existing = await stripe.customers.list({ email, limit: 1 });
+      const cid = existing.data[0]?.id;
+      if (!cid) return res.status(404).json({ error: 'Nenhuma assinatura encontrada para esta conta.' });
+      const portal = await stripe.billingPortal.sessions.create({
+        customer: cid,
+        return_url: APP + '/app',
+      });
+      return res.status(200).json({ url: portal.url });
+    } catch (err) {
+      console.error('[billing-portal] Stripe error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  }
 
   try {
     // Reutiliza customer existente para evitar duplicatas no Stripe
@@ -62,6 +82,14 @@ export default async function handler(req, res) {
     try {
       const existing = await stripe.customers.list({ email, limit: 1 });
       customerId = existing.data[0]?.id;
+      // B-M1: se já tem assinatura ativa, não cria outro checkout (evita pagar 2×).
+      if (customerId) {
+        const subs = await stripe.subscriptions.list({ customer: customerId, status: 'active', limit: 1 });
+        if (subs.data.length) {
+          const portal = await stripe.billingPortal.sessions.create({ customer: customerId, return_url: APP + '/app' });
+          return res.status(200).json({ url: portal.url, alreadyPro: true });
+        }
+      }
     } catch(_) { /* sem customer existente — cria novo */ }
 
     const session = await stripe.checkout.sessions.create({

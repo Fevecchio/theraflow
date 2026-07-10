@@ -145,7 +145,9 @@ function atualizarTrialUI(count) {
   // Plano Pro: substitui barra de trial por badge verde
   if (_tfPlanPro) {
     if (bar) {
-      bar.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px">✦</span><div><div style="font-size:12px;font-weight:700;color:#7fcf97">Plano Pro</div><div style="font-size:10.5px;color:#5a9a6d;margin-top:1px">Sessões ilimitadas</div></div></div>';
+      bar.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px">✦</span><div><div style="font-size:12px;font-weight:700;color:#7fcf97">Plano Pro</div><div style="font-size:10.5px;color:#5a9a6d;margin-top:1px">Sessões ilimitadas</div></div></div>'
+        // B-A4 (decisão #5): gerenciar/cancelar assinatura pelo app (Stripe Billing Portal)
+        + '<button onclick="gerenciarAssinatura(this)" style="margin-top:8px;width:100%;padding:6px;background:transparent;color:#7fcf97;border:1px solid rgba(127,207,151,.4);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Gerenciar assinatura</button>';
       bar.style.background = 'rgba(74,124,89,.2)';
       bar.style.borderColor = 'rgba(74,124,89,.4)';
     }
