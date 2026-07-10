@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "theraflow",
   "buildCommand": null,
   "outputDirectory": ".",
   "rewrites": [
