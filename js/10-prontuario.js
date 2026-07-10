@@ -44,6 +44,7 @@ function excluirMaterial(pidx, mid) {
   var p = patients[pidx];
   if (!p || !p.materials) return;
   p.materials = p.materials.filter(function(m){ return m.id !== mid; });
+  _tfTombstone(p, 'materials', mid); // P10: cópia velha de outro device não ressuscita
   salvarPacientes();
   renderMateriaisProntuario(pidx);
   showToast('Material removido.');

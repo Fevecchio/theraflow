@@ -541,7 +541,9 @@ async function _supaPatientSync() {
     metas: p.metas || [],
     portalMetas: p.portalMetas || [],
     exercises: p.exercises || [],
-    materials: p.materials || [],
+    // P10: materials SAIU do patch — o paciente nunca o escreve (só marca leitura
+    // em readMaterials); mandá-lo devolvia o array stale e apagava material novo
+    // do terapeuta. A RPC 025 também o tirou da allowlist.
     mood: (p.mood != null ? p.mood : null),
     _moodLastDate: p._moodLastDate || null,
     checkInStreak: p.checkInStreak || 0,
@@ -1280,6 +1282,7 @@ function _excluirMaterialFicha(pidx, mid) {
   var p = patients[pidx];
   if (!p || !p.materials) return;
   p.materials = p.materials.filter(function(m){ return m.id !== mid; });
+  _tfTombstone(p, 'materials', mid); // P10: cópia velha de outro device não ressuscita
   salvarPacientes();
   renderPatientFicha(pidx);
   showToast('Material removido.');

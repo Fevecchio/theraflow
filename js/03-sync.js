@@ -279,6 +279,9 @@ async function _supaSync_patients(opts) {
           planoEvolucao: p.planoEvolucao || null,
           planoEvolucaoDate: p.planoEvolucaoDate || null,
           nascimento: p.nascimento || null,
+          // P10: tombstones de exclusão (exercises/portalMetas/materials) — a RPC
+          // 025 os une aos do servidor e o merge por elemento respeita.
+          _tombs: p._tombs || {},
         },
       }));
       // Caminho preferido: RPC merge-aware (migration 016) — UPDATE vira MERGE do

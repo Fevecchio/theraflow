@@ -193,3 +193,16 @@ async function _logConsent(tipo, opts) {
   }
 }
 
+
+
+/* ── P10: tombstone de exclusão ──
+ * Excluir elemento de array de escrita dupla (exercises/portalMetas/materials)
+ * grava {id: quando} em p._tombs[array] — o merge por elemento no servidor
+ * (migration 025) usa isso para a cópia velha de outro device não ressuscitar
+ * o item. O _tombs viaja no metadata do sync do terapeuta (js/03). */
+function _tfTombstone(p, arrKey, id) {
+  if (!p || id == null) return;
+  p._tombs = p._tombs || {};
+  p._tombs[arrKey] = p._tombs[arrKey] || {};
+  p._tombs[arrKey][String(id)] = Date.now();
+}

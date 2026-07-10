@@ -1457,6 +1457,7 @@ function salvarRespostaDiario(pidx, entryIdx) {
   var input = document.getElementById('diary-reply-' + entryIdx);
   if (!input || !input.value.trim()) { showToast('⚠ Escreva a resposta primeiro.'); return; }
   p.diary[entryIdx].reply = input.value.trim();
+  p.diary[entryIdx]._up = Date.now(); // P10: a resposta é edição do elemento — vence a cópia stale do portal
   salvarPacientes();
   renderDiarioLivre(p);
   showToast('✦ Resposta enviada! O paciente verá na próxima vez que abrir o portal.');

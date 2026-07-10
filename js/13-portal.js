@@ -68,7 +68,7 @@ function adicionarMetaPortal() {
   const p = patients[currentPortalPatientIdx] || patients[0];
   if (!p) return;
   if (!p.portalMetas) p.portalMetas = [];
-  p.portalMetas.push({ id: Date.now(), text: texto.trim(), done: false });
+  p.portalMetas.push({ id: Date.now(), text: texto.trim(), done: false, _up: Date.now() });
   salvarPacientes();
   renderMetasPortal();
   showToast('Meta adicionada!');
@@ -78,7 +78,7 @@ function toggleMetaPortal(id, cb) {
   const p = patients[currentPortalPatientIdx] || patients[0];
   if (!p?.portalMetas) return;
   const m = p.portalMetas.find(function(x){ return x.id === id; });
-  if (m) { m.done = cb.checked; salvarPacientes(); }
+  if (m) { m.done = cb.checked; m._up = Date.now(); salvarPacientes(); }
   renderMetasPortal();
 }
 
@@ -86,6 +86,7 @@ function excluirMetaPortal(id) {
   const p = patients[currentPortalPatientIdx] || patients[0];
   if (!p?.portalMetas) return;
   p.portalMetas = p.portalMetas.filter(function(x){ return x.id !== id; });
+  _tfTombstone(p, 'portalMetas', id); // P10: cópia velha de outro device não ressuscita
   salvarPacientes();
   renderMetasPortal();
   showToast('Meta removida.');
@@ -156,7 +157,7 @@ function toggleExercise(exerciseId) {
   const p = patients[currentPortalPatientIdx] || patients[0];
   if (!p?.exercises) return;
   const ex = p.exercises.find(e => e.id === exerciseId);
-  if (ex) { ex.done = !ex.done; salvarPacientes(); }
+  if (ex) { ex.done = !ex.done; ex._up = Date.now(); salvarPacientes(); }
   renderExercises();
 }
 
@@ -166,6 +167,7 @@ function incrementarExercicio(exerciseId) {
   const ex = p.exercises.find(e => e.id === exerciseId);
   if (!ex) return;
   ex.concluidos = Math.min((ex.concluidos || 0) + 1, ex.total || 1);
+  ex._up = Date.now();
   if (ex.concluidos >= (ex.total || 1)) { ex.done = true; showToast('🎉 Exercício concluído! Parabéns, ' + (p.name||'').split(' ')[0] + '!'); }
   else showToast('✓ Realização registrada — ' + ex.concluidos + '/' + ex.total);
   salvarPacientes();
@@ -208,10 +210,10 @@ function salvarExercicio() {
   if (!p.exercises) p.exercises = [];
   if (_editingExerciseId) {
     const ex = p.exercises.find(e => e.id === _editingExerciseId);
-    if (ex) { ex.title = titulo; ex.desc = desc; ex.tag = tag; ex.prazo = prazo; ex.total = total; }
+    if (ex) { ex.title = titulo; ex.desc = desc; ex.tag = tag; ex.prazo = prazo; ex.total = total; ex._up = Date.now(); }
     showToast('✓ Exercício atualizado no portal.');
   } else {
-    p.exercises.push({ id: Date.now(), title: titulo, desc: desc, tag: tag, done: false, prazo: prazo, total: total, concluidos: 0 });
+    p.exercises.push({ id: Date.now(), title: titulo, desc: desc, tag: tag, done: false, prazo: prazo, total: total, concluidos: 0, _up: Date.now() });
     showToast('✓ Exercício adicionado ao portal de ' + _firstName(p.name) + '.');
   }
   salvarPacientes();
@@ -224,6 +226,7 @@ function excluirExercicio(exerciseId) {
   const p = patients[currentPortalPatientIdx] || patients[0];
   if (!p?.exercises) return;
   p.exercises = p.exercises.filter(e => e.id !== exerciseId);
+  _tfTombstone(p, 'exercises', exerciseId); // P10: cópia velha de outro device não ressuscita
   salvarPacientes();
   renderExercises();
   showToast('Exercício removido.');
@@ -427,7 +430,8 @@ function saveDiaryLivre() {
   var pPortal = patients[currentPortalPatientIdx];
   if (pPortal) {
     if (!pPortal.diary) pPortal.diary = [];
-    pPortal.diary.unshift({ tipo: 'livre', texto: text, date: dateStr, hora: horaStr, ts: Date.now() });
+    var _dts = Date.now();
+    pPortal.diary.unshift({ tipo: 'livre', texto: text, date: dateStr, hora: horaStr, ts: _dts, _up: _dts });
     salvarPacientes();
     if (typeof renderDiarioLivre === 'function') renderDiarioLivre(pPortal);
   }
@@ -1160,6 +1164,7 @@ function pacIncrementarEx(pidx, exId) {
   var ex = p.exercises.find(function(e){ return e.id === exId; });
   if (!ex) return;
   ex.concluidos = Math.min((ex.concluidos||0)+1, ex.total||1);
+  ex._up = Date.now();
   if (ex.concluidos >= (ex.total||1)) { ex.done = true; showToast('🎉 Exercício concluído! Parabéns!'); }
   else showToast('✓ Realização registrada — ' + ex.concluidos + '/' + (ex.total||1));
   if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
@@ -1718,7 +1723,8 @@ function pacSalvarNotaRapida(idx) {
   var dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   var dataStr = dias[hoje.getDay()]+', '+String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
   var horaStr = String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0');
-  p.diary.unshift({ tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: Date.now() });
+  var _nts = Date.now();
+  p.diary.unshift({ tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: _nts, _up: _nts });
   if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.diary = p.diary;
   if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].diary = p.diary;
@@ -1733,7 +1739,7 @@ function pacToggleEx(pidx, exId, patientName) {
   var p = res.p, pacs = res.pacs, _idx = res.idx;
   if (!p.exercises) return;
   var ex = p.exercises.find(function(e){ return e.id === exId; });
-  if (ex) ex.done = !ex.done;
+  if (ex) { ex.done = !ex.done; ex._up = Date.now(); }
   if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].exercises = p.exercises;
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.exercises = p.exercises;
@@ -1747,7 +1753,7 @@ function pacToggleMeta(pidx, metaId, cb, patientName) {
   var p = res.p, pacs = res.pacs, _idx = res.idx;
   if (!p.portalMetas) return;
   var m = p.portalMetas.find(function(x){ return x.id === metaId; });
-  if (m) m.done = cb.checked;
+  if (m) { m.done = cb.checked; m._up = Date.now(); }
   if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].portalMetas = p.portalMetas;
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.portalMetas = p.portalMetas;
@@ -1768,10 +1774,11 @@ function pacSalvarDiario(tipo, idx) {
 
   var entrada = null;
 
+  var _ets = Date.now();
   if (tipo === 'livre') {
     var texto = (document.getElementById('pac-diary-livre-text')?.value || '').trim();
     if (!texto) return;
-    entrada = { tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: Date.now() };
+    entrada = { tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: _ets, _up: _ets };
     document.getElementById('pac-diary-livre-text').value = '';
   } else {
     var campos = [];
@@ -1780,7 +1787,7 @@ function pacSalvarDiario(tipo, idx) {
       if (el && el.value.trim()) campos.push(el.value.trim());
     });
     if (campos.length === 0) return;
-    entrada = { tipo: 'esp', campos: campos, date: dataStr, hora: horaStr, ts: Date.now() };
+    entrada = { tipo: 'esp', campos: campos, date: dataStr, hora: horaStr, ts: _ets, _up: _ets };
     [1,2,3,4].forEach(function(n){ var el = document.getElementById('esp-campo-'+n); if(el) el.value=''; });
   }
 

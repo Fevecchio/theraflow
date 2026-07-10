@@ -1251,7 +1251,7 @@ function salvarMaterial() {
   if (!p.materials) p.materials = [];
   var hoje = new Date();
   var dateStr = String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
-  p.materials.unshift({ id: Date.now(), tipo: tipo, titulo: titulo, url: url, desc: desc, date: dateStr });
+  p.materials.unshift({ id: Date.now(), tipo: tipo, titulo: titulo, url: url, desc: desc, date: dateStr, _up: Date.now() });
   salvarPacientes();
   closeModal('modal-material');
   renderMateriaisProntuario(_materialPatientIdx);
