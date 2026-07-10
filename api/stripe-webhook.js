@@ -144,6 +144,24 @@ export default async function handler(req, res) {
       if (supaId) {
         await supaUpdatePlan(supaId, 'pro', session.customer);
         console.log(`[webhook] plano=pro para supaId=${supaId}`);
+        // Plano Fundador (migration 026): os 10 primeiros assinantes ganham
+        // founder_number — registro auditável do "preço travado para sempre"
+        // prometido na landing. Idempotente; falha aqui NÃO derruba o webhook.
+        try {
+          const fRes = await fetch(`${SUPA_URL}/rest/v1/rpc/assign_founder`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+              'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({ p_user: supaId }),
+          });
+          const fNum = fRes.ok ? await fRes.json() : null;
+          if (fNum) console.log(`[webhook] fundador #${fNum} atribuído a ${supaId}`);
+        } catch (fErr) {
+          console.warn('[webhook] assign_founder falhou (não-fatal):', fErr.message);
+        }
         // Este usuário assinou: (a) se ele foi INDICADO, conta+credita o indicador;
         // (b) se ELE indicou alguém e a recompensa estava PENDENTE (não tinha customer
         // até agora), aplica agora que ganhou stripe_customer_id. Decisão #6.

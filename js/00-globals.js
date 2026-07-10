@@ -178,6 +178,7 @@ async function _supaLoadUserData(userId) {
         supa_id: userId,
         referral_count: profile.referral_count || 0,
         referral_rewarded: profile.referral_rewarded || false,
+        founder_number: profile.founder_number || null, // plano fundador (026)
       };
       localStorage.setItem('tf_account', JSON.stringify(mergedAcc));
       // Atualiza tfUserData e re-aplica UI com dados reais do Supabase
