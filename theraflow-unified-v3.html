@@ -2175,7 +2175,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <input type="time" id="horario-fim" class="perfil-input" style="width:110px;padding:7px 10px" value="18:00"/>
         </div>
         <div style="margin-top:12px;padding:10px 14px;background:var(--sage-light);border-radius:8px;font-size:12px;color:var(--sage);display:flex;gap:6px">
-          <span>🗓</span><span>Horários salvos automaticamente ao clicar em <strong>Salvar alterações</strong>.</span>
+          <span>Horários salvos automaticamente ao clicar em <strong>Salvar alterações</strong>.</span>
         </div>
       </div>
 
@@ -2243,10 +2243,10 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
   <!-- Banner / greeting -->
   <div class="portal-banner">
-    <div class="portal-greeting" id="portal-greeting">Olá, Camila 🌿</div>
+    <div class="portal-greeting" id="portal-greeting">Olá, Camila</div>
     <div class="portal-sub">Como você está se sentindo hoje?</div>
     <div class="portal-next-session">
-      <span>🗓</span>
+      
       <span id="portal-next-session-label">Próxima sessão: <strong>—</strong></span>
       <span style="opacity:.5">·</span>
       <span id="portal-countdown" style="font-weight:500"></span>
@@ -2264,24 +2264,17 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
         <div style="font-size:13px;color:var(--muted);margin-top:4px;margin-bottom:4px">Como você está neste momento?</div>
 
-        <div class="mood-emoji-row" id="mood-emojis">
-          <div style="text-align:center"><div class="mood-emoji" data-mood="1" onclick="selectMoodEmoji(this)">😢</div><div class="mood-emoji-label">Muito mal</div></div>
-          <div style="text-align:center"><div class="mood-emoji" data-mood="3" onclick="selectMoodEmoji(this)">😟</div><div class="mood-emoji-label">Mal</div></div>
-          <div style="text-align:center"><div class="mood-emoji" data-mood="5" onclick="selectMoodEmoji(this)">😐</div><div class="mood-emoji-label">Neutro</div></div>
-          <div style="text-align:center"><div class="mood-emoji" data-mood="7" onclick="selectMoodEmoji(this)">🙂</div><div class="mood-emoji-label">Bem</div></div>
-          <div style="text-align:center"><div class="mood-emoji" data-mood="10" onclick="selectMoodEmoji(this)">😄</div><div class="mood-emoji-label">Muito bem</div></div>
-        </div>
-
-        <div class="mood-slider-wrap">
-          <input type="range" min="1" max="10" value="5" class="mood-slider" id="mood-slider" oninput="updateMoodSlider(this.value)"/>
-          <div class="mood-scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
-        </div>
+        <!-- Redesign B5: MESMO check-in do portal real (rostos SVG + rótulo) —
+             populado por initPortal via _PAC_MOODS; o hidden mantém o contrato
+             de saveMoodCheckin (#mood-slider.value). -->
+        <div class="pac-mood-row" id="mood-emojis"></div>
+        <input type="hidden" id="mood-slider" value="5"/>
 
         <textarea class="mood-note-input" id="mood-note" placeholder="O que está passando pela sua cabeça? (opcional)" rows="2"></textarea>
 
         <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
           <button class="btn btn-primary" onclick="saveMoodCheckin()" id="mood-save-btn">Registrar humor</button>
-          <span style="font-size:12px;color:var(--muted)">Último registro: hoje às 08:12</span>
+          <span style="font-size:12px;color:var(--muted)" id="mood-last-label"></span>
         </div>
 
         <div class="mood-saved-msg" id="mood-saved-msg">✓ Humor registrado com sucesso! Sua terapeuta poderá ver na próxima sessão.</div>
@@ -2297,23 +2290,23 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <!-- Header -->
         <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-            <div class="section-title" style="margin:0">📓 Diário da semana</div>
-            <span style="font-size:11px;color:var(--muted);background:#f5f5f5;padding:3px 10px;border-radius:20px" id="diary-count">3 registros</span>
+            <div class="section-title" style="margin:0">Diário da semana</div>
+            <span style="font-size:11px;color:var(--muted);background:var(--line-2);padding:3px 10px;border-radius:20px" id="diary-count">3 registros</span>
           </div>
-          <div style="font-size:12px;color:var(--muted);line-height:1.5">Escreva quando quiser — sua terapeuta verá na próxima sessão 🌿</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">Escreva quando quiser — sua terapeuta verá na próxima sessão</div>
         </div>
 
         <!-- Abas -->
-        <div style="display:flex;border-bottom:1px solid var(--border);background:#fafbfa" id="diary-tabs-row">
-          <button id="diary-tab-livre" onclick="switchDiaryTab('livre')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--white);color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit;transition:all .15s">✏️ Registro livre</button>
-          <button id="diary-tab-tcc" onclick="switchDiaryTab('tcc')" style="flex:1;padding:10px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s">🧠 Diário TCC</button>
+        <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg)" id="diary-tabs-row">
+          <button id="diary-tab-livre" onclick="switchDiaryTab('livre')" style="flex:1;padding:10px;font-size:13px;font-weight:600;border:none;background:var(--white);color:var(--sage);border-bottom:2px solid var(--sage);cursor:pointer;font-family:inherit;transition:all .15s">Registro livre</button>
+          <button id="diary-tab-tcc" onclick="switchDiaryTab('tcc')" style="flex:1;padding:10px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s">Diário TCC</button>
         </div>
 
         <!-- ABA: Registro livre -->
         <div id="diary-panel-livre" style="padding:16px 20px">
           <textarea id="diary-livre-text" placeholder="O que está passando pela sua cabeça? Pode ser qualquer coisa — uma situação difícil, uma conquista, algo que ficou na cabeça depois da última sessão…" style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13.5px;font-family:inherit;resize:none;outline:none;line-height:1.6;color:var(--ink);box-sizing:border-box;transition:border-color .15s" onfocus="this.style.borderColor='var(--sage)';" onblur="this.style.borderColor='var(--border)'"></textarea>
           <div style="display:flex;justify-content:flex-end;margin-top:8px">
-            <button class="btn btn-primary btn-sm" onclick="saveDiaryLivre()">💾 Salvar registro</button>
+            <button class="btn btn-primary btn-sm" onclick="saveDiaryLivre()">Salvar registro</button>
           </div>
           <!-- Registros salvos (preenchido dinamicamente por renderDiarioLivre) -->
           <div id="diary-livre-list" style="display:flex;flex-direction:column;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"></div>
@@ -2337,7 +2330,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div class="section-title">Exercícios entre sessões</div>
           <div style="display:flex;align-items:center;gap:10px">
             <span style="font-size:13px;color:var(--muted)" id="exercise-counter">2 de 4 concluídos</span>
-            <button class="btn btn-sm" style="background:var(--purple);color:#fff;border:none;padding:5px 12px;font-size:12px;border-radius:8px;cursor:pointer;font-family:inherit" onclick="abrirModalExercicio()">+ Exercício</button>
+            <button class="btn btn-sm" style="background:var(--sage);color:#fff;border:none;padding:5px 12px;font-size:12px;border-radius:8px;cursor:pointer;font-family:inherit" onclick="abrirModalExercicio()">+ Exercício</button>
           </div>
         </div>
         <div id="exercise-list"></div>
@@ -2349,8 +2342,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div class="progress-ring-wrap">
           <div class="progress-ring">
             <svg width="90" height="90" viewBox="0 0 90 90">
-              <circle cx="45" cy="45" r="38" fill="none" stroke="#e8f0eb" stroke-width="6"/>
-              <circle id="portal-ring-fill" cx="45" cy="45" r="38" fill="none" stroke="#4a7c59" stroke-width="6"
+              <circle cx="45" cy="45" r="38" fill="none" stroke="#F0EBE2" stroke-width="6"/>
+              <circle id="portal-ring-fill" cx="45" cy="45" r="38" fill="none" stroke="#4A7A63" stroke-width="6"
                 stroke-dasharray="238.76" stroke-dashoffset="238.76"
                 stroke-linecap="round"/>
             </svg>
@@ -2365,60 +2358,48 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <div class="progress-stat-row"><div class="progress-dot" style="background:var(--blue)"></div><span style="font-weight:500" id="portal-stat-checkins">—</span><span style="color:var(--muted)">check-ins de humor</span></div>
           </div>
         </div>
-        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Humor médio semanal</div>
-          <div style="display:flex;align-items:flex-end;gap:8px;height:50px">
-            <div style="flex:1;text-align:center"><div style="background:var(--sage);opacity:.5;border-radius:3px 3px 0 0;height:20px;margin:0 auto;width:24px"></div><div style="font-size:10px;color:var(--muted);margin-top:3px">Sem 1</div></div>
-            <div style="flex:1;text-align:center"><div style="background:var(--sage);opacity:.55;border-radius:3px 3px 0 0;height:22px;margin:0 auto;width:24px"></div><div style="font-size:10px;color:var(--muted);margin-top:3px">Sem 2</div></div>
-            <div style="flex:1;text-align:center"><div style="background:var(--sage);opacity:.6;border-radius:3px 3px 0 0;height:28px;margin:0 auto;width:24px"></div><div style="font-size:10px;color:var(--muted);margin-top:3px">Sem 3</div></div>
-            <div style="flex:1;text-align:center"><div style="background:var(--sage);opacity:.7;border-radius:3px 3px 0 0;height:32px;margin:0 auto;width:24px"></div><div style="font-size:10px;color:var(--muted);margin-top:3px">Sem 4</div></div>
-            <div style="flex:1;text-align:center"><div style="background:var(--sage);opacity:.8;border-radius:3px 3px 0 0;height:36px;margin:0 auto;width:24px"></div><div style="font-size:10px;color:var(--muted);margin-top:3px">Sem 5</div></div>
-            <div style="flex:1;text-align:center"><div style="background:var(--sage);border-radius:3px 3px 0 0;height:42px;margin:0 auto;width:24px"></div><div style="font-size:10px;color:var(--sage);font-weight:600;margin-top:3px">Atual</div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Minhas conquistas (espelho da gamificação que o paciente vê) -->
-      <div class="card">
-        <div class="section-title" style="margin-bottom:16px">🏅 Minhas conquistas</div>
-        <div id="portal-conquistas-wrap"></div>
+        <!-- Redesign B5: barras "Humor médio semanal" removidas (eram estáticas —
+             teatro); o gráfico REAL de 14 dias já vive no card de check-in.
+             Card "Minhas conquistas" removido: a gamificação de troféus saiu do
+             portal do paciente (tom compassivo) — a prévia não pode mostrar o
+             que não existe mais. -->
       </div>
 
       <!-- Mensagem da semana -->
-      <div class="card" style="background:linear-gradient(135deg,#eaf6f0,#f7fbf9);border-color:rgba(74,124,89,.2)">
+      <div class="card" style="background:var(--sage-light);border-color:var(--border)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:20px">✉️</span>
+            
             <div class="section-title" style="color:var(--sage);margin:0">Mensagem da semana</div>
           </div>
-          <button onclick="editarMensagemPortal()" id="btn-edit-mensagem" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:3px 8px;border-radius:6px;transition:all .15s" onmouseover="this.style.color='var(--sage)';this.style.background='var(--sage-light)'" onmouseout="this.style.color='var(--muted)';this.style.background='none'" title="Editar mensagem">✏ Editar</button>
+          <button onclick="editarMensagemPortal()" id="btn-edit-mensagem" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:3px 8px;border-radius:6px;transition:all .15s" onmouseover="this.style.color='var(--sage)';this.style.background='var(--sage-light)'" onmouseout="this.style.color='var(--muted)';this.style.background='none'" title="Editar mensagem">Editar</button>
         </div>
         <div id="portal-mensagem-view" style="font-size:14px;color:var(--ink-soft);line-height:1.7;font-style:italic" id="portal-mensagem-text">Boa semana! Lembre-se de praticar os exercícios que combinamos. Estou aqui se precisar. 🌿</div>
         <div id="portal-mensagem-edit" style="display:none">
           <textarea id="portal-mensagem-input" style="width:100%;min-height:80px;border:1.5px solid var(--sage);border-radius:8px;padding:10px 12px;font-size:13.5px;font-family:inherit;resize:none;outline:none;line-height:1.6;box-sizing:border-box"></textarea>
           <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
             <button class="btn btn-secondary btn-sm" onclick="cancelarMensagemPortal()">Cancelar</button>
-            <button class="btn btn-primary btn-sm" onclick="salvarMensagemPortal()">✓ Salvar</button>
+            <button class="btn btn-primary btn-sm" onclick="salvarMensagemPortal()">Salvar</button>
           </div>
         </div>
         <div style="font-size:11.5px;color:var(--sage);opacity:.7;margin-top:8px" id="portal-mensagem-meta">Visível para o paciente entre as sessões</div>
       </div>
 
       <!-- Dica da semana -->
-      <div class="card" style="background:linear-gradient(135deg,#f0ecfa,#faf8ff);border-color:rgba(90,62,138,.15)">
+      <div class="card" style="background:var(--purple-light);border-color:var(--border)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:20px">💡</span>
+            
             <div class="section-title" style="color:var(--purple);margin:0">Dica da semana</div>
           </div>
-          <button onclick="editarDicaPortal()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:3px 8px;border-radius:6px;transition:all .15s" onmouseover="this.style.color='var(--purple)';this.style.background='var(--purple-light)'" onmouseout="this.style.color='var(--muted)';this.style.background='none'" title="Editar dica">✏ Editar</button>
+          <button onclick="editarDicaPortal()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:3px 8px;border-radius:6px;transition:all .15s" onmouseover="this.style.color='var(--purple)';this.style.background='var(--purple-light)'" onmouseout="this.style.color='var(--muted)';this.style.background='none'" title="Editar dica">Editar</button>
         </div>
         <div id="portal-dica-view" style="font-size:14px;color:var(--ink-soft);line-height:1.7">Quando perceber um pensamento catastrófico, tente se perguntar: <em style="color:var(--purple);font-weight:500">"Qual a evidência real de que isso vai acontecer?"</em> — Isso ajuda a separar o medo da realidade.</div>
         <div id="portal-dica-edit" style="display:none">
           <textarea id="portal-dica-input" style="width:100%;min-height:90px;border:1.5px solid var(--purple);border-radius:8px;padding:10px 12px;font-size:13.5px;font-family:inherit;resize:none;outline:none;line-height:1.6;box-sizing:border-box"></textarea>
           <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
             <button class="btn btn-secondary btn-sm" onclick="cancelarDicaPortal()">Cancelar</button>
-            <button class="btn btn-primary btn-sm" onclick="salvarDicaPortal()">✓ Salvar</button>
+            <button class="btn btn-primary btn-sm" onclick="salvarDicaPortal()">Salvar</button>
           </div>
         </div>
         <div style="font-size:12px;color:var(--muted);margin-top:10px" id="portal-dica-meta">Baseada na abordagem do tratamento</div>
@@ -2428,7 +2409,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="card">
         <div class="section-header" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:18px">🎯</span>
+            
             <div class="section-title" style="margin:0">Metas terapêuticas</div>
           </div>
           <button onclick="adicionarMetaPortal()" style="background:none;border:1px solid var(--border);color:var(--ink-soft);font-size:12px;padding:4px 10px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--sage)';this.style.color='var(--sage)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink-soft)'">+ Meta</button>

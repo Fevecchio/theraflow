@@ -233,23 +233,22 @@ function excluirExercicio(exerciseId) {
 }
 
 function selectMoodEmoji(el) {
-  document.querySelectorAll('.mood-emoji').forEach(e => e.classList.remove('selected'));
-  el.classList.add('selected');
+  // Redesign B5: a prévia usa os MESMOS botões do portal real (.pac-mood-btn),
+  // escopados ao #mood-emojis para não colidir com a camada do paciente.
+  document.querySelectorAll('#mood-emojis .pac-mood-btn').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
   const val = parseInt(el.dataset.mood);
   document.getElementById('mood-slider').value = val;
 }
 
-function updateMoodSlider(val) {
-  val = parseInt(val);
-  document.querySelectorAll('.mood-emoji').forEach(e => {
-    const m = parseInt(e.dataset.mood);
-    e.classList.toggle('selected', m === [1,1,3,3,5,5,7,7,10,10,10][val-1] || m === val);
-  });
-  // Select closest emoji
-  const emojis = document.querySelectorAll('.mood-emoji');
-  const vals = [1,3,5,7,10];
-  let closest = vals.reduce((a,b) => Math.abs(b-val) < Math.abs(a-val) ? b : a);
-  emojis.forEach(e => e.classList.toggle('selected', parseInt(e.dataset.mood) === closest));
+/* Popula o check-in da PRÉVIA com a escala nova (chamado pelo initPortal).
+   updateMoodSlider morreu junto com o slider arco-íris da prévia. */
+function _fillPreviewMoodRow() {
+  var row = document.getElementById('mood-emojis');
+  if (!row || typeof _PAC_MOODS === 'undefined') return;
+  row.innerHTML = _PAC_MOODS.map(function(m){
+    return '<button type="button" class="pac-mood-btn" data-mood="' + m.val + '" data-emoji="' + m.emoji + '" onclick="selectMoodEmoji(this)">' + _pacMoodSvg(m) + '<span class="pac-mood-lbl">' + m.label + '</span></button>';
+  }).join('');
 }
 
 function saveMoodCheckin() {

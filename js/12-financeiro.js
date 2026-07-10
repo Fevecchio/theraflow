@@ -1272,7 +1272,7 @@ function initPortal() {
 
   // Greeting e labels
   const greeting = document.getElementById('portal-greeting');
-  if (greeting) greeting.textContent = `Olá, ${firstName} 🌿`;
+  if (greeting) greeting.textContent = `Olá, ${firstName}`;
 
   const modeLabel = document.getElementById('portal-mode-label');
   if (modeLabel) modeLabel.textContent = `Gerenciando portal de ${p.name}`;
@@ -1296,6 +1296,7 @@ function initPortal() {
   if (statC) statC.textContent = (p.mood !== null && p.mood !== undefined ? '✓ ativo' : '—');
 
   // Exercícios, countdown, mood, conteúdo editável
+  if (typeof _fillPreviewMoodRow === 'function') _fillPreviewMoodRow(); // B5: escala nova na prévia
   renderExercises();
   renderMoodHistory();
   renderDiarioPortal(p);
@@ -1308,10 +1309,7 @@ function initPortal() {
   if (_jornadaWrap && typeof renderTrajetoriaPortal === 'function') {
     _jornadaWrap.innerHTML = renderTrajetoriaPortal(p, currentPortalPatientIdx, true);
   }
-  var _conqWrap = document.getElementById('portal-conquistas-wrap');
-  if (_conqWrap && typeof _badgesGridHtml === 'function') {
-    _conqWrap.innerHTML = _badgesGridHtml(p);
-  }
+  // B5: card de conquistas removido da prévia (a gamificação de troféus saiu do portal real)
   clearInterval(_portalCountdownInterval);
   _portalCountdownInterval = setInterval(updatePortalCountdown, 60000);
 
