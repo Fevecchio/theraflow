@@ -793,18 +793,36 @@ function atualizarStatsFinanceiro(mesFilter) {
   var mes = mesFilter;
   if (!mes) { var sel = document.getElementById('fin-month-select'); mes = sel ? sel.value : null; }
   const ativas = charges.filter(function(c){ if (c.deleted) return false; if (mes && c.date) return _chargeInMonth(c, mes); return true; });
+  // V1 (revisão 10/07): UMA definição de "vencido" no app inteiro — _chargeVencida
+  // (status overdue OU pendente com data passada). O filtro antigo por
+  // status==='overdue' dava sempre ~R$0 porque nada seta esse status.
   const receitaTotal = ativas.filter(c => c.status === 'paid').reduce((s, c) => s + c.value, 0);
-  const aReceber    = ativas.filter(c => c.status === 'pending').reduce((s, c) => s + c.value, 0);
-  const emAtraso    = ativas.filter(c => c.status === 'overdue').reduce((s, c) => s + c.value, 0);
+  const vencidas     = ativas.filter(function(c){ return _chargeVencida(c); });
+  const emAtraso     = vencidas.reduce((s, c) => s + c.value, 0);
+  const aReceber     = ativas.filter(function(c){ return c.status !== 'paid' && !_chargeVencida(c); }).reduce((s, c) => s + c.value, 0);
   const _fmtR = fmtMoedaCompact;
   const stats = document.querySelectorAll('#page-financeiro .stat-value');
   if (stats[0]) stats[0].textContent = _fmtR(receitaTotal);
   if (stats[1]) stats[1].textContent = _fmtR(aReceber);
+  // Stat "Planos mensais" (index 2): NUNCA era atualizado — ficava no valor demo.
+  var _planosAtivos = (typeof plans !== 'undefined' ? plans : []).filter(function(pl){ return pl && pl.status === 'ativo'; });
+  if (stats[2]) stats[2].textContent = _planosAtivos.length;
   if (stats[3]) stats[3].textContent = _fmtR(emAtraso);
-  // Tags de contagem
+  // Deltas dos 4 cards: eram TEXTO FABRICADO fixo no HTML — agora refletem o cálculo.
+  var deltas = document.querySelectorAll('#page-financeiro .stat-delta');
+  var _mensaisMes = ativas.filter(function(c){ return c.billing === 'mensal' && c.status === 'paid'; }).reduce(function(s,c){ return s + c.value; }, 0);
+  if (deltas[0]) deltas[0].textContent = receitaTotal > 0 ? (_fmtR(_mensaisMes) + ' de planos + ' + _fmtR(receitaTotal - _mensaisMes) + ' avulsos') : 'Nenhum pagamento no período';
+  var _pendCount = ativas.filter(function(c){ return c.status !== 'paid' && !_chargeVencida(c); }).length;
+  if (deltas[1]) deltas[1].textContent = _pendCount + (_pendCount === 1 ? ' cobrança pendente' : ' cobranças pendentes');
+  var _recorrente = _planosAtivos.reduce(function(s,pl){ return s + (parseFloat(pl.valor) || 0); }, 0);
+  if (deltas[2]) deltas[2].textContent = _planosAtivos.length ? (_fmtR(_recorrente) + '/mês recorrente') : 'Nenhum plano ativo';
+  if (deltas[3]) deltas[3].textContent = vencidas.length
+    ? (vencidas.length + (vencidas.length === 1 ? ' cobrança vencida' : ' cobranças vencidas') + ' · ' + _firstName(vencidas[0].patient || ''))
+    : 'Nada em atraso';
+  // Tags de contagem (mesma régua)
   var countPaid = ativas.filter(function(c){ return c.status==='paid'; }).length;
-  var countPend = ativas.filter(function(c){ return c.status==='pending'; }).length;
-  var countOver = ativas.filter(function(c){ return c.status==='overdue'; }).length;
+  var countOver = vencidas.length;
+  var countPend = _pendCount;
   var el;
   el = document.getElementById('fin-count-paid');    if (el) el.textContent = countPaid + ' paga' + (countPaid!==1?'s':'');
   el = document.getElementById('fin-count-pending'); if (el) el.textContent = countPend + ' pendente' + (countPend!==1?'s':'');
