@@ -134,6 +134,38 @@ function _lkSaveDraft(sp, transcript, note) {
 }
 function _lkClearDraft() { try { localStorage.removeItem('tf_lk_draft'); } catch (_) {} }
 
+// Recuperação do rascunho (T-A4): o draft era salvo e NUNCA lido — se o navegador
+// fechava entre gerar a nota e salvar, o trabalho sumia. No boot do app, se houver
+// rascunho, oferece recuperá-lo (reabre o modal pós-sessão com a nota). Uma vez/sessão.
+var _lkDraftChecked = false;
+function _lkCheckDraftOnBoot() {
+  if (_lkDraftChecked) return;
+  _lkDraftChecked = true;
+  var draft;
+  try { draft = JSON.parse(localStorage.getItem('tf_lk_draft') || 'null'); } catch (_) { draft = null; }
+  if (!draft || (!draft.note && !draft.transcript)) return;
+  var quando = '';
+  try { quando = new Date(draft.at).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); } catch(_) {}
+  var bar = document.createElement('div');
+  bar.id = 'lk-draft-recover';
+  bar.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9997;background:#1a2a1e;color:#fff;border-radius:12px;padding:14px 18px;box-shadow:0 8px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:14px;max-width:92vw;font-size:13px';
+  bar.innerHTML = '<span>📝 Há uma nota de sessão não salva'
+    + (draft.patientName ? ' de <strong>' + (typeof escHTML==='function'?escHTML(draft.patientName):draft.patientName) + '</strong>' : '')
+    + (quando ? ' (' + quando + ')' : '') + '.</span>'
+    + '<button id="lk-draft-open" style="background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Recuperar</button>'
+    + '<button id="lk-draft-dismiss" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;padding:0 4px">×</button>';
+  document.body.appendChild(bar);
+  document.getElementById('lk-draft-open').onclick = function() {
+    bar.remove();
+    if (typeof _lkShowPostSession === 'function') {
+      _lkShowPostSession({ transcript: draft.transcript || '', note: draft.note || '' });
+    }
+  };
+  document.getElementById('lk-draft-dismiss').onclick = function() {
+    bar.remove(); _lkClearDraft();
+  };
+}
+
 // Medidor de áudio ao vivo — confirma visualmente que o mic está sendo captado.
 function _lkStartMeter(sourceNode) {
   try {
@@ -623,10 +655,11 @@ async function _lkProcessSession() {
 
     // 2) Nota clínica (Claude, transcript pseudonimizado no servidor).
     _lkProcStep('s3', 'doing');
+    var _secArr = []; try { _secArr = (JSON.parse(localStorage.getItem('tf_account')||'{}').secundarias) || []; } catch(_) {}
     const nr = await fetch('/api/session-note', {
       method: 'POST',
       headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem }),
+      body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem, abordagemSecundarias: _secArr }),
     });
     if (!nr.ok) throw new Error('session-note ' + nr.status);
     let { note } = await nr.json();

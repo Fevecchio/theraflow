@@ -509,8 +509,7 @@ function agendaMesDetalhe(day, month, year) {
 
 // ── Perfil do terapeuta ──
 function initPerfil() {
-  loadApiKeyToForm();
-  showApiKeyStatus(!!getApiKey());
+  // (campo de API key removido — Lote 4)
   const ativos = patients.filter(p => p.status === 'Ativa' || p.status === 'Nova').length;
   const heroCount = document.getElementById('perfil-hero-pacientes');
   if (heroCount) heroCount.textContent = ativos;
@@ -533,18 +532,7 @@ function initPerfil() {
   renderBloqueiosList();
 }
 
-function showApiKeyStatus(connected) {
-  const el = document.getElementById('api-key-status');
-  if (!el) return;
-  el.style.display = 'block';
-  if (connected) {
-    el.style.color = 'var(--sage)';
-    el.textContent = '✓ Chave configurada — Briefing IA ativo';
-  } else {
-    el.style.color = 'var(--muted)';
-    el.textContent = 'Nenhuma chave configurada — usando dados de demonstração';
-  }
-}
+// showApiKeyStatus removido junto com o campo de API key (Lote 4).
 
 function selectPerfilAbordagem(el, key) {
   // Seleciona visualmente o card
@@ -597,17 +585,8 @@ function saveProfile() {
 
   if (!nome) { showToast('⚠ Informe seu nome.'); return; }
 
-  // Valida a chave Claude ANTES de qualquer alteração (DOM/memória/localStorage).
-  // Antes, a validação ficava no fim e fazia return depois de já ter mutado o hero,
-  // a sidebar e o tfUserData — deixando estado parcial (memória ≠ localStorage) e
-  // descartando o save. Validando cedo, ou salva tudo ou não altera nada.
-  const apiKeyInput = document.getElementById('perfil-api-key');
-  const apiKeyVal = apiKeyInput ? apiKeyInput.value.trim() : '';
-  if (apiKeyVal && !apiKeyVal.startsWith('sk-ant-')) {
-    showToast('⚠ Chave inválida. A chave Claude começa com "sk-ant-". Nenhuma alteração foi salva.');
-    if (apiKeyInput) apiKeyInput.focus();
-    return;
-  }
+  // (Campo "Chave da API Claude" removido — decisão do usuário: era teatro, nenhuma
+  // chamada de IA usava a chave; tudo vai pelo proxy /api/*. Lote 4.)
 
   // Calcula iniciais (até 2 letras)
   const initials = nome.trim().split(' ')
@@ -666,10 +645,18 @@ function saveProfile() {
     if (lembreteQuandoEl) acc.lembrete_quando = lembreteQuandoEl.value;
     var pixEl = document.getElementById('perfil-pix-key');
     if (pixEl) acc.pix_key = pixEl.value.trim();
-    if (apiKeyVal) acc.claude_api_key = apiKeyVal;
-    else delete acc.claude_api_key;
+    acc.crp = crp;
+    acc.abordagem = tfUserData.abordagem;
     localStorage.setItem('tf_account', JSON.stringify(acc));
-    showApiKeyStatus(!!apiKeyVal);
+    // T-A7: persiste no banco (users) — sem isto, nome/CRP/abordagem revertiam para
+    // os valores do cadastro a cada login (_supaLoadUserData sobrescreve do banco).
+    if (acc.supa_id && typeof supa !== 'undefined') {
+      supa.from('users').update({
+        nome: nome, crp: crp, abordagem: profileAbordagem, updated_at: new Date().toISOString()
+      }).eq('id', acc.supa_id).then(function(r){
+        if (r && r.error) console.warn('[TF] update users falhou:', r.error.message);
+      }, function(){});
+    }
   } catch(e) { console.warn('[TF] Erro ao salvar perfil:', e.message); }
 
   // ── Reaplica em todo o app ──
@@ -678,7 +665,6 @@ function saveProfile() {
   // ── Toast com abordagem ──
   const labels = {tcc:'TCC', psicanalise:'Psicanálise', sistemica:'Sistêmica', humanista:'Humanista/Gestalt', act:'ACT/DBT'};
   const abordLabel = labels[profileAbordagem] || profileAbordagem;
-  const apiMsg = apiKeyVal ? ' · API Claude conectada.' : '';
   // Sincroniza duração e valor padrão de sessão
   var duracaoEl = document.getElementById('perfil-duracao');
   var valorEl   = document.getElementById('perfil-valor-sessao');
@@ -691,7 +677,10 @@ function saveProfile() {
     } catch(e2){}
   }
   salvarHorarios();
-  showToast('✓ Perfil salvo. IA recalibrada para ' + abordLabel + apiMsg);
+  showToast('✓ Perfil salvo. IA recalibrada para ' + abordLabel + '.');
+  // Perfil pode ter mudado o WhatsApp/nome do terapeuta → propaga ao metadata dos
+  // pacientes p/ o portal remoto (Lote 2 P2/P7) refletir na próxima abertura deles.
+  if (typeof _supaSync_patients === 'function') _supaSync_patients().catch(function(){});
 }
 
 /* ── Alterar senha do terapeuta ── */

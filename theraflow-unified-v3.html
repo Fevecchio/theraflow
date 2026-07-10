@@ -827,7 +827,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
                 Nenhum link configurado — edite a ficha do paciente para adicionar o link da sala.
               </div>
               <div style="font-size:11px;color:#3a5a3d;margin-top:10px">
-                🔒 Vídeo seguro integrado · nada é gravado ou armazenado
+                🔒 Vídeo seguro · áudio processado para transcrição e descartado (vídeo não é gravado)
               </div>
             </div>
 
@@ -2155,24 +2155,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </div>
 
       <!-- Claude API Key -->
-      <div class="perfil-section">
-        <div class="perfil-section-title">Integração com Claude API</div>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">
-          Conecte sua chave da API Anthropic para ativar o Briefing IA em tempo real. A chave fica salva apenas no seu navegador.
-        </div>
-        <div>
-          <label for="perfil-api-key" class="perfil-label">Chave da API <span style="font-size:11px;color:var(--muted);font-weight:400">· começa com <code style="background:var(--bg);padding:1px 4px;border-radius:4px">sk-ant-</code></span></label>
-          <div style="position:relative">
-            <input type="password" id="perfil-api-key" class="perfil-input" placeholder="sk-ant-api03-…" style="padding-right:44px;font-family:monospace;font-size:13px"/>
-            <button type="button" id="btn-toggle-apikey" onclick="toggleApiKeyVisibility()" aria-label="Mostrar ou ocultar a chave" title="Mostrar ou ocultar a chave" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;line-height:1">👁</button>
-          </div>
-          <div id="api-key-status" style="margin-top:8px;font-size:12px;display:none"></div>
-          <div style="margin-top:8px;padding:8px 12px;background:#fff8e1;border:1px solid rgba(200,150,0,.2);border-radius:8px;font-size:11.5px;color:#7a5c00;display:flex;gap:6px;align-items:flex-start">
-            <span>⚠</span>
-            <span>A chave é usada diretamente no navegador nesta versão. <strong>Na fase de backend, ela será protegida no servidor</strong> — nunca exposta ao cliente.</span>
-          </div>
-        </div>
-      </div>
+      <!-- Integração com Claude API removida (decisão do usuário): a IA usa o proxy
+           do servidor; o campo não tinha função (Lote 4). -->
 
       <!-- Horários de atendimento -->
       <div class="perfil-section">

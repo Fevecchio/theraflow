@@ -490,21 +490,22 @@ function proximaSessaoDate() {
     }
   }
 
-  // 3. Fallback: próxima terça-feira às 09h
-  const target = new Date(now);
-  let daysUntilTer = (2 - now.getDay() + 7) % 7;
-  if (daysUntilTer === 0 && now.getHours() >= 9) daysUntilTer = 7;
-  target.setDate(now.getDate() + daysUntilTer);
-  target.setHours(9, 0, 0, 0);
-  return target;
+  // Sem sessão real → null. Antes inventava "próxima terça 09h", fazendo o preview
+  // do terapeuta (e o card) mostrarem uma sessão que não existe. Lote 4 (teatro).
+  return null;
 }
 
 function atualizarProximaSessaoPortal() {
   const target = proximaSessaoDate();
+  var labelEl = document.getElementById('portal-next-session-label');
+  if (!target) {
+    if (labelEl) labelEl.innerHTML = 'Nenhuma sessão agendada';
+    else { var span0 = document.querySelector('.portal-next-session strong'); if (span0) span0.textContent = '—'; }
+    return;
+  }
   const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   const hora = String(target.getHours()).padStart(2,'0') + ':' + String(target.getMinutes()).padStart(2,'0');
   const label = `${dias[target.getDay()]}, ${String(target.getDate()).padStart(2,'0')}/${String(target.getMonth()+1).padStart(2,'0')} às ${hora}`;
-  var labelEl = document.getElementById('portal-next-session-label');
   if (labelEl) labelEl.innerHTML = 'Próxima sessão: <strong>' + label + '</strong>';
   else { var span = document.querySelector('.portal-next-session strong'); if (span) span.textContent = label; }
 }
@@ -514,6 +515,7 @@ function updatePortalCountdown() {
   if (!el) return;
   const now = new Date();
   const target = proximaSessaoDate();
+  if (!target) { el.textContent = ''; return; } // sem sessão real (Lote 4)
   const diff = target - now;
   if (diff <= 0) {
     el.textContent = 'Agora!';
@@ -566,30 +568,8 @@ const abordagemCalibration = {
   },
 };
 
-function toggleApiKeyVisibility() {
-  const inp = document.getElementById('perfil-api-key');
-  const btn = document.getElementById('btn-toggle-apikey');
-  if (!inp) return;
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
-}
-
-function getApiKey() {
-  try {
-    const acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
-    return acc.claude_api_key || '';
-  } catch(e) { return ''; }
-}
-
-function loadApiKeyToForm() {
-  const key = getApiKey();
-  const inp = document.getElementById('perfil-api-key');
-  if (inp && key) {
-    inp.value = key;
-    showApiKeyStatus(true);
-  }
-}
-
+// Funções do campo de API key (toggleApiKeyVisibility/getApiKey/loadApiKeyToForm)
+// removidas junto com o campo — a IA usa o proxy do servidor (Lote 4).
 
 // Grid de conquistas (gamificação) a partir de um objeto paciente `p`.
 // Reutilizado na aba Perfil do app do paciente e no preview do terapeuta

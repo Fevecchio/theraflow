@@ -225,7 +225,8 @@ function renderAlertasSupervisao() {
     var acoes = a.idx !== null
       ? '<div class="sup-alert-actions">'
           + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')">✦ Briefing IA</button>'
-          + '<button class="btn btn-sm btn-secondary" onclick="navigate(\'prontuarios\')">📋 Prontuário</button>'
+          // abre o prontuário DO paciente do alerta (antes ia sempre no 1º). B15/Lote 4.
+          + '<button class="btn btn-sm btn-secondary" onclick="selectPatient('+a.idx+');navigate(\'prontuarios\')">📋 Prontuário</button>'
         + '</div>'
       : '';
     var pacBadge = a.paciente
@@ -1525,6 +1526,12 @@ function toggleSupervisao(checked) {
     const content = document.getElementById('sup-ai-content');
     if (loading) loading.style.display = 'none';
     if (content) content.style.display = 'block';
+    // CRÍTICO: renderiza os dados REAIS por cima do HTML demo estático — sem isto,
+    // ativar o toggle numa conta real exibia o dossiê fabricado ("Rafael Andrade"
+    // com citações inventadas, métricas 71%, reflexões falsas). Lote 4 (T-A11).
+    if (typeof atualizarMetricasSupervisao === 'function') atualizarMetricasSupervisao();
+    if (typeof renderAlertasSupervisao === 'function') renderAlertasSupervisao();
+    if (typeof renderReflectionsList === 'function') renderReflectionsList();
   } else {
     document.getElementById('sup-dashboard').style.display = 'none';
     document.getElementById('sup-onboarding').style.display = 'flex';

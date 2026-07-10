@@ -108,6 +108,21 @@ function _wppLink(phone, texto) {
   return 'https://wa.me/' + (n || '') + (texto ? '?text=' + encodeURIComponent(texto) : '');
 }
 
+/* Contexto de abordagem do TERAPEUTA para os prompts de IA (decisão do usuário:
+ * terapeutas integrativos usam abordagens secundárias). Retorna algo como
+ * " O terapeuta também integra: Psicanálise, ACT." ou '' se não houver. As
+ * secundárias vêm do onboarding (tf_account.secundarias, nomes display). */
+function _abordagemSecundariasIA() {
+  try {
+    var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    var sec = acc.secundarias;
+    if (Array.isArray(sec) && sec.length) {
+      return ' O terapeuta também integra elementos de: ' + sec.join(', ') + '.';
+    }
+  } catch(_) {}
+  return '';
+}
+
 /* Link de sala de vídeo (/sala) — aceita o formato novo com FRAGMENT (/sala#u=…,
  * que não vaza token em logs/Referer — F3.3) e o antigo com query (/sala?u=…,
  * links já enviados a pacientes). Única fonte de verdade p/ "é link de sala?". */

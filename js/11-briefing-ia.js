@@ -245,7 +245,10 @@ async function callBriefingAI() {
 
   c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
 
-  const system = `Você é um assistente clínico especializado em psicologia. Gera briefings pré-sessão para psicólogos e terapeutas. Tom clínico, objetivo e empático. Nunca faz diagnósticos — apenas observações baseadas no histórico. Responda em português brasileiro.`;
+  // Abordagem primária vem do paciente; as secundárias do terapeuta (integrativo) —
+  // decisão do usuário: injetar no prompt para a IA calibrar o vocabulário. Lote 4 (#9).
+  const _secIA = (typeof _abordagemSecundariasIA === 'function') ? _abordagemSecundariasIA() : '';
+  const system = `Você é um assistente clínico especializado em psicologia. Gera briefings pré-sessão para psicólogos e terapeutas. Calibre o vocabulário e as sugestões pela abordagem do paciente.${_secIA} Tom clínico, objetivo e empático. Nunca faz diagnósticos — apenas observações baseadas no histórico. Responda em português brasileiro.`;
   const bpHistory = buildSessionHistory(bp);
   const bpThemes = buildThemes(bp);
   const totalSessoes = bp?.sessions || 0;

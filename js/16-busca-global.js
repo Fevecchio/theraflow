@@ -246,11 +246,13 @@ document.addEventListener('keydown', function(e) {
     if (ov && ov.classList.contains('visible')) { fecharBuscaGlobal(); } else { abrirBuscaGlobal(); }
     return;
   }
-  // Escape — fechar modais
+  // Escape — fechar busca ou modais. Os modais (showModal) usam a classe `open`,
+  // NÃO `visible` → o Esc nunca fechava modal nenhum. M4/Lote 4.
   if (e.key === 'Escape') {
     var ov2 = document.getElementById('global-search-overlay');
     if (ov2 && ov2.classList.contains('visible')) { fecharBuscaGlobal(); return; }
-    document.querySelectorAll('.modal-overlay.visible').forEach(function(m){ var id = m.id; if(id) closeModal(id); });
+    var abertos = document.querySelectorAll('.modal-overlay.open');
+    if (abertos.length) { abertos.forEach(function(m){ var id = m.id; if(id) closeModal(id); else m.classList.remove('open'); }); return; }
     return;
   }
   if (isInput) return;

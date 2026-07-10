@@ -74,7 +74,7 @@ function navigate(page) {
   // Mostra/oculta nota rápida FAB
   var fab = document.getElementById('quick-note-fab');
   if (fab) fab.style.display = ['dashboard','pacientes','supervisao','tarefas'].includes(page) ? 'flex' : 'none';
-  if (page === 'dashboard') { checkFirstPatientBanner(); atualizarDashboard(); setTimeout(iniciarTour, 500); setTimeout(function(){ if (localStorage.getItem('tf_tour_done')) verificarMarcos(); }, 1200); _startDashAutoRefresh(); }
+  if (page === 'dashboard') { checkFirstPatientBanner(); atualizarDashboard(); setTimeout(iniciarTour, 500); setTimeout(function(){ if (localStorage.getItem('tf_tour_done')) verificarMarcos(); }, 1200); _startDashAutoRefresh(); if (typeof _lkCheckDraftOnBoot === 'function') setTimeout(_lkCheckDraftOnBoot, 1500); }
   else { _stopDashAutoRefresh(); }
   // Atualiza badges de nav
   _atualizarBadgeSupervisao();
