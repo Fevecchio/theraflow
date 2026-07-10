@@ -55,7 +55,7 @@ function navigate(page) {
   // página não pode matá-lo (a gravação continua rodando). Lote 1.
   var _sessaoAtiva = (typeof _lkRoom !== 'undefined' && _lkRoom);
   if (typeof timerInterval !== 'undefined' && timerInterval !== null && page !== 'sessao' && !_sessaoAtiva) {
-    clearInterval(timerInterval); timerInterval = null;
+    clearInterval(timerInterval); timerInterval = null; if (typeof _setSessionLiveUI === 'function') _setSessionLiveUI(false);
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));

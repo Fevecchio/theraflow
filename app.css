@@ -575,6 +575,25 @@ tr:last-child td { border-bottom: none; }
 .sess-patient-picker:hover { background: rgba(74,124,89,.17); }
 .sess-picker-arrow { font-size: 10px; color: var(--sage); opacity: .8; pointer-events: none; line-height: 1; margin-top: 1px; }
 .ai-panel { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; min-height: 0; }
+/* EM SESSÃO: a coluna se reordena para o que importa ao vivo — notas e perguntas
+   sobem, histórico (útil só nos primeiros minutos) desce. Revisão 10/07. */
+.ai-panel.live #sess-nota-card { order: -2; }
+.ai-panel.live #sess-guia { order: -1; }
+.ai-panel.live #sess-historico { order: 2; }
+.ai-panel.live #session-ai-note { min-height: 220px; font-size: 13px; }
+/* Indicador de captura ao vivo (confiança: o áudio ESTÁ sendo gravado) */
+.sess-capture { display: flex; align-items: center; gap: 9px; background: var(--sage-light); border: 1px solid var(--sage-mid); border-radius: var(--radius); font-size: 12.5px; color: var(--sage-800); padding: 10px 14px; }
+.sess-capture .sess-cap-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: sessCapPulse 1.6s ease-out infinite; flex-shrink: 0; }
+@keyframes sessCapPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+/* Briefing em overlay (sem sair da sessão ao vivo) */
+#sess-briefing-overlay { position: fixed; inset: 0; z-index: 9000; display: none; }
+#sess-briefing-overlay.open { display: block; }
+#sess-briefing-overlay .sbo-back { position: absolute; inset: 0; background: rgba(20,25,20,.45); }
+#sess-briefing-overlay .sbo-panel { position: absolute; top: 0; right: 0; bottom: 0; width: min(480px, 92vw); background: var(--white); border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; }
+#sess-briefing-overlay .sbo-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+#sess-briefing-overlay .sbo-body { padding: 18px 20px; overflow-y: auto; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
+#sess-briefing-overlay .sbo-body h4 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--purple); margin: 16px 0 6px; font-weight: 700; }
+#sess-briefing-overlay .sbo-body h4:first-child { margin-top: 0; }
 .ai-section-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
 .sess-nota-item { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .sess-nota-item:last-child { border-bottom: none; }

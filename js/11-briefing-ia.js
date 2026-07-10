@@ -188,39 +188,10 @@ function exportarBriefing() {
   try { localStorage.setItem('tf_first_export', Date.now()); verificarMarcos(); } catch(e){}
 }
 
-async function callBriefingAI() {
-  const c = document.getElementById('b-content');
-  // Demo mode: exibe fallback diretamente sem chamar API
-  if (window._tfDemo) {
-    c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
-    await new Promise(r => setTimeout(r, 1200));
-    renderBriefingFallback();
-    _briefingForceRefresh = false;
-    return;
-  }
-
-  const bp = patients[currentBriefingPatientIdx] || patients[0];
-
-  // Verificar cache antes de chamar API
-  if (!_briefingForceRefresh) {
-    var _cacheKey = bp.id || bp.name;
-    var _cached = _getBriefingCache(_cacheKey);
-    if (_cached) {
-      renderBriefingContent(_cached.content);
-      var _cct = new Date(_cached.generatedAt);
-      var _cts = String(_cct.getHours()).padStart(2,'0') + ':' + String(_cct.getMinutes()).padStart(2,'0');
-      var _subEl = document.getElementById('b-result-subtitle');
-      var _cUnch = _briefingCacheUnchanged(_cached, bp);
-      if (_subEl) _subEl.textContent = 'Cache de ' + _cts + ' · ' + (bp.sessions||0) + ' sessões · ' + (_cUnch ? 'sem alterações' : 'há alterações');
-      _setRegenBtn(_cUnch);
-      _briefingForceRefresh = false;
-      return;
-    }
-  }
-  _briefingForceRefresh = false;
-
-  c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
-
+/* Gera o TEXTO do briefing (prompt + chamada + cache) — compartilhado entre a
+ * página Briefing (callBriefingAI) e o overlay da sessão ao vivo (js/09).
+ * Lança Error('HTTP_xxx …') nas falhas, para os chamadores tratarem. */
+async function _gerarBriefingTexto(bp) {
   // Abordagem primária vem do paciente; as secundárias do terapeuta (integrativo) —
   // decisão do usuário: injetar no prompt para a IA calibrar o vocabulário. Lote 4 (#9).
   const _secIA = (typeof _abordagemSecundariasIA === 'function') ? _abordagemSecundariasIA() : '';
@@ -257,25 +228,62 @@ Estruture em 5 blocos com estes títulos EXATOS:
 
 Máximo 300 palavras. Seja específico, baseie-se apenas nos dados fornecidos acima.`;
 
-  try {
-    // Chama a Edge Function no servidor (chave Anthropic fica no servidor, não no cliente)
-    const res = await fetchWithTimeout('/api/briefing', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
-      // Minimização (LGPD): patientData omitido — ignorado pelo servidor com systemPrompt presente,
-      // e bp completo contém prontuário/whatsapp/token da sala.
-      body: JSON.stringify({ systemPrompt: system, userPrompt: user })
-    }, 30000);
-    if (!res.ok) {
-      let errDetail = 'HTTP_' + res.status;
-      try { const eb = await res.json(); errDetail = 'HTTP_' + res.status + ' ' + (eb.error || ''); } catch(_){}
-      throw new Error(errDetail);
+  // Chama a Edge Function no servidor (chave Anthropic fica no servidor, não no cliente)
+  const res = await fetchWithTimeout('/api/briefing', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await _apiAuthHeader()) },
+    // Minimização (LGPD): patientData omitido — ignorado pelo servidor com systemPrompt presente,
+    // e bp completo contém prontuário/whatsapp/token da sala.
+    body: JSON.stringify({ systemPrompt: system, userPrompt: user })
+  }, 30000);
+  if (!res.ok) {
+    let errDetail = 'HTTP_' + res.status;
+    try { const eb = await res.json(); errDetail = 'HTTP_' + res.status + ' ' + (eb.error || ''); } catch(_){}
+    throw new Error(errDetail);
+  }
+  const data = await res.json();
+  const text = data.content || '';
+  if (!text || text.length < 80) throw new Error('Resposta vazia');
+  _saveBriefingCache((bp.id || bp.name), text);
+  return text;
+}
+
+async function callBriefingAI() {
+  const c = document.getElementById('b-content');
+  // Demo mode: exibe fallback diretamente sem chamar API
+  if (window._tfDemo) {
+    c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
+    await new Promise(r => setTimeout(r, 1200));
+    renderBriefingFallback();
+    _briefingForceRefresh = false;
+    return;
+  }
+
+  const bp = patients[currentBriefingPatientIdx] || patients[0];
+
+  // Verificar cache antes de chamar API
+  if (!_briefingForceRefresh) {
+    var _cacheKey = bp.id || bp.name;
+    var _cached = _getBriefingCache(_cacheKey);
+    if (_cached) {
+      renderBriefingContent(_cached.content);
+      var _cct = new Date(_cached.generatedAt);
+      var _cts = String(_cct.getHours()).padStart(2,'0') + ':' + String(_cct.getMinutes()).padStart(2,'0');
+      var _subEl = document.getElementById('b-result-subtitle');
+      var _cUnch = _briefingCacheUnchanged(_cached, bp);
+      if (_subEl) _subEl.textContent = 'Cache de ' + _cts + ' · ' + (bp.sessions||0) + ' sessões · ' + (_cUnch ? 'sem alterações' : 'há alterações');
+      _setRegenBtn(_cUnch);
+      _briefingForceRefresh = false;
+      return;
     }
-    const data = await res.json();
-    const text = data.content || '';
-    if (!text || text.length < 80) throw new Error('Resposta vazia');
+  }
+  _briefingForceRefresh = false;
+
+  c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--purple);font-size:14px;padding:8px 0"><div class="ai-dot"></div> Gerando análise clínica…</div>`;
+
+  try {
+    const text = await _gerarBriefingTexto(bp);
     renderBriefingContent(text);
-    _saveBriefingCache((bp.id || bp.name), text);
     _setRegenBtn(false);
     try { localStorage.setItem('tf_last_briefing', Date.now()); verificarMarcos(); } catch(e2){}
   } catch(e) {

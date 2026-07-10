@@ -32,7 +32,7 @@ async function startSession() {
     return;
   }
   _sessionAlreadySaved = false;
-  sessionSeconds = 0; if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
+  sessionSeconds = 0; if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; } if (typeof _setSessionLiveUI === 'function') _setSessionLiveUI(false);
   // Reseta o estado da área de vídeo para pré-sessão
   const prestate = document.getElementById('whereby-prestate');
   if (prestate) prestate.style.display = 'block';
@@ -154,8 +154,19 @@ function trocarPacienteSessao(newIdx) {
   if (typeof currentBriefingPatientIdx !== 'undefined') currentBriefingPatientIdx = newIdx;
 }
 
+/* Liga/desliga o modo EM SESSÃO da coluna lateral (reordena p/ notas+perguntas) */
+function _setSessionLiveUI(on) {
+  var panel = document.querySelector('#page-sessao .ai-panel');
+  if (panel) panel.classList[on ? 'add' : 'remove']('live');
+  if (!on) {
+    var cap = document.getElementById('sess-capture-status');
+    if (cap) cap.style.display = 'none';
+  }
+}
+
 function _iniciarTimerSessao() {
   if (timerInterval !== null) return;
+  _setSessionLiveUI(true);
   timerInterval = setInterval(() => {
     sessionSeconds++;
     const m = String(Math.floor(sessionSeconds/60)).padStart(2,'0');
@@ -181,15 +192,20 @@ function _renderSessionContext(p) {
   var listEl = document.getElementById('sess-notas-list');
   if (listEl) listEl.innerHTML = notasHtml;
 
-  // Humor médio (últimas 4 entradas)
+  // Humor médio (últimas 4 entradas) + DATA do último registro (revisão 10/07:
+  // "7.3 ↑" sem quando não diz se o dado é de ontem ou do mês passado)
   var mh = (p.moodHistory || []).slice(-4);
   if (mh.length >= 2) {
     var vals = mh.map(function(e) { return typeof e === 'object' ? (e.value || 0) : Number(e); });
     var avg = (vals.reduce(function(a,b){return a+b;},0) / vals.length).toFixed(1);
     var trend = vals[vals.length-1] >= vals[0] ? '↑' : '↓';
+    var ultimo = mh[mh.length-1];
+    var quando = (typeof ultimo === 'object' && ultimo.date) ? ' · últ. ' + String(ultimo.date).slice(0,5) : '';
     var humEl = document.getElementById('sess-humor-line');
-    if (humEl) { humEl.textContent = 'Humor recente: ' + avg + '/10 ' + trend; humEl.style.display = ''; }
+    if (humEl) { humEl.textContent = 'Humor recente: ' + avg + '/10 ' + trend + quando; humEl.style.display = ''; }
   }
+
+  _updateConsentStatus(p);
 
   // Cards 2 e 3: usa briefing em cache se existir
   var cacheKey = p.id || p.name;
@@ -240,8 +256,9 @@ function _renderSessLocalFallback(p) {
   } else if (typeof p.metas === 'string' && p.metas.trim()) {
     html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(p.metas.substring(0,100)) + '</span></div>';
   }
-  html2 += '<div class="insight-item"><span class="insight-icon">📈</span><span>Sessão ' + (p.sessions||0) + ' · ' + (p.progress||0) + '% de evolução</span></div>';
-  html2 += '<div class="sess-briefing-badge" style="color:var(--muted)">💡 Gere o briefing antes da sessão para insights detalhados</div>';
+  // Revisão 10/07: "% de evolução" saiu do contexto EM SESSÃO — é métrica de
+  // gestão, não orienta decisão clínica ao vivo (e duplicava o card ao lado).
+  html2 += '<div class="sess-briefing-badge" style="color:var(--muted)">Gere o briefing antes da sessão para insights detalhados</div>';
   var el2 = document.getElementById('sess-contexto-body');
   if (el2) el2.innerHTML = html2;
 
@@ -258,6 +275,77 @@ function _renderSessLocalFallback(p) {
   };
   var chave = Object.keys(mapa).find(function(k){ return abord.includes(k); });
   _renderSessPerguntas(chave ? mapa[chave] : ['Como você está chegando hoje?','O que quer trazer para esta sessão?','O que ficou da última vez?']);
+}
+
+/* Status de consentimento VISÍVEL no topo da sessão (revisão 10/07): o botão
+ * abria o modal, mas nada dizia se ESTA sessão está coberta e desde quando. */
+function _updateConsentStatus(p) {
+  var el = document.getElementById('sess-consent-status');
+  if (!el) return;
+  var c = window._tfSessionConsent;
+  if (c && p && c.patientId === p.id) {
+    var h = new Date(c.at);
+    el.textContent = 'Consentimento ✓ ' + String(h.getHours()).padStart(2,'0') + ':' + String(h.getMinutes()).padStart(2,'0');
+    el.className = 'tag tag-green';
+  } else {
+    el.textContent = 'Consentimento pendente';
+    el.className = 'tag';
+    el.style.cssText = 'background:var(--amber-light);color:var(--amber)';
+  }
+  el.style.display = '';
+}
+
+/* ── BRIEFING EM OVERLAY (revisão 10/07): consultar sem sair da sessão ao vivo.
+ * Antes, "Ver briefing" NAVEGAVA para fora da tela com a sessão rodando. ── */
+function abrirBriefingOverlay() {
+  var ov = document.getElementById('sess-briefing-overlay');
+  var body = document.getElementById('sess-briefing-body');
+  if (!ov || !body) return;
+  ov.classList.add('open');
+  var p = patients[currentSessionPatientIdx] || patients[0];
+  if (!p) { body.innerHTML = '<div style="color:var(--muted)">Nenhum paciente selecionado.</div>'; return; }
+  var cache = (typeof _getBriefingCache === 'function') ? _getBriefingCache(p.id || p.name) : null;
+  if (cache && cache.content) {
+    body.innerHTML = _briefingParaHtml(cache.content)
+      + '<div class="sess-briefing-badge" style="margin-top:16px">✦ Briefing de hoje · ' + escHTML(p.name) + '</div>';
+  } else {
+    body.innerHTML = '<div style="color:var(--muted);margin-bottom:12px">O briefing de hoje ainda não foi gerado para ' + escHTML(_firstName(p.name)) + '.</div>'
+      + '<button class="btn btn-purple btn-sm" onclick="_gerarBriefingNoOverlay()">✦ Gerar agora</button>';
+  }
+}
+
+function fecharBriefingOverlay() {
+  var ov = document.getElementById('sess-briefing-overlay');
+  if (ov) ov.classList.remove('open');
+}
+
+async function _gerarBriefingNoOverlay() {
+  var body = document.getElementById('sess-briefing-body');
+  var p = patients[currentSessionPatientIdx] || patients[0];
+  if (!body || !p) return;
+  body.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--purple)"><div class="ai-dot"></div> Gerando análise clínica…</div>';
+  try {
+    var texto = await _gerarBriefingTexto(p);
+    body.innerHTML = _briefingParaHtml(texto)
+      + '<div class="sess-briefing-badge" style="margin-top:16px">✦ Briefing de hoje · ' + escHTML(p.name) + '</div>';
+    // O painel lateral também aproveita o briefing recém-gerado
+    _renderSessionContext(p);
+  } catch (e) {
+    body.innerHTML = '<div style="color:var(--red);font-size:13px">Não foi possível gerar agora (' + escHTML(e.message || 'erro') + '). As perguntas por abordagem do painel continuam valendo.</div>';
+  }
+}
+
+/* Formata o texto do briefing (títulos em MAIÚSCULAS viram cabeçalhos) */
+function _briefingParaHtml(content) {
+  var linhas = String(content || '').split(/\n/);
+  return linhas.map(function(l) {
+    var t = l.trim();
+    if (!t) return '';
+    if (/^\d?\.?\s*[A-ZÁÉÍÓÚÇÃÕ][A-ZÁÉÍÓÚÇÃÕ\s]{4,}:?$/.test(t)) {
+      return '<h4>' + escHTML(t.replace(/^\d\.\s*/, '').replace(/:$/, '')) + '</h4>';
+    }
+    return '<div style="margin-bottom:6px">' + escHTML(t) + '</div>';
+  }).join('');
 }
 
 function _renderSessPerguntas(linhas) {

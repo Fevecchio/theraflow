@@ -808,9 +808,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </div>
     </div>
     <div class="topbar-actions">
-      <span class="tag tag-green tag-dot">Conectada</span>
-      <button class="btn btn-purple btn-sm" onclick="currentBriefingPatientIdx=currentSessionPatientIdx;navigate('briefing')">✦ Ver briefing</button>
-      <button class="btn btn-secondary btn-sm" onclick="showModal('modal-consent')">🔒 Consentimento</button>
+      <span class="tag" id="sess-consent-status" style="display:none"></span>
+      <button class="btn btn-purple btn-sm" onclick="abrirBriefingOverlay()">✦ Briefing</button>
+      <button class="btn btn-secondary btn-sm" onclick="showModal('modal-consent')">Consentimento</button>
     </div>
   </div>
   <div class="session-layout">
@@ -852,17 +852,22 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </div>
     </div>
     <div class="ai-panel">
+      <!-- Indicador de captura AO VIVO (js/21 alimenta) — confiança de que a
+           gravação está fluindo, sem esperar o fim da sessão para descobrir. -->
+      <div id="sess-capture-status" class="sess-capture" style="display:none">
+        <span class="sess-cap-dot"></span><span id="sess-capture-text">Capturando áudio…</span>
+      </div>
       <div class="card card-sm" id="sess-historico">
-        <div class="ai-section-title">📋 Últimas sessões</div>
+        <div class="ai-section-title">Últimas sessões</div>
         <div id="sess-notas-list"></div>
         <div id="sess-humor-line" style="display:none" class="sess-humor"></div>
       </div>
       <div class="card card-sm" id="sess-contexto">
-        <div class="ai-section-title">✦ Contexto clínico</div>
+        <div class="ai-section-title">Contexto clínico</div>
         <div id="sess-contexto-body"></div>
       </div>
       <div class="card card-sm" id="sess-guia">
-        <div class="ai-section-title">🧭 Para esta sessão</div>
+        <div class="ai-section-title">Para esta sessão</div>
         <div style="display:flex;flex-direction:column;gap:8px" id="session-ficha">
           <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Abordagem</span><span id="sf-abordagem">—</span></div>
           <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Sessão</span><span id="sf-sessao">—</span></div>
@@ -873,12 +878,24 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </div>
       <div class="card card-sm" id="sess-nota-card">
         <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
-          <div class="ai-section-title" style="margin-bottom:0">✏ Notas da sessão</div>
+          <div class="ai-section-title" style="margin-bottom:0">Notas da sessão</div>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Anote durante a consulta · IA completa ao encerrar</div>
-        <textarea id="session-ai-note" class="note-area" style="min-height:130px;font-size:12px;line-height:1.6"></textarea>
-        <button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px;justify-content:center" onclick="indexPostSession()">✓ Salvar e indexar na IA</button>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Anote durante a consulta · a IA completa ao encerrar</div>
+        <textarea id="session-ai-note" class="note-area" style="min-height:130px;font-size:12.5px;line-height:1.6"></textarea>
+        <button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px;justify-content:center" onclick="indexPostSession()">Salvar nota</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Briefing em OVERLAY: consultar sem sair da sessão ao vivo (revisão 10/07) -->
+  <div id="sess-briefing-overlay">
+    <div class="sbo-back" onclick="fecharBriefingOverlay()"></div>
+    <div class="sbo-panel">
+      <div class="sbo-head">
+        <div class="ai-section-title" style="margin:0;color:var(--purple)">✦ Briefing pré-sessão</div>
+        <button onclick="fecharBriefingOverlay()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:4px">✕</button>
+      </div>
+      <div class="sbo-body" id="sess-briefing-body"></div>
     </div>
   </div>
 </div>

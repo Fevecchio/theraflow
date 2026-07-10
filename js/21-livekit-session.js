@@ -47,6 +47,7 @@ function confirmarConsentimentoSessao() {
   if (typeof _logConsent === 'function' && /^[0-9a-f-]{36}$/i.test(pid || '')) {
     _logConsent('gravacao_sessao', { patientId: pid });
   }
+  if (typeof _updateConsentStatus === 'function') _updateConsentStatus(sp); // tag no topo da sessão
   if (typeof closeModal === 'function') closeModal('modal-consent');
   if (chk) chk.checked = false;
   if (window._tfPendingSessionStart) {
@@ -87,6 +88,23 @@ let _lkTherRotTimer = null;  // timers da rotação (limpos no encerrar)
 let _lkPacRotTimer = null;
 let _lkEnding = false;       // encerrando → a rotação não abre novo segmento
 
+/* Indicador de captura AO VIVO (revisão 10/07): o terapeuta via a gravação
+ * funcionar só NO FIM — sessão irrecuperável se algo falhasse. Este status
+ * mostra em tempo real que o áudio está fluindo e quantos trechos já estão
+ * seguros em memória. Honesto: a transcrição acontece ao encerrar. */
+function _lkLiveStatus() {
+  var el = document.getElementById('sess-capture-status');
+  var txt = document.getElementById('sess-capture-text');
+  if (!el || !txt) return;
+  if (_lkEnding || (!_lkRecorder && !_lkPacRecorder)) { el.style.display = 'none'; return; }
+  var fechados = _lkSegsTher.length + _lkSegsPac.length;
+  var lados = _lkPacDest ? 'ambos os lados' : 'seu áudio';
+  txt.textContent = 'Capturando ' + lados + ' para transcrição'
+    + (fechados > 0 ? ' · ' + fechados + (fechados === 1 ? ' trecho seguro' : ' trechos seguros') : '')
+    + ' · transcreve ao encerrar';
+  el.style.display = 'flex';
+}
+
 // Cria o gravador de UM segmento da faixa e agenda a rotação para o próximo.
 function _lkStartSegRec(which) {
   const isTher = which === 'ther';
@@ -103,8 +121,10 @@ function _lkStartSegRec(which) {
     // Segmento minúsculo (ex.: rotação logo antes do encerrar) não vale transcrição.
     if (blob.size < 1200) return;
     (isTher ? _lkSegsTher : _lkSegsPac).push({ blob, offsetSec: Math.max(0, (startMs - _lkRecStartMs) / 1000) });
+    _lkLiveStatus();
   };
   rec.start(1000);
+  _lkLiveStatus();
   const timer = setTimeout(() => {
     if (_lkEnding) return;
     try { if (rec.state !== 'inactive') rec.stop(); } catch (_) {}
@@ -578,7 +598,7 @@ async function endLiveKitSession() {
   _lkClearPortalLink(window._lkSessionPatient || patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
   window._lkSessionPatient = null;
   window.removeEventListener('beforeunload', _lkGuardUnload); // gravação terminou — libera a saída
-  if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
+  if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; } if (typeof _setSessionLiveUI === 'function') _setSessionLiveUI(false);
 
   _lkProcStep('s1', 'done');
 
