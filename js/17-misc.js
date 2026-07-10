@@ -163,6 +163,21 @@ function atualizarTrialUI(count) {
   if (el) el.textContent = count;
   if (fill) fill.style.width = Math.min(100, (count / 20) * 100) + '%';
 
+  // Fundador(a) convidado ainda no trial: mostra o selo desde o dia 1 —
+  // o status vem do banco (users.founder_number, migration 026).
+  if (bar) {
+    var _fT = null;
+    try { _fT = (JSON.parse(localStorage.getItem('tf_account') || '{}')).founder_number; } catch(_) {}
+    var _fTag = bar.querySelector('#trial-founder-tag');
+    if (_fT && !_fTag) {
+      _fTag = document.createElement('div');
+      _fTag.id = 'trial-founder-tag';
+      _fTag.style.cssText = 'margin-bottom:6px;font-size:11px;font-weight:700;color:#7fcf97;display:flex;align-items:center;gap:5px';
+      _fTag.innerHTML = '✦ Fundador(a) #' + _fT + ' <span style="font-weight:500;color:#5a9a6d">· preço travado quando assinar</span>';
+      bar.insertBefore(_fTag, bar.firstChild);
+    } else if (!_fT && _fTag) { _fTag.remove(); }
+  }
+
   const esgotado = count >= 20;
   if (bar && esgotado) {
     bar.style.background = 'rgba(192,57,43,.1)';
