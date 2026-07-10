@@ -146,7 +146,19 @@ async function ativar2FA() {
     const { data, error } = await supa.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'TheraFlow' });
     if (error) { showToast('⚠ ' + (error.message || 'Não foi possível iniciar o 2FA.')); return; }
     _tfaEnrollFactorId = data.id;
-    if (qrEl) qrEl.innerHTML = (data.totp && data.totp.qr_code) || '';
+    // qr_code é um data URI (data:image/svg+xml;utf-8,<svg…>) — como innerHTML
+    // o prefixo vira texto e o svg renderiza sem tamanho; tem que ser src de <img>.
+    if (qrEl) {
+      qrEl.innerHTML = '';
+      const q = (data.totp && data.totp.qr_code) || '';
+      if (q) {
+        const img = document.createElement('img');
+        img.src = q;
+        img.alt = 'QR code do 2FA';
+        img.style.cssText = 'width:100%;height:100%;display:block';
+        qrEl.appendChild(img);
+      }
+    }
     if (secretEl) secretEl.textContent = (data.totp && data.totp.secret) || '';
     if (enrollArea) enrollArea.style.display = 'block';
     const inp = document.getElementById('tfa-enroll-code');
