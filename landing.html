@@ -18,15 +18,17 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --sage: #4a7c59; --sage-dark: #2e5237; --sage-light: #e8f0eb; --sage-mid: #8fb89c;
-  --ink: #1a1f1c; --ink-soft: #3d4540; --muted: #6b7280;
-  --border: #e2e8e4; --bg: #f7f8f6; --white: #ffffff;
-  --amber: #c97d2e; --amber-light: #fdf3e7;
-  --blue: #2c5f8a; --blue-light: #eaf1f8;
-  --purple: #5a3e8a; --purple-light: #f0ecfa;
-  --radius: 14px; --radius-lg: 20px;
-  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 20px rgba(0,0,0,.07);
-  --shadow-lg: 0 8px 40px rgba(0,0,0,.12);
+  /* Tokens ALINHADOS ao :root único do app (Sálvia & Linho, redesign 10/07) — a
+     landing usava a paleta antiga cinza-fria e destoava do produto real. */
+  --sage: #4A7A63; --sage-dark: #3D6653; --sage-light: #EAF1EC; --sage-mid: #8FB89C;
+  --ink: #2B2A26; --ink-soft: #4A4842; --muted: #6B675F;
+  --border: #E8E2D8; --bg: #FAF7F2; --white: #ffffff;
+  --amber: #B8762A; --amber-light: #F7EBDB;
+  --blue: #5A6C8A; --blue-light: #E9EDF3;
+  --purple: #5A3D75; --purple-light: #EFE7F5;
+  --radius: 12px; --radius-lg: 16px;
+  --shadow: 0 1px 3px rgba(43,42,38,.07);
+  --shadow-lg: 0 8px 28px rgba(43,42,38,.10), 0 2px 6px rgba(43,42,38,.05);
 }
 html { scroll-behavior: smooth; }
 body { background: var(--white); color: var(--ink); font-family: 'DM Sans', sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }

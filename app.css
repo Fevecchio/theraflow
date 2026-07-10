@@ -25,20 +25,21 @@ body { background: #f7f8f6; color: #1a1f1c; font-family: 'DM Sans', sans-serif; 
   justify-content: flex-start;
   min-height: 100dvh;
   /* Cores e tipografia */
-  background: #f7f8f6;
-  color: #1a1f1c;
+  background: #FAF7F2;
+  color: #2B2A26;
   font-family: 'DM Sans', sans-serif;
-  /* Variáveis CSS */
-  --sage: #4a7c59; --sage-light: #e8f0eb; --sage-mid: #8fb89c;
-  --ink: #1a1f1c; --ink-soft: #3d4540; --muted: #8a9490;
-  --border: #dde3de; --bg: #f7f8f6; --white: #ffffff;
-  --amber: #c97d2e; --amber-light: #fdf3e7;
-  --red: #c0392b; --red-light: #fdf0ef;
-  --blue: #2c5f8a; --blue-light: #eaf1f8;
-  --purple: #5a3e8a; --purple-light: #f0ecfa;
+  /* Tokens do onboarding ALINHADOS ao :root único (Sálvia & Linho) — antes era a
+     paleta antiga cinza-fria e o login parecia outro produto. Redesign 10/07. */
+  --sage: #4A7A63; --sage-light: #EAF1EC; --sage-mid: #8FB89C;
+  --ink: #2B2A26; --ink-soft: #4A4842; --muted: #6B675F;
+  --border: #E8E2D8; --bg: #FAF7F2; --white: #ffffff;
+  --amber: #B8762A; --amber-light: #F7EBDB;
+  --red: #B3564A; --red-light: #F9EEEC;
+  --blue: #5A6C8A; --blue-light: #E9EDF3;
+  --purple: #5A3D75; --purple-light: #EFE7F5;
   --radius: 12px;
-  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+  --shadow: 0 1px 3px rgba(43,42,38,.07);
+  --shadow-lg: 0 8px 28px rgba(43,42,38,.10), 0 2px 6px rgba(43,42,38,.05);
 }
 
 @media (max-width: 480px) {
@@ -346,29 +347,39 @@ body { background: #f7f8f6; color: #1a1f1c; font-family: 'DM Sans', sans-serif; 
 ═══════════════════════════════════ */
 
 :root {
-  --sage: #4a7c59; --sage-light: #e3ece6; --sage-mid: #8fb89c; --sage-dark: #2a5238;
-  --sage-50: #eef3ef; --sage-100: #e3ece6; --sage-700: #3a6347; --sage-800: #2a5238;
-  --ink: #1a1f1c; --ink-soft: #3b4540; --muted: #6f766f; --muted-2: #9aa09a;
-  --border: #e8e4d8; --line-2: #efece2; --bg: #f7f5ef; --white: #ffffff;
-  --amber: #c47a3a; --amber-light: #f6ead9;
-  --red: #c0392b; --red-light: #fdf0ef;
-  --blue: #5a6c8a; --blue-light: #e9edf3;
-  --purple: #5a3d75; --purple-light: #efe7f5;
-  --radius: 14px; --radius-sm: 10px;
-  --shadow: 0 1px 0 rgba(20,30,25,.03), 0 1px 2px rgba(20,30,25,.04);
-  --shadow-lg: 0 8px 28px rgba(20,30,25,.08), 0 2px 6px rgba(20,30,25,.04);
+  /* ── "Sálvia & Linho" — FONTE ÚNICA de tokens (redesign aprovado 10/07/2026).
+     Nomes preservados p/ compatibilidade; valores são a nova paleta. Não criar
+     outro :root em lugar nenhum — onboarding e landing herdam ESTES valores. ── */
+  --sage: #4A7A63; --sage-light: #EAF1EC; --sage-mid: #8FB89C; --sage-dark: #3D6653;
+  --sage-50: #F0F5F1; --sage-100: #EAF1EC; --sage-700: #3D6653; --sage-800: #2E4F3E;
+  --ink: #2B2A26; --ink-soft: #4A4842; --muted: #6B675F; --muted-2: #9A948A;
+  --border: #E8E2D8; --line-2: #F0EBE2; --bg: #FAF7F2; --white: #ffffff;
+  --amber: #B8762A; --amber-light: #F7EBDB;
+  --red: #B3564A; --red-light: #F9EEEC;
+  --blue: #5A6C8A; --blue-light: #E9EDF3;
+  --purple: #5A3D75; --purple-light: #EFE7F5;
+  --terra: #C4795A;
+  /* Humor (sem arco-íris, sem julgamento): difícil → leve */
+  --mood-1: #7D8CA3; --mood-2: #8FA391; --mood-3: #A9B27E; --mood-4: #D3B36A; --mood-5: #E39A5B;
+  --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+  --shadow: 0 1px 3px rgba(43,42,38,.07);
+  --shadow-lg: 0 8px 28px rgba(43,42,38,.10), 0 2px 6px rgba(43,42,38,.05);
   font-family: 'DM Sans', sans-serif;
 }
 [data-theme="dark"] {
-  --sage: #6aab7a; --sage-light: #1a2e20; --sage-mid: #4a8a5c; --sage-dark: #4a8a5c;
-  --ink: #e8ede9; --ink-soft: #b0bdb3; --muted: #6a7a70;
-  --border: #2e3a31; --bg: #111714; --white: #1a2118;
-  --amber: #e8a040; --amber-light: #2a1e0a;
-  --red: #e05060; --red-light: #2a1018;
-  --blue: #5a90c0; --blue-light: #101e2c;
-  --purple: #8a6ac0; --purple-light: #1a1230;
-  --shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.3);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.5);
+  /* Dark QUENTE (não preto): escada de luminância, elevação sem sombra */
+  --sage: #8FBCA4; --sage-light: #2A332C; --sage-mid: #6FA184; --sage-dark: #A5CBB5;
+  --sage-50: #242B26; --sage-100: #2A332C; --sage-700: #A5CBB5; --sage-800: #B8D8C6;
+  --ink: #EDE9E1; --ink-soft: #C9C4B8; --muted: #A39E92; --muted-2: #7A756A;
+  --border: #3A362C; --line-2: #2E2B22; --bg: #1C1A16; --white: #262319;
+  --amber: #DDB061; --amber-light: #332A18;
+  --red: #CF7E72; --red-light: #33211E;
+  --blue: #93A2B8; --blue-light: #20242C;
+  --purple: #B396D6; --purple-light: #2A2133;
+  --terra: #D99A7E;
+  --mood-1: #8B99AE; --mood-2: #9CAF9E; --mood-3: #B5BE8C; --mood-4: #DBBE7C; --mood-5: #E8A96F;
+  --shadow: none;
+  --shadow-lg: none;
 }
 [data-theme="dark"] .sidebar { background: #131a15; border-right-color: rgba(255,255,255,.05); }
 [data-theme="dark"] .sidebar-logo { border-bottom-color: rgba(255,255,255,.06); }
