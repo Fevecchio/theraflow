@@ -88,13 +88,15 @@ async function _supaLoadUserData(userId) {
   try {
     var _prevOwner = localStorage.getItem('tf_owner_uid');
     if (_prevOwner && _prevOwner !== userId) {
-      // O que NUNCA sincroniza (local-only: captação, bloqueios, reflexões,
-      // check-ins, sequência de recibos) e pacientes offline pendentes NÃO podem
-      // ser deletados — seriam perda PERMANENTE (não estão no Supabase do dono).
-      // Vão para um stash por uid e são devolvidos quando o dono anterior voltar.
+      // O que não sincroniza (local-only: captação, reflexões, check-ins, sequência
+      // de recibos) e pacientes offline pendentes NÃO podem ser deletados — seriam
+      // perda PERMANENTE (não estão no Supabase do dono). Vão para um stash por uid
+      // e são devolvidos quando o dono anterior voltar. Bloqueios/horários passaram
+      // a sincronizar (users.settings, 10/07), mas ficam no stash mesmo assim —
+      // protege edições feitas offline que ainda não subiram.
       try {
         var _stash = {};
-        ['tf_captacao','tf_bloqueios','tf_reflections','tf_checkin_terapeuta','tf_recibo_seq']
+        ['tf_captacao','tf_bloqueios','tf_horarios','tf_reflections','tf_checkin_terapeuta','tf_recibo_seq']
           .forEach(function(k){ var v = localStorage.getItem(k); if (v !== null) _stash[k] = v; });
         var _pend = JSON.parse(localStorage.getItem('tf_patients') || '[]')
           .filter(function(q){ return q && q._pendingSync && !q._isDemo; });
@@ -102,7 +104,7 @@ async function _supaLoadUserData(userId) {
         if (Object.keys(_stash).length) localStorage.setItem('tf_switch_stash_' + _prevOwner, JSON.stringify(_stash));
       } catch(_) {}
       ['tf_patients','tf_charges','tf_tasks','tf_appointments','tf_captacao',
-       'tf_reflections','tf_checkin_terapeuta','tf_bloqueios','tf_recibo_seq',
+       'tf_reflections','tf_checkin_terapeuta','tf_bloqueios','tf_horarios','tf_recibo_seq',
        'tf_last_briefing','tf_lk_draft','tf_marcos_vistos','tf_portal_new_data','tf_account']
         .forEach(function(k){ localStorage.removeItem(k); });
       Object.keys(localStorage).forEach(function(k){ if (k.indexOf('tf_bc_') === 0) localStorage.removeItem(k); });
@@ -178,6 +180,25 @@ async function _supaLoadUserData(userId) {
         tfUserData.abordagem   = mergedAcc.abordagem;
       }
       if (typeof aplicarDadosNoApp === 'function') aplicarDadosNoApp();
+      // Configurações da agenda (bloqueios/horários) — users.settings (migration 024).
+      // No login o servidor é a fonte (LWW, escritor único). Se o servidor ainda não
+      // tem nada e o local tem (dados pré-feature ou salvos offline), semeia o upload.
+      try {
+        var _st = profile.settings || {};
+        if (Array.isArray(_st.bloqueios)) {
+          localStorage.setItem('tf_bloqueios', JSON.stringify(_st.bloqueios));
+          if (typeof bloqueios !== 'undefined') {
+            bloqueios.splice(0, bloqueios.length);
+            Array.prototype.push.apply(bloqueios, _st.bloqueios);
+          }
+        }
+        if (_st.horarios) localStorage.setItem('tf_horarios', JSON.stringify(_st.horarios));
+        if (!Array.isArray(_st.bloqueios) && !_st.horarios) {
+          var _temLocal = (localStorage.getItem('tf_bloqueios') || '[]') !== '[]'
+            || !!localStorage.getItem('tf_horarios');
+          if (_temLocal && typeof _supaSync_settings === 'function') _supaSync_settings();
+        }
+      } catch(_) {}
     }
     if (pats && pats.length > 0) {
       const localPats = JSON.parse(localStorage.getItem('tf_patients') || '[]');

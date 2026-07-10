@@ -512,3 +512,29 @@ async function _supaSync_appointments() {
     if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sync de agenda falhou — dados preservados localmente.');
   }
 }
+
+/* Sync das configurações da agenda (tf_bloqueios/tf_horarios) → users.settings.
+ * Eram local-only: férias e grade de horários sumiam em outro dispositivo (TEMA 6).
+ * Escritor único (só o terapeuta edita) → last-write-wins, sem merge. Migration 024.
+ * Sem a migration o update falha com "column not found" — só loga; nada quebra. */
+var _settingsSyncTimer = null;
+function _supaSync_settings() {
+  if (window._tfDemo) return;
+  if (_settingsSyncTimer) clearTimeout(_settingsSyncTimer);
+  _settingsSyncTimer = setTimeout(async function() {
+    _settingsSyncTimer = null;
+    try {
+      await _syncRace(async function() {
+        const { data: { user } } = await supa.auth.getUser();
+        if (!user) return; // sem sessão: fica local, sem alarde (config não é dado clínico)
+        var settings = {};
+        try { settings.bloqueios = JSON.parse(localStorage.getItem('tf_bloqueios') || '[]'); } catch(_) { settings.bloqueios = []; }
+        try { settings.horarios  = JSON.parse(localStorage.getItem('tf_horarios')  || 'null'); } catch(_) { settings.horarios = null; }
+        const { error } = await supa.from('users').update({ settings: settings }).eq('id', user.id);
+        if (error) throw error;
+      });
+    } catch(e) {
+      console.warn('[Supa] Sync settings falhou:', e.message);
+    }
+  }, 800);
+}

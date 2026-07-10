@@ -851,6 +851,7 @@ function salvarHorarios() {
   var fim    = document.getElementById('horario-fim')?.value    || '18:00';
   var config = { dias: dias, inicio: inicio, fim: fim };
   try { localStorage.setItem('tf_horarios', JSON.stringify(config)); } catch(e) {}
+  if (typeof _supaSync_settings === 'function') _supaSync_settings();
   return config;
 }
 
@@ -886,6 +887,7 @@ try { bloqueios = JSON.parse(localStorage.getItem('tf_bloqueios') || '[]'); } ca
 
 function salvarBloqueios() {
   try { localStorage.setItem('tf_bloqueios', JSON.stringify(bloqueios)); } catch(e) {}
+  if (typeof _supaSync_settings === 'function') _supaSync_settings();
 }
 
 function abrirModalBloqueio() {
