@@ -1243,11 +1243,9 @@ function renderPatientFicha(i) {
     + '<div>'
     + '<div class="form-group"><label>CID principal</label><div style="font-size:14px;padding:9px 0">' + (p.cid && p.cid !== '—' ? escHTML(p.cid) : 'Não informado') + '</div></div>'
     + '<div class="form-group"><label>Abordagem</label><div style="font-size:14px;padding:9px 0">' + escHTML(p.abordagem || '—') + '</div></div>'
-    + '<div class="form-group"><label>Frequência</label><div style="font-size:14px;padding:9px 0">—</div></div>'
     + '</div>'
     + '<div>'
     + '<div class="form-group"><label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">' + escHTML(p.notes || '—') + '</div></div>'
-    + '<div class="form-group"><label>Medicamentos</label><div style="font-size:14px;padding:9px 0">—</div></div>'
     + '</div>'
     + '</div>'
     + evolucaoHtml

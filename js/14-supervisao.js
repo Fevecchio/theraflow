@@ -1551,46 +1551,43 @@ function switchSupTab(el, tabId) {
 function runSupAnalysis() {
   const loading = document.getElementById('sup-ai-loading');
   const content = document.getElementById('sup-ai-content');
-  if (!loading || !content) return;
-  content.style.display = 'none';
-  loading.style.display = 'block';
-  setTimeout(function() {
-    loading.style.display = 'none';
-    content.style.display = 'block';
-    // Gera alertas reais a partir dos dados dos pacientes
-    var alertas = gerarAlertasReais();
-    var bannerExist = document.getElementById('sup-new-session-banner');
-    var bannerHtml = bannerExist ? bannerExist.outerHTML : '';
-    if (alertas.length === 0) {
-      content.innerHTML = bannerHtml + '<div style="text-align:center;padding:40px 20px;color:var(--muted)">'
-        + '<div style="font-size:32px;margin-bottom:12px">🌿</div>'
-        + '<div style="font-weight:600;margin-bottom:6px">Tudo certo por aqui!</div>'
-        + '<div style="font-size:13px">Nenhum alerta clínico identificado esta semana.</div>'
-        + '</div>';
-    } else {
-      content.innerHTML = bannerHtml + alertas.map(function(a){
-        var acoes = a.idx !== null
-          ? '<div class="sup-alert-actions">'
-              + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')">✦ Briefing IA</button>'
-              + '<button class="btn btn-sm btn-secondary" onclick="navigate(\'prontuarios\')">📋 Prontuário</button>'
-            + '</div>'
-          : '';
-        var pacBadge = a.paciente
-          ? '<div class="sup-alert-patient"><span>'+escHTML(a.paciente)+'</span></div>'
-          : '';
-        return '<div class="sup-alert-card '+a.tipo+'">'
-          + '<div class="sup-alert-icon">'+a.icon+'</div>'
-          + '<div><div class="sup-alert-type">'+a.label+'</div>'
-            + '<div class="sup-alert-title">'+a.titulo+'</div>'
-            + '<div class="sup-alert-text">'+a.texto+'</div>'
-            + pacBadge + acoes
+  if (!content) return;
+  // A análise é síncrona e local (gerarAlertasReais) — renderiza direto, sem o
+  // loading encenado de 1,8s que fingia processamento (F4.6 #10a).
+  if (loading) loading.style.display = 'none';
+  content.style.display = 'block';
+  var alertas = gerarAlertasReais();
+  var bannerExist = document.getElementById('sup-new-session-banner');
+  var bannerHtml = bannerExist ? bannerExist.outerHTML : '';
+  if (alertas.length === 0) {
+    content.innerHTML = bannerHtml + '<div style="text-align:center;padding:40px 20px;color:var(--muted)">'
+      + '<div style="font-size:32px;margin-bottom:12px">🌿</div>'
+      + '<div style="font-weight:600;margin-bottom:6px">Tudo certo por aqui!</div>'
+      + '<div style="font-size:13px">Nenhum alerta clínico identificado esta semana.</div>'
+      + '</div>';
+  } else {
+    content.innerHTML = bannerHtml + alertas.map(function(a){
+      var acoes = a.idx !== null
+        ? '<div class="sup-alert-actions">'
+            + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')">✦ Briefing IA</button>'
+            + '<button class="btn btn-sm btn-secondary" onclick="navigate(\'prontuarios\')">📋 Prontuário</button>'
           + '</div>'
-          + '</div>';
-      }).join('');
-    }
-    content.classList.add('fade-in');
-    showToast('✦ Análise clínica atualizada com sucesso.');
-  }, 1800);
+        : '';
+      var pacBadge = a.paciente
+        ? '<div class="sup-alert-patient"><span>'+escHTML(a.paciente)+'</span></div>'
+        : '';
+      return '<div class="sup-alert-card '+a.tipo+'">'
+        + '<div class="sup-alert-icon">'+a.icon+'</div>'
+        + '<div><div class="sup-alert-type">'+a.label+'</div>'
+          + '<div class="sup-alert-title">'+a.titulo+'</div>'
+          + '<div class="sup-alert-text">'+a.texto+'</div>'
+          + pacBadge + acoes
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+  content.classList.add('fade-in');
+  showToast('✦ Análise clínica atualizada.');
 }
 
 function _gerarReflexoesDinamicas() {
@@ -2091,7 +2088,7 @@ function _renderPerguntasSupervPares() {
   var qs = _gerarPerguntasSupervPares();
   container.innerHTML = qs.map(function(q, i) {
     return '<div style="background:var(--purple-light);border:1px solid rgba(90,62,138,.15);border-radius:10px;padding:14px 16px">'
-      + '<div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Supervisor IA · Questão ' + (i+1) + '</div>'
+      + '<div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Para refletir · Questão ' + (i+1) + '</div>'
       + '<div style="font-size:14px;color:var(--ink);line-height:1.7;font-style:italic">"' + q + '"</div>'
       + '<button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="showReflectionModal()">✍ Registrar reflexão</button>'
     + '</div>';

@@ -1199,6 +1199,22 @@ function renderDiarioPortal(p) {
       ta.addEventListener('focus', function(){ this.style.borderColor = config.cor; });
       ta.addEventListener('blur',  function(){ this.style.borderColor = 'var(--border)'; });
     });
+    // Esta tela é a PRÉVIA do terapeuta — quem preenche é o paciente, no portal
+    // (pacSalvarDiario). Form desabilitado e botão "salvar" trocado por aviso;
+    // antes chamava saveDiaryEsp, que só criava card no DOM e sumia no F5 (F4.6 #6).
+    panel.querySelectorAll('textarea, input').forEach(function(el){ el.disabled = true; el.style.opacity = '.65'; });
+    panel.querySelectorAll('button').forEach(function(btn) {
+      var oc = btn.getAttribute('onclick') || '';
+      if (oc.indexOf('saveDiaryEsp') !== -1) {
+        var note = document.createElement('span');
+        note.style.cssText = 'font-size:12px;color:var(--muted);font-style:italic';
+        note.textContent = '👁 Prévia — o paciente preenche e salva no portal dele';
+        btn.parentNode.replaceChild(note, btn);
+      } else {
+        btn.disabled = true; btn.removeAttribute('onclick');
+        btn.style.opacity = '.55'; btn.style.cursor = 'default';
+      }
+    });
     // Popula os registros especializados JÁ salvos pelo paciente (tipo 'esp' vem do
     // portal via pacSalvarDiario). Sem isto a lista nascia vazia e o terapeuta nunca
     // via o diário especializado real.
@@ -1282,41 +1298,9 @@ function salvarRespostaDiario(pidx, entryIdx) {
   showToast('✦ Resposta enviada! O paciente verá na próxima vez que abrir o portal.');
 }
 
-function saveDiaryEsp(abordagem) {
-  const config = DIARY_CONFIG[abordagem];
-  if (!config) return;
-  var campos = [];
-  [1,2,3,4].forEach(function(n) {
-    var el = document.getElementById('esp-campo-' + n);
-    if (el && el.value.trim()) campos.push(el.value.trim());
-  });
-  if (campos.length === 0) { showToast('⚠ Preencha ao menos um campo.'); return; }
-
-  var hoje = new Date();
-  var dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  var dataStr = dias[hoje.getDay()]+', '+String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+' · '+String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0');
-  var nomeT = (typeof tfUserData !== 'undefined' ? tfUserData?.nome : '') || 'sua terapeuta';
-  nomeT = nomeT.split(' ')[0];
-
-  var config2 = DIARY_CONFIG[abordagem];
-  var cor = config2 ? config2.cor : 'var(--sage)';
-
-  var listEl = document.getElementById('diary-esp-list');
-  if (!listEl) return;
-
-  var card = document.createElement('div');
-  card.style.cssText = 'background:var(--bg);border-radius:10px;padding:14px 16px;border-left:3px solid '+cor;
-  card.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between"><span>'+escHTML(dataStr)+'</span><span style="color:var(--sage);font-weight:600">✓ '+escHTML(nomeT)+' verá na sessão</span></div>'
-    + campos.map(function(c){ return '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:6px">'+escHTML(c)+'</div>'; }).join('');
-  listEl.insertBefore(card, listEl.firstChild);
-
-  // Limpa campos
-  [1,2,3,4].forEach(function(n) {
-    var el = document.getElementById('esp-campo-' + n);
-    if (el) el.value = '';
-  });
-  showToast('✓ Registro salvo!');
-}
+// saveDiaryEsp foi removida (F4.6 item 6): era DOM-only — o card sumia no F5 com
+// toast "salvo!". O form real é o do portal do paciente (pacSalvarDiario, js/13);
+// na prévia do terapeuta o form agora é somente-leitura (renderDiarioPortal).
 
 // ── MENSAGEM DA SEMANA ──
 function renderMensagemPortal() {

@@ -645,7 +645,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   </div>
 
   <div class="card" style="margin-top:20px">
-    <div class="section-header"><div class="section-title">Insights da semana (IA)</div><span class="tag tag-purple">Análise automática</span></div>
+    <div class="section-header"><div class="section-title">Insights da carteira</div><span class="tag tag-purple">Análise automática</span></div>
     <div id="dash-insights-list" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
       <div style="color:var(--muted);font-size:13px;padding:8px 0">Carregando…</div>
     </div>
@@ -1210,18 +1210,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <button class="btn btn-purple" onclick="startBriefing()">✦ Analisar histórico e gerar briefing</button>
       </div>
     </div>
-    <!-- Estado: loading -->
-    <div id="b-state-load" style="display:none">
-      <div style="padding:14px 20px;background:#faf8f4;border-bottom:1px solid var(--border);font-size:13px;color:var(--purple);font-weight:500;display:flex;align-items:center;gap:8px"><div class="ai-dot"></div>Analisando 11 sessões…</div>
-      <div class="loading-steps" id="b-loading-steps">
-        <div class="loading-step"><div class="step-icon step-running" id="bs0-icon">🔍</div><span class="step-label running" id="bs0-lbl">Lendo notas e transcrições anteriores</span></div>
-        <div class="loading-step"><div class="step-icon step-pending" id="bs1-icon">🔁</div><span class="step-label" id="bs1-lbl">Identificando temas recorrentes</span></div>
-        <div class="loading-step"><div class="step-icon step-pending" id="bs2-icon">📈</div><span class="step-label" id="bs2-lbl">Mapeando evolução clínica</span></div>
-        <div class="loading-step"><div class="step-icon step-pending" id="bs3-icon">⚠</div><span class="step-label" id="bs3-lbl">Verificando pontos de atenção</span></div>
-        <div class="loading-step"><div class="step-icon step-pending" id="bs4-icon">💡</div><span class="step-label" id="bs4-lbl">Sugerindo perguntas para hoje</span></div>
-      </div>
-    </div>
-    <!-- Estado: resultado -->
+    <!-- Estado: resultado (o loading real acontece dentro de b-content, via callBriefingAI) -->
     <div id="b-state-result" style="display:none">
       <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div><div style="font-family:'Instrument Serif',serif;font-size:17px" id="b-result-title">Briefing — Paciente</div><div style="font-size:12px;color:var(--muted);margin-top:2px" id="b-result-subtitle">Gerado agora</div></div>
@@ -1585,12 +1574,10 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div class="sup-hero">
       <div class="sup-hero-icon">🔬</div>
       <div>
-        <div class="sup-hero-title">Supervisão · Semana 12</div>
-        <div class="sup-hero-sub">Análise baseada em 11 sessões realizadas · 24 pacientes ativos · última atualização há 2h</div>
+        <div class="sup-hero-title">Supervisão</div>
+        <div class="sup-hero-sub">Análise da sua carteira</div>
       </div>
       <div class="sup-hero-right">
-        <div class="sup-streak">11</div>
-        <div class="sup-streak-lbl">semanas ativas</div>
         <button onclick="deactivateSupervisao()" class="btn btn-secondary btn-sm" style="margin-top:12px;font-size:11.5px">⊘ Desativar</button>
       </div>
     </div>
@@ -2646,13 +2633,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div class="form-group">
       <label for="plan-paciente-select">Paciente</label>
       <select class="form-input" id="plan-paciente-select">
-        <option>Selecionar paciente…</option>
-        <option>Camila Rocha — mensal (R$720/mês)</option>
-        <option>Rafael Andrade — avulso (R$200/sessão)</option>
-        <option>Marcos Oliveira — mensal (R$720/mês)</option>
-        <option>Pedro Alves — avulso (R$200/sessão)</option>
-        <option>Juliana Costa — avulso (R$250/sessão)</option>
-        <option>Lúcia Fernandes — nova paciente</option>
+        <option value="">Selecionar paciente…</option>
       </select>
     </div>
 
@@ -2673,29 +2654,15 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <input class="form-input" id="plan-valor-pacote" value="R$ 720,00" placeholder="R$ 720,00"/>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="plan-desconto">Desconto aplicado</label>
-          <input class="form-input" id="plan-desconto" value="10%" style="max-width:100px"/>
-        </div>
-        <div class="form-group">
-          <label for="plan-vencimento">Dia de vencimento</label>
-          <select class="form-input" id="plan-vencimento">
-            <option>Dia 1</option>
-            <option>Dia 5</option>
-            <option>Dia 10</option>
-            <option>Dia 15</option>
-            <option>Dia 20</option>
-            <option>Combinado com paciente</option>
-          </select>
-        </div>
-      </div>
       <div class="form-group">
-        <label for="plan-politica-falta">Política de falta</label>
-        <select class="form-input" id="plan-politica-falta">
-          <option>Sessão perdida não é reposta</option>
-          <option>Sessão perdida pode ser reposta no mesmo mês</option>
-          <option>Sessão perdida transfere para o próximo mês</option>
+        <label for="plan-vencimento">Dia de vencimento</label>
+        <select class="form-input" id="plan-vencimento">
+          <option>Dia 1</option>
+          <option>Dia 5</option>
+          <option>Dia 10</option>
+          <option>Dia 15</option>
+          <option>Dia 20</option>
+          <option>Combinado com paciente</option>
         </select>
       </div>
       <div style="padding:12px;background:var(--blue-light);border-radius:8px;font-size:13px;color:var(--blue);line-height:1.5;margin-bottom:16px">
@@ -2714,15 +2681,6 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <label for="fin-plano-data">Data da sessão</label>
           <input class="form-input" id="fin-plano-data" type="text" placeholder="dd/mm/aaaa"/>
         </div>
-      </div>
-      <div class="form-group">
-        <label for="plan-recorrencia">Recorrência</label>
-        <select class="form-input" id="plan-recorrencia">
-          <option value="unica">Sessão única (não vai repetir)</option>
-          <option value="semanal">Semanal — cobrar a cada sessão</option>
-          <option value="quinzenal">Quinzenal — cobrar a cada sessão</option>
-          <option value="irregular">Sem frequência fixa — cobrar quando agendar</option>
-        </select>
       </div>
       <div class="form-group">
         <label for="plan-metodo-pgto">Método de pagamento</label>
@@ -3083,12 +3041,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
 </div>
 
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
-}
-</script>
+<!-- register() do sw.js removido (F4.6 #13c): o sw.js atual se auto-desregistra e o
+     head já tem o killswitch que limpa SW/caches antigos — registrar de novo era um
+     ciclo inútil. Reintroduzir SW só com estratégia offline real. -->
 </body>
 </html>

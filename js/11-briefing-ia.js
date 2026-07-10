@@ -30,17 +30,9 @@ let _briefingForceRefresh = false;
 function initBriefing() {
   // Reseta para estado inicial "gerar"
   document.getElementById('b-state-gen').style.display  = 'block';
-  document.getElementById('b-state-load').style.display = 'none';
   document.getElementById('b-state-result').style.display = 'none';
   document.getElementById('b-section-themes').style.display = 'none';
   document.getElementById('b-section-timeline').style.display = 'none';
-  // Reseta steps
-  for (let i = 0; i < 5; i++) {
-    const icon = document.getElementById(`bs${i}-icon`);
-    const lbl  = document.getElementById(`bs${i}-lbl`);
-    if (icon) { icon.className = 'step-icon step-pending'; icon.textContent = ['🔍','🔁','📈','⚠','💡'][i]; }
-    if (lbl)  lbl.className = 'step-label';
-  }
   // Atualiza hero com paciente atual
   const p = patients[currentBriefingPatientIdx] || patients[0];
   if (!p) return;
@@ -62,9 +54,6 @@ function initBriefing() {
   // Atualiza memória disponível
   const memSessions = document.querySelector('.memory-chip b');
   if (memSessions) memSessions.textContent = p.sessions || 0;
-  // Atualiza badge
-  const loadTxt = document.querySelector('#b-state-load > div:first-child');
-  if (loadTxt) loadTxt.innerHTML = `<div class="ai-dot"></div>Analisando ${p.sessions || 0} sessões…`;
   // Atualiza header do resultado
   const resHeader = document.querySelector('#b-state-result > div:first-child > div > div:first-child');
   if (resHeader) resHeader.textContent = `Briefing — ${p.name}`;
@@ -137,27 +126,14 @@ function _setRegenBtn(disabled) {
 }
 
 function startBriefing() {
+  // Direto ao resultado — o loading real é o do callBriefingAI ("Gerando análise
+  // clínica…"). As 5 etapas com timing fixo (~5,6s) eram encenação antes da
+  // chamada de verdade — loading duplo (F4.6 #11).
   document.getElementById('b-state-gen').style.display = 'none';
-  document.getElementById('b-state-load').style.display = 'block';
-  const icons = ['🔍','🔁','📈','⚠','💡'];
-  const labels = ['Lendo notas e transcrições anteriores','Identificando temas recorrentes','Mapeando evolução clínica','Verificando pontos de atenção','Sugerindo perguntas para hoje'];
-  const delays = [800, 1800, 2800, 3600, 4400];
-  delays.forEach((d, i) => {
-    setTimeout(() => {
-      if(i > 0) {
-        document.getElementById(`bs${i-1}-icon`).className = 'step-icon step-done';
-        document.getElementById(`bs${i-1}-icon`).textContent = '✓';
-        document.getElementById(`bs${i-1}-lbl`).className = 'step-label done';
-      }
-      document.getElementById(`bs${i}-icon`).className = 'step-icon step-running';
-      document.getElementById(`bs${i}-lbl`).className = 'step-label running';
-      if(i === delays.length - 1) setTimeout(showBriefingResult, 1200);
-    }, d);
-  });
+  showBriefingResult();
 }
 
 function showBriefingResult() {
-  document.getElementById('b-state-load').style.display = 'none';
   document.getElementById('b-state-result').style.display = 'block';
   document.getElementById('b-section-themes').style.display = 'block';
   document.getElementById('b-section-timeline').style.display = 'block';
@@ -511,25 +487,10 @@ function renderTimeline() {
 }
 
 function regenerateBriefing() {
+  // Sem a animação encenada de 5 etapas (F4.6 #11): _briefingForceRefresh pula o
+  // cache e o callBriefingAI mostra o loading real no lugar do conteúdo antigo.
   _briefingForceRefresh = true;
-  document.getElementById('b-state-result').style.display = 'none';
-  document.getElementById('b-section-themes').style.display = 'none';
-  document.getElementById('b-section-timeline').style.display = 'none';
-  for(let i=0;i<5;i++){
-    document.getElementById(`bs${i}-icon`).className = 'step-icon step-pending';
-    document.getElementById(`bs${i}-icon`).textContent = ['🔍','🔁','📈','⚠','💡'][i];
-    document.getElementById(`bs${i}-lbl`).className = 'step-label';
-  }
-  document.getElementById('b-state-load').style.display = 'block';
-  const delays = [800,1800,2800,3600,4400];
-  delays.forEach((d,i) => {
-    setTimeout(() => {
-      if(i>0){document.getElementById(`bs${i-1}-icon`).className='step-icon step-done';document.getElementById(`bs${i-1}-icon`).textContent='✓';document.getElementById(`bs${i-1}-lbl`).className='step-label done';}
-      document.getElementById(`bs${i}-icon`).className='step-icon step-running';
-      document.getElementById(`bs${i}-lbl`).className='step-label running';
-      if(i===delays.length-1) setTimeout(showBriefingResult, 1200);
-    }, d);
-  });
+  showBriefingResult();
 }
 
 // ── FINANCEIRO V2 ──
