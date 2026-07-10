@@ -443,14 +443,26 @@ document.addEventListener('DOMContentLoaded', function() {
     if (event === 'TOKEN_REFRESHED' && session) {
       _supaLoadUserData(session.user.id).catch(function() {});
     }
+    if (event === 'PASSWORD_RECOVERY') {
+      // T-A6: o link do "Esqueci minha senha" do terapeuta não tinha destino — caía
+      // no app sem pedir senha nova. Agora abre a tela de definir nova senha.
+      _showTherapistPasswordReset();
+    }
     if (event === 'SIGNED_OUT') {
       // Limpa estado Pro se sessão expirar sem renovação
       _tfPlanPro = false;
     }
   });
 
+  // Se a página abriu por um link de recuperação (#type=recovery), NÃO auto-entra —
+  // mostra a tela de nova senha (o evento acima também dispara, mas o hash chega antes).
+  var _recoveryOnLoad = false;
+  try { _recoveryOnLoad = /type=recovery/.test(location.hash || ''); } catch(_) {}
+  if (_recoveryOnLoad) { setTimeout(_showTherapistPasswordReset, 300); }
+
   // Verificar sessão Supabase ativa — se válida, restaura dados e entra sem re-digitar senha
   supa.auth.getSession().then(async function({ data: { session } }) {
+    if (_recoveryOnLoad) return; // fluxo de recuperação de senha — não auto-entra (T-A6)
     if (!session || !session.user) return;
     var acc = null;
     try { acc = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
@@ -498,3 +510,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }).catch(function() {});
   }
 });
+
+// Tela de definir nova senha do terapeuta (T-A6), acionada pelo link do email de
+// recuperação. Usa supa.auth.updateUser (a sessão de recovery já autentica).
+function _showTherapistPasswordReset() {
+  if (document.getElementById('tf-pwd-recovery-overlay')) return;
+  var ov = document.createElement('div');
+  ov.id = 'tf-pwd-recovery-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,30,24,.82);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:400px;width:100%;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit">'
+    + '<div style="font-size:20px;font-weight:700;color:#1a2a1e;margin-bottom:6px">Defina uma nova senha 🔐</div>'
+    + '<div style="font-size:13px;color:#5a6b60;line-height:1.5;margin-bottom:18px">Escolha a nova senha da sua conta TheraFlow.</div>'
+    + '<input id="tf-pwd-rec-1" type="password" placeholder="Nova senha (mín. 8 caracteres)" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
+    + '<input id="tf-pwd-rec-2" type="password" placeholder="Confirme a nova senha" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
+    + '<div id="tf-pwd-rec-err" style="display:none;color:#c0392b;font-size:12.5px;margin-bottom:10px"></div>'
+    + '<button id="tf-pwd-rec-btn" style="width:100%;padding:12px;background:#4a7c59;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Salvar nova senha</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+  var btn = document.getElementById('tf-pwd-rec-btn');
+  btn.onclick = async function() {
+    var s1 = (document.getElementById('tf-pwd-rec-1').value || '').trim();
+    var s2 = (document.getElementById('tf-pwd-rec-2').value || '').trim();
+    var err = document.getElementById('tf-pwd-rec-err');
+    err.style.display = 'none';
+    if (s1.length < 8) { err.textContent = 'A senha deve ter pelo menos 8 caracteres.'; err.style.display = ''; return; }
+    if (s1 !== s2) { err.textContent = 'As senhas não coincidem.'; err.style.display = ''; return; }
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    try {
+      var r = await supa.auth.updateUser({ password: s1 });
+      if (r && r.error) throw r.error;
+      // Atualiza o hash local de fallback (senão o login offline usaria a senha antiga)
+      try {
+        var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+        if (typeof tfHashSenha === 'function') { acc.senha = await tfHashSenha(s1); localStorage.setItem('tf_account', JSON.stringify(acc)); }
+      } catch(_) {}
+      ov.remove();
+      try { history.replaceState({}, '', location.pathname); } catch(_) {}
+      if (typeof showToast === 'function') showToast('Senha atualizada! 🔐');
+      var _acc2 = null; try { _acc2 = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(_) {}
+      if (_acc2 && typeof _proceedToApp === 'function') _proceedToApp(_acc2);
+    } catch(e) {
+      btn.disabled = false; btn.textContent = 'Salvar nova senha';
+      err.textContent = 'Não foi possível salvar: ' + (e.message || 'tente novamente') + '.';
+      err.style.display = '';
+    }
+  };
+  var i1 = document.getElementById('tf-pwd-rec-1'); if (i1) i1.focus();
+}
