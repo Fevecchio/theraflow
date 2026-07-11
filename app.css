@@ -1250,14 +1250,21 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   gap: 5px;
   padding: 6px 10px;
   border-radius: 7px;
-  border: 1.5px dashed var(--border);
-  color: var(--muted);
+  /* Invisível até o hover da linha — o "+ Nova sessão" permanente em TODO slot
+     vazio era ruído visual; mesma revelação da view Semana (V3). */
+  border: 1.5px dashed transparent;
+  color: transparent;
   font-size: 12px;
   cursor: pointer;
   transition: all .18s;
   user-select: none;
 }
-.slot-add:hover {
+.appt-slot:hover .slot-add {
+  border-color: var(--border);
+  color: var(--muted);
+}
+.slot-add:hover,
+.appt-slot .slot-add:hover {
   border-color: var(--sage);
   background: var(--sage-light);
   color: var(--sage);

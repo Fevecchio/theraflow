@@ -428,10 +428,10 @@ function enviarLembreteAgenda(nomeCompleto) {
   var p = patients[pidx];
   if (!p?.whatsapp) {
     showToast('⚠ ' + nomeCompleto.split(' ')[0] + ' não tem WhatsApp cadastrado — não foi possível enviar. Adicione o número na ficha do paciente.', 'warning');
-    return;
+    return false; // _lembrarConfirmacao não marca confirmada sem lembrete enviado
   }
   var n = _wppNumero(p.whatsapp);
-  if (!n) { showToast('Número de WhatsApp inválido.'); return; }
+  if (!n) { showToast('Número de WhatsApp inválido.'); return false; }
   var detalhe = '';
   if (appt) {
     var d = new Date(appt.date + 'T12:00');
@@ -441,6 +441,7 @@ function enviarLembreteAgenda(nomeCompleto) {
   var msg = 'Olá ' + _firstName(p.name) + '! Lembrete da sua sessão de psicoterapia' + detalhe + '. Até breve! 😊';
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank');
   showToast('📨 Lembrete enviado para ' + _firstName(p.name) + '!');
+  return true;
 }
 
 // ── /AGENDA ──────────────────────────────────────────────────────────────────

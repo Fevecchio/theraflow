@@ -18,12 +18,12 @@ function countUp(el, target, duration) {
 var _dashRefreshInterval = null;
 function _startDashAutoRefresh() {
   _stopDashAutoRefresh();
+  // Refresh COMPLETO: stats, hero, insights e tarefas também envelhecem no
+  // intervalo — só a lista de sessões atualizava e o resto ficava stale (V3).
+  // countUp não repinta valor igual, então não há churn visual.
   _dashRefreshInterval = setInterval(function() {
     var pg = document.getElementById('page-dashboard');
-    if (pg && pg.classList.contains('active')) _renderDashSessoesHoje(
-      appointments.filter(function(a){ return a.date===hojeISO() && a.status!=='cancelada'; })
-        .sort(function(a,b){ return a.time<b.time?-1:1; })
-    );
+    if (pg && pg.classList.contains('active')) atualizarDashboard();
   }, 60000);
 }
 function _stopDashAutoRefresh() {
@@ -184,6 +184,26 @@ function atualizarDashboard() {
     subtitle.textContent = dataFmt + (sessoesHoje.length > 0 ? ` · ${sessoesHoje.length} ${sessoesHoje.length!==1?'sessões':'sessão'} hoje` : ' · Sem sessões hoje');
   }
 
+  // ── Hero: "Iniciar sessão" aponta para a PRÓXIMA sessão real de hoje
+  // (antes navegava para a página Sessão com o paciente que estivesse lá — V3)
+  const heroBtn = document.getElementById('btn-hero-sessao');
+  if (heroBtn) {
+    const agoraMin = agora.getHours()*60 + agora.getMinutes();
+    const proxHoje = sessoesHoje.filter(function(a){
+      if (a.presenca) return false;
+      const t = (a.time||'00:00').split(':');
+      // margem de 30min: sessão em andamento ainda conta como "a de agora"
+      return (parseInt(t[0])*60 + parseInt(t[1] || 0)) >= agoraMin - 30;
+    })[0];
+    if (proxHoje && patients[proxHoje.patientIdx]) {
+      heroBtn.textContent = '▶ Iniciar · ' + _firstName(proxHoje.patientName) + ' ' + (proxHoje.time || '');
+      heroBtn.onclick = function(){ currentSessionPatientIdx = proxHoje.patientIdx; navigate('sessao'); };
+    } else {
+      heroBtn.textContent = '▶ Iniciar sessão';
+      heroBtn.onclick = function(){ navigate('sessao'); };
+    }
+  }
+
   // Renderiza lista "Sessões de hoje"
   _renderDashSessoesHoje(sessoesHoje);
 
@@ -307,6 +327,16 @@ function _renderDashSessoesHoje(sessoes) {
   }).join('');
 }
 
+// CTA dos insights: abre o paciente citado (o insight sem ação era beco sem saída — V3)
+function _dashInsightAbrirPaciente(idx) {
+  navigate('pacientes');
+  setTimeout(function(){ if (typeof selectPatient === 'function') selectPatient(idx); }, 150);
+}
+function _dashInsightAgendar() {
+  navigate('agenda');
+  setTimeout(function(){ if (typeof showAgendarModal === 'function') showAgendarModal(); }, 150);
+}
+
 function _renderDashInsights() {
   const cont = document.getElementById('dash-insights-list');
   if (!cont) return;
@@ -322,13 +352,15 @@ function _renderDashInsights() {
   });
   var temaTop = Object.entries(temas).sort((a,b)=>b[1]-a[1]).slice(0,1);
   if (temaTop.length && temaTop[0][1] >= 2) {
-    insights.push({ icon:'🔁', text: temaTop[0][1]+' pacientes relataram <strong>'+temaTop[0][0]+'</strong> nas notas recentes — tema emergente na carteira.' });
+    insights.push({ icon:'🔁', text: temaTop[0][1]+' pacientes relataram <strong>'+temaTop[0][0]+'</strong> nas notas recentes — tema emergente na carteira.',
+      cta:'Ver na Supervisão', onclick:"navigate('supervisao')" });
   }
 
   // Paciente com boa evolução
   var evolucao = patients.filter(function(p){ return (p.progress||0) >= 70 && p.sessions >= 5; }).slice(0,1);
   if (evolucao.length) {
-    insights.push({ icon:'📈', text: escHTML(evolucao[0].name.split(' ')[0])+' demonstrou <strong>evolução consistente</strong> ('+evolucao[0].progress+'% de progresso em '+evolucao[0].sessions+' sessões).' });
+    insights.push({ icon:'📈', text: escHTML(evolucao[0].name.split(' ')[0])+' demonstrou <strong>evolução consistente</strong> ('+evolucao[0].progress+'% de progresso em '+evolucao[0].sessions+' sessões).',
+      cta:'Abrir paciente', onclick:'_dashInsightAbrirPaciente('+patients.indexOf(evolucao[0])+')' });
   }
 
   // Risco: paciente com humor baixo
@@ -338,7 +370,8 @@ function _renderDashInsights() {
     return ult[ult.length-1] <= 4;
   }).slice(0,1);
   if (risco.length) {
-    insights.push({ icon:'⚠', text: escHTML(risco[0].name.split(' ')[0])+' registrou humor <strong>abaixo de 5/10</strong> nas últimas avaliações. Considerar atenção especial na próxima sessão.' });
+    insights.push({ icon:'⚠', text: escHTML(risco[0].name.split(' ')[0])+' registrou humor <strong>abaixo de 5/10</strong> nas últimas avaliações. Considerar atenção especial na próxima sessão.',
+      cta:'Abrir paciente', onclick:'_dashInsightAbrirPaciente('+patients.indexOf(risco[0])+')' });
   }
 
   // Sem agendar próxima sessão
@@ -350,14 +383,16 @@ function _renderDashInsights() {
     return !temFuturo;
   }).slice(0,1);
   if (semProxima.length) {
-    insights.push({ icon:'🗓', text: escHTML(semProxima[0].name.split(' ')[0])+' tem '+semProxima[0].sessions+' sessões realizadas mas <strong>sem próxima sessão marcada</strong>. Risco de evasão.' });
+    insights.push({ icon:'🗓', text: escHTML(semProxima[0].name.split(' ')[0])+' tem '+semProxima[0].sessions+' sessões realizadas mas <strong>sem próxima sessão marcada</strong>. Risco de evasão.',
+      cta:'Agendar agora', onclick:'_dashInsightAgendar()' });
   }
 
   // Inadimplência na carteira
   var inadimplentes = charges.filter(_chargeVencida);
   if (inadimplentes.length) {
     var totalInad = inadimplentes.reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
-    insights.push({ icon:'💸', text: '<strong>'+fmtMoedaInt(totalInad)+' em atraso</strong> — '+inadimplentes.length+' cobrança'+( inadimplentes.length>1?'s':'')+' vencida'+( inadimplentes.length>1?'s':'')+' aguardando ação.' });
+    insights.push({ icon:'💸', text: '<strong>'+fmtMoedaInt(totalInad)+' em atraso</strong> — '+inadimplentes.length+' cobrança'+( inadimplentes.length>1?'s':'')+' vencida'+( inadimplentes.length>1?'s':'')+' aguardando ação.',
+      cta:'Ver Financeiro', onclick:"navigate('financeiro')" });
   }
 
   // Exercícios com baixa adesão
@@ -368,7 +403,8 @@ function _renderDashInsights() {
     return media < 0.3 && p.status !== 'Inativa';
   }).slice(0,1);
   if (baixaAdesao.length) {
-    insights.push({ icon:'📋', text: escHTML(baixaAdesao[0].name.split(' ')[0])+' tem <strong>baixa adesão aos exercícios</strong> (menos de 30% concluídos). Vale revisar na próxima sessão.' });
+    insights.push({ icon:'📋', text: escHTML(baixaAdesao[0].name.split(' ')[0])+' tem <strong>baixa adesão aos exercícios</strong> (menos de 30% concluídos). Vale revisar na próxima sessão.',
+      cta:'Abrir paciente', onclick:'_dashInsightAbrirPaciente('+patients.indexOf(baixaAdesao[0])+')' });
   }
 
   // Paciente sem sessão há mais de 30 dias
@@ -381,7 +417,8 @@ function _renderDashInsights() {
     return ultima && ultima.date < iso30;
   }).slice(0,1);
   if (longOut.length) {
-    insights.push({ icon:'⏳', text: escHTML(longOut[0].name.split(' ')[0]+' está há mais de 30 dias sem sessão. Considere um contato de acompanhamento.') });
+    insights.push({ icon:'⏳', text: escHTML(longOut[0].name.split(' ')[0]+' está há mais de 30 dias sem sessão. Considere um contato de acompanhamento.'),
+      cta:'Agendar agora', onclick:'_dashInsightAgendar()' });
   }
 
   if (!insights.length) {
@@ -389,7 +426,9 @@ function _renderDashInsights() {
   }
 
   cont.innerHTML = insights.map(function(ins){
-    return '<div class="insight-item"><span class="insight-icon">'+ins.icon+'</span><span>'+ins.text+'</span></div>';
+    return '<div class="insight-item"><span class="insight-icon">'+ins.icon+'</span><span style="flex:1">'+ins.text
+      + (ins.cta ? '<br/><a onclick="'+ins.onclick+'" style="display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--sage);cursor:pointer">'+ins.cta+' →</a>' : '')
+      + '</span></div>';
   }).join('');
 }
 

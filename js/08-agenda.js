@@ -543,12 +543,36 @@ function confirmarReagendamento(id) {
   appt.date = novaData;
   appt.time = novaHora;
   appt.duration = novaDuracao;
+  appt.confirmada = false; // nova data ainda não foi confirmada pelo paciente
   _salvarAppointments();
   document.getElementById('modal-reagendar')?.remove();
   if (agendaCurrentView === 'dia') renderDayView();
   else if (agendaCurrentView === 'semana') renderWeekView();
   showToast('✓ Sessão reagendada de ' + dataAnterior + ' para ' + novaData + ' às ' + novaHora);
   tfTrack('session_rescheduled', {});
+}
+
+/* ── ESTADO "CONFIRMADA" (anti no-show, v1 otimista — item 5 dos desligados) ──
+   Lembrar envia o WhatsApp e marca a sessão como confirmada (otimista); o ✓
+   marca sem enviar (paciente confirmou por outro canal). Reagendar reseta.
+   Futuro: confirmação real pela resposta do paciente (portal/WhatsApp API). */
+function _lembrarConfirmacao(apptId) {
+  var a = appointments.find(function(x){ return x.id == apptId; });
+  if (!a) return;
+  // Só marca se o lembrete realmente saiu (sem WhatsApp não há o que confirmar)
+  if (enviarLembreteAgenda(a.patientName) === false) return;
+  a.confirmada = true;
+  _salvarAppointments();
+  if (agendaCurrentView === 'dia') renderDayView();
+}
+
+function _marcarConfirmada(apptId) {
+  var a = appointments.find(function(x){ return x.id == apptId; });
+  if (!a) return;
+  a.confirmada = true;
+  _salvarAppointments();
+  showToast('✓ Sessão de ' + _firstName(a.patientName) + ' marcada como confirmada.');
+  if (agendaCurrentView === 'dia') renderDayView();
 }
 
 /* ── RENDER DIA ── */
@@ -606,9 +630,11 @@ function renderDayView() {
               + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'atrasou\')" style="font-size:10px;padding:2px 6px;background:#fef3c7;color:#92400e;border:none;border-radius:8px;cursor:pointer" title="Atrasou">~</button>'
               + '</span>';
           }
+          var confTag = (a.confirmada && !a.presenca && !isPast)
+            ? ' <span style="font-size:9.5px;padding:1px 6px;border-radius:8px;background:#d1fae5;color:#065f46;font-weight:600;vertical-align:middle">✓ confirmada</span>' : '';
           return '<div class="'+escHTML(a.color)+' appt-block" style="display:flex;flex-direction:column;gap:5px;margin-bottom:4px;padding:8px">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
-              + '<div onclick="event.stopPropagation();_mostrarOpcoesAppt('+pi+','+a.id+')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong><br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
+              + '<div onclick="event.stopPropagation();_mostrarOpcoesAppt('+pi+','+a.id+')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong>'+confTag+'<br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
               + '<div style="display:flex;gap:4px;flex-shrink:0">'
                 + '<button class="btn btn-purple btn-sm" onclick="event.stopPropagation();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="font-size:10px;padding:3px 7px" title="Briefing IA">✦</button>'
                 + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();reagendarAppointment('+a.id+')" style="font-size:10px;padding:3px 7px" title="Reagendar">↻</button>'
@@ -639,17 +665,20 @@ function renderDayView() {
       + '</div>';
   }).join('');
 
-  // Confirmações pendentes (hoje ou próximas 48h)
+  // Confirmações pendentes (hoje ou próximas 48h). Confirmadas saem da lista —
+  // antes o Lembrar não mudava estado nenhum e a lista nunca esvaziava (item 5
+  // dos desligados, LIGADO no V3: fluxo anti no-show completo).
   var amanha = new Date(hoje); amanha.setDate(amanha.getDate()+2);
   var pendentes = appointments.filter(function(a){
-    return a.status==='agendada' && a.date>=hoje && a.date<=localDateISO(amanha);
+    return a.status==='agendada' && !a.confirmada && a.date>=hoje && a.date<=localDateISO(amanha);
   }).slice(0,4);
   var pendHtml = pendentes.length === 0
-    ? '<div style="font-size:13px;color:var(--muted);font-style:italic">Nenhuma pendência de confirmação.</div>'
+    ? '<div style="font-size:13px;color:var(--muted);font-style:italic">Nenhuma pendência de confirmação. ✓</div>'
     : pendentes.map(function(a){
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
-          + '<span style="font-size:13px">'+escHTML(_firstName(a.patientName))+' · '+escHTML(a.date.split('-').reverse().slice(0,2).join('/'))+'</span>'
-          + '<button class="btn btn-secondary btn-sm" data-pname="'+escHTML(a.patientName)+'" onclick="enviarLembreteAgenda(this.dataset.pname)">📨 Lembrar</button>'
+          + '<span style="font-size:13px;flex:1">'+escHTML(_firstName(a.patientName))+' · '+escHTML(a.date.split('-').reverse().slice(0,2).join('/'))+'</span>'
+          + '<button class="btn btn-secondary btn-sm" onclick="_lembrarConfirmacao('+a.id+')" title="Envia lembrete WhatsApp e marca como confirmada">📨 Lembrar</button>'
+          + '<button class="btn btn-secondary btn-sm" onclick="_marcarConfirmada('+a.id+')" title="Paciente já confirmou por fora — marcar sem enviar" style="padding-left:8px;padding-right:8px;color:var(--sage)">✓</button>'
           + '</div>';
       }).join('');
 
@@ -744,8 +773,11 @@ function renderWeekView() {
           + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:9px;cursor:pointer;color:#065f46;background:#d1fae5;border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
           + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:9px;cursor:pointer;color:#991b1b;background:#fee2e2;border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
           + '</div>';
+        else if (a.confirmada) pBadge = '<div style="font-size:9px;color:#065f46;background:#d1fae5;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block" title="Presença confirmada pelo paciente">✓ conf.</div>';
+        // Clique unificado com a view Dia: abre o popup de opções (antes entrava
+        // direto na Sessão — um clique de consulta iniciava atendimento). V3.
         gridHtml += '<div class="'+escHTML(a.color)+' appt-block" style="font-size:11px;padding:3px 5px;margin-bottom:2px" title="'+escHTML(a.patientName)+' — '+escHTML(a.abordagem||'')+'">'
-          + '<div style="cursor:pointer" onclick="currentSessionPatientIdx='+a.patientIdx+';navigate(\'sessao\')">'
+          + '<div style="cursor:pointer" onclick="event.stopPropagation();_mostrarOpcoesAppt('+a.patientIdx+','+a.id+')">'
           + '<strong>'+escHTML(_firstName(a.patientName))+'</strong><br/>'+escHTML(a.abordagem||'')+' '+(a.time||'')+'</div>'
           + pBadge
           + '</div>';
