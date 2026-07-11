@@ -1,6 +1,31 @@
 // 13-portal.js — Portal do paciente (visão terapeuta + visão paciente)
 
 /* ── PORTAL DO PACIENTE — LÓGICA ── */
+
+// Resolvedor ÚNICO do nome do terapeuta no portal. Nunca inventa nome: o
+// fallback 'Ana' aparecia p/ paciente real quando _therapistNome faltava no
+// payload (cache antigo do 1º acesso). Camadas: conta do terapeuta (prévia no
+// app) → payload do login (RPC 020) → cache local do aparelho da paciente
+// (gravado aqui mesmo quando o payload traz o nome — cura logins antigos) → ''.
+function _pacTherapistNome() {
+  if (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) return tfUserData.nome;
+  var n = (typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistNome)
+    ? _loggedPatientData._therapistNome : '';
+  try {
+    if (n) localStorage.setItem('tf_pac_tnome', n);
+    else n = localStorage.getItem('tf_pac_tnome') || '';
+  } catch(e) {}
+  return n;
+}
+
+// Primeiro nome SEM título ("Dra. Ana Meireles" → "Ana") — mesma regra do
+// greeting do dashboard; split(' ')[0] cru devolvia "Dra." como nome.
+function _pacTherapistFirst() {
+  var n = _pacTherapistNome();
+  if (!n) return '';
+  var parts = n.split(' ').filter(function(w){ return !/^(Dr|Dra|Prof|Profa|Me)\.?$/i.test(w); });
+  return parts[0] || '';
+}
 // ── DICA DA SEMANA ──
 function renderDicaPortal() {
   const p = patients[currentPortalPatientIdx] || patients[0];
@@ -478,7 +503,7 @@ function saveDiaryLivre() {
   }
   ta.value = '';
   updateDiaryCount();
-  showToast('Registro salvo. ' + (tfUserData.nome || 'Ana').split(' ')[0] + ' verá na próxima sessão.');
+  showToast('Registro salvo. ' + (_pacTherapistFirst() || 'Sua terapeuta') + ' verá na próxima sessão.');
 }
 
 let tccEmocaoSelecionada = '';
@@ -663,18 +688,18 @@ function _pacSessCardHtml(p) {
   var live = _pacSessionLive(p);
   // Link /sala fora do ao-vivo = token expirado (efêmero) — não oferecer como botão legado.
   var legacyLink = (sessionLink && !_isSalaLink(sessionLink)) ? sessionLink : null;
-  var _tn = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome
-    : ((typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistNome) ? _loggedPatientData._therapistNome : 'Ana');
-  var tFirst = _tn.split(' ')[0];
+  var tFirst = _pacTherapistFirst();
   if (live) _pacEnsureLiveCss();
   // Redesign "Sálvia & Linho": hero CLARO ("one big thing"). Sem sessão, a área
   // nobre convida ao check-in em vez de anunciar ausência num painel escuro.
   return (live
         ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px"><span style="width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 rgba(179,86,74,.5);animation:pacLivePulse 1.6s ease-out infinite;flex-shrink:0"></span><span class="pac-hero-k">Sessão ao vivo agora</span></div>'
-          + '<div class="pac-hero-v">' + escHTML(tFirst) + ' está esperando por você</div>'
+          + '<div class="pac-hero-v">' + (tFirst ? escHTML(tFirst) + ' está esperando por você' : 'Sua sessão está aberta — entre quando quiser') + '</div>'
         : (proximaStr
-            ? '<div class="pac-hero-k">Próxima sessão</div><div class="pac-hero-v">' + escHTML(proximaStr) + '</div><div class="pac-hero-s">com ' + escHTML(tFirst) + '</div>'
-            : '<div class="pac-hero-k">Para hoje</div><div class="pac-hero-v">Como você está chegando?</div><div class="pac-hero-s">Seu check-in leva 10 segundos — e ' + escHTML(tFirst) + ' acompanha de perto.</div>'))
+            ? '<div class="pac-hero-k">Próxima sessão</div><div class="pac-hero-v">' + escHTML(proximaStr) + '</div>' + (tFirst ? '<div class="pac-hero-s">com ' + escHTML(tFirst) + '</div>' : '')
+            // "Como você está chegando?" confundia sem sessão marcada (chegando aonde?)
+            // — feedback do usuário 11/07; o convite agora é direto ao check-in.
+            : '<div class="pac-hero-k">Para hoje</div><div class="pac-hero-v">Reserve um minuto para você</div><div class="pac-hero-s">Seu check-in leva 10 segundos' + (tFirst ? ' — e ' + escHTML(tFirst) + ' acompanha de perto.' : '.') + '</div>'))
     + '<div class="pac-hero-actions">'
       + (live
           ? '<a href="' + escHTML(sessionLink) + '" target="_blank" rel="noopener" class="pac-btn-solid">Entrar na sessão agora</a>'
@@ -984,10 +1009,8 @@ function renderPatientApp(idx, pacs) {
   var _monthsLong = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   var _tnow = new Date();
   var _dateLabel = _daysLong[_tnow.getDay()] + ', ' + _tnow.getDate() + ' de ' + _monthsLong[_tnow.getMonth()];
-  var _therapistName = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome
-    : ((typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistNome) ? _loggedPatientData._therapistNome : 'Ana');
-  var _therapistFirst = _therapistName.split(' ')[0];
-  var _therapistInitial = _therapistFirst.charAt(0).toUpperCase();
+  var _therapistFirst = _pacTherapistFirst() || 'Sua terapeuta';
+  var _therapistInitial = _pacTherapistFirst() ? _therapistFirst.charAt(0).toUpperCase() : 'T';
   // Redesign: ícones de traço (Lucide-like) no lugar dos emojis por tag — um
   // único tom (sage) via CSS .pac-ex-tagicon; a tag diferencia pela FORMA.
   var _tagIconPaths = {
@@ -1224,9 +1247,7 @@ function pacIncrementarEx(pidx, exId) {
 
 function _pacRenderChatBlock(p, msgs, idx) {
   var _fname = (p.name||'').split(' ')[0];
-  var _tFirst = (_loggedPatientData && _loggedPatientData._therapistNome)
-    ? (_loggedPatientData._therapistNome||'').split(' ')[0]
-    : 'sua terapeuta';
+  var _tFirst = _pacTherapistFirst() || 'sua terapeuta';
   var _tInit = _tFirst.charAt(0).toUpperCase();
   var unread = (msgs||[]).filter(function(m){ return m.sender_role==='therapist' && !m.read_at; }).length;
   var thread = (msgs||[]).map(function(m) {
