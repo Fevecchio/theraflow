@@ -93,6 +93,8 @@ function criarPaciente() {
   salvarPacientes();
   limparModalPaciente();
   closeModal('modal-novo-paciente');
+  // Funil de ativação: total permite ver "1º paciente criado" no PostHog (sem nome/dado clínico)
+  tfTrack('paciente_criado', { total: patients.filter(function(x){ return !x._isDemo; }).length });
   showToast('✓ Paciente criado com sucesso!');
   checkFirstPatientBanner();
   renderPatients();

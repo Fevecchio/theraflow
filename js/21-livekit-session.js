@@ -673,6 +673,9 @@ async function _lkProcessSession() {
       return;
     }
 
+    // Funil do diferencial-núcleo: transcrição ok mas nota falhando aparece aqui
+    if (typeof tfTrack === 'function') tfTrack('transcricao_concluida');
+
     // 2) Nota clínica (Claude, transcript pseudonimizado no servidor).
     _lkProcStep('s3', 'doing');
     var _secArr = []; try { _secArr = (JSON.parse(localStorage.getItem('tf_account')||'{}').secundarias) || []; } catch(_) {}
@@ -692,6 +695,8 @@ async function _lkProcessSession() {
     const ta = document.getElementById('session-ai-note');
     if (ta && note) ta.value = note;
     _lkHideProcessing();
+    // O evento do negócio: o pitch inteiro é "nota em 2 min" (só metadado, nunca o texto)
+    if (note && typeof tfTrack === 'function') tfTrack('nota_ia_gerada', { origem: 'sessao_ao_vivo' });
     _lkShowPostSession({ transcript, note });
     if (typeof showToast === 'function') showToast(note ? 'Nota gerada ✓ Revise antes de salvar.' : 'Transcrição pronta ✓ (nota não gerada)');
   } catch (err) {

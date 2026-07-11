@@ -35,6 +35,7 @@ function abrirApp() {
       }
       // Atualiza perfil no banco se criou com sucesso
       if (data?.user) {
+        tfTrack('conta_criada', { abordagem: tfUserData.abordagem || '' });
         const refId = localStorage.getItem('tf_referral');
         supa.from('users').update({
           nome: tfUserData.nome,

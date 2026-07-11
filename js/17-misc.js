@@ -135,6 +135,7 @@ function incrementarSessaoTrial() {
     localStorage.setItem('tf_account', JSON.stringify(acc));
     atualizarTrialUI(acc.sessoes_usadas);
     if (acc.sessoes_usadas >= 20 && !_tfTrialDismissed) {
+      tfTrack('trial_esgotado_visto', { contexto: 'incremento_sessao' });
       setTimeout(() => showModal('modal-trial-esgotado'), 600);
     }
   } catch(e) { console.warn('[TF] Erro ao incrementar sessão trial:', e.message); }

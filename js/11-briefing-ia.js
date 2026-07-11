@@ -124,6 +124,7 @@ function _briefingCacheUnchanged(c, bp) {
 }
 
 function _saveBriefingCache(key, content) {
+  tfTrack('briefing_gerado');
   try {
     var bp = patients[currentBriefingPatientIdx] || {};
     localStorage.setItem('tf_bc_' + key, JSON.stringify({

@@ -472,6 +472,7 @@ function saveDiaryLivre() {
     if (!pPortal.diary) pPortal.diary = [];
     var _dts = Date.now();
     pPortal.diary.unshift({ tipo: 'livre', texto: text, date: dateStr, hora: horaStr, ts: _dts, _up: _dts });
+    tfTrack('portal_diario_salvo', { tipo: 'livre' }); // só metadado — nunca o texto
     salvarPacientes();
     if (typeof renderDiarioLivre === 'function') renderDiarioLivre(pPortal);
   }
@@ -1703,6 +1704,7 @@ function pacSalvarMood(idx) {
 
   if (!p.moodHistory) p.moodHistory = [];
   p.moodHistory.push({ value: val, emoji: _pacSelectedMoodEmoji || '😐', date: dataStr });
+  tfTrack('portal_checkin_humor'); // ativação do portal — SEM o valor (dado clínico)
   // Cap 60 (era 12): 12 tornava o "últimos 14 dias" do gráfico aritmeticamente
   // impossível e inviabiliza histórico longo ("pixels"). 60 registros ≈ 2 meses.
   if (p.moodHistory.length > 60) p.moodHistory = p.moodHistory.slice(-60);
@@ -1772,6 +1774,7 @@ function pacSalvarNotaRapida(idx) {
   var horaStr = String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0');
   var _nts = Date.now();
   p.diary.unshift({ tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: _nts, _up: _nts });
+  tfTrack('portal_diario_salvo', { tipo: 'nota_rapida' });
   if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.diary = p.diary;
   if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].diary = p.diary;
@@ -1839,6 +1842,7 @@ function pacSalvarDiario(tipo, idx) {
   }
 
   p.diary.unshift(entrada);
+  tfTrack('portal_diario_salvo', { tipo: entrada.tipo });
   if (p.diary.length > 50) p.diary = p.diary.slice(0, 50);
 
   if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
