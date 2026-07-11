@@ -75,11 +75,15 @@ async function verifyCallerJWT(req) {
   } catch(e) { return null; }
 }
 
-// Normaliza o destinatário (Resend aceita string ou array) para um email simples.
-function normalizeTo(to) {
-  const first = Array.isArray(to) ? to[0] : to;
-  return String(first == null ? '' : first).trim().toLowerCase();
+// TODOS os destinatários, normalizados (Resend aceita string ou array). O envio
+// usava só normalizeTo(to)[0] na validação MAS mandava o array `to` INTEIRO para
+// a Resend → dava para colar vítimas depois de um paciente legítimo. Agora a
+// validação cobre a lista toda e o envio usa só o que foi aprovado.
+function normalizeAll(to) {
+  const arr = Array.isArray(to) ? to : [to];
+  return arr.map((x) => String(x == null ? '' : x).trim().toLowerCase()).filter(Boolean);
 }
+function normalizeTo(to) { return normalizeAll(to)[0] || ''; }
 
 // Anti-abuso: o terapeuta só pode enviar para o email de um PACIENTE SEU.
 // Sem isso, qualquer terapeuta logado poderia disparar emails do TheraFlow (com
@@ -90,40 +94,38 @@ function normalizeTo(to) {
 // verificação não pôde ser feita por erro técnico (config/rede) — nesse caso
 // liberamos (fail-open) para não bloquear envios legítimos por instabilidade,
 // apenas logando. É proteção anti-abuso, não barreira de dados sensíveis.
+// Retorna { ok, allowed } — `allowed` é a lista de emails APROVADOS (só pacientes
+// do caller). FAIL-CLOSED (auditoria adversarial 12/07): sem service key, erro de
+// rede ou conta sem pacientes → NEGA. O fail-open anterior transformava conta
+// nova (0 pacientes) num relay de phishing com a marca TheraFlow.
 async function callerOwnsRecipient(callerId, to) {
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!SERVICE_KEY) {
-    console.warn('[send-email] SERVICE_ROLE ausente — pulando validação de destinatário (fail-open).');
-    return { ok: true, soft: true };
+    console.error('[send-email] SERVICE_ROLE ausente — negando (fail-closed).');
+    return { ok: false };
   }
-  const target = normalizeTo(to);
-  if (!target) return { ok: false };
+  const targets = normalizeAll(to);
+  if (!targets.length) return { ok: false };
   try {
-    // service_role bypassa RLS → checagem determinística por dono (user_id).
     const r = await fetch(
       `${SUPA_URL}/rest/v1/patients?user_id=eq.${encodeURIComponent(callerId)}&select=email`,
       { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
     );
     if (!r.ok) {
       const t = await r.text().catch(() => '');
-      console.warn('[send-email] Falha ao validar destinatário (fail-open):', r.status, t.slice(0, 120));
-      return { ok: true, soft: true };
+      console.error('[send-email] Falha ao validar destinatário (fail-closed):', r.status, t.slice(0, 120));
+      return { ok: false };
     }
     const rows = await r.json();
-    const emails = (Array.isArray(rows) ? rows : [])
-      .map((x) => String(x.email || '').trim().toLowerCase())
-      .filter(Boolean);
-    // Sem pacientes no banco (conta nova ou sync ainda pendente do 1º paciente):
-    // não dá para validar ownership de forma significativa → libera (fail-open).
-    // O abuso residual fica limitado pelo rate-limit por usuário.
-    if (emails.length === 0) {
-      console.warn('[send-email] Caller sem pacientes no banco — pulando validação (fail-open).');
-      return { ok: true, soft: true };
-    }
-    return { ok: emails.includes(target) };
+    const emails = new Set((Array.isArray(rows) ? rows : [])
+      .map((x) => String(x.email || '').trim().toLowerCase()).filter(Boolean));
+    // TODOS os destinatários precisam ser pacientes do caller (bloqueia o bypass
+    // por array). Envio usa só os aprovados.
+    const allowed = targets.filter((t) => emails.has(t));
+    return { ok: allowed.length > 0 && allowed.length === targets.length, allowed };
   } catch (e) {
-    console.warn('[send-email] Exceção ao validar destinatário (fail-open):', e.message);
-    return { ok: true, soft: true };
+    console.error('[send-email] Exceção ao validar destinatário (fail-closed):', e.message);
+    return { ok: false };
   }
 }
 
@@ -276,12 +278,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: '`template` e `to` são obrigatórios' });
   }
 
-  // Anti-abuso: só permite enviar para um paciente do próprio terapeuta.
+  // Anti-abuso: só permite enviar para paciente(s) do próprio terapeuta.
   const ownership = await callerOwnsRecipient(caller.id, to);
   if (!ownership.ok) {
     console.warn('[send-email] Bloqueado: destinatário não é paciente do caller', caller.id);
     return res.status(403).json({ error: 'Destinatário não é um paciente vinculado à sua conta.' });
   }
+  // Envia SÓ para os destinatários aprovados (nunca o array cru do body).
+  const toApproved = ownership.allowed && ownership.allowed.length ? ownership.allowed : normalizeAll(to);
 
   const resend = new Resend(RESEND_KEY);
 

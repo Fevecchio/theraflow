@@ -89,11 +89,39 @@ export default async function handler(req, res) {
 
   const hdrs = supaHeaders(SERVICE_KEY);
 
-  // Verifica se já existe vínculo para este paciente
+  // SEGURANÇA (auditoria adversarial 12/07): o `patientId` PRECISA pertencer ao
+  // chamador. Sem esta checagem, um terapeuta autenticado passava o UUID de um
+  // paciente de OUTRO terapeuta e (a) resetava a senha do portal dele
+  // [account-takeover] ou (b) criava vínculo cruzado. therapistId===caller.id
+  // sozinho não bastava — patientId era confiado cegamente. Trava no servidor,
+  // com service role (bypassa RLS), consultando o dono real do paciente.
+  try {
+    const ownRes = await fetch(
+      `${SUPA_URL}/rest/v1/patients?id=eq.${encodeURIComponent(patientId)}&select=user_id&limit=1`,
+      { headers: hdrs }
+    );
+    const owned = await ownRes.json();
+    const ownerId = Array.isArray(owned) && owned[0] && owned[0].user_id;
+    if (!ownerId || ownerId !== caller.id) {
+      _audit(SERVICE_KEY, {
+        user_id: caller.id, patient_id: patientId, acao: 'portal_access_denied',
+        detalhes: { motivo: 'patientId nao pertence ao caller', via: 'invite-patient' },
+        ip: (req.headers['x-forwarded-for'] || '').split(',')[0] || null,
+      });
+      return res.status(403).json({ error: 'Forbidden: este paciente não pertence à sua conta.' });
+    }
+  } catch (e) {
+    console.error('[invite-patient] Falha ao verificar posse do paciente:', e.message);
+    return res.status(502).json({ error: 'Não foi possível verificar a posse do paciente.' });
+  }
+
+  // Verifica se já existe vínculo para este paciente — restrito ao vínculo DESTE
+  // terapeuta (defesa em profundidade: além da posse acima, o reset de senha só
+  // toca a conta ligada a este terapeuta).
   let existingAuthUserId = null;
   try {
     const checkRes = await fetch(
-      `${SUPA_URL}/rest/v1/patient_users?patient_id=eq.${encodeURIComponent(patientId)}&select=auth_user_id&limit=1`,
+      `${SUPA_URL}/rest/v1/patient_users?patient_id=eq.${encodeURIComponent(patientId)}&therapist_id=eq.${encodeURIComponent(caller.id)}&select=auth_user_id&limit=1`,
       { headers: hdrs }
     );
     const existing = await checkRes.json();
