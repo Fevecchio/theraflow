@@ -475,6 +475,7 @@ async function _supaSync_appointments() {
         color: a.color || null,
         metadata: {
           resumoParaPaciente: a.resumoParaPaciente || null,
+          resumoPendente: a.resumoPendente || null, // rascunho aguardando aprovação do terapeuta
           meuInsight: a.meuInsight || null,
         },
       }));

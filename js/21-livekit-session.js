@@ -820,13 +820,12 @@ function _lkSalvarNotaPostSessao() {
       var appt = (typeof appointments !== 'undefined' ? appointments : [])
         .find(function (a) { return String(a.id) === String(_pendingResumoApptId); });
       if (appt) {
-        appt.resumoParaPaciente = resumo;
+        // RASCUNHO, não publicação: nada chega ao paciente sem aprovação do
+        // terapeuta (publica em Pacientes → Visão Geral → Trajetória). Por isso
+        // também NÃO espelha em sp.appointments — esse é o payload do portal.
+        appt.resumoPendente = resumo;
         if (typeof _salvarAppointments === 'function') _salvarAppointments();
-        if (!sp.appointments) sp.appointments = [];
-        var i = sp.appointments.findIndex(function (a) { return String(a.id) === String(appt.id); });
-        if (i >= 0) sp.appointments[i].resumoParaPaciente = resumo;
-        else sp.appointments.push({ id: appt.id, date: appt.date, presenca: 'compareceu', resumoParaPaciente: resumo });
-        if (typeof salvarPacientes === 'function') salvarPacientes();
+        if (typeof showToast === 'function') showToast('📝 Resumo para o paciente pronto — revise e publique em Pacientes → Visão Geral.');
       }
       _pendingResumoApptId = null;
     }).catch(function () {});

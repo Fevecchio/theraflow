@@ -1499,27 +1499,34 @@ function renderTrajetoriaTerapeuta(i) {
     var statusColor = a.presenca === 'compareceu' ? 'var(--sage)' : a.presenca === 'faltou' ? 'var(--red)' : 'var(--amber)';
     var statusLabel = a.presenca === 'compareceu' ? 'Compareceu' : a.presenca === 'faltou' ? 'Faltou' : 'Cancelou';
     var resumo = a.resumoParaPaciente || '';
+    // Rascunho da IA aguardando aprovação (gerado pós-sessão; NÃO visível ao
+    // paciente até o terapeuta publicar) — prioridade p/ o publicado se ambos existem.
+    var pendente = !resumo && a.resumoPendente ? a.resumoPendente : '';
+    var pendenteBadge = pendente
+      ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fff8e6;color:#c97d2e;font-weight:600">🕓 rascunho da IA — não publicado</span>'
+      : '';
     return '<div style="border-bottom:1px solid var(--border);padding:10px 0">'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">'
       + '<span style="font-size:12px;font-weight:600;color:var(--ink)">' + dateStr + '</span>'
       + '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:' + (a.presenca==='compareceu'?'#e8f5ee':a.presenca==='faltou'?'#fdecea':'#fff8e6') + ';color:' + statusColor + '">' + statusLabel + '</span>'
+      + pendenteBadge
       + '</div>'
-      + '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">Resumo para o paciente (opcional):</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">' + (pendente ? 'Revise o rascunho — o paciente só vê depois que você publicar:' : 'Resumo para o paciente (opcional):') + '</div>'
       + '<div style="display:flex;gap:6px;align-items:flex-start">'
       + '<textarea id="resumo-pac-' + a.id + '" placeholder="Escreva um resumo acessível desta sessão para o paciente ver na jornada…" '
-      + 'style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:#fafaf8;color:var(--ink);line-height:1.5" '
+      + 'style="flex:1;border:1.5px solid ' + (pendente ? '#f0d060' : 'var(--border)') + ';border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:' + (pendente ? '#fffdf5' : '#fafaf8') + ';color:var(--ink);line-height:1.5" '
       + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
-      + escHTML(resumo)
+      + escHTML(resumo || pendente)
       + '</textarea>'
       + '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
-      + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Salvar</button>'
+      + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">' + (pendente ? '✓ Publicar' : 'Salvar') + '</button>'
       + '<button onclick="regenerarResumoIA(' + i + ',\'' + escHTML(a.id) + '\')" style="background:#fff;border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">✨ IA</button>'
       + '</div>'
       + '</div>'
       + '</div>';
   }).join('');
 
-  var _hasResumo = passados.some(function(a) { return a.resumoParaPaciente; });
+  var _hasResumo = passados.some(function(a) { return a.resumoParaPaciente || a.resumoPendente; });
   return '<details ' + (_hasResumo ? 'open ' : '') + 'style="margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden">'
     + '<summary style="padding:12px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;list-style:none;display:flex;align-items:center;gap:6px;background:var(--bg)">'
     + '📅 Trajetória — resumos para o paciente</summary>'
@@ -1538,17 +1545,27 @@ function salvarResumoParaPaciente(patientIdx, apptId) {
   var appt = appointments.find(function(a) { return String(a.id) === String(apptId); });
   if (appt) {
     appt.resumoParaPaciente = texto;
+    delete appt.resumoPendente; // publicado (ou removido) → rascunho deixa de existir
     _salvarAppointments();
     _supaSync_appointments().catch(function(){});
   }
-  // Atualiza no metadata do paciente (para sync via _supaSync_patients)
+  // Atualiza no metadata do paciente (para sync via _supaSync_patients).
+  // Cria a entrada se não existir — rascunhos não têm espelho (privacidade), então
+  // na 1ª publicação de uma sessão antiga pode não haver entrada prévia.
   var p = patients[patientIdx];
-  if (p && p.appointments) {
+  if (p && texto) {
+    if (!p.appointments) p.appointments = [];
     var pa = p.appointments.find(function(a) { return String(a.id) === String(apptId); });
     if (pa) pa.resumoParaPaciente = texto;
+    else if (appt) p.appointments.push({ id: appt.id, date: appt.date, presenca: appt.presenca || 'compareceu', resumoParaPaciente: texto });
     salvarPacientes();
+  } else if (p && p.appointments) {
+    var paDel = p.appointments.find(function(a) { return String(a.id) === String(apptId); });
+    if (paDel) { paDel.resumoParaPaciente = ''; salvarPacientes(); }
   }
-  showToast(texto ? '✓ Resumo salvo — visível na jornada do paciente' : '✓ Resumo removido');
+  showToast(texto ? '✓ Resumo publicado — visível na jornada do paciente' : '✓ Resumo removido');
+  // Re-render: badge "rascunho" e botão "Publicar" saem na hora
+  if (typeof currentPatientTab !== 'undefined' && currentPatientTab === 'overview') renderPatientOverview(patientIdx);
 }
 
 async function regenerarResumoIA(patientIdx, apptId) {

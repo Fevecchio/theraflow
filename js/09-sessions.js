@@ -556,7 +556,7 @@ function showPostSessionFlow() {
               placeholder="Aguardando geração…"
               style="width:100%;border:1.5px solid #d1e7d9;border-radius:8px;padding:9px 11px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;resize:none;background:#f9fcfa;color:#333;line-height:1.6;box-sizing:border-box"
             ></textarea>
-            <div style="font-size:10.5px;color:#aaa;margin-top:4px">Aparece em "Minha jornada" no portal do paciente. Edite antes de salvar se quiser.</div>
+            <div style="font-size:10.5px;color:#aaa;margin-top:4px">Só é publicado na jornada do paciente quando você salvar — revise e edite à vontade. Se a IA não terminar antes de você fechar, o texto fica como rascunho para aprovar depois.</div>
           </div>
         </div>
 
@@ -675,22 +675,18 @@ function showPostSessionFlow() {
             taEl.disabled = false;
           }
         }
-        // Salva no appointment independente do estado do modal (resolve race condition)
+        // Modal já fechado quando a IA terminou → vira RASCUNHO pendente de
+        // aprovação (antes publicava direto no portal sem o terapeuta ver — o
+        // paciente podia ler texto de IA sem revisão). Aprovar/publicar fica em
+        // Pacientes → Visão Geral → Trajetória. Não espelha em sp.appointments
+        // (payload do portal) enquanto for rascunho.
         if (resumo && _pendingResumoApptId) {
           var _apptAsync = (typeof appointments !== 'undefined' ? appointments : [])
             .find(function(a) { return String(a.id) === _pendingResumoApptId; });
           if (_apptAsync) {
-            _apptAsync.resumoParaPaciente = resumo;
+            _apptAsync.resumoPendente = resumo;
             _salvarAppointments();
-            var _spAsync = patients[currentSessionPatientIdx];
-            if (_spAsync) {
-              if (!_spAsync.appointments) _spAsync.appointments = [];
-              var _saIdx = _spAsync.appointments.findIndex(function(a) { return String(a.id) === _pendingResumoApptId; });
-              if (_saIdx >= 0) _spAsync.appointments[_saIdx].resumoParaPaciente = resumo;
-              else _spAsync.appointments.push({ id: _apptAsync.id, date: _apptAsync.date, presenca: 'compareceu', resumoParaPaciente: resumo });
-              salvarPacientes();
-              _supaSync_patients().catch(function(){});
-            }
+            if (typeof showToast === 'function') showToast('📝 Resumo para o paciente pronto — revise e publique em Pacientes → Visão Geral.');
           }
           _pendingResumoApptId = null;
         }
