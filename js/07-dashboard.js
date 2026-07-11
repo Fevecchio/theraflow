@@ -263,6 +263,9 @@ function atualizarDashboard() {
   if (pacSub) pacSub.textContent = `${ativos} ativo${ativos!==1?'s':''}` + (novos>0?` · ${novos} em espera`:'');
 
   carregarTarefas();
+  // Régua de cobrança (item 6): gera as tarefas D+3/7/14 também de quem só vive
+  // no dashboard (idempotente — dedup por _cobr)
+  if (typeof _gerarTarefasCobranca === 'function') _gerarTarefasCobranca();
   renderDashTarefas();
   atualizarBadgeTarefas();
 }

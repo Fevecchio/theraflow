@@ -18,6 +18,19 @@ function _pacTherapistNome() {
   return n;
 }
 
+// Mini bio da terapeuta no portal (item 1 dos desligados) — mesmas camadas e
+// cache local do nome (tfUserData → payload → cache do aparelho → '').
+function _pacTherapistBio() {
+  if (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.bio) return tfUserData.bio;
+  var b = (typeof _loggedPatientData !== 'undefined' && _loggedPatientData && _loggedPatientData._therapistBio)
+    ? _loggedPatientData._therapistBio : '';
+  try {
+    if (b) localStorage.setItem('tf_pac_tbio', b);
+    else b = localStorage.getItem('tf_pac_tbio') || '';
+  } catch(e) {}
+  return b;
+}
+
 // Primeiro nome SEM título ("Dra. Ana Meireles" → "Ana") — mesma regra do
 // greeting do dashboard; split(' ')[0] cru devolvia "Dra." como nome.
 function _pacTherapistFirst() {
@@ -1114,6 +1127,9 @@ function renderPatientApp(idx, pacs) {
   + '<div style="margin:0 16px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow)">'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700;flex-shrink:0">' + _therapistInitial + '</div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">' + escHTML(_therapistFirst) + '</div><div style="font-size:11.5px;color:var(--muted)">deixou uma mensagem</div></div></div>'
     + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;font-style:italic">&#8220;' + escHTML(msgTexto) + '&#8221;</div>'
+    // Mini bio (item 1 dos desligados, LIGADA 11/07): humaniza — a paciente vê
+    // quem é a terapeuta. Só aparece se a bio existir.
+    + (function(){ var _b = _pacTherapistBio(); return _b ? '<div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px;padding-top:8px;border-top:1px solid var(--line-2, var(--border))">Sobre ' + escHTML(_therapistFirst) + ': ' + escHTML(_b) + '</div>' : ''; })()
   + '</div>'
   + '<div style="margin:0 16px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 16px;box-shadow:var(--shadow)">'
     + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:2px">Check-in de humor</div>'

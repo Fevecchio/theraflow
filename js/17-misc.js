@@ -549,6 +549,13 @@ function initPerfil() {
     }
     var fValor = document.getElementById('perfil-valor-sessao');
     if (fValor && acc.valor_sessao) fValor.value = acc.valor_sessao;
+    // Itens 1/3 dos desligados (LIGADOS 11/07): bio e abordagem secundária agora
+    // são campos REAIS — carregam o valor salvo (antes: textarea com bio fake fixa
+    // e select morto que não salvava).
+    var fBio = document.getElementById('perfil-bio');
+    if (fBio) fBio.value = acc.bio || '';
+    var fSec = document.getElementById('perfil-abordagem-sec');
+    if (fSec) fSec.value = (acc.secundarias && acc.secundarias[0]) || '';
   } catch(e) { console.warn('[TF] Erro ao carregar perfil:', e.message); }
   initHorariosGrid();
   renderBloqueiosList();
@@ -668,6 +675,12 @@ function saveProfile() {
     if (lembreteQuandoEl) acc.lembrete_quando = lembreteQuandoEl.value;
     var pixEl = document.getElementById('perfil-pix-key');
     if (pixEl) acc.pix_key = pixEl.value.trim();
+    // Mini bio (item 1) → vai ao portal da paciente via metadata (_therapistBio, js/03)
+    var bioEl = document.getElementById('perfil-bio');
+    if (bioEl) { acc.bio = bioEl.value.trim(); tfUserData.bio = acc.bio; }
+    // Abordagem secundária (item 3) → _abordagemSecundariasIA já consome tfUserData.secundarias
+    var secEl = document.getElementById('perfil-abordagem-sec');
+    if (secEl) { acc.secundarias = secEl.value ? [secEl.value] : []; tfUserData.secundarias = acc.secundarias; }
     acc.crp = crp;
     acc.abordagem = tfUserData.abordagem;
     localStorage.setItem('tf_account', JSON.stringify(acc));

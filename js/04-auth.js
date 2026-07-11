@@ -86,6 +86,7 @@ function _proceedToApp(account) {
     tfUserData.email       = account.email;
     tfUserData.abordagem   = account.abordagem || '';
     tfUserData.secundarias = account.secundarias || [];
+    tfUserData.bio         = account.bio || '';
     tfUserData.abordagemKey = account.abordagemKey || ABORDAGEM_KEY_MAP?.[account.abordagem] || 'tcc';
     try {
       if (window.posthog && account.supa_id) {
@@ -406,7 +407,7 @@ function loginPaciente() {
       'appointments','sessionLink','sessionLinkAt','_moodLastDate','mood','checkInStreak',
       'lastCheckInDate','readMaterials','portalNota','portalNotifHour','portalDica',
       'portalMensagem','anamnese','portalAnamneseAtiva','pwdTemp',
-      'next','nextTime','_therapistNome','_therapistWhatsapp']; // Lote 2 P1/P2/P7
+      'next','nextTime','_therapistNome','_therapistWhatsapp','_therapistBio']; // Lote 2 P1/P2/P7 + bio (item 1)
     var _leanSel = 'id,name,email,phone,age,cidade,abordagem,status,sessions_count,valor_sessao,progress,'
       + _leanMeta.map(function(k){ return 'metadata->' + k; }).join(',');
     var patResult = await supaPatient.from('patients')

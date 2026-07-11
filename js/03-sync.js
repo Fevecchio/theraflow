@@ -289,6 +289,7 @@ async function _supaSync_patients(opts) {
           next: (p.id && _nextById[p.id]) ? _nextById[p.id] : (p.next || null),
           _therapistNome: _terNome,
           _therapistWhatsapp: _terWpp,
+          _therapistBio: _accSync.bio || null, // mini bio no portal (item 1 dos desligados)
           portalRevogado: p.portalRevogado ? true : false,
           // Lote 3 (TEMA 6): campos que morriam no restore por não estarem no metadata.
           planoEvolucao: p.planoEvolucao || null,

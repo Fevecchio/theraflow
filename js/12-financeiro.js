@@ -808,7 +808,47 @@ function lembreteInadimplentes() {
   modal.classList.add('open');
 }
 
+// ── Escalação de cobrança (item 6 dos desligados — LIGADA 11/07, v1 enxuta) ──
+// A régua do guia (D+3 lembrete gentil / D+7 segundo lembrete / D+14 conversa)
+// vira TAREFA automática por cobrança vencida. Nada é enviado ao paciente sem
+// o terapeuta: a tarefa só lembra a ação — o disparo continua manual (WhatsApp).
+// Dedup por marca _cobr (id da cobrança + etapa): idempotente, roda quantas vezes for.
+function _gerarTarefasCobranca() {
+  try {
+    if (typeof tasks === 'undefined' || typeof charges === 'undefined') return;
+    if (typeof carregarTarefas === 'function' && !tasks.length) carregarTarefas();
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var novas = 0;
+    charges.forEach(function(c) {
+      if (!c || c.deleted || !_chargeVencida(c)) return;
+      var d = (c.date || '').trim(), iso = null;
+      if (/^\d{4}-\d{2}-\d{2}/.test(d)) iso = d.slice(0, 10);
+      else { var pp = d.split('/'); if (pp.length >= 2) iso = (pp[2] || hoje.getFullYear()) + '-' + String(pp[1]).padStart(2, '0') + '-' + String(pp[0]).padStart(2, '0'); }
+      if (!iso) return;
+      var dias = Math.floor((hoje - new Date(iso + 'T00:00:00')) / 86400000);
+      [[14, 'conversar com ' + (c.patient || 'paciente') + ' sobre o pagamento'],
+       [7,  'segundo lembrete de pagamento para ' + (c.patient || 'paciente')],
+       [3,  'lembrete gentil de pagamento para ' + (c.patient || 'paciente')]].forEach(function(et) {
+        if (dias < et[0]) return;
+        var marca = String(c.id) + ':' + et[0];
+        if (tasks.some(function(t) { return t._cobr === marca; })) return;
+        var titulo = 'Cobrança D+' + et[0] + ': ' + et[1] + ' (R$ ' + (parseFloat(c.value) || 0) + ', venceu ' + (c.date || '—') + ')';
+        tasks.push({ id: Date.now() + novas, title: titulo, titulo: titulo, patientName: c.patient || '',
+                     dueDate: (typeof hojeISO === 'function' ? hojeISO() : ''), status: 'aberta',
+                     createdAt: (typeof hojeISO === 'function' ? hojeISO() : ''), _cobr: marca });
+        novas++;
+      });
+    });
+    if (novas > 0) {
+      if (typeof salvarTarefas === 'function') salvarTarefas();
+      if (typeof atualizarBadgeTarefas === 'function') atualizarBadgeTarefas();
+      if (typeof showToast === 'function') showToast('📋 Régua de cobrança: ' + novas + (novas === 1 ? ' tarefa criada' : ' tarefas criadas') + ' para cobranças vencidas.');
+    }
+  } catch (e) { console.warn('[TF] escalação de cobrança:', e.message); }
+}
+
 function initFinanceiro() {
+  _gerarTarefasCobranca();
   _gerarCobrancasDosPlanos(); // planos mensais: gera a cobrança do mês se ainda não existe
   _popularMesesFinanceiro();
   var sel = document.getElementById('fin-month-select');
