@@ -28,6 +28,23 @@ let currentBriefingPatientIdx = 0;
 let _briefingForceRefresh = false;
 
 function initBriefing() {
+  // Tag "IA ativa" (item 10 dos desligados): checagem REAL do serviço — era um
+  // selo decorativo sempre aceso. Qualquer resposta do endpoint (mesmo 4xx de
+  // método) prova que a função está no ar; falha de rede/5xx = indisponível.
+  (function() {
+    var tag = document.getElementById('b-ia-status');
+    if (!tag) return;
+    fetch('/api/briefing', { method: 'GET' }).then(function(r) {
+      var ok = r.status < 500;
+      tag.textContent = ok ? '✦ IA ativa' : '✦ IA indisponível';
+      tag.className = ok ? 'tag tag-purple' : 'tag tag-gray';
+      tag.title = ok ? 'Serviço de IA respondendo' : 'Serviço de IA fora do ar — o briefing usará o modo básico';
+    }).catch(function() {
+      tag.textContent = '✦ IA indisponível';
+      tag.className = 'tag tag-gray';
+      tag.title = 'Sem conexão com o serviço de IA — o briefing usará o modo básico';
+    });
+  })();
   // Reseta para estado inicial "gerar"
   document.getElementById('b-state-gen').style.display  = 'block';
   document.getElementById('b-state-result').style.display = 'none';
@@ -86,7 +103,9 @@ function initBriefing() {
   // Verificar cache — exibir direto se válido (hoje)
   var _bpKey = p.id || p.name;
   var _bcache = _getBriefingCache(_bpKey);
-  if (_bcache) {
+  // Preferência da IA "briefing" desligada → não auto-exibe o cache (o botão
+  // "gerar" continua disponível — o terapeuta decide quando quer a análise).
+  if (_bcache && (typeof _iaPrefOn !== 'function' || _iaPrefOn('briefing'))) {
     document.getElementById('b-state-gen').style.display = 'none';
     document.getElementById('b-state-result').style.display = 'block';
     document.getElementById('b-section-themes').style.display = 'block';

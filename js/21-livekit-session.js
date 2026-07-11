@@ -701,18 +701,26 @@ async function _lkProcessSession() {
     if (typeof tfTrack === 'function') tfTrack('transcricao_concluida');
 
     // 2) Nota clínica (Claude, transcript pseudonimizado no servidor).
-    _lkProcStep('s3', 'doing');
-    var _secArr = []; try { _secArr = (JSON.parse(localStorage.getItem('tf_account')||'{}').secundarias) || []; } catch(_) {}
-    const nr = await fetch('/api/session-note', {
-      method: 'POST',
-      headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem, abordagemSecundarias: _secArr }),
-    });
-    if (!nr.ok) throw new Error('session-note ' + nr.status);
-    let { note } = await nr.json();
-    // Descarta recusa do Claude (não deve virar nota clínica). Mantém a transcrição real.
-    if (_lkIsRefusal(note)) note = '';
-    _lkProcStep('s3', 'done');
+    // Preferência da IA "nota" desligada → só transcrição, sem rascunho de IA
+    // (autonomia do terapeuta — item 2 dos desligados).
+    let note = '';
+    if (typeof _iaPrefOn === 'function' && !_iaPrefOn('nota')) {
+      _lkProcStep('s3', 'done');
+      if (typeof showToast === 'function') showToast('Nota automática desligada nas Preferências da IA — transcrição pronta para sua escrita.');
+    } else {
+      _lkProcStep('s3', 'doing');
+      var _secArr = []; try { _secArr = (JSON.parse(localStorage.getItem('tf_account')||'{}').secundarias) || []; } catch(_) {}
+      const nr = await fetch('/api/session-note', {
+        method: 'POST',
+        headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem, abordagemSecundarias: _secArr }),
+      });
+      if (!nr.ok) throw new Error('session-note ' + nr.status);
+      note = (await nr.json()).note;
+      // Descarta recusa do Claude (não deve virar nota clínica). Mantém a transcrição real.
+      if (_lkIsRefusal(note)) note = '';
+      _lkProcStep('s3', 'done');
+    }
 
     _lkSaveDraft(sp, transcript, note); // rascunho: sobrevive a fechar o navegador antes de salvar
     _lkRetry = null;                    // deu certo — não precisa mais reprocessar

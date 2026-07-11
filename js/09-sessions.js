@@ -645,7 +645,8 @@ function showPostSessionFlow() {
       if (noteEl && noteEl.tagName !== 'TEXTAREA') {
         noteEl.innerHTML = _gerarNotaEstrutural();
         // Se há notas do terapeuta, gera nota SOAP real via IA em background
-        if (_sessionNote) {
+        // (respeita a Preferência da IA "nota" — autonomia do terapeuta)
+        if (_sessionNote && _iaPrefOn('nota')) {
           noteEl.insertAdjacentHTML('afterbegin', '<div id="_note-ia-loader" style="font-size:11px;color:var(--sage,#4a7c59);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;animation:spin .8s linear infinite">⟳</span> Claude gerando nota clínica a partir das suas anotações…</div>');
           _gerarNotaClinicaIA(patients[currentSessionPatientIdx] || patients[0], _sessionNote).then(function(notaIA) {
             if (notaIA) tfTrack('nota_ia_gerada', { origem: 'painel_anotacoes' });

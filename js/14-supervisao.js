@@ -116,7 +116,10 @@ function gerarAlertasReais() {
     }
 
     // ── 4. PALAVRAS-CHAVE DE RISCO NAS NOTAS ───────────────────────────────
-    var riskWords = ['não vejo saída','cansado de tudo','sem sentido','desistir','acabar com tudo','não aguento mais','não quer viver'];
+    // Respeita a Preferência da IA "risco" (autonomia clínica — item 2)
+    var riskWords = _iaPrefOn('risco')
+      ? ['não vejo saída','cansado de tudo','sem sentido','desistir','acabar com tudo','não aguento mais','não quer viver']
+      : [];
     var notasTexto = (p.prontuarioNotes||[]).map(function(n){ return (n.text||'').toLowerCase(); }).join(' ');
     var found = riskWords.filter(function(w){ return notasTexto.includes(w); });
     if (found.length > 0) {
@@ -1560,6 +1563,8 @@ function exportarReflexoes() {
 }
 
 function _mostrarPromptReflexao(p) {
+  // Preferência da IA "reflexao" desligada → sem convite pós-sessão (item 2)
+  if (typeof _iaPrefOn === 'function' && !_iaPrefOn('reflexao')) return;
   var existente = document.getElementById('prompt-reflexao-posssessao');
   if (existente) existente.remove();
   var nome = p ? _firstName(p.name) : 'paciente';

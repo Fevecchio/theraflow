@@ -152,6 +152,26 @@ async function fetchWithTimeout(url, opts, ms = 15000) {
 }
 
 
+/* ── PREFERÊNCIAS DA IA (item 2 dos desligados, LIGADO 11/07) ──
+ * O terapeuta controla ONDE a IA opina. Default: tudo ligado (opt-out).
+ * Chaves: nota (nota clínica automática) · briefing (mostrar cache ao abrir)
+ * · risco (palavras de risco nas notas) · reflexao (prompt pós-sessão). */
+function _iaPrefOn(key) {
+  try {
+    var p = JSON.parse(localStorage.getItem('tf_account') || '{}').ia_prefs || {};
+    return p[key] !== false;
+  } catch (e) { return true; }
+}
+function _salvarIaPref(key, ligado) {
+  try {
+    var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    acc.ia_prefs = acc.ia_prefs || {};
+    acc.ia_prefs[key] = !!ligado;
+    localStorage.setItem('tf_account', JSON.stringify(acc));
+    if (typeof showToast === 'function') showToast(ligado ? '✓ Recurso de IA ligado.' : 'Recurso de IA desligado — você está no controle.');
+  } catch (e) {}
+}
+
 // ── Tracking stubs and badge functions ──
 /* ── TRACKING STUBS (PostHog / Mixpanel) ── */
 function tfTrack(event, props) {

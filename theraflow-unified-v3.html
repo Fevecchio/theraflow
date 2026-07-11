@@ -1032,7 +1032,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="topbar">
     <div><div class="page-title">Briefing pré-sessão</div><div class="page-subtitle">Análise inteligente do histórico clínico · funcionalidade opcional</div></div>
     <div class="topbar-actions">
-      <span class="tag tag-purple">✦ IA ativa</span>
+      <!-- item 10 dos desligados: verificação REAL em initBriefing (era decorativa) -->
+      <span class="tag tag-purple" id="b-ia-status" title="Verificando o serviço de IA…">✦ IA ativa</span>
       <button class="btn btn-secondary btn-sm" onclick="navigate('sessao')">▶ Ir para sessão</button>
     </div>
   </div>
@@ -1748,7 +1749,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="perfil-meta">
         <span id="perfil-hero-especialidade">Psicólogo(a) Clínico(a)</span>
         <span id="perfil-hero-cidade">São Paulo, SP</span>
-        <span>12 anos de experiência</span>
+        <!-- item 4 dos desligados: "12 anos" era fixo/inventado — agora só aparece com valor REAL -->
+        <span id="perfil-hero-exp" style="display:none"></span>
       </div>
       <div class="perfil-crp" id="perfil-hero-crp">🪪 CRP —</div>
     </div>
@@ -1778,6 +1780,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div>
             <label for="perfil-especialidade" class="perfil-label">Especialidade</label>
             <input id="perfil-especialidade" class="perfil-input" value="Psicologia Clínica" />
+            <label for="perfil-experiencia" class="perfil-label" style="margin-top:12px">Anos de experiência (opcional)</label>
+            <input id="perfil-experiencia" class="perfil-input" type="number" min="0" max="70" placeholder="Ex.: 8" />
           </div>
           <div>
             <label for="perfil-cidade" class="perfil-label">Cidade</label>
@@ -1972,30 +1976,30 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
             <div>
               <div style="font-size:13.5px;font-weight:500">Gerar nota clínica automaticamente</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px">IA rascunha a nota durante a sessão para você revisar</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">IA rascunha a nota ao encerrar a sessão para você revisar</div>
             </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <label class="toggle"><input type="checkbox" checked id="ia-pref-nota" onchange="_salvarIaPref('nota',this.checked)"><span class="toggle-slider"></span></label>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
             <div>
               <div style="font-size:13.5px;font-weight:500">Briefing pré-sessão automático</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px">Aparecer sugestão 30min antes de cada sessão</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Mostrar o briefing do dia automaticamente ao abrir a página</div>
             </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <label class="toggle"><input type="checkbox" checked id="ia-pref-briefing" onchange="_salvarIaPref('briefing',this.checked)"><span class="toggle-slider"></span></label>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
             <div>
               <div style="font-size:13.5px;font-weight:500">Detecção de risco clínico</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px">Alertar quando houver linguagem de risco nas transcrições</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Alertar quando houver linguagem de risco nas notas clínicas</div>
             </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <label class="toggle"><input type="checkbox" checked id="ia-pref-risco" onchange="_salvarIaPref('risco',this.checked)"><span class="toggle-slider"></span></label>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
             <div>
               <div style="font-size:13.5px;font-weight:500">Reflexões pós-sessão sugeridas</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px">IA propõe pergunta reflexiva ao encerrar cada sessão</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Convite para registrar uma reflexão ao encerrar cada sessão</div>
             </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <label class="toggle"><input type="checkbox" checked id="ia-pref-reflexao" onchange="_salvarIaPref('reflexao',this.checked)"><span class="toggle-slider"></span></label>
           </div>
         </div>
       </div>

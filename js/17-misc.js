@@ -556,6 +556,20 @@ function initPerfil() {
     if (fBio) fBio.value = acc.bio || '';
     var fSec = document.getElementById('perfil-abordagem-sec');
     if (fSec) fSec.value = (acc.secundarias && acc.secundarias[0]) || '';
+    // Anos de experiência (item 4) — hero só mostra se houver valor REAL
+    var fExp = document.getElementById('perfil-experiencia');
+    if (fExp) fExp.value = acc.experiencia || '';
+    var heroExp = document.getElementById('perfil-hero-exp');
+    if (heroExp) {
+      if (acc.experiencia) { heroExp.textContent = acc.experiencia + (acc.experiencia == 1 ? ' ano' : ' anos') + ' de experiência'; heroExp.style.display = ''; }
+      else heroExp.style.display = 'none';
+    }
+    // Preferências da IA (item 2): estado dos 4 toggles
+    var _prefs = acc.ia_prefs || {};
+    ['nota','briefing','risco','reflexao'].forEach(function(k){
+      var el = document.getElementById('ia-pref-' + k);
+      if (el) el.checked = _prefs[k] !== false;
+    });
   } catch(e) { console.warn('[TF] Erro ao carregar perfil:', e.message); }
   initHorariosGrid();
   renderBloqueiosList();
@@ -681,6 +695,16 @@ function saveProfile() {
     // Abordagem secundária (item 3) → _abordagemSecundariasIA já consome tfUserData.secundarias
     var secEl = document.getElementById('perfil-abordagem-sec');
     if (secEl) { acc.secundarias = secEl.value ? [secEl.value] : []; tfUserData.secundarias = acc.secundarias; }
+    // Anos de experiência (item 4) — hero atualiza na hora
+    var expEl = document.getElementById('perfil-experiencia');
+    if (expEl) {
+      acc.experiencia = expEl.value ? parseInt(expEl.value) : null;
+      var heroExpS = document.getElementById('perfil-hero-exp');
+      if (heroExpS) {
+        if (acc.experiencia) { heroExpS.textContent = acc.experiencia + (acc.experiencia == 1 ? ' ano' : ' anos') + ' de experiência'; heroExpS.style.display = ''; }
+        else heroExpS.style.display = 'none';
+      }
+    }
     acc.crp = crp;
     acc.abordagem = tfUserData.abordagem;
     localStorage.setItem('tf_account', JSON.stringify(acc));
