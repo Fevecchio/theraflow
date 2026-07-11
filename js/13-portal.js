@@ -1252,7 +1252,7 @@ function pacIncrementarEx(pidx, exId) {
   ex._up = Date.now();
   if (ex.concluidos >= (ex.total||1)) { ex.done = true; showToast('🎉 Exercício concluído! Parabéns!'); }
   else showToast('✓ Realização registrada — ' + ex.concluidos + '/' + (ex.total||1));
-  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) _tfSetPatientsLS(pacs);
   if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].exercises = p.exercises;
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.exercises = p.exercises;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
@@ -1755,7 +1755,7 @@ function pacSalvarMood(idx) {
   p._moodLastDate = (typeof hojeISO === 'function') ? hojeISO() : dataStr;
   if (typeof _calcStreak === 'function') _calcStreak(p);
 
-  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) _tfSetPatientsLS(pacs);
 
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) {
     Object.assign(_loggedPatientData, {
@@ -1812,7 +1812,7 @@ function pacSalvarNotaRapida(idx) {
   var _nts = Date.now();
   p.diary.unshift({ tipo: 'livre', texto: texto, date: dataStr, hora: horaStr, ts: _nts, _up: _nts });
   tfTrack('portal_diario_salvo', { tipo: 'nota_rapida' });
-  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) _tfSetPatientsLS(pacs);
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.diary = p.diary;
   if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].diary = p.diary;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
@@ -1827,7 +1827,7 @@ function pacToggleEx(pidx, exId, patientName) {
   if (!p.exercises) return;
   var ex = p.exercises.find(function(e){ return e.id === exId; });
   if (ex) { ex.done = !ex.done; ex._up = Date.now(); }
-  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) _tfSetPatientsLS(pacs);
   if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].exercises = p.exercises;
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.exercises = p.exercises;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
@@ -1841,7 +1841,7 @@ function pacToggleMeta(pidx, metaId, cb, patientName) {
   if (!p.portalMetas) return;
   var m = p.portalMetas.find(function(x){ return x.id === metaId; });
   if (m) { m.done = cb.checked; m._up = Date.now(); }
-  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) _tfSetPatientsLS(pacs);
   if (typeof patients !== 'undefined' && patients[_idx]) patients[_idx].portalMetas = p.portalMetas;
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.portalMetas = p.portalMetas;
   if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
@@ -1882,7 +1882,7 @@ function pacSalvarDiario(tipo, idx) {
   tfTrack('portal_diario_salvo', { tipo: entrada.tipo });
   if (p.diary.length > 50) p.diary = p.diary.slice(0, 50);
 
-  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) _tfSetPatientsLS(pacs);
 
   // Mantém memória em sincronia
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) {

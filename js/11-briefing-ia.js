@@ -634,7 +634,9 @@ function carregarCharges() {
 }
 
 function salvarCharges() {
-  try { localStorage.setItem('tf_charges', JSON.stringify(charges)); } catch(e) {}
+  // A6: quota cheia perdia baixa de pagamento em silêncio (com "✓ confirmado" na tela)
+  try { localStorage.setItem('tf_charges', JSON.stringify(charges)); }
+  catch(e) { if (typeof showToast === 'function') showToast('⚠ Armazenamento local cheio — a alteração financeira pode não ter sido gravada neste aparelho.'); }
   // Mantém o status financeiro dos pacientes consistente com as cobranças
   // (pagamento/estorno/exclusão refletem na lista de pacientes e no dashboard sem precisar renavegar).
   if (typeof _recalcFinStatus === 'function') _recalcFinStatus();

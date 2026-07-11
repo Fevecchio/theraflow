@@ -203,7 +203,9 @@ function _lkStartMeter(sourceNode) {
       wrap.appendChild(bar);
     }
     const buf = new Float32Array(_lkAnalyser.fftSize);
-    let sawSound = false;
+    // B7: o rótulo travava em "áudio ok ✓" no 1º som — mic mudo/caído no meio
+    // da sessão continuava "ok". Janela deslizante: sem som há 4s, avisa.
+    let lastSoundTs = 0;
     const tick = () => {
       if (!_lkAnalyser) return;
       _lkAnalyser.getFloatTimeDomainData(buf);
@@ -213,8 +215,10 @@ function _lkStartMeter(sourceNode) {
       const fill = document.getElementById('lk-mic-fill');
       const lbl = document.getElementById('lk-mic-label');
       if (fill) fill.style.width = pct + '%';
-      if (rms > 0.01) sawSound = true;
-      if (lbl) lbl.textContent = sawSound ? 'áudio ok ✓' : 'fale para testar…';
+      if (rms > 0.01) lastSoundTs = Date.now();
+      if (lbl) lbl.textContent = !lastSoundTs ? 'fale para testar…'
+        : (Date.now() - lastSoundTs < 4000) ? 'áudio ok ✓'
+        : 'sem áudio agora — verifique o microfone';
       _lkMeterRAF = requestAnimationFrame(tick);
     };
     _lkMeterRAF = requestAnimationFrame(tick);

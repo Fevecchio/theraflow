@@ -322,7 +322,9 @@ async function _supaLoadUserData(userId) {
         ...(a.metadata || {}),
         id: a.local_id,
         patientId: a.patient_id || null, // identidade estável (C3) — o índice é derivado
-        patientIdx: patsArr.findIndex(p => p.id === a.patient_id),
+        // C9: sem patient_id no servidor (paciente legado/offline) → resolve pelo
+        // NOME antes de desistir (patientIdx -1 deixava o agendamento órfão)
+        patientIdx: (function(){ var ix = patsArr.findIndex(p => p.id === a.patient_id); return ix !== -1 ? ix : patsArr.findIndex(p => p.name === a.patient_name); })(),
         patientName: a.patient_name,
         date: a.date,
         time: a.time,

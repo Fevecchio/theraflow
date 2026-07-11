@@ -268,6 +268,9 @@ function atualizarDashboard() {
   if (typeof _gerarTarefasCobranca === 'function') _gerarTarefasCobranca();
   renderDashTarefas();
   atualizarBadgeTarefas();
+  // B5: alerta clínico gerado por dados que chegaram em background acende o
+  // badge da Supervisão também no auto-refresh (antes só no navigate)
+  if (typeof _atualizarBadgeSupervisao === 'function') _atualizarBadgeSupervisao();
 }
 
 function _renderDashSessoesHoje(sessoes) {

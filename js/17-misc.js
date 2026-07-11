@@ -305,13 +305,17 @@ async function _sendEmail(template, to, data) {
     });
     const result = await r.json();
     if (!r.ok) {
+      // A5: e-mails eram fire-and-forget — falha só no console e o terapeuta
+      // acreditava que a paciente recebeu credenciais/lembrete.
       console.warn('[send-email]', template, '→', to, '|', result.error);
+      if (typeof showToast === 'function') showToast('⚠ O e-mail para ' + to + ' pode NÃO ter sido enviado (serviço de e-mail indisponível). O WhatsApp segue como canal principal.');
     } else {
       console.log('[send-email] ok:', template, '→', to);
     }
     return result;
   } catch(e) {
     console.warn('[send-email] fetch error:', e.message);
+    if (typeof showToast === 'function') showToast('⚠ O e-mail para ' + to + ' pode NÃO ter sido enviado (sem conexão com o serviço). O WhatsApp segue como canal principal.');
     return null;
   }
 }

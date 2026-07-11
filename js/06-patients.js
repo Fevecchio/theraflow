@@ -353,7 +353,9 @@ async function compartilharAcessoPortal(i) {
         // Re-ativa portal caso tenha sido revogado anteriormente
         var _acc2 = JSON.parse(localStorage.getItem('tf_account') || '{}');
         if (_acc2.supa_id) {
-          await supa.from('patient_users').update({ portal_active: true }).eq('patient_id', p.id).eq('therapist_id', _acc2.supa_id).then(() => {}, () => {});
+          await supa.from('patient_users').update({ portal_active: true }).eq('patient_id', p.id).eq('therapist_id', _acc2.supa_id)
+            .then((r) => { if (r && r.error) showToast('⚠ A reativação do portal pode não ter chegado ao servidor — se a paciente não conseguir entrar, use Reenviar acesso de novo.'); },
+                  () => { showToast('⚠ A reativação do portal pode não ter chegado ao servidor — se a paciente não conseguir entrar, use Reenviar acesso de novo.'); }); // A8
         }
         p.portalRevogado = false;
         salvarPacientes();
@@ -1158,7 +1160,7 @@ function renderPatientNotas(i) {
       + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
       + '<span style="font-size:16px">📝</span>'
       + '<span style="font-size:11px;font-weight:700;color:#c97d2e;text-transform:uppercase;letter-spacing:.5px">Nota pré-sessão do paciente</span>'
-      + '<button onclick="if(confirm(\'Limpar nota?\')){ patients['+i+'].portalNota=\'\'; localStorage.setItem(\'tf_patients\',JSON.stringify(patients)); this.parentElement.parentElement.remove(); }" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:4px">× Limpar</button>'
+      + '<button onclick="_limparPortalNota('+i+')" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:4px">× Limpar</button>'
       + '</div>'
       + '<div style="font-size:14px;color:var(--ink);line-height:1.7;font-style:italic">"' + escHTML(p.portalNota.trim()) + '"</div>'
       + '<div style="font-size:11px;color:var(--muted);margin-top:8px">Escrita pelo paciente no portal antes da sessão</div>'
@@ -1229,6 +1231,19 @@ function renderPatientNotas(i) {
     + notasHtml
     + '<div style="margin-top:24px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Linha do tempo</div>'
     + timelineHtml;
+}
+
+// C11: o "Limpar" da nota pré-sessão só apagava localmente (sem sync) e
+// portalNota é chave protegida (escrita da paciente) — a nota "limpa"
+// ressuscitava do servidor no próximo login. O touch autoriza a limpeza
+// intencional a propagar (mesmo mecanismo da anamnese).
+function _limparPortalNota(i) {
+  if (!confirm('Limpar nota da paciente?')) return;
+  var p = patients[i]; if (!p) return;
+  p.portalNota = '';
+  salvarPacientes();
+  if (typeof _supaSync_patients === 'function') _supaSync_patients({ touch: ['portalNota'], onlyId: p.id }).catch(function(){});
+  if (typeof renderPatientNotas === 'function' && currentPatientTab === 'notas') renderPatientNotas(i);
 }
 
 function editarNotaTab(textoId, btn, pidx, noteDate) {

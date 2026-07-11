@@ -357,7 +357,7 @@ function loginPaciente() {
       // e ele nunca chegaria ao servidor. Caminho quase morto (exige plaintext legado).
       if (idx !== -1 && !pacs[idx].portalPasswordHash) {
         pacs[idx].portalPasswordHash = senhaHash;
-        try { localStorage.setItem('tf_patients', JSON.stringify(pacs)); } catch(_) {}
+        try { _tfSetPatientsLS(pacs); } catch(_) {}
         if (typeof _supaSync_patients === 'function') _supaSync_patients({ touch: ['portalPasswordHash'], onlyId: pacs[idx].id }).catch(() => {});
       }
       if (idx !== -1) {
@@ -1007,7 +1007,7 @@ function salvarAnamnese(idx) {
     observacoesLivres:          _get('ana-obs'),
   };
 
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  _tfSetPatientsLS(pacs);
   if (typeof patients !== 'undefined' && patients[idx]) patients[idx].anamnese = p.anamnese;
 
   // Feedback visual
@@ -1033,7 +1033,7 @@ function ativarAnamnesePaciente(idx) {
   pacs = []; try { pacs = JSON.parse(localStorage.getItem('tf_patients')||'[]'); } catch(e){}
   p = pacs[idx]; if (!p) return;
   p.portalAnamneseAtiva = true;
-  localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  _tfSetPatientsLS(pacs);
   if (typeof patients !== 'undefined' && patients[idx]) patients[idx].portalAnamneseAtiva = true;
   if (typeof showToast === 'function') showToast('📤 Anamnese enviada! O paciente verá no portal.');
   // Sync com Supabase para que o portal do paciente receba a flag (touch: anamnese
@@ -1078,7 +1078,7 @@ function pacSalvarAnamnese(idx) {
   });
   p.portalAnamneseAtiva = false; // Some do portal após envio
 
-  if (res.fromLS) localStorage.setItem('tf_patients', JSON.stringify(pacs));
+  if (res.fromLS) _tfSetPatientsLS(pacs);
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) {
     _loggedPatientData.anamnese = p.anamnese;
     _loggedPatientData.portalAnamneseAtiva = false;

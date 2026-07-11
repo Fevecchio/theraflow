@@ -152,6 +152,16 @@ async function fetchWithTimeout(url, opts, ms = 15000) {
 }
 
 
+/* A7: gravação de tf_patients nos fluxos clínicos do portal — quota cheia
+ * abortava o handler SEM aviso (diferente de salvarPacientes, que avisa). */
+function _tfSetPatientsLS(pacs) {
+  try { localStorage.setItem('tf_patients', JSON.stringify(pacs)); return true; }
+  catch (e) {
+    if (typeof showToast === 'function') showToast('⚠ Armazenamento cheio — o registro pode não ter sido salvo neste aparelho.');
+    return false;
+  }
+}
+
 /* ── PREFERÊNCIAS DA IA (item 2 dos desligados, LIGADO 11/07) ──
  * O terapeuta controla ONDE a IA opina. Default: tudo ligado (opt-out).
  * Chaves: nota (nota clínica automática) · briefing (mostrar cache ao abrir)

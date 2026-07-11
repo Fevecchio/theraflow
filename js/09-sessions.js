@@ -228,6 +228,16 @@ function _parseBriefingSection(content, title) {
   return m ? m[1].trim() : '';
 }
 
+// B8: o contexto em-sessão mostrava briefing de cache como "de hoje" mesmo com
+// dados novos desde a geração — a página e a aba já avisavam; aqui não.
+function _briefingStaleSuffix(p) {
+  try {
+    var c = _getBriefingCache(p.id || p.name);
+    return (c && typeof _briefingCacheUnchanged === 'function' && !_briefingCacheUnchanged(c, p))
+      ? ' · há alterações desde a análise' : '';
+  } catch (e) { return ''; }
+}
+
 function _renderSessFromBriefing(p, content) {
   var foco   = _parseBriefingSection(content, 'FOCO RECOMENDADO PARA HOJE');
   var padrao = _parseBriefingSection(content, 'PADRÃO IDENTIFICADO');

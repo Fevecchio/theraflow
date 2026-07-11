@@ -71,6 +71,15 @@ async function _supaFetchMessages(patientId, client) {
       .limit(60);
     if (error) throw error;
     _msgCache[patientId] = data || [];
+    // B6: mensagem NÃO LIDA da paciente acende o dot "novidade no Portal" também
+    // quando a busca roda em segundo plano (antes só ações locais setavam a flag)
+    try {
+      if ((typeof _loggedPatientData === 'undefined' || !_loggedPatientData)
+          && (data || []).some(function(m){ return m.sender_role === 'patient' && !m.read_at; })) {
+        localStorage.setItem('tf_portal_new_data', '1');
+        if (typeof _atualizarBadgePortal === 'function') _atualizarBadgePortal();
+      }
+    } catch(_) {}
     return _msgCache[patientId];
   } catch(e) {
     console.warn('[msg] fetch falhou:', e.message);
