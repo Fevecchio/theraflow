@@ -127,8 +127,13 @@ export default async function handler(req, res) {
 
   const form = new FormData();
   form.append('file', new Blob([audio], { type: mime }), 'sessao.webm');
-  form.append('model', 'whisper-large-v3-turbo');
+  // large-v3 COMPLETO (não turbo): o turbo trocava palavras em pt-BR no co-teste
+  // ("feriado"→"criado"); custo/sessão segue centavos e a transcrição é pós-sessão,
+  // então a latência extra não aparece para o usuário. Prompt curto dá contexto de
+  // vocabulário ao Whisper — reduz confusões acústicas sem induzir conteúdo.
+  form.append('model', 'whisper-large-v3');
   form.append('language', 'pt');
+  form.append('prompt', 'Transcrição de uma sessão de psicoterapia em português do Brasil, conversa entre psicóloga e paciente.');
   form.append('response_format', wantSegments ? 'verbose_json' : 'text');
 
   try {
