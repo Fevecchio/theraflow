@@ -203,8 +203,73 @@ function switchFinTab(el, tabId) {
     if (e) e.style.display = id === tabId ? '' : 'none';
   });
   if (tabId === 'fin-planos') renderFinPlanos();
-  if (tabId === 'fin-inad') renderFinInadimplencia();
+  if (tabId === 'fin-inad') { renderFinInadimplencia(); _renderWppPreviewReal(); }
+  if (tabId === 'fin-recibos') renderFinRecibos();
   if (tabId === 'fin-fluxo') renderFinFluxo();
+}
+
+/* V1 (revisão 10/07): aba Recibos era 100% fabricada (Camila/Marcos/Rafael fixos)
+ * e sem renderer — o PDF gerava recibo vazio. Agora: cobranças PAGAS reais,
+ * respeitando o mês selecionado, com data-charge-id para o gerarReciboPDF. */
+function renderFinRecibos() {
+  var tbody = document.getElementById('fin-recibos-tbody');
+  if (!tbody) return;
+  var sel = document.getElementById('fin-month-select');
+  var mes = (sel && sel.value && /^\d{4}-\d{2}$/.test(sel.value)) ? sel.value : null;
+  var pagos = charges.filter(function(c) {
+    return !c.deleted && c.status === 'paid' && (!mes || _chargeInMonth(c, mes));
+  }).sort(function(a, b) { return String(b.paidDate || b.date || '').localeCompare(String(a.paidDate || a.date || '')); });
+  if (!pagos.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Nenhum pagamento' + (mes ? ' neste mês' : '') + ' ainda — os recibos aparecem aqui quando uma cobrança for marcada como paga.</td></tr>';
+  } else {
+    var nomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    tbody.innerHTML = pagos.map(function(c) {
+      var mk = _chargeMonthKey(c);
+      var periodo = mk ? (nomesMes[parseInt(mk.split('-')[1]) - 1] + '/' + mk.split('-')[0]) : '—';
+      var ini = c.initials || (c.patient || '?').split(' ').map(function(w){ return w[0]; }).join('').slice(0, 2).toUpperCase();
+      return '<tr data-charge-id="' + c.id + '">'
+        + '<td><div class="patient-info"><div class="patient-avatar" style="background:' + (c.color || 'var(--sage)') + ';color:#fff;font-size:11px">' + escHTML(ini) + '</div><span>' + escHTML(c.patient || '—') + '</span></div></td>'
+        + '<td style="font-size:13px">' + periodo + '</td>'
+        + '<td style="font-weight:500">' + fmtMoedaInt(c.value) + '</td>'
+        + '<td><span class="tag tag-green">Pago</span></td>'
+        + '<td><button class="charge-btn" onclick="gerarReciboPDF(this)">PDF</button></td>'
+      + '</tr>';
+    }).join('');
+  }
+  // Prévia do recibo: do pagamento mais recente real (era Camila+CPFs falsos)
+  var prev = document.getElementById('fin-receipt-preview');
+  if (prev && pagos.length) {
+    var c0 = pagos[0];
+    var t = _reciboTerapeuta();
+    prev.innerHTML = '<div class="fin-receipt-header">TheraFlow — Recibo de Pagamento</div>'
+      + '<div class="fin-receipt-row"><span class="fin-receipt-row-label">Profissional</span><span class="fin-receipt-row-value">' + escHTML((t && t.nome) || '—') + (t && t.crp ? ' · CRP ' + escHTML(t.crp) : '') + '</span></div>'
+      + '<div class="fin-receipt-divider"></div>'
+      + '<div class="fin-receipt-row"><span class="fin-receipt-row-label">Paciente</span><span class="fin-receipt-row-value">' + escHTML(c0.patient || '—') + '</span></div>'
+      + '<div class="fin-receipt-row"><span class="fin-receipt-row-label">Referente a</span><span class="fin-receipt-row-value">' + escHTML(c0.billing === 'mensal' ? (c0.planLabel || 'Plano mensal') : 'Sessão de psicoterapia') + '</span></div>'
+      + '<div class="fin-receipt-divider"></div>'
+      + '<div class="fin-receipt-row"><span class="fin-receipt-row-label fin-receipt-total">Total pago</span><span class="fin-receipt-row-value fin-receipt-total" style="color:var(--sage)">' + fmtMoedaInt(c0.value) + '</span></div>'
+      + '<div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.5">Documento válido para declaração de Imposto de Renda.<br/>Serviço: Consulta psicológica · Código CNAE: 8650-0/01</div>';
+  }
+}
+
+/* V1: prévia do WhatsApp era fabricada ("Camila / 24/03 / R$200" + link
+ * inexistente) — agora nasce do 1º inadimplente real, com estado vazio honesto. */
+function _renderWppPreviewReal() {
+  var el = document.getElementById('fin-wpp-preview-body');
+  if (!el) return;
+  var venc = charges.filter(function(c) { return !c.deleted && _chargeVencida(c); });
+  if (!venc.length) {
+    el.innerHTML = 'Ninguém em atraso — quando houver cobrança vencida, a prévia da mensagem aparece aqui.';
+    return;
+  }
+  var c = venc[0];
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch (_) {}
+  var dataBR = c.date ? fmtDataBR(c.date) : '—';
+  el.innerHTML = 'Oi <strong>' + escHTML(_firstName(c.patient || '')) + '</strong>!<br/><br/>'
+    + 'Segue o lembrete do pagamento da sua sessão de <strong>' + escHTML(dataBR) + '</strong>.<br/><br/>'
+    + 'Valor: <strong>' + fmtMoedaInt(c.value) + '</strong><br/>'
+    + (acc.pix_key ? 'PIX: <strong>' + escHTML(acc.pix_key) + '</strong><br/><br/>' : '<br/>')
+    + 'Qualquer dúvida, estou aqui!';
 }
 
 function renderFinPlanos() {
@@ -1084,6 +1149,9 @@ function filterFinMonth(val) {
   if (sub) sub.textContent = label + ' · Cobranças, pagamentos e recibos';
   renderCharges(val);
   atualizarStatsFinanceiro(val);
+  // V1: o seletor de mês agora vale também para Recibos (Inadimplência segue
+  // global de propósito — dívida vencida importa independentemente do mês).
+  renderFinRecibos();
 }
 
 function switchPlanType(type) {

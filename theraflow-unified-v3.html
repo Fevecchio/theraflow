@@ -1412,15 +1412,12 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
         <div class="card">
           <div class="section-title" style="margin-bottom:10px">Prévia da mensagem — WhatsApp</div>
-          <div class="fin-wpp-preview">
-            Oi <strong>Camila</strong>! 😊<br/><br/>
-            Segue o link de pagamento da sua sessão de <strong>terça, 24/03</strong>.<br/><br/>
-            💰 Valor: <strong>R$200,00</strong><br/>
-            📱 PIX: <em>clique no link abaixo</em><br/><br/>
-            <span style="color:#128C7E;text-decoration:underline">pix.theraflow.com.br/p/cam1la...</span><br/><br/>
-            Pode pagar quando puder. Qualquer dúvida, estou aqui! 💚
+          <!-- V1: prévia era FABRICADA ("Camila / terça 24/03 / R$200" fixos +
+               link pix.theraflow inexistente) — agora gerada do 1º inadimplente real. -->
+          <div class="fin-wpp-preview" id="fin-wpp-preview-body">
+            Quando houver cobrança vencida, a prévia da mensagem aparece aqui.
           </div>
-          <div style="margin-top:10px;font-size:12px;color:var(--muted)">Mensagem personalizável nas configurações. Inclui link PIX copia-e-cola + QR code.</div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)">O envio é sempre manual, pelo botão WhatsApp da cobrança — nada sai sem você.</div>
         </div>
       </div>
     </div>
@@ -1434,30 +1431,13 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div class="section-title">Recibos emitidos</div>
           <button class="btn btn-primary btn-sm" onclick="gerarRecibosLote()">📋 Gerar recibos do mês</button>
         </div>
+        <!-- V1: tabela era FABRICADA (Camila/Marcos/Rafael fixos) e o PDF gerava
+             recibo vazio (sem data-charge-id) — renderFinRecibos (js/12) preenche
+             das cobranças PAGAS reais, respeitando o mês selecionado. -->
         <table>
-          <thead><tr><th>Paciente</th><th>Período</th><th>Valor total</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            <tr>
-              <td><div class="patient-info"><div class="patient-avatar" style="background:#4a7c59;color:#fff;font-size:11px">CR</div><span>Camila Rocha</span></div></td>
-              <td style="font-size:13px">Mar/2026</td>
-              <td style="font-weight:500">R$800</td>
-              <td><span class="tag tag-green">Enviado</span></td>
-              <td><button class="charge-btn" onclick="gerarReciboPDF(this)">📄 PDF</button></td>
-            </tr>
-            <tr>
-              <td><div class="patient-info"><div class="patient-avatar" style="background:#c97d2e;color:#fff;font-size:11px">MO</div><span>Marcos Oliveira</span></div></td>
-              <td style="font-size:13px">Mar/2026</td>
-              <td style="font-weight:500">R$800</td>
-              <td><span class="tag tag-green">Enviado</span></td>
-              <td><button class="charge-btn" onclick="gerarReciboPDF(this)">📄 PDF</button></td>
-            </tr>
-            <tr>
-              <td><div class="patient-info"><div class="patient-avatar" style="background:#2c5f8a;color:#fff;font-size:11px">RA</div><span>Rafael Andrade</span></div></td>
-              <td style="font-size:13px">Mar/2026</td>
-              <td style="font-weight:500">R$400</td>
-              <td><span class="tag tag-amber">Parcial</span></td>
-              <td><button class="charge-btn" onclick="gerarReciboPDF(this)">📄 PDF</button></td>
-            </tr>
+          <thead><tr><th>Paciente</th><th>Período</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+          <tbody id="fin-recibos-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Carregando…</td></tr>
           </tbody>
         </table>
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px">
@@ -1470,19 +1450,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card">
           <div class="section-title" style="margin-bottom:14px">Prévia do recibo</div>
-          <div class="fin-receipt-card">
+          <!-- V1: prévia era FABRICADA (Camila, CPFs falsos) — renderFinRecibos
+               preenche do pagamento mais recente real. -->
+          <div class="fin-receipt-card" id="fin-receipt-preview">
             <div class="fin-receipt-header">TheraFlow — Recibo de Pagamento</div>
-            <div class="fin-receipt-row"><span class="fin-receipt-row-label">Profissional</span><span class="fin-receipt-row-value" id="receipt-profissional">Ana Meireles · CRP 06/123456</span></div>
-            <div class="fin-receipt-row"><span class="fin-receipt-row-label">CPF profissional</span><span class="fin-receipt-row-value">123.456.789-00</span></div>
-            <div class="fin-receipt-divider"></div>
-            <div class="fin-receipt-row"><span class="fin-receipt-row-label">Paciente</span><span class="fin-receipt-row-value">Camila Rocha</span></div>
-            <div class="fin-receipt-row"><span class="fin-receipt-row-label">CPF paciente</span><span class="fin-receipt-row-value">987.654.321-00</span></div>
-            <div class="fin-receipt-divider"></div>
-            <div class="fin-receipt-row"><span class="fin-receipt-row-label">Período</span><span class="fin-receipt-row-value">Março 2026</span></div>
-            <div class="fin-receipt-row"><span class="fin-receipt-row-label">Sessões realizadas</span><span class="fin-receipt-row-value">4 sessões</span></div>
-            <div class="fin-receipt-row"><span class="fin-receipt-row-label">Valor por sessão</span><span class="fin-receipt-row-value">R$200,00</span></div>
-            <div class="fin-receipt-divider"></div>
-            <div class="fin-receipt-row"><span class="fin-receipt-row-label fin-receipt-total">Total pago</span><span class="fin-receipt-row-value fin-receipt-total" style="color:var(--sage)">R$800,00</span></div>
+            <div style="padding:16px 0;font-size:13px;color:var(--muted)">A prévia aparece aqui quando houver um pagamento registrado.</div>
             <div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.5">
               Documento válido para declaração de Imposto de Renda.<br/>
               Serviço: Consulta psicológica · Código CNAE: 8650-0/01
