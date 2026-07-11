@@ -537,6 +537,7 @@ function _salvarEvolucaoPlano(texto) {
   if (!p) return;
   p.planoEvolucao = texto;
   p.planoEvolucaoDate = new Date().toLocaleDateString('pt-BR');
+  p.planoEvolucaoUp = Date.now(); // desempate LWW no servidor (027): cópia velha não reverte
   salvarPacientes();
 }
 

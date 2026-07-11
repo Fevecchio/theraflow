@@ -28,6 +28,17 @@ function closeSidebar() {
 }
 
 function navigate(page) {
+  // C1: outra aba alterou dados enquanto um modal/sessão estava ativo aqui —
+  // recarrega agora que o usuário navegou (a flag zera antes p/ não recursar).
+  if (typeof _tfStorageStale !== 'undefined' && _tfStorageStale && !document.querySelector('.modal-overlay.open')) {
+    _tfStorageStale = false;
+    try {
+      if (typeof carregarPacientes === 'function') carregarPacientes();
+      if (typeof carregarAppointments === 'function') carregarAppointments();
+      if (typeof carregarCharges === 'function') charges = carregarCharges();
+      if (typeof carregarTarefas === 'function') carregarTarefas();
+    } catch (_) {}
+  }
   // Redirect fragmented pages into unified patient panel
   if (page === 'prontuarios') {
     navigate('pacientes');
@@ -136,4 +147,32 @@ function toggleDarkMode(on) {
     localStorage.removeItem('tf_dark_mode');
   }
 }
+
+// ── Coordenação entre ABAS (auditoria de confiança C1) ──────────────────────
+// Outra aba gravou tf_* → a memória DESTA aba ficou velha; sem recarregar, o
+// próximo salvar daqui sobrescrevia o localStorage inteiro com dados antigos
+// (e, via sync, o servidor). O evento 'storage' só dispara nas OUTRAS abas —
+// exatamente as que precisam se atualizar.
+var _tfStorageStale = false;
+function _tfRecarregarDeOutraAba() {
+  _tfStorageStale = false;
+  try {
+    if (typeof carregarPacientes === 'function') carregarPacientes();
+    if (typeof carregarAppointments === 'function') carregarAppointments();
+    if (typeof carregarCharges === 'function') charges = carregarCharges();
+    if (typeof carregarTarefas === 'function') carregarTarefas();
+    var pg = document.querySelector('.page.active');
+    if (pg && typeof navigate === 'function') navigate(pg.id.replace('page-', ''));
+    if (typeof showToast === 'function') showToast('Dados atualizados a partir de outra aba.');
+  } catch (err) { console.warn('[TF] recarga multi-aba:', err.message); }
+}
+window.addEventListener('storage', function(e) {
+  if (!e || ['tf_patients', 'tf_appointments', 'tf_charges', 'tf_tasks'].indexOf(e.key) === -1) return;
+  // Modal aberto ou sessão rodando: não puxa o tapete do usuário — marca stale
+  // e a recarga acontece na próxima navegação (gancho no navigate()).
+  var _modalAberto = document.querySelector('.modal-overlay.open');
+  var _emSessao = (typeof _lkRoom !== 'undefined' && _lkRoom) || (typeof timerInterval !== 'undefined' && timerInterval !== null);
+  if (_modalAberto || _emSessao) { _tfStorageStale = true; return; }
+  _tfRecarregarDeOutraAba();
+});
 

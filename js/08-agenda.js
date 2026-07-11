@@ -131,7 +131,7 @@ function _salvarNotaRapida(pidx) {
   if (!p.prontuarioNotes) p.prontuarioNotes = [];
   var hoje = new Date();
   var data = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0');
-  p.prontuarioNotes.push({ date: data, text: texto });
+  p.prontuarioNotes.push({ date: data, text: texto, _up: Date.now() }); // _up: merge por elemento (migration 027)
   p.lastSession = data;
   salvarPacientes();
   document.getElementById('modal-nota-presenca')?.remove();
@@ -233,6 +233,7 @@ function _gerarAppointmentsDemo() {
     appointments.push({
       id: Date.now() + i,
       patientIdx: d.pi,
+      patientId: p.id || null, // C3: identidade estável (índice desloca com exclusões)
       patientName: p.name,
       date: iso(addDays(seg, d.di)),
       time: d.h,
@@ -360,6 +361,7 @@ function confirmarAgendamento() {
       appointments.push({
         id: Date.now() + i,
         patientIdx: pidx,
+        patientId: p.id || null, // C3: identidade estável (índice desloca com exclusões)
         patientName: p.name,
         date: dt,
         time: horaVal,

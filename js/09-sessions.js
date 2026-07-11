@@ -908,7 +908,7 @@ function indexPostSession() {
     sp.lastSession = `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}`;
     if (noteText) {
       if (!sp.prontuarioNotes) sp.prontuarioNotes = [];
-      sp.prontuarioNotes.push({ date: sp.lastSession, text: noteText });
+      sp.prontuarioNotes.push({ date: sp.lastSession, text: noteText, _up: Date.now() }); // _up: merge por elemento (027)
     }
     salvarPacientes();
     showToast('✓ Sessão encerrada e nota salva.');
@@ -935,6 +935,7 @@ function indexPostSession() {
       apptHoje = {
         id: 'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2,5),
         patientIdx: currentSessionPatientIdx,
+        patientId: sp.id || null, // C3: identidade estável (índice desloca com exclusões)
         patientName: sp.name,
         date: hojeIso2,
         time: null,

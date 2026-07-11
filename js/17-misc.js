@@ -764,7 +764,7 @@ function salvarNotaRapida() {
   if (!p.prontuarioNotes) p.prontuarioNotes = [];
   var hoje = new Date();
   var data = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0');
-  p.prontuarioNotes.push({ date: data, text: texto });
+  p.prontuarioNotes.push({ date: data, text: texto, _up: Date.now() }); // _up: merge por elemento (027)
   salvarPacientes();
   closeModal('modal-nota-rapida');
   showToast('✓ Nota salva no prontuário de ' + _firstName(p.name) + '.');

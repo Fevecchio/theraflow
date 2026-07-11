@@ -223,6 +223,10 @@ function salvarEdicaoPaciente(i) {
       }
     } catch (_) {}
   }
+  // C4: marca a edição como não-sincronizada — se o app fechar antes do sync
+  // (offline/debounce), o restore preserva ESTA cópia em vez da do servidor.
+  // A flag é limpa no sucesso do sync (js/03), igual às criações.
+  p._pendingSync = true;
   salvarPacientes();
   limparModalPaciente();
   closeModal('modal-novo-paciente');
@@ -1238,7 +1242,7 @@ function _salvarNota(pidx, noteDate, novoTexto) {
   var p = patients[pidx];
   if (!p || !p.prontuarioNotes) return;
   var nota = p.prontuarioNotes.find(function(n){ return n.date === noteDate; });
-  if (nota) { nota.text = novoTexto; salvarPacientes(); }
+  if (nota) { nota.text = novoTexto; nota._up = Date.now(); salvarPacientes(); } // _up: merge por elemento (027)
 }
 
 function renderPatientFicha(i) {

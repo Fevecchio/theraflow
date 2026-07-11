@@ -251,10 +251,18 @@ async function _supaLoadUserData(userId) {
       // O _pendingSync só existe em paciente NÃO sincronizado (limpo no sucesso do sync), então
       // não ressuscita paciente deletado do Supabase (esse não tem a flag). Auditoria 07/07.
       const offlinePats = localPats.filter(p => !p._isDemo && (p._pendingSync || _newLocalPatientIds.has(p.id)) && !supaPatIds.has(p.id));
-      const mergedPats = [...restored, ...offlinePats];
+      // C4 (auditoria de confiança): EDIÇÃO local ainda não sincronizada de paciente
+      // que JÁ existe no servidor — a cópia local suja (dirty, _pendingSync) vence o
+      // restore e sobe no próximo sync. Antes, editar offline e reabrir o app
+      // descartava a edição em silêncio (a flag só protegia CRIAÇÕES).
+      const dirtyById = new Map(localPats
+        .filter(p => !p._isDemo && p._pendingSync && p.id && supaPatIds.has(p.id))
+        .map(p => [p.id, p]));
+      const restoredFinal = restored.map(rp => dirtyById.get(rp.id) || rp);
+      const mergedPats = [...restoredFinal, ...offlinePats];
       localStorage.setItem('tf_patients', JSON.stringify(mergedPats));
       try { if (typeof patients !== 'undefined') patients.splice(0, patients.length, ...mergedPats); } catch(_) {}
-      if (offlinePats.length) _supaSync_patients().catch(() => {});
+      if (offlinePats.length || dirtyById.size) _supaSync_patients().catch(() => {});
     }
     if (chgs && chgs.length > 0) {
       const localChgs = JSON.parse(localStorage.getItem('tf_charges') || '[]');
@@ -313,6 +321,7 @@ async function _supaLoadUserData(userId) {
       const restoredAppts = appts.map(a => ({
         ...(a.metadata || {}),
         id: a.local_id,
+        patientId: a.patient_id || null, // identidade estável (C3) — o índice é derivado
         patientIdx: patsArr.findIndex(p => p.id === a.patient_id),
         patientName: a.patient_name,
         date: a.date,

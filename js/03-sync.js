@@ -293,6 +293,7 @@ async function _supaSync_patients(opts) {
           // Lote 3 (TEMA 6): campos que morriam no restore por não estarem no metadata.
           planoEvolucao: p.planoEvolucao || null,
           planoEvolucaoDate: p.planoEvolucaoDate || null,
+          planoEvolucaoUp: p.planoEvolucaoUp || null, // LWW honesto no servidor (027)
           nascimento: p.nascimento || null,
           // P10: tombstones de exclusão (exercises/portalMetas/materials) — a RPC
           // 025 os une aos do servidor e o merge por elemento respeita.
@@ -478,7 +479,14 @@ async function _supaSync_appointments() {
       const rows = appts.map(a => ({
         local_id: String(a.id),
         user_id: user.id,
-        patient_id: (pats[a.patientIdx] || pats.find(p => p.name === a.patientName))?.id || null,
+        // C3 (auditoria de confiança): IDENTIDADE antes de POSIÇÃO — pats[a.patientIdx]
+        // vinculava a sessão ao paciente ERRADO quando uma exclusão em outra aba
+        // deslocava os índices. Ordem: patientId gravado na criação → nome → índice.
+        patient_id: (
+          (a.patientId ? pats.find(p => p.id === a.patientId) : null) ||
+          pats.find(p => p.name === a.patientName) ||
+          pats[a.patientIdx]
+        )?.id || null,
         patient_name: a.patientName || '',
         date: a.date,
         time: a.time || null,
