@@ -93,6 +93,7 @@ async function callClaude(system, userPrompt) {
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
+      temperature: 0.4, // análise clínica: consistência entre gerações do mesmo histórico
       system,
       messages: [{ role: 'user', content: userPrompt }],
     }),
