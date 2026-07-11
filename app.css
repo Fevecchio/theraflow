@@ -1884,7 +1884,6 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 .breath-ring.expanding{transform:scale(1.5);opacity:1}
 .breath-ring.contracting{transform:scale(.65);opacity:.55}
 .breath-inner{width:52px;height:52px;border-radius:50%;background:rgba(90,138,106,.15)}
-.streak-bar{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#fff8ec,#fffcf4);border:1px solid rgba(201,125,46,.22);border-radius:14px;padding:14px 18px}
 .streak-week-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
 .streak-week-left{display:flex;align-items:center;gap:6px}
 .streak-num{font-size:24px;font-weight:700;color:#c97d2e;line-height:1}
@@ -2090,8 +2089,6 @@ select:hover { border-color: #d8d3c2; }
 
 /* Emoji do check-in */
 .pac-mood-em { font-size: 24px; line-height: 1; display: inline-block; transition: transform .2s; }
-.pac-mood-selected .pac-mood-em { transform: scale(1.3); }
-.pac-mood-selected { border-color: var(--sage) !important; background: var(--sage-50) !important; box-shadow: 0 0 0 3px var(--sage-100); }
 
 /* ── Ícones de exercício MONOCROMÁTICOS (redesign: fim da sub-paleta pastel
    multicolorida — a hierarquia vem do conteúdo, não de 5 cores gritando). ── */

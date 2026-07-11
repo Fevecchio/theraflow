@@ -658,18 +658,8 @@ const abordagemCalibration = {
 // Reutilizado na aba Perfil do app do paciente e no preview do terapeuta
 // (initPortal). Avalia cada BADGES_DEF.cond(p) — badges cumpridas ganham
 // .earned, as demais .locked. Read-only (sem interação).
-function _badgesGridHtml(p) {
-  return '<div class="badges-grid">'
-    + BADGES_DEF.map(function(b){
-        var earned = b.cond(p);
-        return '<div class="badge-card '+(earned?'earned':'locked')+'">'
-          + '<div style="font-size:26px;line-height:1">'+b.icon+'</div>'
-          + '<div style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:2px">'+b.name+'</div>'
-          + '<div style="font-size:10px;color:var(--muted)">'+b.desc+'</div>'
-        + '</div>';
-      }).join('')
-    + '</div>';
-}
+// (grade de conquistas removida no redesign compassivo — Fase B3; o morto
+// badgesHtml/_badgesGridHtml saiu de vez no Pacote 2, 11/07)
 
 // ── Sessão AO VIVO no portal (parte 2/2 da entrada da paciente) ──
 // A terapeuta, ao iniciar a videochamada, salva o link real de /sala em
@@ -936,11 +926,6 @@ function renderPatientApp(idx, pacs) {
     + '</div>'
     + '<div class="streak-week-dots">' + _weekDots + '</div>'
   + '</div>';
-
-  // ── Conquistas ──
-  var badgesHtml = '<div class="patient-section-card">'
-    + '<div class="patient-section-header"><div class="patient-section-title">🏅 Minhas conquistas</div></div>'
-    + '<div class="patient-section-body">' + _badgesGridHtml(p) + '</div></div>';
 
   // ── Materiais ──
   var mats = p.materials || [];
@@ -1961,7 +1946,7 @@ function renderTrajetoriaPortal(p, idx, readonly) {
   }).sort(function(a, b) { return b.date.localeCompare(a.date); });
 
   if (!appts.length) {
-    return '<div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">📅 Minha jornada</div></div>'
+    return '<div class="patient-section-card"><div class="patient-section-header"><div class="patient-section-title">Minha jornada</div></div>'
       + '<div class="patient-section-body"><div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">Suas sessões aparecerão aqui.</div></div></div>';
   }
 
@@ -2050,7 +2035,7 @@ function renderTrajetoriaPortal(p, idx, readonly) {
   }).join('');
 
   return '<div class="patient-section-card">'
-    + '<div class="patient-section-header"><div class="patient-section-title">📅 Minha jornada</div></div>'
+    + '<div class="patient-section-header"><div class="patient-section-title">Minha jornada</div></div>'
     + '<div style="padding:0 16px 8px;display:flex;gap:6px;flex-wrap:wrap">'
     + '<button class="traj-filter-btn active" onclick="pacTrajFilter(\'all\',this)">Tudo</button>'
     + '<button class="traj-filter-btn" onclick="pacTrajFilter(\'milestones\',this)">Marcos</button>'
