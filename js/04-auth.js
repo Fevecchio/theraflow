@@ -911,11 +911,10 @@ function _checkNotifPortal(p) {
 
 // ─── ANAMNESE — TERAPEUTA ─────────────────────────────────────────────
 
-// A aba Anamnese do painel de Pacientes COPIA o form de #tab-anamnese (que segue
-// existindo na página Prontuários legada, oculta) → os ids ana-* ficam DUPLICADOS
-// no DOM. getElementById pega o primeiro (a cópia oculta) → o terapeuta digitava
-// na cópia visível e o Salvar lia a oculta vazia, descartando tudo. Este resolvedor
-// prioriza a instância visível dentro de #patient-detail-tab-content. Lote 1 (T-A2).
+// O form ana-* vem do <template id="tpl-anamnese"> (inerte — os ids só existem na
+// cópia viva dentro do painel de Pacientes; a página Prontuários que duplicava os
+// ids foi deletada no V2). Resolvedor mantido por robustez: prioriza a instância
+// dentro de #patient-detail-tab-content.
 function _anaEl(id) {
   var painel = document.getElementById('patient-detail-tab-content');
   if (painel) { var e = painel.querySelector('#' + id); if (e) return e; }

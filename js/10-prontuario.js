@@ -1,55 +1,8 @@
 // 10-prontuario.js — Prontuário, notas clínicas, materiais, export de prontuário
 
-/* ── PRONTUÁRIO & NOTAS CLÍNICAS ── */
-function renderMateriaisProntuario(idx) {
-  _materialPatientIdx = idx;
-  var p = patients[idx];
-  if (!p) return;
-  var list = document.getElementById('materiais-list');
-  var empty = document.getElementById('materiais-empty');
-  var count = document.getElementById('materiais-count');
-  if (!list) return;
-  var mats = p.materials || [];
-  if (count) count.textContent = mats.length > 0 ? mats.length + ' material' + (mats.length !== 1 ? 'is' : '') : '';
-  if (mats.length === 0) {
-    list.innerHTML = '';
-    if (empty) { empty.style.display = ''; list.appendChild(empty); }
-    return;
-  }
-  if (empty) empty.style.display = 'none';
-  list.innerHTML = mats.map(function(m) {
-    var icon = MATERIAL_ICONS[m.tipo] || '📎';
-    var tituloHtml = m.url
-      ? '<a href="'+escHTML(m.url)+'" target="_blank" rel="noopener">'+escHTML(m.titulo)+'</a>'
-      : escHTML(m.titulo);
-    var descHtml = m.desc ? '<div class="material-desc">'+escHTML(m.desc)+'</div>' : '';
-    var tag = '<span style="font-size:10.5px;background:#f0f2f0;color:var(--muted);padding:2px 7px;border-radius:10px;font-weight:500">'+escHTML(MATERIAL_LABELS[m.tipo]||m.tipo)+'</span>';
-    return '<div class="material-card">'
-      +'<div class="material-icon '+m.tipo+'">'+icon+'</div>'
-      +'<div style="flex:1;min-width:0">'
-        +'<div class="material-title" style="display:flex;align-items:center;gap:8px">'+tituloHtml+tag+'</div>'
-        +descHtml
-        +'<div class="material-date">'+escHTML(m.date)+'</div>'
-      +'</div>'
-      +'<div class="material-actions">'
-        +(m.url ? '<a href="'+escHTML(m.url)+'" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none">↗ Abrir</a>' : '')
-        +'<button class="task-delete" onclick="excluirMaterial('+idx+','+m.id+')" title="Excluir">✕</button>'
-      +'</div>'
-      +'</div>';
-  }).join('');
-}
-
-function excluirMaterial(pidx, mid) {
-  if (!confirm('Remover este material?')) return;
-  var p = patients[pidx];
-  if (!p || !p.materials) return;
-  p.materials = p.materials.filter(function(m){ return m.id !== mid; });
-  _tfTombstone(p, 'materials', mid); // P10: cópia velha de outro device não ressuscita
-  salvarPacientes();
-  renderMateriaisProntuario(pidx);
-  showToast('Material removido.');
-}
-// ── /PRONTUÁRIOS ─────────────────────────────────────────────────────────────
+/* Materiais do paciente: renderizados pela aba Ficha do painel de Pacientes
+   (renderPatientFicha/_excluirMaterialFicha em js/06). Os renderizadores da
+   página Prontuários legada saíram junto com ela no V2. */
 
 // ── BRIEFING ──
 

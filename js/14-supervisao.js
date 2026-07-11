@@ -448,9 +448,6 @@ function enviarLembreteAgenda(nomeCompleto) {
 // ── PRONTUÁRIO — ABA PLANO DE TRATAMENTO ─────────────────────────────────────
 function renderPlanoProntuario(idx) {
   var p = patients[idx !== undefined ? idx : currentPatientIdx];
-  // #tab-plano-content é DUPLICADO (aba Plano do painel + página Prontuários legada);
-  // getElementById pegava a cópia oculta → o painel visível travava em "Carregando…".
-  // Prioriza a instância dentro do painel de Pacientes. Lote 1 (T-A2).
   var _painel = document.getElementById('patient-detail-tab-content');
   var el = (_painel && _painel.querySelector('#tab-plano-content')) || document.getElementById('tab-plano-content');
   if (!p || !el) return;
@@ -658,7 +655,7 @@ function exportarExtratoPaciente(idx) {
 }
 
 function exportarRelatorioEvolucao() {
-  var p = patients[_currentProntuarioIdx] || patients[0];
+  var p = patients[currentPatientIdx] || patients[0];
   if (!p) { showToast('Selecione um paciente primeiro.'); return; }
   var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
   var nomeT = acc.nome || '—';
@@ -678,7 +675,7 @@ function exportarRelatorioEvolucao() {
   }
 
   // Presença
-  var apptsPac = (typeof appointments!=='undefined'?appointments:[]).filter(function(a){ return a.patientIdx===(_currentProntuarioIdx||0); });
+  var apptsPac = (typeof appointments!=='undefined'?appointments:[]).filter(function(a){ return a.patientIdx===(currentPatientIdx||0); });
   var compareceu = apptsPac.filter(function(a){ return a.presenca==='compareceu'; }).length;
   var faltou = apptsPac.filter(function(a){ return a.presenca==='faltou'; }).length;
   var taxaPresenca = apptsPac.filter(function(a){return a.presenca;}).length
@@ -718,11 +715,7 @@ function exportarRelatorioEvolucao() {
 }
 
 function exportarProntuario() {
-  // Painel de Pacientes (currentPatientIdx) e página Prontuários legada
-  // (_currentProntuarioIdx) divergem; usa o do painel visível quando aberto. T-A2.
-  var _pIdx = (document.getElementById('page-pacientes') && document.getElementById('page-pacientes').classList.contains('active'))
-    ? currentPatientIdx : (typeof _currentProntuarioIdx !== 'undefined' ? _currentProntuarioIdx : currentPatientIdx);
-  const p = patients[_pIdx] || patients[currentPatientIdx] || patients[0];
+  const p = patients[currentPatientIdx] || patients[0];
   if (!p) { showToast('Selecione um paciente primeiro.'); return; }
 
   const terapeuta = tfUserData || {};
@@ -917,283 +910,6 @@ function exportarProntuario() {
   try { localStorage.setItem('tf_first_export', '1'); verificarMarcos(); } catch(e2){}
 }
 
-function renderProntuarios() {
-  const page = document.getElementById('page-prontuarios');
-  if (!page) return;
-  // Popula select
-  const sel = page.querySelector('.topbar-actions select');
-  if (sel) {
-    sel.innerHTML = `<option value="">Todos os pacientes</option>` +
-      patients.map((p,i) => `<option value="${i}">${escHTML(p.name)}</option>`).join('');
-    sel.onchange = function() {
-      if (this.value === '') { renderListaProntuarios(); return; }
-      const idx = parseInt(this.value);
-      renderListaProntuarios(idx);
-      selecionarProntuario(idx, page.querySelector('.list-item'));
-    };
-  }
-  renderListaProntuarios();
-}
-
-function buscarNotasProntuario(q) {
-  q = (q || '').toLowerCase().trim();
-  var list = document.querySelector('#page-prontuarios .panel-list');
-  if (!list) return;
-  if (!q) { renderListaProntuarios(); return; }
-  // Busca em todos os pacientes
-  var resultados = [];
-  patients.forEach(function(p, i) {
-    var notas = (p.prontuarioNotes || []).filter(function(n){
-      return (n.text || '').toLowerCase().includes(q) || (n.date || '').includes(q);
-    });
-    if (notas.length || p.name.toLowerCase().includes(q) || (p.notes||'').toLowerCase().includes(q)) {
-      resultados.push({ p: p, i: i, notas: notas });
-    }
-  });
-  if (!resultados.length) {
-    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Nenhuma nota encontrada para "' + escHTML(q) + '".</div>';
-    return;
-  }
-  list.innerHTML = resultados.map(function(r, fi) {
-    var trecho = r.notas.length ? r.notas[0].text.substring(0,80) + '…' : '';
-    return '<div class="list-item" onclick="selecionarProntuario('+r.i+',this)">'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-        + '<div class="patient-avatar" style="background:'+(r.p.colorGrad||r.p.color||'#4a7c59')+';color:#fff;width:28px;height:28px;font-size:10px">'+(r.p.initials||(r.p.name?r.p.name.trim().split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase():'?'))+'</div>'
-        + '<span style="font-weight:500;font-size:13.5px">'+escHTML(r.p.name)+'</span>'
-        + (r.notas.length ? '<span style="margin-left:auto;font-size:11px;color:var(--sage);font-weight:600">'+r.notas.length+' nota'+(r.notas.length>1?'s':'')+'</span>' : '')
-      + '</div>'
-      + (trecho ? '<div style="font-size:11.5px;color:var(--muted);line-height:1.5">…'+escHTML(trecho)+'</div>' : '')
-      + '</div>';
-  }).join('');
-}
-
-function renderListaProntuarios(destaque) {
-  const list = document.querySelector('#page-prontuarios .panel-list');
-  if (!list) return;
-  const lista = destaque !== undefined ? [patients[destaque]].map((p,_) => ({...p, _i: destaque}))
-                : patients.slice(0, 8).map((p, i) => ({...p, _i: i}));
-  list.innerHTML = lista.map((p, fi) => {
-    const badge = p.status === 'Atenção' || p.alert
-      ? `<span class="tag tag-red" style="margin-left:auto;font-size:10px">Revisar</span>`
-      : p.portalNota && p.portalNota.trim()
-        ? `<span class="tag tag-amber" style="margin-left:auto;font-size:10px">📝 Nota</span>`
-        : fi === 0 ? `<span class="tag tag-amber" style="margin-left:auto;font-size:10px">Nova nota</span>` : '';
-    const avatarBg = p.colorGrad || p.color || '#4a7c59';
-    const _inits = p.initials || (p.name ? p.name.trim().split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase() : '?');
-    return `<div class="list-item ${fi===0?'active':''}" onclick="selecionarProntuario(${p._i},this)" style="animation:itemStagger .3s ease both;animation-delay:${fi*40}ms">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div class="patient-avatar" style="background:${avatarBg};color:#fff;width:52px;height:52px;font-size:17px;flex-shrink:0;border-radius:50%">${_inits}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">${escHTML(p.name)}</div>
-          <div style="font-size:12px;color:var(--muted)">${escHTML(p.abordagem)} · Sessão ${p.sessions}</div>
-        </div>
-        <div style="flex-shrink:0">${badge}</div>
-      </div>
-    </div>`;
-  }).join('');
-  if (lista.length > 0) selecionarProntuario(lista[0]._i, list.querySelector('.list-item'));
-}
-
-var _currentProntuarioIdx = 0;
-
-function prontuarioNavSessao() {
-  currentSessionPatientIdx = _currentProntuarioIdx;
-  navigate('sessao');
-}
-function prontuarioNavBriefing() {
-  currentBriefingPatientIdx = _currentProntuarioIdx;
-  navigate('briefing');
-}
-
-function selecionarProntuario(i, el) {
-  _currentProntuarioIdx = i;
-  document.querySelectorAll('#page-prontuarios .list-item').forEach(x => x.classList.remove('active'));
-  if (el) el.classList.add('active');
-  const p = patients[i];
-  if (!p) return;
-  const header = document.querySelector('#page-prontuarios .detail-header');
-  if (!header) return;
-  const av = header.querySelector('.detail-avatar');
-  const nm = header.querySelector('.detail-name');
-  const mt = header.querySelector('.detail-meta');
-  if (av) { av.style.background = p.colorGrad || p.color || '#4a7c59'; av.textContent = p.initials || (p.name ? p.name.trim().split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase() : '?'); }
-  if (nm) nm.textContent = p.name;
-  if (mt) mt.innerHTML = `<span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span><span>📋 ${escHTML(p.abordagem)}</span><span>📍 ${p.cidade !== '—' ? escHTML(p.cidade) : '—'}</span>`;
-
-  // Limpa notas demo estáticas do HTML — substitui por dados reais do paciente
-  const tabNotas = document.getElementById('tab-notas');
-  if (tabNotas) {
-    tabNotas.innerHTML = '<div style="display:flex;flex-direction:column;gap:12px"></div>';
-  }
-
-  // Atualiza ficha clínica com dados reais do paciente. Frequência/Medicamentos
-  // saíram (F4.6 #9): eram "—" fixo, nunca editáveis — os índices casam com o
-  // HTML enxuto de tab-ficha (CID, Abordagem, Queixa).
-  const tabFicha = document.getElementById('tab-ficha');
-  if (tabFicha) {
-    const fields = tabFicha.querySelectorAll('.form-group');
-    if (fields[0]) fields[0].innerHTML = `<label>CID principal</label><div style="font-size:14px;padding:9px 0">${p.cid !== '—' ? escHTML(p.cid) : 'Não informado'}</div>`;
-    if (fields[1]) fields[1].innerHTML = `<label>Abordagem</label><div style="font-size:14px;padding:9px 0">${escHTML(p.abordagem || '—')}</div>`;
-    if (fields[2]) fields[2].innerHTML = `<label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">${escHTML(p.notes || '—')}</div>`;
-  }
-
-  // ── Painel de evolução (sparkline de humor + stats)
-  (function() {
-    var panelId = 'prontuario-evolucao-panel';
-    var existing = document.getElementById(panelId);
-    if (existing) existing.remove();
-    var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; })
-      .map(function(v){ return _normMoodVal(v); }); // portal grava {value,emoji} — Lote 1
-    var totalSessoes = p.sessions || 0;
-    var prog = p.progress || 0;
-    // Calcula taxa de presença
-    var apptsPac = appointments.filter(function(a){ return a.patientIdx === i && a.presenca; });
-    var compareceu = apptsPac.filter(function(a){ return a.presenca === 'compareceu'; }).length;
-    var taxaPresenca = apptsPac.length ? Math.round(compareceu / apptsPac.length * 100) : null;
-
-    var sparkHtml = '';
-    if (mh.length >= 2) {
-      var pts = mh.slice(-12);
-      var W = 200, H = 44, pad = 5;
-      var stepX = (W - pad*2) / (pts.length - 1);
-      var coords = pts.map(function(v, i) {
-        var x = pad + i * stepX;
-        var y = H - pad - ((v - 1) / 9) * (H - pad*2);
-        return x.toFixed(1) + ',' + y.toFixed(1);
-      }).join(' ');
-      var trend = pts[pts.length-1] - pts[0];
-      var cor = trend > 0.5 ? '#4a7c59' : trend < -0.5 ? '#c0392b' : '#c97d2e';
-      var ultimo = pts[pts.length-1];
-      sparkHtml = '<div style="display:flex;align-items:center;gap:10px;margin-top:6px">'
-        + '<svg width="'+W+'" height="'+H+'" style="flex-shrink:0"><polyline points="'+coords+'" fill="none" stroke="'+cor+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'
-        + '<div style="flex-shrink:0;text-align:center"><div style="font-size:20px;font-weight:700;color:'+cor+'">'+ultimo+'</div><div style="font-size:10px;color:var(--muted)">/10</div></div>'
-        + '</div>'
-        + '<div style="font-size:11px;color:var(--muted);margin-top:4px">'
-        + (trend > 0.5 ? '↗ Melhora' : trend < -0.5 ? '↘ Queda' : '→ Estável')
-        + ' — últimas '+ pts.length +' sessões</div>';
-    } else {
-      sparkHtml = '<div style="font-size:12px;color:var(--muted);font-style:italic">Humor não registrado ainda.</div>';
-    }
-
-    var panel = document.createElement('div');
-    panel.id = panelId;
-    panel.style.cssText = 'margin:16px 0;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border)';
-    panel.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Evolução do paciente</div>'
-      + '<div style="display:flex;gap:16px;margin-bottom:10px">'
-        + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">'+totalSessoes+'</div><div style="font-size:10px;color:var(--muted)">Sessões</div></div>'
-        + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--sage)">'+prog+'%</div><div style="font-size:10px;color:var(--muted)">Progresso</div></div>'
-        + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">'+(mh.length ? mh[mh.length-1] : '—')+'</div><div style="font-size:10px;color:var(--muted)">Humor atual</div></div>'
-        + (taxaPresenca !== null ? '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:'+(taxaPresenca>=80?'var(--sage)':taxaPresenca>=60?'var(--amber)':'var(--red)')+'">'+taxaPresenca+'%</div><div style="font-size:10px;color:var(--muted)">Presença</div></div>' : '')
-      + '</div>'
-      + '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Histórico de humor (últimas sessões)</div>'
-      + sparkHtml;
-
-    // Injeta antes dos materiais (no detail-body ou no tab-ficha)
-    var tabFicha = document.getElementById('tab-ficha');
-    if (tabFicha) tabFicha.appendChild(panel);
-  })();
-
-  // Materiais do paciente
-  renderMateriaisProntuario(i);
-
-  // ── Nota pré-sessão do paciente (portal) ──────────────────────────
-  // tabNotas já declarado acima — não redeclara com const
-  if (tabNotas) {
-    // Remove card anterior se existir
-    const prevNota = tabNotas.querySelector('.portal-nota-pre');
-    if (prevNota) prevNota.remove();
-
-    if (p.portalNota && p.portalNota.trim()) {
-      const notaCard = document.createElement('div');
-      notaCard.className = 'portal-nota-pre fade-in';
-      notaCard.style.cssText = 'background:#fffbec;border:1.5px solid #f0d060;border-radius:12px;padding:14px 16px;margin-bottom:16px';
-      notaCard.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
-        + '<span style="font-size:16px">📝</span>'
-        + '<span style="font-size:11px;font-weight:700;color:#c97d2e;text-transform:uppercase;letter-spacing:.5px">Nota pré-sessão do paciente</span>'
-        + '<button onclick="if(confirm(\'Limpar nota do paciente?\')){ patients['+i+'].portalNota=\'\'; if(patients['+i+']) localStorage.setItem(\'tf_patients\',JSON.stringify(patients)); this.closest(\'.portal-nota-pre\').remove(); }" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:4px" title="Limpar nota">× Limpar</button>'
-        + '</div>'
-        + '<div style="font-size:14px;color:var(--ink);line-height:1.7;font-style:italic">"' + escHTML(p.portalNota.trim()) + '"</div>'
-        + '<div style="font-size:11px;color:var(--muted);margin-top:8px">Escrita pelo paciente no portal antes da sessão</div>';
-      const container = tabNotas.querySelector('div');
-      if (container) container.insertBefore(notaCard, container.firstChild);
-      else tabNotas.insertBefore(notaCard, tabNotas.firstChild);
-    }
-  }
-
-  // Renderiza as notas reais na aba notas (ou empty-state honesto se não houver).
-  // Antes, 2 cards de exemplo hardcoded ("Camila") ficavam fixos no HTML e apareciam
-  // para TODOS os pacientes — removidos; agora a aba reflete só o prontuário real.
-  if (tabNotas) {
-    const container = tabNotas.querySelector('div');
-    if (container) {
-      container.querySelectorAll('.injected-note, .notas-empty').forEach(n => n.remove());
-      const notas = p.prontuarioNotes || [];
-      if (notas.length > 0) {
-        notas.slice().reverse().forEach((n, ni) => {
-          const card = document.createElement('div');
-          card.className = 'card card-sm injected-note fade-in';
-          card.style.borderLeft = '3px solid var(--sage)';
-          card.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:500">Sessão ${p.sessions - ni} — ${escHTML(n.date)}</span><span class="tag tag-green">Indexada</span></div><p style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">${escHTML(n.text)}</p>`;
-          container.insertBefore(card, container.firstChild);
-        });
-      } else {
-        const empty = document.createElement('div');
-        empty.className = 'notas-empty';
-        empty.style.cssText = 'padding:24px 0;color:var(--muted);font-size:13px;font-style:italic;text-align:center';
-        empty.textContent = 'Nenhuma nota clínica ainda. As notas aparecem aqui depois que você salva e indexa uma sessão.';
-        container.appendChild(empty);
-      }
-    }
-  }
-
-  // ── Linha do tempo dinâmica (substitui conteúdo estático)
-  const tabTl = document.getElementById('tab-timeline');
-  if (tabTl) {
-    // Mescla appointments + notas em eventos ordenados por data
-    var apptsPac = appointments.filter(function(a){ return a.patientIdx === i; })
-      .sort(function(a,b){ return (a.date+a.time) < (b.date+b.time) ? 1 : -1 }); // mais recente primeiro
-    var notasIdx = (p.prontuarioNotes||[]).reduce(function(m,n,idx){ m[n.date] = n; return m; }, {});
-
-    if (!apptsPac.length && !(p.prontuarioNotes||[]).length) {
-      tabTl.innerHTML = '<div class="timeline"><div style="padding:24px 0;color:var(--muted);font-size:13px;font-style:italic;text-align:center">Nenhum evento registrado ainda.</div></div>';
-    } else {
-      // Gera eventos combinados
-      var eventos = [];
-      apptsPac.forEach(function(a, ai) {
-        var nota = notasIdx[fmtDataBR(a.date)];
-        var presencaLabel = a.presenca === 'compareceu' ? '' : a.presenca === 'faltou' ? 'Falta' : a.presenca === 'atrasou' ? 'Atrasou' : '';
-        var statusLabel = a.status === 'cancelada' ? 'Cancelada' : (presencaLabel || 'Realizada');
-        var dotColor = a.status==='cancelada' ? 'var(--muted)' : a.presenca==='faltou' ? 'var(--red)' : a.presenca==='atrasou' ? 'var(--amber)' : 'var(--sage)';
-        var tagHtml = a.status==='cancelada'
-          ? '<span class="tag tag-gray" style="font-size:10px">Cancelada</span>'
-          : a.presenca==='faltou' ? '<span class="tag tag-red" style="font-size:10px">Faltou</span>'
-          : a.presenca==='atrasou' ? '<span class="tag tag-amber" style="font-size:10px">Atrasou</span>'
-          : nota ? '<span class="tag tag-green" style="font-size:10px">Nota indexada</span>'
-          : '';
-        var _totalSessoesTl = (typeof p.sessions === 'number' && p.sessions > 0) ? p.sessions : apptsPac.length;
-        var numSessao = Math.max(1, _totalSessoesTl - ai);
-        var dateBR = fmtDataBR(a.date);
-        var moodHtml = '';
-        if (p.moodHistory && p.moodHistory[apptsPac.length - ai - 1] !== undefined) {
-          var mv = p.moodHistory[apptsPac.length - ai - 1];
-          var moodColor = mv <= 3 ? 'var(--red)' : mv <= 6 ? 'var(--amber)' : 'var(--sage)';
-          moodHtml = ' <span style="font-size:11px;color:'+moodColor+'">● '+mv+'/10</span>';
-        }
-        eventos.push({
-          dateSort: a.date,
-          html: '<div class="tl-item"><div class="tl-line"><div class="tl-dot" style="background:'+dotColor+'"></div>'+(ai<apptsPac.length-1?'<div class="tl-bar"></div>':'')+'</div>'
-            + '<div class="tl-content"><div class="tl-date">'+dateBR+' · Sessão '+numSessao+' · '+escHTML(a.time)+'</div>'
-            + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="tl-title">'+escHTML(statusLabel)+moodHtml+'</div>'+tagHtml+'</div>'
-            + (nota ? '<div class="tl-body">'+escHTML(nota.text.substring(0,200))+(nota.text.length>200?'…':'')+'</div>' : '')
-            + (a.motivoCancelamento ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">Motivo: '+escHTML(a.motivoCancelamento)+'</div>' : '')
-            + '</div></div>'
-        });
-      });
-      tabTl.innerHTML = '<div class="timeline">' + eventos.map(function(e){ return e.html; }).join('') + '</div>';
-    }
-  }
-}
-
 function editarNota(textoId, btn) {
   const el = document.getElementById(textoId);
   if (!el) return;
@@ -1254,7 +970,6 @@ function salvarMaterial() {
   p.materials.unshift({ id: Date.now(), tipo: tipo, titulo: titulo, url: url, desc: desc, date: dateStr, _up: Date.now() });
   salvarPacientes();
   closeModal('modal-material');
-  renderMateriaisProntuario(_materialPatientIdx);
   if (typeof currentPatientTab !== 'undefined' && currentPatientTab === 'ficha') {
     renderPatientFicha(_materialPatientIdx);
   }
@@ -1333,9 +1048,11 @@ function atualizarMetricasSupervisao() {
   _renderSupTemas();
   const ativos = patients.filter(p => p.status === 'Ativa' || p.status === 'Nova');
   const totalSessoes = patients.reduce((s, p) => s + (p.sessions || 0), 0);
-  // comAlerta: derivado dos alertas reais (não p.alert hardcoded)
-  var _alertasReaisIds = new Set(gerarAlertasReais().filter(function(a){ return a.idx !== null; }).map(function(a){ return a.idx; }));
-  const comAlerta = _alertasReaisIds.size;
+  // Card "Alertas de risco": conta só alertas tipo 'risk' (humor em declínio /
+  // palavras de risco nas notas). 'pattern'/'reflection' são organizacionais e já
+  // entram em "Casos em atenção" — contá-los aqui inflava o número vermelho.
+  var _alertasRiscoIds = new Set(gerarAlertasReais().filter(function(a){ return a.tipo === 'risk' && a.idx !== null; }).map(function(a){ return a.idx; }));
+  const comAlerta = _alertasRiscoIds.size;
   // comAtencao: pacientes com humor baixo (<5) ou em queda ou com falta recente
   // (_normMoodVal: entradas do portal são {value,emoji} — comparação crua nunca batia. Lote 1)
   const comAtencao = patients.filter(function(p, i) {

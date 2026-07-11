@@ -263,15 +263,6 @@ document.addEventListener('keydown', function(e) {
     if (activePage && activePage.id === 'page-agenda') { showAgendarModal(); return; }
     if (activePage && activePage.id === 'page-financeiro') { abrirModalNovaCobranca(); return; }
   }
-  // / — foco na busca de prontuários (quando na página de prontuários)
-  if (e.key === '/') {
-    var ap2 = document.querySelector('.page.active');
-    if (ap2 && ap2.id === 'page-prontuarios') {
-      e.preventDefault();
-      document.getElementById('prontuario-search')?.focus();
-      return;
-    }
-  }
   // I — inadimplentes (em financeiro)
   if (e.key === 'i') {
     var ap3 = document.querySelector('.page.active');

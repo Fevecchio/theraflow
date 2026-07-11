@@ -1,4 +1,4 @@
-// 02-ui.js — Navegação, sidebar, modais, switchTab, toggleDarkMode, _hideDemoBanner
+// 02-ui.js — Navegação, sidebar, modais, toggleDarkMode, _hideDemoBanner
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar() {
@@ -88,7 +88,6 @@ function navigate(page) {
   if (page === 'sessao' && !_sessaoAtiva) startSession();
   if (page === 'pacientes') renderPatients();
   if (page === 'agenda') initAgenda();
-  if (page === 'prontuarios') renderProntuarios();
   if (page === 'briefing') initBriefing();
   if (page === 'portal') { initPortal(); _limparBadgePortal(); }
   if (page === 'financeiro') initFinanceiro();
@@ -123,19 +122,6 @@ function closeModal(id) {
   }, 220);
 }
 // Click fora do modal já está no DOMContentLoaded principal acima
-
-// ── TABS ──
-function switchTab(el, tabId) {
-  const tabsEl = el.closest('.tabs');
-  tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  const container = tabsEl.parentElement;
-  container.querySelectorAll('[id^="tab-"]').forEach(panel => {
-    if (panel.parentElement === container) {
-      panel.style.display = panel.id === tabId ? '' : 'none';
-    }
-  });
-}
 
 // ── PACIENTES ──
 

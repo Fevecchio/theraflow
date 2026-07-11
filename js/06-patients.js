@@ -1270,9 +1270,8 @@ function renderPatientPlano(i) {
 function renderPatientAnamnese(i) {
   var content = document.getElementById('patient-detail-tab-content');
   if (!content) return;
-  var src = document.getElementById('tab-anamnese');
+  var src = document.getElementById('tpl-anamnese');
   if (!src) return;
-  _currentProntuarioIdx = i;
   content.innerHTML = '<div class="divider"></div>' + src.innerHTML;
   if (typeof _popularAnamnese === 'function') _popularAnamnese(i);
 }
