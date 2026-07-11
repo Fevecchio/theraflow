@@ -137,11 +137,31 @@ function renderTarefas() {
     return;
   }
 
+  // Agrupamento por vencimento (V4): só na ordenação padrão (data asc) com o
+  // filtro de abertas — em outras ordenações os grupos sairiam intercalados.
+  var _agrupar = tarefasFiltro === 'abertas' && tarefasSort.key === 'date' && tarefasSort.asc;
+  var _grupoDe = function(t) {
+    if (!t.dueDate) return 'Sem data';
+    var d = formatarDataTarefa(t.dueDate);
+    if (typeof d === 'object' && d.cls === 'overdue') return 'Atrasadas';
+    if (typeof d === 'object' && d.cls === 'today') return 'Hoje';
+    return 'Próximas';
+  };
+  var _grupoAtual = null;
   tbody.innerHTML = list.map(function(t, i){
     var concluida = t.status === 'concluida';
     var dtObj = formatarDataTarefa(t.dueDate);
     var dtText = typeof dtObj === 'object' ? dtObj.text : dtObj;
     var dtCls  = typeof dtObj === 'object' ? dtObj.cls : '';
+    var headerRow = '';
+    if (_agrupar) {
+      var g = _grupoDe(t);
+      if (g !== _grupoAtual) {
+        _grupoAtual = g;
+        var gCor = g === 'Atrasadas' ? 'var(--red)' : g === 'Hoje' ? 'var(--amber)' : 'var(--muted)';
+        headerRow = '<tr class="task-group-row"><td colspan="7" style="padding:14px 12px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:' + gCor + ';border-bottom:1px solid var(--border)">' + g + '</td></tr>';
+      }
+    }
     var pac = t.patientName ? '<span class="task-paciente">'+escHTML(t.patientName)+'</span>' : '<span class="task-paciente none">—</span>';
     var statusTag = concluida
       ? '<span class="tag tag-green" style="font-size:11px">Concluída</span>'
@@ -157,7 +177,7 @@ function renderTarefas() {
     var dataCell = concluida
       ? '<span class="task-date '+dtCls+'">'+escHTML(dtText)+'</span>'
       : '<span class="task-date '+dtCls+' task-inline-trigger" onclick="tarefaEditInline(this,'+t.id+',\'date\')" title="Clique para editar">'+escHTML(dtText)+'<span class="task-inline-icon">✏</span></span>';
-    return '<tr class="task-row'+(concluida?' concluida':'')+'" data-id="'+t.id+'">'
+    return headerRow + '<tr class="task-row'+(concluida?' concluida':'')+'" data-id="'+t.id+'">'
       +'<td data-label="">'+acaoBtn+'</td>'
       +'<td class="task-num" data-label="#">'+(i+1)+'</td>'
       +'<td data-label="Assunto">'+assuntoCell+'</td>'
@@ -165,6 +185,7 @@ function renderTarefas() {
       +'<td data-label="Vencimento">'+dataCell+'</td>'
       +'<td data-label="Status">'+statusTag+'</td>'
       +'<td data-label="" style="display:flex;gap:2px;align-items:center">'
+        +(concluida ? '' : '<button class="task-delete" onclick="editarTarefa('+t.id+')" title="Editar tudo (inclusive paciente)" style="color:var(--muted)">✏</button>')
         +'<button class="task-delete" onclick="excluirTarefa('+t.id+')" title="Excluir">✕</button>'
       +'</td>'
       +'</tr>';

@@ -53,6 +53,14 @@ function fecharModalPaciente() {
   closeModal('modal-novo-paciente');
 }
 
+// Abertura padrão do modal: sempre limpa ANTES (restaura o onclick do botão
+// "Criar ficha", que a conversão de lead e a edição trocam — fechar por clique
+// fora não limpava e o handler antigo vazava para o próximo cadastro). V4.
+function abrirModalNovoPaciente() {
+  limparModalPaciente();
+  showModal('modal-novo-paciente');
+}
+
 function criarPaciente() {
   const d = lerCamposPaciente();
   if (!d.nome) { showToast('Informe o nome do paciente.'); return; }
@@ -727,6 +735,14 @@ function renderPatients(filter) {
   _recalcNextSessions();
   _recalcSessions();
   _recalcAllProgress();
+  // Subtítulo da página: antes só o dashboard o preenchia — quem entrava direto
+  // em Pacientes via "—" para sempre (V4).
+  var _pacSub = document.getElementById('pacientes-subtitle');
+  if (_pacSub) {
+    var _atv = patients.filter(function(p){ return p.status === 'Ativa' || p.status === 'Atenção'; }).length;
+    var _nvs = patients.filter(function(p){ return p.status === 'Nova'; }).length;
+    _pacSub.textContent = _atv + ' ativo' + (_atv !== 1 ? 's' : '') + (_nvs > 0 ? ' · ' + _nvs + ' em espera' : '');
+  }
   const list = document.getElementById('patient-list');
   if (!list) return;
   const q = (filter !== undefined ? filter : patientFilter).toLowerCase();
@@ -746,7 +762,7 @@ function renderPatients(filter) {
            <div style="font-size:40px;margin-bottom:12px">🌱</div>
            <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Nenhum paciente cadastrado</div>
            <div style="font-size:13px;margin-bottom:20px">Adicione seu primeiro paciente para começar a usar o TheraFlow.</div>
-           <button class="btn-primary" onclick="showModal('modal-novo-paciente')">+ Novo paciente</button>
+           <button class="btn-primary" onclick="abrirModalNovoPaciente()">+ Novo paciente</button>
          </div>`
       : `<div style="padding:32px;text-align:center;color:var(--muted)">
            <div style="font-size:28px;margin-bottom:8px">🔍</div>
@@ -841,6 +857,7 @@ function selectPatientTab(tabName) {
   else if (tabName === 'plano')    renderPatientPlano(i);
   else if (tabName === 'anamnese') renderPatientAnamnese(i);
   else if (tabName === 'briefing') renderPatientBriefing(i);
+  else if (tabName === 'config')   renderPatientConfig(i);
 }
 
 function _renderTabPlaceholder(tabName) {
@@ -860,7 +877,8 @@ function renderPatientDetailShell(i) {
   var tabDefs = [
     ['overview','Visão Geral'],['notas','Notas & Timeline'],
     ['ficha','Ficha Clínica'],['plano','Plano'],
-    ['anamnese','Anamnese'],['briefing','Briefing IA']
+    ['anamnese','Anamnese'],['briefing','Briefing IA'],
+    ['config','Acesso & Config']
   ];
   var tabBarHtml = '<div class="patient-tab-bar" id="ptab-bar">'
     + tabDefs.map(function(td){
@@ -981,8 +999,8 @@ function renderPatientOverview(i) {
         <div style="font-size:11px;color:var(--muted);margin-top:2px">Última: ${p.lastSession || '—'}</div>
       </div>
       <div class="stat-card card-sm">
-        <div class="stat-label">CID</div>
-        <div style="font-size:13px;font-weight:500;margin-top:8px;line-height:1.4">${escHTML(p.cid)}</div>
+        <div class="stat-label">Próxima sessão</div>
+        <div style="font-size:13px;font-weight:500;margin-top:8px;line-height:1.4">${p.next && p.next !== '—' ? escHTML(p.next) : '<span style="color:var(--muted)">não marcada</span>'}</div>
       </div>
       ${moodBlock}
       ${finBlock}
@@ -1010,10 +1028,20 @@ function renderPatientOverview(i) {
       <div class="progress-bar"><div class="progress-fill" style="width:${p.progress}%;transition:width .6s"></div></div>
     </div>
 
-    <div class="card card-sm" style="background:var(--bg);margin-bottom:16px">
-      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Última observação clínica</div>
-      <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7;font-style:italic">"${escHTML(p.notes)}"</div>
-    </div>
+    ` + (function(){
+      // "Última observação clínica" mostrava a QUEIXA inicial com rótulo errado —
+      // agora mostra a última nota real; sem notas, rotula honesto (V4).
+      var ultNota = (p.prontuarioNotes && p.prontuarioNotes.length) ? p.prontuarioNotes[p.prontuarioNotes.length - 1] : null;
+      var texto = ultNota ? (ultNota.text || '') : (p.notes || '');
+      if (!texto) return '';
+      var rotulo = ultNota ? 'Última nota clínica — ' + escHTML(ultNota.date || '') : 'Queixa inicial';
+      var trecho = texto.length > 320 ? texto.substring(0, 320) + '…' : texto;
+      return '<div class="card card-sm" style="background:var(--bg);margin-bottom:16px">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">' + rotulo + '</div>'
+        + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7;font-style:italic">"' + escHTML(trecho) + '"</div>'
+        + (ultNota ? '<button onclick="selectPatientTab(\'notas\')" style="margin-top:8px;background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;padding:0">Ver todas as notas →</button>' : '')
+        + '</div>';
+    })() + `
 
     ${taskBlock}
 
@@ -1027,42 +1055,52 @@ function renderPatientOverview(i) {
         📲 WhatsApp lembrete
       </button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('portal')">♡ Portal do paciente</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('config')">🔑 Acesso & Config</button>
     </div>
     <div id="pac-chat-section-${i}" style="margin-top:16px">
       ${renderChatTerapeuta(i, _msgCache[p.id] || [])}
     </div>
+  `;
+}
 
-    <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
-      <div style="background:var(--blue-light);border:1px solid rgba(44,95,138,.15);border-radius:10px;padding:12px 14px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
-        <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
-          <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
-          <div style="font-size:11.5px;color:var(--muted);line-height:1.5">${p.portalPasswordHash
-            ? '🔒 Acesso ativo. A senha do paciente é pessoal e não fica visível aqui — para gerar uma nova, use “Reenviar acesso”.'
-            : 'O paciente recebe uma senha forte pelo WhatsApp e a troca no primeiro acesso.'}</div>
-          <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 ${p.portalPasswordHash ? 'Reenviar acesso (nova senha)' : 'Enviar acesso via WhatsApp'}</button>
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(220,38,38,.12);text-align:right">
-            <button onclick="revogarPortalPaciente(${i})" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">Desativar acesso ao portal</button>
+// Aba "Acesso & Config" — bloco de acesso ao portal + link da sala + exclusão,
+// que viviam misturados no fim da Visão Geral (config junto de clínica). V4.
+function renderPatientConfig(i) {
+  var content = document.getElementById('patient-detail-tab-content');
+  if (!content) return;
+  var p = patients[i];
+  if (!p) return;
+  content.innerHTML = `
+    <div class="divider"></div>
+    <div style="background:var(--blue-light);border:1px solid rgba(44,95,138,.15);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
+        <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.5">${p.portalPasswordHash
+          ? '🔒 Acesso ativo. A senha do paciente é pessoal e não fica visível aqui — para gerar uma nova, use “Reenviar acesso”.'
+          : 'O paciente recebe uma senha forte pelo WhatsApp e a troca no primeiro acesso.'}</div>
+        <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 ${p.portalPasswordHash ? 'Reenviar acesso (nova senha)' : 'Enviar acesso via WhatsApp'}</button>
+        <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(220,38,38,.12);text-align:right">
+          <button onclick="revogarPortalPaciente(${i})" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">Desativar acesso ao portal</button>
+        </div>
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(44,95,138,.12)">
+          <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:5px">🔗 Link da sala de sessão</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input id="pac-session-link-${i}" type="url" placeholder="Cole o link da videochamada aqui"
+              value="${escHTML(p.sessionLink||'')}"
+              style="flex:1;font-size:12px;padding:5px 8px;border:1px solid rgba(44,95,138,.25);border-radius:7px;font-family:inherit;color:var(--ink);background:#fff;outline:none"
+              onkeydown="if(event.key==='Enter')salvarSessionLink(${i})"
+            />
+            <button onclick="salvarSessionLink(${i})" style="background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Salvar</button>
+            ${p.sessionLink ? `<button onclick="limparSessionLink(${i})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);border-radius:7px;font-size:11px;padding:5px 8px;cursor:pointer;font-family:inherit">✕</button>` : ''}
           </div>
-          <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(44,95,138,.12)">
-            <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:5px">🔗 Link da sala de sessão</div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <input id="pac-session-link-${i}" type="url" placeholder="Cole o link da videochamada aqui"
-                value="${escHTML(p.sessionLink||'')}"
-                style="flex:1;font-size:12px;padding:5px 8px;border:1px solid rgba(44,95,138,.25);border-radius:7px;font-family:inherit;color:var(--ink);background:#fff;outline:none"
-                onkeydown="if(event.key==='Enter')salvarSessionLink(${i})"
-              />
-              <button onclick="salvarSessionLink(${i})" style="background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Salvar</button>
-              ${p.sessionLink ? `<button onclick="limparSessionLink(${i})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);border-radius:7px;font-size:11px;padding:5px 8px;cursor:pointer;font-family:inherit">✕</button>` : ''}
-            </div>
-            ${p.sessionLink ? `<div style="font-size:11px;color:var(--sage);margin-top:4px">✓ Link ativo — visível para o paciente no portal</div>` : `<div style="font-size:11px;color:var(--ink-soft);opacity:.7;margin-top:4px">Sem link — paciente verá mensagem de aguardo</div>`}
-          </div>
+          ${p.sessionLink ? `<div style="font-size:11px;color:var(--sage);margin-top:4px">✓ Link ativo — visível para o paciente no portal</div>` : `<div style="font-size:11px;color:var(--ink-soft);opacity:.7;margin-top:4px">Sem link — paciente verá mensagem de aguardo</div>`}
         </div>
       </div>
-      <button class="btn btn-sm" style="color:var(--red);border-color:rgba(192,57,43,.25);background:var(--red-light);justify-content:center;width:100%" onclick="excluirPaciente(${i})">
-        ✕ Excluir paciente
-      </button>
     </div>
+    <button class="btn btn-sm" style="color:var(--red);border-color:rgba(192,57,43,.25);background:var(--red-light);justify-content:center;width:100%" onclick="excluirPaciente(${i})">
+      ✕ Excluir paciente
+    </button>
   `;
 }
 
@@ -1135,10 +1173,11 @@ function renderPatientNotas(i) {
         var mc = mv <= 3 ? 'var(--red)' : mv <= 6 ? 'var(--amber)' : 'var(--sage)';
         moodHtml = ' <span style="font-size:11px;color:' + mc + '">● ' + mv + '/10</span>';
       }
+      // Linha do tempo só de EVENTOS: o texto da nota vive apenas nos cards de
+      // "Notas clínicas" acima — repeti-lo aqui duplicava todo o conteúdo (V4).
       return '<div class="tl-item"><div class="tl-line"><div class="tl-dot" style="background:' + dotColor + '"></div>' + (ai < apptsPac.length - 1 ? '<div class="tl-bar"></div>' : '') + '</div>'
         + '<div class="tl-content"><div class="tl-date">' + dateBR + ' · Sessão ' + numSessao + ' · ' + escHTML(a.time) + '</div>'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="tl-title">' + escHTML(statusLabel) + moodHtml + '</div>' + tagHtml + '</div>'
-        + (nota ? '<div class="tl-body">' + escHTML(nota.text.substring(0, 200)) + (nota.text.length > 200 ? '…' : '') + '</div>' : '')
         + (a.motivoCancelamento ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">Motivo: ' + escHTML(a.motivoCancelamento) + '</div>' : '')
         + '</div></div>';
     });
@@ -1336,23 +1375,17 @@ function renderPatientBriefing(i) {
 
 function _renderBriefingCacheInline(text) {
   if (!text || text.length < 60) return '<div style="font-style:italic;color:var(--muted)">Conteúdo indisponível.</div>';
-  var defs = [
-    { key:'FOCO RECOMENDADO', icon:'🎯', color:'var(--sage)' },
-    { key:'PADRÃO IDENTIFICADO', icon:'🔁', color:'var(--purple)' },
-    { key:'EVOLUÇÃO', icon:'📈', color:'#2563eb' },
-    { key:'PONTO DE ATENÇÃO', icon:'⚠', color:'var(--red)' },
-    { key:'PERGUNTAS SUGERIDAS', icon:'💡', color:'var(--amber)' }
-  ];
+  // Parser único com a página do briefing (_parseBriefingBlocks js/11) — só o
+  // estilo compacto é daqui; perguntas vêm primeiro pela ordem das defs (V4).
+  var cores = { question:'var(--amber)', priority:'var(--sage)', pattern:'var(--purple)', progress:'#2563eb', alert:'var(--red)' };
+  var blocks = (typeof _parseBriefingBlocks === 'function') ? _parseBriefingBlocks(text) : [];
   var html = '';
-  defs.forEach(function(d) {
-    var re = new RegExp(d.key + '[:\\s]*([\\s\\S]*?)(?=' + defs.map(function(x){ return x.key; }).join('|') + '|$)', 'i');
-    var m = text.match(re);
-    if (m && m[1] && m[1].trim()) {
-      html += '<div style="margin-bottom:12px;padding:12px 14px;border-radius:10px;background:var(--bg);border-left:3px solid ' + d.color + '">'
-        + '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">' + d.icon + ' ' + d.key + '</div>'
-        + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(m[1].trim()) + '</div>'
-        + '</div>';
-    }
+  blocks.forEach(function(b) {
+    if (!b.content) return;
+    html += '<div style="margin-bottom:12px;padding:12px 14px;border-radius:10px;background:var(--bg);border-left:3px solid ' + (cores[b.type] || 'var(--sage)') + '">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">' + b.icon + ' ' + b.label + '</div>'
+      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(b.content) + '</div>'
+      + '</div>';
   });
   return html || '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(text.substring(0, 400)) + (text.length > 400 ? '…' : '') + '</div>';
 }

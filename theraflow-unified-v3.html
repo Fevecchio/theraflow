@@ -605,7 +605,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="fpb-step"><div class="fpb-step-num">3</div>Agende a primeira sessão</div>
     </div>
     <div class="fpb-actions">
-      <button class="btn btn-primary" onclick="showModal('modal-novo-paciente')">＋ Cadastrar agora</button>
+      <button class="btn btn-primary" onclick="abrirModalNovoPaciente()">＋ Cadastrar agora</button>
       <button class="btn btn-secondary" onclick="document.getElementById('first-patient-banner').style.display='none'">Explorar primeiro</button>
     </div>
   </div>
@@ -664,7 +664,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <select id="patient-status-filter" onchange="filterPatientsByStatus(this.value)"><option value="">Todos os status</option><option value="Ativa">Ativos</option><option value="Nova">Novos</option><option value="Pausa">Em pausa</option><option value="Atenção">Atenção</option></select>
       <select id="patient-abordagem-filter" onchange="filterPatientsByAbordagem(this.value)"><option value="">Todas as abordagens</option><option value="TCC">TCC</option><option value="Psicanálise">Psicanálise</option><option value="Sistêmica">Sistêmica</option><option value="Humanista">Humanista</option><option value="ACT">ACT</option><option value="EMDR">EMDR</option></select>
       <button class="btn btn-secondary btn-sm" onclick="exportarListaPacientesCSV()" title="Exportar lista em CSV">⬇ CSV</button>
-      <button class="btn btn-primary btn-sm" onclick="showModal('modal-novo-paciente')">+ Novo paciente</button>
+      <button class="btn btn-primary btn-sm" onclick="abrirModalNovoPaciente()">+ Novo paciente</button>
     </div>
   </div>
   <div class="search-bar"><span>🔍</span><input id="patient-search" placeholder="Buscar por nome, cidade, diagnóstico, abordagem…" oninput="searchPatients(this.value)"/><span id="patient-search-clear" style="cursor:pointer;color:var(--muted);display:none" onclick="document.getElementById('patient-search').value='';searchPatients('')">✕</span></div>
@@ -1057,19 +1057,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
   <div class="ai-badge-inline"><div class="ai-dot"></div><span id="b-ai-badge-text">Briefing gerado por IA sobre o histórico real do paciente</span></div>
 
-  <!-- Memória disponível — V1: chips eram FABRICADOS (8/4/7/6 meses fixos);
-       agora initBriefing (js/11) deriva cada um dos dados reais do paciente. -->
-  <div class="section-lbl">Memória clínica disponível</div>
-  <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden">
-    <div class="memory-bar">
-      <div class="memory-chip" id="b-chip-notas"><b>—</b> notas clínicas</div>
-      <div class="memory-chip" id="b-chip-humor"><b>—</b> registros de humor</div>
-      <div class="memory-chip" id="b-chip-ex"><b>—</b> exercícios</div>
-      <div class="memory-chip" id="b-chip-hist"><b>—</b> de histórico</div>
-    </div>
-  </div>
-
-  <!-- Briefing card -->
+  <!-- Análise ANTES dos chips de memória: é o conteúdo que a terapeuta veio
+       buscar; os chips são metadados de apoio (V4). -->
   <div class="section-lbl">Análise inteligente</div>
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px" id="briefing-card">
     <!-- Estado: gerar -->
@@ -1093,6 +1082,18 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
       </div>
       <div style="padding:20px 22px" id="b-content"></div>
+    </div>
+  </div>
+
+  <!-- Memória disponível — V1: chips eram FABRICADOS (8/4/7/6 meses fixos);
+       initBriefing (js/11) deriva cada um dos dados reais do paciente. -->
+  <div class="section-lbl">Memória clínica disponível</div>
+  <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden">
+    <div class="memory-bar">
+      <div class="memory-chip" id="b-chip-notas"><b>—</b> notas clínicas</div>
+      <div class="memory-chip" id="b-chip-humor"><b>—</b> registros de humor</div>
+      <div class="memory-chip" id="b-chip-ex"><b>—</b> exercícios</div>
+      <div class="memory-chip" id="b-chip-hist"><b>—</b> de histórico</div>
     </div>
   </div>
 

@@ -346,22 +346,40 @@ function _showBriefingNote(html) {
   c.insertBefore(note, c.firstChild);
 }
 
+// Parser ÚNICO das seções do briefing — usado pela página (renderBriefingContent)
+// e pela aba do paciente (_renderBriefingCacheInline, js/06); antes cada um
+// parseava o texto por conta própria (V4). A ordem de _BRIEFING_DEFS é a ordem
+// de EXIBIÇÃO: perguntas primeiro — é o que a terapeuta usa na sessão.
+var _BRIEFING_DEFS = [
+  { key:'PERGUNTAS SUGERIDAS', type:'question', icon:'💬', label:'Perguntas sugeridas para hoje' },
+  { key:'FOCO RECOMENDADO', type:'priority', icon:'🎯', label:'Foco recomendado para hoje' },
+  { key:'PADRÃO IDENTIFICADO', type:'pattern', icon:'🔁', label:'Padrão identificado' },
+  { key:'EVOLUÇÃO', type:'progress', icon:'📈', label:'Evolução clínica' },
+  { key:'PONTO DE ATENÇÃO', type:'alert', icon:'⚠', label:'Ponto de atenção' },
+];
+function _parseBriefingBlocks(text) {
+  var found = _BRIEFING_DEFS
+    .map(function(d){ return Object.assign({}, d, { pos: text.toUpperCase().indexOf(d.key) }); })
+    .filter(function(b){ return b.pos !== -1; });
+  var porPosicao = found.slice().sort(function(a,b){ return a.pos - b.pos; });
+  porPosicao.forEach(function(b, i) {
+    var end = i < porPosicao.length - 1 ? porPosicao[i+1].pos : text.length;
+    b.content = text.slice(b.pos, end).replace(new RegExp(b.key + '[:\\-—\\s1234567890.]*', 'i'), '').trim();
+  });
+  // devolve na ordem de exibição das defs, não na ordem do texto da IA
+  return _BRIEFING_DEFS
+    .map(function(d){ return porPosicao.find(function(b){ return b.key === d.key; }); })
+    .filter(Boolean);
+}
+
 function renderBriefingContent(text) {
   const c = document.getElementById('b-content');
   if(text.length < 80) { renderBriefingFallback(); return; }
-  const defs = [
-    { key:'FOCO RECOMENDADO', type:'priority', icon:'🎯', label:'Foco recomendado para hoje' },
-    { key:'PADRÃO IDENTIFICADO', type:'pattern', icon:'🔁', label:'Padrão identificado' },
-    { key:'EVOLUÇÃO', type:'progress', icon:'📈', label:'Evolução clínica' },
-    { key:'PONTO DE ATENÇÃO', type:'alert', icon:'⚠', label:'Ponto de atenção' },
-    { key:'PERGUNTAS SUGERIDAS', type:'question', icon:'💬', label:'Perguntas sugeridas para hoje' },
-  ];
-  let blocks = defs.map(d => ({ ...d, pos: text.toUpperCase().indexOf(d.key) })).filter(b => b.pos !== -1).sort((a,b) => a.pos-b.pos);
+  const blocks = _parseBriefingBlocks(text);
   if(!blocks.length) { renderBriefingFallback(); return; }
   let html = '';
-  blocks.forEach((b, i) => {
-    const end = i < blocks.length-1 ? blocks[i+1].pos : text.length;
-    let content = text.slice(b.pos, end).replace(new RegExp(b.key+'[:\\-—\\s1234567890.]*','i'),'').trim();
+  blocks.forEach((b) => {
+    const content = b.content;
     if(b.type === 'question') {
       const qs = content.split(/\n|\d[.)]\s/).filter(q => q.trim().length > 10);
       html += `<div class="insight-block ${b.type}"><div class="insight-type">${b.icon} ${b.label}</div>${qs.map((q,qi)=>`<button class="question-item" onclick="markQuestion(this)"><span class="q-num">${qi+1}.</span><span>${q.trim()}</span></button>`).join('')}</div>`;
@@ -404,6 +422,11 @@ function renderBriefingFallback() {
       : 'Fase intermediária — consolidar ganhos e aprofundar o processo.';
 
   document.getElementById('b-content').innerHTML =
+    // Perguntas primeiro — mesma ordem de exibição de _BRIEFING_DEFS (V4)
+    '<div class="insight-block question fade-in">' +
+      '<div class="insight-type">💬 Perguntas sugeridas para hoje</div>' +
+      questoes.map(function(q, i){ return '<button class="question-item" onclick="markQuestion(this)"><span class="q-num">' + (i+1) + '.</span><span>' + q + '</span></button>'; }).join('') +
+    '</div>' +
     '<div class="insight-block priority fade-in">' +
       '<div class="insight-type">🎯 Foco recomendado para hoje</div>' +
       '<div class="insight-text">' +
@@ -435,10 +458,6 @@ function renderBriefingFallback() {
           ? 'Poucas notas indexadas (' + notas.length + '). Indexe as sessões anteriores para análises mais precisas pela IA.'
           : 'Revise as últimas ' + notas.length + ' notas clínicas antes da sessão. Verifique temas recorrentes não resolvidos ou mudanças relevantes no contexto de vida de ' + nome + '.') +
       '</div>' +
-    '</div>' +
-    '<div class="insight-block question fade-in">' +
-      '<div class="insight-type">💬 Perguntas sugeridas para hoje</div>' +
-      questoes.map(function(q, i){ return '<button class="question-item" onclick="markQuestion(this)"><span class="q-num">' + (i+1) + '.</span><span>' + q + '</span></button>'; }).join('') +
     '</div>';
 }
 

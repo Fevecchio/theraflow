@@ -481,15 +481,9 @@ function renderPlanoProntuario(idx) {
     +   '<div style="background:#f0f8ff;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--blue)">' + sessoes + '</div><div style="font-size:11px;color:var(--blue);margin-top:2px">sessões realizadas</div></div>'
     +   '<div style="background:' + (moodMedia ? '#fdf3e7' : '#fafafa') + ';border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:' + (moodMedia ? 'var(--amber)' : 'var(--muted)') + '">' + (moodMedia || '—') + '</div><div style="font-size:11px;color:' + (moodMedia ? 'var(--amber)' : 'var(--muted)') + ';margin-top:2px">humor médio</div></div>'
     + '</div>'
-    // Dados clínicos
-    + '<div style="background:#fafafa;border:1px solid var(--border);border-radius:10px;padding:14px">'
-    +   '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Dados clínicos</div>'
-    +   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-    +     '<div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Abordagem</div><div style="font-size:13.5px;font-weight:500">' + escHTML(abord) + '</div></div>'
-    +     '<div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">CID</div><div style="font-size:13.5px;font-weight:500">' + escHTML(cid) + '</div></div>'
-    +   '</div>'
-    +   (queixa ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Queixa principal</div><div style="font-size:13.5px;color:var(--ink-soft);line-height:1.6">' + escHTML(queixa) + '</div></div>' : '')
-    + '</div>'
+    // Dados clínicos (Abordagem/CID/Queixa) moram só na Ficha Clínica — aqui
+    // eram a 3ª cópia dos mesmos campos (V4); link no lugar.
+    + '<div style="font-size:12px;color:var(--muted)">Abordagem, CID e queixa: <a onclick="selectPatientTab(\'ficha\')" style="color:var(--sage);font-weight:600;cursor:pointer">ver Ficha Clínica →</a></div>'
     // Objetivos terapêuticos
     + '<div>'
     +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'

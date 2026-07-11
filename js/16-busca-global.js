@@ -161,7 +161,7 @@ function executarBuscaGlobal(q) {
   if (!q) {
     [
       { icon: '+',   label: 'Agendar nova sessão',        cat: 'Sessão',      action: function(){ fecharBuscaGlobal(); showAgendarModal(); } },
-      { icon: '+',   label: 'Cadastrar novo paciente',    cat: 'Paciente',    action: function(){ navigate('pacientes'); setTimeout(function(){ showModal('modal-novo-paciente'); }, 200); } },
+      { icon: '+',   label: 'Cadastrar novo paciente',    cat: 'Paciente',    action: function(){ navigate('pacientes'); setTimeout(function(){ abrirModalNovoPaciente(); }, 200); } },
       { icon: '✦',   label: 'Abrir briefing IA',          cat: 'Briefing',    action: function(){ navigate('briefing'); } },
       { icon: '◈',   label: 'Ir para supervisão IA',      cat: 'Supervisão',  action: function(){ navigate('supervisao'); } },
       { icon: '$',   label: 'Ver cobranças',              cat: 'Financeiro',  action: function(){ navigate('financeiro'); } },
@@ -259,7 +259,7 @@ document.addEventListener('keydown', function(e) {
   // N — novo paciente (em pacientes) ou nova sessão (em agenda) ou nova cobrança (em financeiro)
   if (e.key === 'n') {
     var activePage = document.querySelector('.page.active');
-    if (activePage && activePage.id === 'page-pacientes') { showModal('modal-novo-paciente'); return; }
+    if (activePage && activePage.id === 'page-pacientes') { abrirModalNovoPaciente(); return; }
     if (activePage && activePage.id === 'page-agenda') { showAgendarModal(); return; }
     if (activePage && activePage.id === 'page-financeiro') { abrirModalNovaCobranca(); return; }
   }

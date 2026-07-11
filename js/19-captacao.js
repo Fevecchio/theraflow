@@ -64,6 +64,18 @@ function _captacaoSubtitle() {
 function renderKanban() {
   var board = document.getElementById('kanban-board');
   if (!board) return;
+  // Empty state GLOBAL: sem nenhum lead, 6 colunas com "Sem leads aqui" era um
+  // deserto sem próxima ação (V4).
+  if (captacaoLeads.length === 0) {
+    board.innerHTML = '<div style="flex:1;padding:56px 24px;text-align:center;color:var(--muted)">'
+      + '<div style="font-size:40px;margin-bottom:12px">📥</div>'
+      + '<div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Seu pipeline está vazio</div>'
+      + '<div style="font-size:13px;margin-bottom:20px;max-width:380px;margin-left:auto;margin-right:auto">Registre aqui cada pessoa que entra em contato — da primeira mensagem até virar paciente. Nada de perder lead no WhatsApp.</div>'
+      + '<button class="btn btn-primary" onclick="abrirModalLead()">+ Registrar primeiro contato</button>'
+      + '</div>';
+    _captacaoSubtitle();
+    return;
+  }
   var html = '';
   CAPTACAO_COLS.forEach(function(col, colIdx) {
     var leads = captacaoLeads.filter(function(l){ return l.coluna === colIdx; });
@@ -72,7 +84,11 @@ function renderKanban() {
     html += '<span>' + col.icon + '</span><span>' + escHTML(col.label) + '</span>';
     html += '<span class="kanban-col-count">' + leads.length + '</span>';
     html += '</div>';
-    html += '<div class="kanban-col-body">';
+    // Corpo é alvo de drop: arrastar o card entre colunas (V4)
+    html += '<div class="kanban-col-body" data-col="' + colIdx + '"'
+      + ' ondragover="event.preventDefault();this.classList.add(\'drag-over\')"'
+      + ' ondragleave="this.classList.remove(\'drag-over\')"'
+      + ' ondrop="_capDrop(event,' + colIdx + ')">';
     if (leads.length === 0) {
       html += '<div class="kanban-empty">Sem leads aqui</div>';
     } else {
@@ -82,6 +98,23 @@ function renderKanban() {
   });
   board.innerHTML = html;
   _captacaoSubtitle();
+}
+
+// ── Drag-and-drop entre colunas (V4) ─────────────────────────────────────────
+function _capDragStart(ev, id) {
+  ev.dataTransfer.setData('text/plain', id);
+  ev.dataTransfer.effectAllowed = 'move';
+}
+function _capDrop(ev, colIdx) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  var id = ev.dataTransfer.getData('text/plain');
+  var lead = captacaoLeads.find(function(l){ return l.id === id; });
+  if (!lead || lead.coluna === colIdx) return;
+  lead.coluna = colIdx;
+  salvarCaptacao();
+  renderKanban();
+  showToast('Lead movido para "' + CAPTACAO_COLS[colIdx].label + '".');
 }
 
 function _capIniciais(nome) {
@@ -113,7 +146,7 @@ function _renderCard(lead, colIdx) {
     diasLabel = dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : 'há ' + dias + 'd';
   }
 
-  var html = '<div class="kanban-card">';
+  var html = '<div class="kanban-card" draggable="true" ondragstart="_capDragStart(event,\'' + lead.id + '\')">';
 
   // Avatar + nome
   html += '<div style="display:flex;align-items:center;gap:9px;margin-bottom:6px">';
@@ -232,8 +265,9 @@ function converterParaPaciente(id) {
     if (wppEl)    wppEl.value    = wpp;
     if (queixaEl && queixa) queixaEl.value = queixa;
     // Substitui o handler do botão "Criar ficha": só remove o lead se o paciente
-    // for realmente criado (detectado pelo aumento de patients.length, que ocorre
-    // apenas quando criarPaciente passa por todas as validações).
+    // for realmente criado. O handler original volta via limparModalPaciente —
+    // no sucesso (criarPaciente a chama) e em toda abertura normal do modal
+    // (abrirModalNovoPaciente), então a troca não vaza p/ cadastros comuns. V4.
     var criarBtn = document.getElementById('btn-criar-paciente');
     if (criarBtn) {
       criarBtn.onclick = function(){ _finalizarConversaoLead(id); };
