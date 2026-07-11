@@ -51,9 +51,35 @@ function initBriefing() {
   if (sub) sub.innerHTML = `<span>📋 ${escHTML(p.abordagem)} — ${p.cid !== '—' ? escHTML(p.cid) : 'em avaliação'}</span><span>🕐 Hoje</span><span>⏱ 50 min</span>`;
   const sessNum = document.querySelector('.briefing-hero .session-num');
   if (sessNum) sessNum.textContent = `${(p.sessions || 0) + 1}ª`;
-  // Atualiza memória disponível
-  const memSessions = document.querySelector('.memory-chip b');
-  if (memSessions) memSessions.textContent = p.sessions || 0;
+  // V1 (revisão 10/07): chips de "memória clínica" derivados dos dados REAIS
+  // do paciente — eram números fabricados fixos no HTML (8/4/7/"6 meses").
+  var _chipSet = function(id, val) {
+    var el = document.querySelector('#' + id + ' b');
+    if (el) el.textContent = val;
+  };
+  _chipSet('b-chip-notas', (p.prontuarioNotes || []).length);
+  _chipSet('b-chip-humor', (p.moodHistory || []).length);
+  _chipSet('b-chip-ex', (p.exercises || []).length);
+  // Histórico: da 1ª nota datada até hoje (meses); sem notas → "—"
+  var _hist = '—';
+  var _notas = (p.prontuarioNotes || []).filter(function(n){ return n && n.date; });
+  if (_notas.length) {
+    var pt = String(_notas[0].date).split('/'); // dd/mm ou dd/mm/aaaa
+    if (pt.length >= 2) {
+      var ano = pt[2] ? parseInt(pt[2]) : new Date().getFullYear();
+      var d0 = new Date(ano, parseInt(pt[1]) - 1, parseInt(pt[0]));
+      var meses = Math.max(0, Math.round((new Date() - d0) / (30.44 * 86400000)));
+      _hist = meses < 1 ? 'menos de 1 mês' : meses + (meses === 1 ? ' mês' : ' meses');
+    }
+  }
+  var _histEl = document.querySelector('#b-chip-hist b');
+  if (_histEl) _histEl.textContent = _hist;
+  var _memTag = document.getElementById('b-hero-mem-tag');
+  if (_memTag) _memTag.textContent = (p.sessions || 0) + (p.sessions === 1 ? ' sessão na memória' : ' sessões na memória');
+  var _aiBadge = document.getElementById('b-ai-badge-text');
+  if (_aiBadge) _aiBadge.textContent = (p.sessions || 0) > 0
+    ? 'Briefing gerado por IA · baseado em ' + p.sessions + (p.sessions === 1 ? ' sessão anterior' : ' sessões anteriores')
+    : 'Briefing gerado por IA · primeira sessão — sem histórico ainda';
   // Atualiza header do resultado
   const resHeader = document.querySelector('#b-state-result > div:first-child > div > div:first-child');
   if (resHeader) resHeader.textContent = `Briefing — ${p.name}`;

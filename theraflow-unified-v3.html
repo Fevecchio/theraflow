@@ -1193,8 +1193,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <span>⏱ 50 min</span>
       </div>
       <div style="margin-top:10px;display:flex;gap:8px">
-        <span class="tag tag-green">Confirmada</span>
-        <span class="tag tag-purple">11 sessões na memória</span>
+        <span class="tag tag-purple" id="b-hero-mem-tag">— sessões na memória</span>
       </div>
     </div>
     <div class="hero-right">
@@ -1204,17 +1203,17 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
   </div>
 
-  <div class="ai-badge-inline"><div class="ai-dot"></div>Briefing gerado por IA · Baseado em 11 sessões anteriores</div>
+  <div class="ai-badge-inline"><div class="ai-dot"></div><span id="b-ai-badge-text">Briefing gerado por IA sobre o histórico real do paciente</span></div>
 
-  <!-- Memória disponível -->
+  <!-- Memória disponível — V1: chips eram FABRICADOS (8/4/7/6 meses fixos);
+       agora initBriefing (js/11) deriva cada um dos dados reais do paciente. -->
   <div class="section-lbl">Memória clínica disponível</div>
   <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden">
     <div class="memory-bar">
-      <div class="memory-chip">📝 <b>11</b> notas clínicas</div>
-      <div class="memory-chip">🎙 <b>8</b> transcrições</div>
-      <div class="memory-chip">📊 <b>4</b> avaliações de humor</div>
-      <div class="memory-chip">✅ <b>7</b> exercícios registrados</div>
-      <div class="memory-chip">🗓 <b>6 meses</b> de histórico</div>
+      <div class="memory-chip" id="b-chip-notas"><b>—</b> notas clínicas</div>
+      <div class="memory-chip" id="b-chip-humor"><b>—</b> registros de humor</div>
+      <div class="memory-chip" id="b-chip-ex"><b>—</b> exercícios</div>
+      <div class="memory-chip" id="b-chip-hist"><b>—</b> de histórico</div>
     </div>
   </div>
 
@@ -1610,7 +1609,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div class="sup-metric-delta up">↑ 4% vs semana anterior</div>
       </div>
       <div class="sup-metric-card">
-        <div class="sup-metric-label">Casos estagnados</div>
+        <div class="sup-metric-label">Casos em atenção</div>
         <div class="sup-metric-value" style="color:var(--amber)">3</div>
         <div class="sup-metric-delta warn">⚠ Atenção recomendada</div>
       </div>
@@ -1735,15 +1734,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div id="sup-tab-carteira" style="display:none">
       <div class="grid-2" style="margin-bottom:24px">
         <div class="card">
-          <div class="section-header"><div class="section-title">Temas mais frequentes na carteira</div><span class="tag tag-purple">Últimos 30 dias</span></div>
-          <div style="margin-top:16px">
-            <div class="sup-theme-row"><span class="sup-theme-name">Ansiedade</span><div class="sup-theme-bar-wrap"><div class="sup-theme-bar" style="width:88%"></div></div><span class="sup-theme-count">14 sessões</span></div>
-            <div class="sup-theme-row"><span class="sup-theme-name">Relacionamentos</span><div class="sup-theme-bar-wrap"><div class="sup-theme-bar" style="width:72%"></div></div><span class="sup-theme-count">11 sessões</span></div>
-            <div class="sup-theme-row"><span class="sup-theme-name">Autoestima</span><div class="sup-theme-bar-wrap"><div class="sup-theme-bar" style="width:60%"></div></div><span class="sup-theme-count">9 sessões</span></div>
-            <div class="sup-theme-row"><span class="sup-theme-name">Trabalho / carreira</span><div class="sup-theme-bar-wrap"><div class="sup-theme-bar" style="width:50%"></div></div><span class="sup-theme-count">8 sessões</span></div>
-            <div class="sup-theme-row"><span class="sup-theme-name">Família de origem</span><div class="sup-theme-bar-wrap"><div class="sup-theme-bar" style="width:44%"></div></div><span class="sup-theme-count">7 sessões</span></div>
-            <div class="sup-theme-row"><span class="sup-theme-name">Luto / perda</span><div class="sup-theme-bar-wrap"><div class="sup-theme-bar" style="width:25%"></div></div><span class="sup-theme-count">4 sessões</span></div>
-            <div class="sup-theme-row"><span class="sup-theme-name">Sono / fadiga</span><div class="sup-theme-bar-wrap"><div class="sup-theme-bar" style="width:20%"></div></div><span class="sup-theme-count">3 sessões</span></div>
+          <div class="section-header"><div class="section-title">Temas mais frequentes na carteira</div><span class="tag tag-purple">Das suas notas</span></div>
+          <!-- V1: barras eram FABRICADAS ("Ansiedade 14 sessões · 88%" fixos) —
+               agora _renderSupTemas (js/14) gera das notas reais. -->
+          <div style="margin-top:16px" id="sup-temas-list">
+            <div style="color:var(--muted);font-size:13px;padding:12px 0">Carregando…</div>
           </div>
         </div>
         <div class="card">
@@ -1773,7 +1768,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="card">
         <div class="section-header"><div class="section-title">Pacientes que merecem atenção esta semana</div></div>
         <table>
-          <thead><tr><th>Paciente</th><th>Sessões</th><th>Último humor</th><th>Observação IA</th><th>Ação</th></tr></thead>
+          <thead><tr><th>Paciente</th><th>Sessões</th><th>Último humor</th><th>Observação</th><th>Ação</th></tr></thead>
           <tbody>
             <tr>
               <td><div class="patient-info"><div class="patient-avatar" style="background:#2c5f8a;color:#fff">RA</div><div><div class="patient-name">Rafael Andrade</div><div class="patient-meta">Psicanálise · Depressão</div></div></div></td>
@@ -1839,7 +1834,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div>
           <div class="section-lbl" style="margin-bottom:16px">Nova reflexão</div>
           <div class="card">
-            <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:6px">Pergunta sugerida pela IA:</div>
+            <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:6px">Pergunta sugerida:</div>
             <div id="reflection-question-display" style="font-size:14px;color:var(--purple);line-height:1.7;padding:12px;background:var(--purple-light);border-radius:8px;margin-bottom:16px;font-style:italic">
               "Quando você encerrou a sessão de Lúcia antes do tempo, o que você sentiu naquele momento? Era desconforto dela — ou seu?"
             </div>
@@ -1889,7 +1884,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div id="sup-contratransf-content"></div>
 
       <!-- Perguntas de supervisão entre pares -->
-      <div class="section-lbl" style="margin:24px 0 16px">Perguntas do supervisor IA</div>
+      <div class="section-lbl" style="margin:24px 0 16px">Perguntas do supervisor (perguntas do sistema)</div>
       <div class="card">
         <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Se você estivesse em supervisão com um colega experiente agora, essas seriam as perguntas sobre a sua prática desta semana:</div>
         <div id="sup-peer-questions" style="display:flex;flex-direction:column;gap:12px"></div>

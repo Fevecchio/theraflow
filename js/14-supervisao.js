@@ -1301,7 +1301,36 @@ function initSupervisao() {
   }
 }
 
+/* V1 (revisão 10/07): "Temas mais frequentes" era 100% fabricado no HTML —
+ * agora conta keywords nas notas clínicas reais (mesma família do alerta de
+ * temas). Estado vazio honesto quando não há notas suficientes. */
+function _renderSupTemas() {
+  var el = document.getElementById('sup-temas-list');
+  if (!el) return;
+  var kw = ['ansiedade','relacionamento','autoestima','trabalho','família','luto','sono','depressão','estresse','medo','raiva','autonomia','controle','abandono'];
+  var contagem = {};
+  (typeof patients !== 'undefined' ? patients : []).forEach(function(p) {
+    (p.prontuarioNotes || []).forEach(function(n) {
+      var txt = (n.text || '').toLowerCase();
+      kw.forEach(function(t) { if (txt.includes(t)) contagem[t] = (contagem[t] || 0) + 1; });
+    });
+  });
+  var top = Object.keys(contagem).map(function(t){ return { t: t, n: contagem[t] }; })
+    .sort(function(a,b){ return b.n - a.n; }).slice(0, 7);
+  if (!top.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0">Os temas aparecem aqui conforme suas notas clínicas se acumulam.</div>';
+    return;
+  }
+  var max = top[0].n;
+  el.innerHTML = top.map(function(x) {
+    var nome = x.t.charAt(0).toUpperCase() + x.t.slice(1);
+    var pct = Math.max(8, Math.round(x.n / max * 100));
+    return '<div class="sup-theme-row"><span class="sup-theme-name">' + nome + '</span><div class="sup-theme-bar-wrap"><div class="sup-theme-bar" style="width:' + pct + '%"></div></div><span class="sup-theme-count">' + x.n + ' nota' + (x.n === 1 ? '' : 's') + '</span></div>';
+  }).join('');
+}
+
 function atualizarMetricasSupervisao() {
+  _renderSupTemas();
   const ativos = patients.filter(p => p.status === 'Ativa' || p.status === 'Nova');
   const totalSessoes = patients.reduce((s, p) => s + (p.sessions || 0), 0);
   // comAlerta: derivado dos alertas reais (não p.alert hardcoded)
