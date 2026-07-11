@@ -490,7 +490,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </button>
     <button class="nav-item notif" onclick="navigate('agenda')">
       <span class="icon">▦</span> Agenda
-      <span class="nav-badge">3</span>
+      <!-- Sessões de HOJE, calculado por _atualizarBadgeAgenda (B2: era "3" fixo) -->
+      <span class="nav-badge" id="nav-agenda-badge" style="display:none">0</span>
     </button>
     <button class="nav-item" onclick="navigate('tarefas')" id="nav-tarefas-btn">
       <span class="icon">☑</span> Tarefas
@@ -755,7 +756,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div style="display:flex;flex-direction:column;gap:16px">
       <div class="video-area" style="flex:1">
         <div class="video-main" style="position:relative;background:#0a0f0b">
-          <div class="session-live-badge"><span class="live-dot"></span>AO VIVO</div>
+          <!-- Tarja controlada por _setSessionLiveUI (auditoria B2): era estática e
+               dizia "AO VIVO" até no pré-estado e depois de encerrar. -->
+          <div class="session-live-badge" id="session-live-badge" style="display:none"><span class="live-dot"></span>AO VIVO</div>
           <div class="session-timer" id="session-timer">00:00</div>
 
           <!-- ── ÁREA DE VÍDEO (LiveKit monta a UI aqui; ids "whereby-*" são legado) ── -->
@@ -1747,7 +1750,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <span id="perfil-hero-cidade">São Paulo, SP</span>
         <span>12 anos de experiência</span>
       </div>
-      <div class="perfil-crp" id="perfil-hero-crp">🪪 CRP 06/123456 — ativo</div>
+      <div class="perfil-crp" id="perfil-hero-crp">🪪 CRP —</div>
     </div>
     <div style="margin-left:auto;text-align:right;flex-shrink:0">
       <div id="perfil-hero-pacientes" style="font-family:'Instrument Serif',serif;font-size:38px;color:var(--sage);line-height:1">0</div>

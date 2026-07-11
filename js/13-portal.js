@@ -2078,27 +2078,39 @@ async function pacSalvarInsight(pidx, apptId) {
 
   // Atualiza em p.appointments (contexto do paciente remoto)
   var appt = (p.appointments || []).find(function(a) { return String(a.id) === String(apptId); });
+  // Auditoria A3: o toast "✓ salvo" era incondicional e o {error} do supabase-js
+  // (que NÃO lança — até o .catch era morto) passava batido. Agora o sucesso só
+  // é anunciado quando o servidor confirmou; falha → verdade + banner.
+  var _toastOk = function() { showToast(texto ? '✓ Insight salvo!' : '✓ Insight removido'); };
+  var _toastFalha = function() {
+    showToast('⚠ Seu insight está salvo neste aparelho, mas ainda não foi enviado — verifique a conexão.');
+    if (typeof _pacSyncBanner === 'function') _pacSyncBanner(true);
+  };
+  var _remoto = false;
   if (appt) {
     appt.meuInsight = texto;
     // Persiste via Supabase usando cliente do paciente
     if (typeof _pacPortalAuth !== 'undefined' && _pacPortalAuth) {
       // Paciente logado via RPC (sem sessão Auth) → RLS bloqueia update direto; usa RPC
+      _remoto = true;
       supaPatient.rpc('portal_save_insight', {
         p_email: _pacPortalAuth.email, p_hash: _pacPortalAuth.hash,
         p_local_id: String(apptId), p_texto: texto
-      }).then(function(){}).catch(function(){});
+      }).then(function(res){ (res && res.error) ? _toastFalha() : _toastOk(); })
+        .catch(function(){ _toastFalha(); });
     } else if (typeof supaPatient !== 'undefined' && p.id) {
+      _remoto = true;
       supaPatient.from('appointments')
         .update({ metadata: { resumoParaPaciente: appt.resumoParaPaciente || null, meuInsight: texto } })
         .eq('patient_id', p.id)
         .eq('local_id', String(apptId))
-        .then(function(){})
-        .catch(function(){});
+        .then(function(res){ (res && res.error) ? _toastFalha() : _toastOk(); })
+        .catch(function(){ _toastFalha(); });
     }
   }
 
   if (_loggedPatientData) _loggedPatientData.appointments = p.appointments;
-  showToast(texto ? '✓ Insight salvo!' : '✓ Insight removido');
+  if (!_remoto) _toastOk(); // prévia local do terapeuta: não há envio remoto aqui
 }
 
 function pacNavTo(tab) {

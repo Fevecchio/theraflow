@@ -385,6 +385,30 @@ async function startLiveKitSession() {
     // Paciente entrou (mesmo que de mic mudo): inicia a gravação do terapeuta.
     _lkRoom.on(LK.RoomEvent.ParticipantConnected, () => { _lkStartTherRecorder(); });
 
+    // Auditoria B1: queda de rede no meio da consulta deixava "AO VIVO ·
+    // capturando" na tela PARA SEMPRE, sem captar mais nada (a sala.html da
+    // paciente já tratava desconexão; o lado do terapeuta não). O indicador
+    // agora conta a verdade em cada estado da conexão.
+    _lkRoom.on(LK.RoomEvent.Reconnecting, () => {
+      var txt = document.getElementById('sess-capture-text');
+      if (txt) txt.textContent = '⚠ Conexão instável — reconectando…';
+      if (typeof showToast === 'function') showToast('⚠ Conexão instável na sessão — tentando reconectar…');
+    });
+    _lkRoom.on(LK.RoomEvent.Reconnected, () => {
+      _lkLiveStatus(); // volta ao status real de captura
+      if (typeof showToast === 'function') showToast('✓ Conexão restabelecida — a captura continua.');
+    });
+    _lkRoom.on(LK.RoomEvent.Disconnected, () => {
+      if (_lkEnding) return; // encerramento normal pelo botão — sem alarme
+      var el = document.getElementById('sess-capture-status');
+      var txt = document.getElementById('sess-capture-text');
+      if (el && txt) {
+        txt.textContent = '⚠ Você foi desconectado da sala — a paciente não está mais sendo captada. Os trechos já gravados estão seguros: encerre a sessão para transcrever.';
+        el.style.display = 'flex';
+      }
+      if (typeof showToast === 'function') showToast('⚠ A conexão da sessão caiu. O que já foi gravado está seguro — encerre para transcrever, ou inicie a sessão de novo.');
+    });
+
     await _lkRoom.connect(url, hostToken);
     await _lkRoom.localParticipant.setCameraEnabled(true);
     await _lkRoom.localParticipant.setMicrophoneEnabled(true);

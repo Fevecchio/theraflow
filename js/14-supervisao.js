@@ -512,6 +512,9 @@ function _excluirMetaPlano(id) {
   var p = patients[currentPatientIdx];
   if (!p || !p.portalMetas) return;
   p.portalMetas = p.portalMetas.filter(function(x){ return x.id !== id; });
+  // Tombstone (C6): sem ele a cópia do portal da paciente ressuscitava a meta
+  // no próximo merge — o lado dela já gravava; este lado não.
+  if (typeof _tfTombstone === 'function') _tfTombstone(p, 'portalMetas', id);
   salvarPacientes();
   renderPlanoProntuario(currentPatientIdx);
   showToast('Objetivo removido.');
@@ -523,7 +526,7 @@ function _adicionarMetaPlano() {
   var p = patients[currentPatientIdx];
   if (!p) return;
   if (!p.portalMetas) p.portalMetas = [];
-  p.portalMetas.push({ id: Date.now(), text: texto.trim(), done: false });
+  p.portalMetas.push({ id: Date.now(), text: texto.trim(), done: false, _up: Date.now() }); // _up: desempate de conflito no merge (C7)
   salvarPacientes();
   renderPlanoProntuario(currentPatientIdx);
   showToast('✓ Objetivo adicionado!');

@@ -1086,17 +1086,28 @@ function pacSalvarAnamnese(idx) {
     patients[idx].anamnese = p.anamnese;
     patients[idx].portalAnamneseAtiva = false;
   }
-  // Sobe ao Supabase (merge — preserva os campos do terapeuta). Antes nem sincronizava.
-  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
-
-  // Confirmação visual
+  // Confirmação HONESTA (auditoria A2): antes mostrava "✅ enviado! sua terapeuta
+  // receberá" incondicionalmente, com o sync fire-and-forget — promessa que podia
+  // ser falsa. Agora aguarda o resultado real e diz a verdade em cada caso.
   var secao = document.getElementById('pac-anamnese-secao');
   if (secao) {
     secao.innerHTML = '<div style="text-align:center;padding:24px 0">'
-      + '<div style="font-size:36px;margin-bottom:10px">✅</div>'
-      + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Formulário enviado!</div>'
-      + '<div style="font-size:13px;color:var(--muted)">Sua terapeuta receberá as informações antes da próxima sessão.</div>'
+      + '<div style="font-size:36px;margin-bottom:10px">⏳</div>'
+      + '<div style="font-size:14px;color:var(--muted)">Enviando suas respostas…</div>'
       + '</div>';
   }
-  if (typeof _supaPatientSync === 'function') _supaPatientSync().catch(function(){});
+  Promise.resolve(typeof _supaPatientSync === 'function' ? _supaPatientSync() : true).then(function(ok) {
+    if (!secao) return;
+    secao.innerHTML = ok !== false
+      ? '<div style="text-align:center;padding:24px 0">'
+        + '<div style="font-size:36px;margin-bottom:10px">✅</div>'
+        + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Formulário enviado!</div>'
+        + '<div style="font-size:13px;color:var(--muted)">Sua terapeuta receberá as informações antes da próxima sessão.</div>'
+        + '</div>'
+      : '<div style="text-align:center;padding:24px 0">'
+        + '<div style="font-size:36px;margin-bottom:10px">💾</div>'
+        + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Respostas salvas neste aparelho</div>'
+        + '<div style="font-size:13px;color:var(--muted);line-height:1.6">Sem conexão agora — elas serão enviadas junto com o próximo registro que você fizer, ou toque no aviso amarelo para tentar de novo.</div>'
+        + '</div>';
+  });
 }

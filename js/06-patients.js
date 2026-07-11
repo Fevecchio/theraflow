@@ -356,10 +356,17 @@ async function compartilharAcessoPortal(i) {
       } else if (r.status === 409) {
         showToast('⚠ ' + result.error);
       } else {
+        // Auditoria A4: falha do servidor seguia em frente EM SILÊNCIO — abria o
+        // WhatsApp e enviava credenciais de uma conta que NÃO existe; a paciente
+        // não conseguia logar. Agora avisa e ABORTA (nada é enviado).
         console.warn('[invite-patient]', result.error || result.warning);
+        showToast('⚠ O servidor não conseguiu criar o acesso (' + (result.error || 'erro ' + r.status) + '). Nada foi enviado — tente novamente.');
+        return;
       }
     } catch(e) {
       console.warn('[invite-patient] fetch error:', e.message);
+      showToast('⚠ Sem resposta do servidor — o acesso NÃO foi criado e nada foi enviado. Verifique a conexão e tente de novo.');
+      return;
     }
   }
 
@@ -540,6 +547,30 @@ function salvarPacientes() {
    edita; o servidor mescla e PRESERVA os campos do terapeuta (prontuarioNotes,
    fin, forma_pagamento, portalDica/Mensagem…). Antes fazia UPDATE do metadata
    inteiro e, como o paciente carrega enxuto (F3.1), apagava o prontuário. */
+// Banner honesto do portal do paciente (auditoria de confiança A1): o portal
+// não tinha NENHUMA superfície de erro de sync — toda falha era silenciosa e o
+// "✓ Salvo!" mentia. Alimentado pelo funil único (_supaPatientSync); some
+// sozinho no próximo sync ok. Toque = tentar de novo.
+function _pacSyncBanner(mostrar) {
+  var b = document.getElementById('pac-sync-banner');
+  if (!mostrar) { if (b) b.remove(); return; }
+  if (b) return;
+  b = document.createElement('div');
+  b.id = 'pac-sync-banner';
+  b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:76px;z-index:9500;background:#fff8e6;border:1px solid #e0b25a;color:#7a5220;border-radius:12px;padding:10px 14px;font-size:12.5px;line-height:1.5;box-shadow:0 4px 16px rgba(43,42,38,.15);cursor:pointer;font-family:inherit';
+  b.innerHTML = '<strong>Salvo neste aparelho, mas ainda não enviado.</strong><br>Verifique sua conexão — toque aqui para tentar de novo.';
+  b.onclick = function() {
+    b.innerHTML = 'Enviando…';
+    if (typeof _supaPatientSync === 'function') {
+      Promise.resolve(_supaPatientSync()).then(function(ok){
+        if (ok === false) { b.remove(); _pacSyncBanner(true); }
+        // ok → o próprio sync já removeu o banner
+      });
+    }
+  };
+  document.body.appendChild(b);
+}
+
 async function _supaPatientSync() {
   if (!_loggedPatientData) return; // Não executar no contexto do terapeuta
   const p = _loggedPatientData;
@@ -578,11 +609,14 @@ async function _supaPatientSync() {
     });
     if (_r && _r.error) {
       console.warn('[supaPatient] sync recusado:', _r.error.message);
+      _pacSyncBanner(true);
       return false;
     }
+    _pacSyncBanner(false);
     return true;
   } catch(e) {
     console.warn('[supaPatient] sync falhou:', e.message);
+    _pacSyncBanner(true);
     return false;
   }
 }

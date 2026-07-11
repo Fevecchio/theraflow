@@ -190,7 +190,21 @@ async function _preencherNotaComIA(pidx) {
   }
 }
 
+// Badge da Agenda na sidebar = sessões de HOJE (auditoria B3: era "3" fixo no HTML)
+function _atualizarBadgeAgenda() {
+  try {
+    var b = document.getElementById('nav-agenda-badge');
+    if (!b) return;
+    var hoje = hojeISO();
+    var n = (typeof appointments !== 'undefined' ? appointments : [])
+      .filter(function(a){ return a.date === hoje && a.status !== 'cancelada'; }).length;
+    if (n > 0) { b.textContent = n; b.style.display = 'inline-block'; }
+    else { b.style.display = 'none'; }
+  } catch(e) {}
+}
+
 function _salvarAppointments() {
+  _atualizarBadgeAgenda();
   try { localStorage.setItem('tf_appointments', JSON.stringify(appointments)); } catch(e) {}
   _supaSync_appointments();
 }

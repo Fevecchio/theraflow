@@ -207,7 +207,7 @@ function aplicarDadosNoApp() {
   var heroCrp    = document.getElementById('perfil-hero-crp');
   if (heroNome)   heroNome.textContent   = nome;
   if (heroAvatar) heroAvatar.textContent = initials;
-  if (heroCrp)    heroCrp.textContent    = '🪪 CRP ' + crp + ' — ativo';
+  if (heroCrp)    heroCrp.textContent    = '🪪 CRP ' + crp; // sem "— ativo": status nunca é verificado (B4)
 
   // ── 4. PERFIL — campos do formulário ──
   var fNome = document.getElementById('perfil-nome');

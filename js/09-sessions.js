@@ -159,6 +159,10 @@ function trocarPacienteSessao(newIdx) {
 function _setSessionLiveUI(on) {
   var panel = document.querySelector('#page-sessao .ai-panel');
   if (panel) panel.classList[on ? 'add' : 'remove']('live');
+  // Tarja "AO VIVO" só durante sessão real (B2 — era estática, mentia no
+  // pré-estado e após encerrar)
+  var badge = document.getElementById('session-live-badge');
+  if (badge) badge.style.display = on ? '' : 'none';
   if (!on) {
     var cap = document.getElementById('sess-capture-status');
     if (cap) cap.style.display = 'none';

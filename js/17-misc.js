@@ -628,7 +628,8 @@ function saveProfile() {
   const heroCidade = document.getElementById('perfil-hero-cidade');
   if (heroNome) heroNome.textContent = nome;
   if (heroAvatar) heroAvatar.textContent = initials;
-  if (heroCrp) heroCrp.textContent = '🪪 CRP ' + crp + ' — ativo';
+  // Sem "— ativo": o status do CRP nunca é verificado — afirmar era mentira (B4)
+  if (heroCrp) heroCrp.textContent = '🪪 CRP ' + crp;
   if (heroEsp) heroEsp.textContent = especialidade;
   if (heroCidade) heroCidade.textContent = cidade;
 
