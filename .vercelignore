@@ -38,3 +38,6 @@ fase*.png
 
 # Rascunhos de conteúdo GTM — NÃO publicados (revisão do fundador pendente)
 docs-rascunhos/
+
+# Manual interno do projeto — nao servir em producao
+CLAUDE.md
