@@ -416,14 +416,18 @@ async function _supaSync_charges() {
         if (upErr) throw upErr;
       }
       // F3 delete-diff: remove do servidor as cobranças ausentes localmente (excluídas).
+      // C5: SÓ sessão hidratada deleta — login offline com cópia velha apagava do
+      // servidor cobranças criadas em outro device. Upserts seguem sempre.
       const localSet = new Set(rows.map(r => r.local_id));
-      const { data: remote, error: fErr } = await supa.from('charges').select('local_id').eq('user_id', user.id);
-      if (fErr) throw fErr;
-      const toDel = (remote || []).map(r => r.local_id).filter(id => id && !localSet.has(id));
-      for (let i = 0; i < toDel.length; i += 40) {
-        const chunk = toDel.slice(i, i + 40);
-        const { error: dErr } = await supa.from('charges').delete().eq('user_id', user.id).in('local_id', chunk);
-        if (dErr) throw dErr;
+      if (window._tfHydrated) {
+        const { data: remote, error: fErr } = await supa.from('charges').select('local_id').eq('user_id', user.id);
+        if (fErr) throw fErr;
+        const toDel = (remote || []).map(r => r.local_id).filter(id => id && !localSet.has(id));
+        for (let i = 0; i < toDel.length; i += 40) {
+          const chunk = toDel.slice(i, i + 40);
+          const { error: dErr } = await supa.from('charges').delete().eq('user_id', user.id).in('local_id', chunk);
+          if (dErr) throw dErr;
+        }
       }
     });
   } catch(e) {
@@ -458,14 +462,17 @@ async function _supaSync_tasks() {
       const { error: upErr } = await supa.from('tasks').upsert(rows, { onConflict: 'user_id,local_id' });
       if (upErr) throw upErr;
       // F3 delete-diff: tarefas excluídas localmente somem do servidor (não ressuscitam).
+      // C5: só sessão hidratada deleta (ver comentário no sync de charges).
       const localSet = new Set(rows.map(r => r.local_id));
-      const { data: remote, error: fErr } = await supa.from('tasks').select('local_id').eq('user_id', user.id);
-      if (fErr) throw fErr;
-      const toDel = (remote || []).map(r => r.local_id).filter(id => id && !localSet.has(id));
-      for (let i = 0; i < toDel.length; i += 40) {
-        const chunk = toDel.slice(i, i + 40);
-        const { error: dErr } = await supa.from('tasks').delete().eq('user_id', user.id).in('local_id', chunk);
-        if (dErr) throw dErr;
+      if (window._tfHydrated) {
+        const { data: remote, error: fErr } = await supa.from('tasks').select('local_id').eq('user_id', user.id);
+        if (fErr) throw fErr;
+        const toDel = (remote || []).map(r => r.local_id).filter(id => id && !localSet.has(id));
+        for (let i = 0; i < toDel.length; i += 40) {
+          const chunk = toDel.slice(i, i + 40);
+          const { error: dErr } = await supa.from('tasks').delete().eq('user_id', user.id).in('local_id', chunk);
+          if (dErr) throw dErr;
+        }
       }
     });
   } catch(e) {
@@ -533,17 +540,21 @@ async function _supaSync_appointments() {
       // Remove linhas excluídas localmente: busca os IDs remotos e deleta os ausentes
       // com .in() em lotes. Evita a sintaxe .not(col,'in',array), que o supabase-js
       // serializa sem parênteses (local_id=not.in.a,b) e o PostgREST rejeita com 400.
+      // C5: só sessão HIDRATADA deleta (login offline com cópia velha apagava do
+      // servidor sessões criadas em outro device; upserts seguem sempre).
       const localSet = new Set(rows.map(r => r.local_id));
-      const { data: remote, error: fetchErr } = await supa.from('appointments')
-        .select('local_id').eq('user_id', user.id);
-      if (fetchErr) throw fetchErr;
-      const toDelete = (remote || []).map(r => r.local_id).filter(id => !localSet.has(id));
-      const BATCH = 40;
-      for (let i = 0; i < toDelete.length; i += BATCH) {
-        const chunk = toDelete.slice(i, i + BATCH);
-        const { error: delErr } = await supa.from('appointments')
-          .delete().eq('user_id', user.id).in('local_id', chunk);
-        if (delErr) throw delErr;
+      if (window._tfHydrated) {
+        const { data: remote, error: fetchErr } = await supa.from('appointments')
+          .select('local_id').eq('user_id', user.id);
+        if (fetchErr) throw fetchErr;
+        const toDelete = (remote || []).map(r => r.local_id).filter(id => !localSet.has(id));
+        const BATCH = 40;
+        for (let i = 0; i < toDelete.length; i += BATCH) {
+          const chunk = toDelete.slice(i, i + BATCH);
+          const { error: delErr } = await supa.from('appointments')
+            .delete().eq('user_id', user.id).in('local_id', chunk);
+          if (delErr) throw delErr;
+        }
       }
     });
   } catch(e) {
@@ -561,6 +572,10 @@ async function _supaSync_appointments() {
 var _settingsSyncTimer = null;
 function _supaSync_settings() {
   if (window._tfDemo) return;
+  // C12: settings é update de objeto INTEIRO (LWW) — sessão não-hidratada com
+  // grade/bloqueios velhos sobrescreveria a versão nova do servidor. Fica local
+  // e sobe na próxima sessão hidratada.
+  if (!window._tfHydrated) return;
   if (_settingsSyncTimer) clearTimeout(_settingsSyncTimer);
   _settingsSyncTimer = setTimeout(async function() {
     _settingsSyncTimer = null;

@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch(e) { /* MFA indisponível no SDK → segue o fluxo normal (conta sem 2FA não é afetada) */ }
     // Sessão válida (aal2 ou conta sem 2FA) — restaura dados frescos e entra no app
-    try { await _supaLoadUserData(session.user.id); } catch(e) { console.warn('[Supa] Auto-restore:', e.message); }
+    try { await _supaLoadUserData(session.user.id); window._tfHydrated = true; } catch(e) { console.warn('[Supa] Auto-restore:', e.message); }
     try { acc = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
     if (acc) _proceedToApp(acc);
   }).catch(function() {});

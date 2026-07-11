@@ -39,6 +39,9 @@ async function _postAuthGate(user) {
 /* Conclui o login: carrega dados do banco e entra no app. */
 async function _finishLogin(uid) {
   await _supaLoadUserData(uid);
+  // C5/C12: sessão HIDRATADA (leu o estado do servidor) — só a partir daqui os
+  // syncs podem deletar/sobrescrever no servidor. Login offline nunca seta isto.
+  window._tfHydrated = true;
   // Login online CONFIRMADO (os dados acabaram de vir do servidor) — reflete no
   // badge na hora; antes um 'noauth' antigo ficava congelado na tela até a
   // próxima gravação, parecendo que o relogin não tinha resolvido.
