@@ -39,6 +39,10 @@ async function _postAuthGate(user) {
 /* Conclui o login: carrega dados do banco e entra no app. */
 async function _finishLogin(uid) {
   await _supaLoadUserData(uid);
+  // Login online CONFIRMADO (os dados acabaram de vir do servidor) — reflete no
+  // badge na hora; antes um 'noauth' antigo ficava congelado na tela até a
+  // próxima gravação, parecendo que o relogin não tinha resolvido.
+  if (typeof _setSyncStatus === 'function') _setSyncStatus('ok');
   let account = null;
   try { account = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch (e) {}
   _proceedToApp(account);

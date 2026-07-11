@@ -530,9 +530,10 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
   </div>
 
-  <!-- Sync status -->
-  <div id="sync-status-bar" title="Status de sincronização com a nuvem"
-    style="margin:0 12px 4px;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:11px;background:rgba(74,124,89,.06);color:#8fb89c;transition:color .3s,background .3s">
+  <!-- Sync status (clicável: verifica a sessão de verdade e sincroniza — o estado
+       podia ficar congelado em "não sincronizado" após um relogin ok) -->
+  <div id="sync-status-bar" title="Clique para verificar a sincronização agora" onclick="_syncRecheck()"
+    style="margin:0 12px 4px;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:11px;background:rgba(74,124,89,.06);color:#8fb89c;transition:color .3s,background .3s;cursor:pointer">
     <span id="sync-status-icon" style="font-size:12px">✓</span>
     <span id="sync-status-text">Sincronizado</span>
   </div>

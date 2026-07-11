@@ -25,6 +25,21 @@ function _setSyncStatus(state) {
     bar.style.color = '#8fb89c'; bar.style.background = 'rgba(74,124,89,.06)';
   }
 }
+// Recheck sob demanda (clique na barrinha): o estado 'noauth' ficava CONGELADO
+// na tela mesmo após login online ok — nada reavaliava até a próxima gravação.
+async function _syncRecheck() {
+  _setSyncStatus('syncing');
+  try {
+    const { data } = await supa.auth.getUser();
+    if (!data || !data.user) {
+      _setSyncStatus('noauth');
+      if (typeof showToast === 'function') showToast('⚠ Sem sessão online neste aparelho. Clique em Sair e entre com e-mail e senha (e o código de verificação).');
+      return;
+    }
+    await _supaSync_patients(); // define o status final ('ok' ou erro real)
+  } catch (e) { /* _supaSync_patients já sinalizou o status */ }
+}
+
 window.addEventListener('offline', function() { _setSyncStatus('error'); });
 // Voltou a conexão: sincroniza de verdade (o próprio sync define o status final) —
 // antes só marcava "Sincronizado" sem subir nada.

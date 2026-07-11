@@ -49,11 +49,17 @@ function loginSubmit() {
     btn.disabled = false;
 
     if (error) {
-      // Fallback: tenta login local (modo offline/demo)
+      // Fallback: tenta login local (modo offline). AVISA — antes era silencioso
+      // e o usuário achava que estava online, com o sync preso em 'noauth' e
+      // "refaça login" caindo no mesmo fallback para sempre.
       let account = null;
       try { account = JSON.parse(localStorage.getItem('tf_account') || 'null'); } catch(e) {}
       if (account && account.email?.toLowerCase() === email.toLowerCase() && tfVerificaSenha(senha, account.senha)) {
         _proceedToApp(account);
+        if (typeof _setSyncStatus === 'function') _setSyncStatus('noauth');
+        setTimeout(function(){
+          if (typeof showToast === 'function') showToast('⚠ Você entrou em modo OFFLINE (o servidor recusou: ' + (error.message === 'Invalid login credentials' ? 'senha não confere com a conta online' : error.message) + '). Os dados não vão sincronizar.');
+        }, 900);
         return;
       }
       errEl.textContent = '⚠ Email ou senha incorretos.';
