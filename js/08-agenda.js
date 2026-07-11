@@ -330,10 +330,16 @@ function confirmarAgendamento() {
   var colorIdx  = pidx % APPT_COLORS.length;
   var dataBR    = fmtDataBR(dataVal);
 
-  // Verificar conflito de horário (± 30 min)
+  // Verificar conflito de horário (± 30 min) — em TODAS as datas da série
+  // recorrente, não só na 1ª (residual da auditoria: dava para agendar 8
+  // semanas em cima de sessões existentes sem nenhum aviso).
   var horaMin = parseInt(horaVal.split(':')[0])*60 + parseInt(horaVal.split(':')[1]);
+  var _datasChecar = [dataVal];
+  if (recVal === 'semanal')   { for (let w=1;w<=7;w++){ const nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*7); _datasChecar.push(localDateISO(nd)); } }
+  if (recVal === 'quinzenal') { for (let w=1;w<=4;w++){ const nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*14); _datasChecar.push(localDateISO(nd)); } }
+  if (recVal === 'mensal')    { for (let w=1;w<=2;w++){ const nd=new Date(dataVal+'T12:00:00'); nd.setMonth(nd.getMonth()+w); _datasChecar.push(localDateISO(nd)); } }
   var conflito = appointments.find(function(a) {
-    if (a.status === 'cancelada' || a.date !== dataVal) return false;
+    if (a.status === 'cancelada' || _datasChecar.indexOf(a.date) === -1) return false;
     var aMin = parseInt((a.time||'00:00').split(':')[0])*60 + parseInt((a.time||'00:00').split(':')[1]);
     return Math.abs(aMin - horaMin) < 30;
   });
@@ -348,7 +354,7 @@ function confirmarAgendamento() {
     avisos.push('⛔ Atenção: ' + dataBR + ' está bloqueado (' + motivo + ').\nDeseja agendar mesmo assim?');
   }
   if (conflito) {
-    avisos.push('⚠ Já existe sessão de ' + conflito.patientName + ' às ' + conflito.time + ' neste dia.\nDeseja agendar mesmo assim?');
+    avisos.push('⚠ Já existe sessão de ' + conflito.patientName + ' às ' + conflito.time + ' em ' + fmtDataBR(conflito.date) + (conflito.date !== dataVal ? ' (data da série recorrente)' : '') + '.\nDeseja agendar mesmo assim?');
   }
 
   function _executar() {

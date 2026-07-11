@@ -23,3 +23,15 @@ serve.js
 *.jpg
 design-*
 *.jsx
+
+# Arquivos de design/screenshots do processo (auditoria 11/07: ~90 arquivos
+# subiam em todo deploy sem serem servíveis ao produto)
+*.png
+*.jpg
+*.jpeg
+!favicon*.png
+!icons/*.png
+*-design*.html
+proposta-*.html
+mockup*.html
+fase*.png

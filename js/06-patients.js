@@ -1140,6 +1140,10 @@ function renderPatientConfig(i) {
         </div>
       </div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarProntuario()" title="PDF completo do prontuário deste paciente">⬇ Prontuário PDF</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarRelatorioEvolucao()" title="PDF de evolução (humor, presença, progresso)">📈 Evolução PDF</button>
+    </div>
     <button class="btn btn-sm" style="color:var(--red);border-color:rgba(192,57,43,.25);background:var(--red-light);justify-content:center;width:100%" onclick="excluirPaciente(${i})">
       ✕ Excluir paciente
     </button>
