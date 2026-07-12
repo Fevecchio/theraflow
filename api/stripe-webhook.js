@@ -131,10 +131,27 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
-  // C3: idempotência — ignora evento já processado (Stripe pode reenviar o mesmo event.id)
-  const alreadyProcessed = await supaGet(`processed_webhooks?stripe_event_id=eq.${encodeURIComponent(event.id)}&select=stripe_event_id`);
-  if (Array.isArray(alreadyProcessed) && alreadyProcessed.length > 0) {
-    return res.status(200).json({ received: true, skipped: true });
+  // C3: idempotência ATÔMICA — reivindica o event.id ANTES de processar (INSERT
+  // na PK). Duas entregas simultâneas do mesmo evento: uma insere, a outra leva
+  // 409 e sai. O check-then-insert antigo deixava as duas passarem (race raro →
+  // bônus de indicação creditado 2×, achado #seguranca 12/07).
+  const claim = await fetch(`${SUPA_URL}/rest/v1/processed_webhooks`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify({ stripe_event_id: event.id }),
+  });
+  if (!claim.ok) {
+    if (claim.status === 409) {
+      return res.status(200).json({ received: true, skipped: true });
+    }
+    // claim falhou por outro motivo (banco fora etc.) → 500 para o Stripe reenviar
+    console.error('[webhook] claim de idempotencia falhou:', claim.status);
+    return res.status(500).json({ error: 'idempotency claim failed' });
   }
 
   try {
@@ -194,19 +211,19 @@ export default async function handler(req, res) {
       }
     }
 
-    // Registra evento como processado
-    await fetch(`${SUPA_URL}/rest/v1/processed_webhooks`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Prefer': 'return=minimal',
-      },
-      body: JSON.stringify({ stripe_event_id: event.id }),
-    });
   } catch (err) {
     console.error('[webhook] Handler error:', err.message);
+    // Solta a reivindicação: o reenvio do Stripe precisa poder reprocessar
+    // (senão o evento ficaria marcado como processado sem ter sido).
+    try {
+      await fetch(`${SUPA_URL}/rest/v1/processed_webhooks?stripe_event_id=eq.${encodeURIComponent(event.id)}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+    } catch (_) {}
     return res.status(500).json({ error: err.message });
   }
 
