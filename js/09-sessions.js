@@ -1008,6 +1008,10 @@ function indexPostSession() {
         sp.finStatus = 'pending';
         sp.fin = 'Pendente';
         salvarPacientes();
+      } else if (_valorSessao <= 0) {
+        // Sem valor definido a cobrança NÃO nasce — avisar em vez de silenciar
+        // (pedido do usuário 12/07; o modal pós-sessão também mostra o aviso).
+        if (typeof showToast === 'function') showToast('◈ Sessão registrada SEM cobrança — defina o valor da sessão na ficha do paciente (✎ Editar) ou no Perfil.', 'warning');
       }
     } catch(_e) {}
   }

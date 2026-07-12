@@ -788,6 +788,20 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
       ${errMsg ? `<div style="margin-top:6px;font-size:11px;opacity:.8">Detalhe técnico: ${esc(errMsg)}</div>` : ''}
     </div>`;
 
+  // Aviso de cobrança AUSENTE (pedido do usuário 12/07): sem valor de sessão na
+  // ficha nem no Perfil, salvar NÃO cria cobrança — avisar aqui, onde o olho está.
+  let chargeWarn = '';
+  try {
+    const _accW = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    if (!(parseFloat((sp && sp.valorSessao) || _accW.valor_sessao) > 0)) {
+      chargeWarn = `
+    <div style="margin-top:12px;background:#fff8e6;border:1px solid #f0d060;border-radius:10px;padding:10px 14px;color:#8a5a1a;font-size:12.5px;line-height:1.5">
+      ◈ <strong>Sem cobrança automática:</strong> a ficha de ${esc(nome)} não tem valor de sessão (nem o Perfil).
+      Ao salvar, <strong>nenhuma cobrança será criada</strong> — defina o valor em Pacientes → ✎ Editar para as próximas.
+    </div>`;
+    }
+  } catch (_) {}
+
   const contentBlock = `
     <div style="margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Transcrição da sessão (real)</div>
@@ -796,7 +810,7 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
     <div>
       <div style="font-size:11px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">✦ Nota clínica — rascunho gerado pela IA</div>
       <textarea id="lk-post-note" style="width:100%;box-sizing:border-box;min-height:200px;border:1.5px solid #d1e7d9;border-radius:10px;padding:12px 14px;font-size:13px;font-family:'DM Sans',sans-serif;line-height:1.6;resize:vertical;outline:none">${esc(note)}</textarea>
-      <div style="font-size:11px;color:#999;margin-top:6px">Revise e edite antes de salvar no prontuário. A gravação de áudio não foi armazenada.</div>
+      <div style="font-size:11px;color:#999;margin-top:6px">Revise e edite antes de salvar no prontuário. A gravação de áudio não foi armazenada.</div>${chargeWarn}
     </div>`;
 
   const bodyHTML = isContent ? contentBlock : tooLong ? tooLongBlock : retry ? retryBlock : emptyBlock;
@@ -857,15 +871,61 @@ function _lkSalvarNotaPostSessao() {
         .find(function (a) { return String(a.id) === String(_pendingResumoApptId); });
       if (appt) {
         // RASCUNHO, não publicação: nada chega ao paciente sem aprovação do
-        // terapeuta (publica em Pacientes → Visão Geral → Trajetória). Por isso
-        // também NÃO espelha em sp.appointments — esse é o payload do portal.
+        // terapeuta. Por isso também NÃO espelha em sp.appointments (payload do
+        // portal). A revisão agora abre AQUI, como última etapa do fluxo
+        // pós-sessão (pedido do usuário 12/07): transcrição → nota → exercícios
+        // → jornada. "Deixar para depois" preserva o pendente na Trajetória.
         appt.resumoPendente = resumo;
         if (typeof _salvarAppointments === 'function') _salvarAppointments();
-        if (typeof showToast === 'function') showToast('📝 Resumo para o paciente pronto — revise e publique em Pacientes → Visão Geral.');
+        _lkAbrirRevisaoJornada(String(appt.id));
       }
       _pendingResumoApptId = null;
     }).catch(function () {});
   }
+}
+
+// Última etapa do pós-sessão: revisão do resumo da jornada da paciente na mesma
+// sentada. Espera os modais anteriores do fluxo fecharem (nota/exercícios) e abre
+// o rascunho para editar + publicar; publicar reaproveita salvarResumoParaPaciente
+// (js/06 — o mesmo caminho da Trajetória, que espelha no payload do portal).
+function _lkAbrirRevisaoJornada(apptId) {
+  var tent = 0;
+  var iv = setInterval(function () {
+    var ocupado = document.querySelector('.modal-overlay.open') || document.getElementById('lk-post-modal');
+    if (ocupado && ++tent < 150) return; // espera até ~2,5min; depois desiste (fica na Trajetória)
+    clearInterval(iv);
+    if (ocupado) return;
+    var appt = (typeof appointments !== 'undefined' ? appointments : [])
+      .find(function (a) { return String(a.id) === String(apptId); });
+    if (!appt || !appt.resumoPendente || document.getElementById('lk-jornada-modal')) return;
+    var sp = _tfSessionPatient();
+    var primeiro = sp && sp.name ? sp.name.split(' ')[0] : 'a paciente';
+    var m = document.createElement('div');
+    m.id = 'lk-jornada-modal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = '<div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">'
+      + '<div style="padding:18px 22px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">'
+      + '<div style="width:38px;height:38px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;font-size:18px">📅</div>'
+      + '<div><div style="font-weight:600;font-size:15px;color:#1a1a1a">Resumo da jornada · para ' + escHTML(primeiro) + '</div>'
+      + '<div style="font-size:12px;color:#888;margin-top:2px">Última etapa da sessão — só chega ao portal depois que você publicar</div></div></div>'
+      + '<div style="padding:18px 22px">'
+      + '<textarea id="resumo-pac-' + escHTML(String(appt.id)) + '" style="width:100%;box-sizing:border-box;min-height:150px;border:1.5px solid #f0d060;background:#fffdf5;border-radius:10px;padding:12px 14px;font-size:13px;font-family:\'DM Sans\',sans-serif;line-height:1.6;resize:vertical;outline:none">' + escHTML(appt.resumoPendente) + '</textarea>'
+      + '<div style="font-size:11px;color:#999;margin-top:6px">Linguagem acessível, sem jargão — é o que aparece em "Minha jornada" no portal.</div>'
+      + '</div>'
+      + '<div style="padding:12px 22px 18px;display:flex;gap:8px;border-top:1px solid #f0f0f0;justify-content:flex-end">'
+      + '<button onclick="document.getElementById(\'lk-jornada-modal\').remove();if(typeof showToast===\'function\')showToast(\'🕓 Rascunho guardado — publique quando quiser em Pacientes → Visão Geral → Trajetória.\')" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555">Deixar para depois</button>'
+      + '<button onclick="_lkPublicarJornada(\'' + escHTML(String(appt.id)) + '\')" style="padding:10px 18px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✓ Publicar para ' + escHTML(primeiro) + '</button>'
+      + '</div></div>';
+    document.body.appendChild(m);
+  }, 1000);
+}
+
+function _lkPublicarJornada(apptId) {
+  var sp = _tfSessionPatient();
+  var pIdx = (typeof patients !== 'undefined') ? patients.indexOf(sp) : -1;
+  if (pIdx < 0) pIdx = (typeof currentSessionPatientIdx !== 'undefined') ? currentSessionPatientIdx : 0;
+  salvarResumoParaPaciente(pIdx, apptId); // publica + espelha no portal + toast
+  var m = document.getElementById('lk-jornada-modal'); if (m) m.remove();
 }
 
 // Montagem de vídeo — dentro do card da sessão (.video-main), SEM quebrar o layout:
