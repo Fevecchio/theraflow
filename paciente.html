@@ -27,10 +27,13 @@
   }
   #tf-patient-login-layer.open { display: flex; }
 
-  /* Patient app */
+  /* Patient app — o LAYER é o contêiner de rolagem: header (sticky top) e
+     bottom-nav (sticky bottom) dependem disso. overflow:hidden aqui TRAVAVA
+     a rolagem no celular (bug real da Mariana, 12/07). */
   #tf-patient-app-layer {
     display: none; position: fixed; inset: 0; z-index: 9000;
-    flex-direction: column; background: var(--bg, #f5f3ee); overflow: hidden;
+    flex-direction: column; background: var(--bg, #f5f3ee);
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   #tf-patient-app-layer.open { display: flex; }
 
