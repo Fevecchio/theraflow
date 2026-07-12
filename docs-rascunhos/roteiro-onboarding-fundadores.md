@@ -1,56 +1,125 @@
-# [RASCUNHO] Roteiro de onboarding — 30 minutos com cada fundador(a)
+# Roteiro de Onboarding — 30 minutos com cada fundador(a) · VERSÃO DETALHADA
 
+> **Versão 2 — 12/07/2026, com os cliques reais do app** (fluxo validado no co-teste).
 > A landing promete "configuração comigo em 30 minutos". Este é o roteiro dessa
-> chamada (Meet/WhatsApp vídeo). Objetivo por trás do objetivo: a pessoa sair da
-> chamada com **a primeira nota de IA gerada por ela mesma** — quem vê a própria
-> nota pronta não cancela. Revisar e adaptar ao seu jeito antes da 1ª chamada.
+> chamada. Objetivo por trás do objetivo: a pessoa sair com **a primeira nota de IA
+> gerada pelas próprias mãos** — quem vê a própria nota pronta não cancela.
 
-## Antes da chamada (5 min, você)
-- [ ] Criar nada por ela — ela cria TUDO na frente sua (senso de posse).
-- [ ] Confirmar que ela está no computador (não só celular) e com fone.
-- [ ] Ter o link da plataforma e o e-mail dela à mão.
-- [ ] Avisar antes: "traga em mente 1 paciente real (sem me contar nada clínico) — vamos montar a ficha dele com dados de mentira".
+---
 
-## Minuto a minuto
+## ANTES DA CHAMADA
 
-### 0–3 · Enquadre (o que vamos fazer)
-"Em 30 minutos você sai com: conta pronta, seu primeiro paciente cadastrado, e uma nota de evolução gerada pela IA a partir de uma sessão de teste. O que eu preciso de você depois: usar de verdade por 2 semanas e me falar o que incomodar. Fechado?"
+### Mensagem de agendamento (mandar 1 dia antes, WhatsApp)
+> Oi, [nome]! Amanhã às [hora] fazemos sua configuração — 30 minutos e você sai com a
+> primeira nota de evolução gerada. Só preciso de 3 coisas: (1) estar no computador
+> (não só celular), (2) fone de ouvido simples, e (3) pensar num paciente de referência
+> — a gente monta a ficha com dados FICTÍCIOS, não me conte nada real. Até amanhã!
 
-### 3–8 · Conta + perfil (ela digita, você guia)
-1. Criar conta com o e-mail profissional dela.
-2. Perfil: nome, CRP, abordagem, cidade, **WhatsApp** (alimenta os lembretes) e **chave PIX** (alimenta cobranças e recibos).
-3. Mencionar sem executar: "existe verificação em duas etapas aqui — te mando o passo a passo depois, faça ainda hoje" (não gastar os 30 min nisso).
+### Seu checklist (5 min antes)
+- [ ] Ela cria TUDO nas próprias mãos — você nunca digita por ela (senso de posse).
+- [ ] Link da plataforma e o e-mail dela à mão.
+- [ ] Seu celular por perto (você fará o papel de "paciente" na sessão de teste dela).
+- [ ] Silêncio no seu lado; câmera ligada — fundadores compram de gente, não de software.
+
+---
+
+## MINUTO A MINUTO
+
+### 0–3 · Enquadre (direto, sem enrolar)
+Fala pronta: **"Em 30 minutos você sai com: conta pronta, um paciente de teste
+cadastrado, e uma nota de evolução gerada pela IA numa sessão simulada comigo. O que
+eu peço de volta: usar de verdade por 2 semanas e me contar TUDO que incomodar — seu
+pedido vira prioridade do roadmap, é isso que fundador significa aqui. Fechado?"**
+
+### 3–8 · Conta + perfil
+1. Ela abre [DOMÍNIO] → **Criar conta** com o e-mail profissional.
+2. Menu lateral → **avatar/Perfil**: nome completo, **CRP**, abordagem, cidade.
+3. Ainda no Perfil: **WhatsApp** (alimenta lembretes de sessão) e **chave PIX**
+   (alimenta cobranças e recibos). Frase: *"esses dois campos são o seu financeiro
+   funcionando sozinho depois."*
+4. **Valor da sessão no Perfil** — não pular: é o que faz a cobrança nascer
+   automaticamente ao fim de cada sessão. (Se ela não definir, o app avisa "sessão sem
+   cobrança" a cada encerramento.)
+5. Mencionar sem executar: *"existe verificação em duas etapas — te mando o passo a
+   passo depois da chamada, ativa ainda hoje."*
 
 ### 8–15 · Primeiro paciente + portal
-1. Pacientes → Criar ficha: nome fictício ("Paciente Teste"), e-mail real DELA de teste ou um secundário.
-2. Mostrar a ficha: queixa inicial, CID (opcional — "só você vê"), valor da sessão.
-3. **Enviar acesso ao portal via WhatsApp** (para o número dela mesma): ela vê na hora o que o paciente recebe, entra no portal no celular, faz um check-in de humor.
-4. De volta ao painel: mostrar o check-in chegando na Visão Geral. Frase-chave: "isso é o que você passa a saber ANTES da sessão, sem perguntar".
+1. **Pacientes → + Novo paciente**: nome fictício ("Paciente Exemplo"), nascimento
+   qualquer, **WhatsApp = o número DELA mesma** (truque: ela vai RECEBER o que o
+   paciente recebe), e-mail fictício, queixa genérica ("ansiedade no trabalho").
+   Marcar a declaração LGPD. **Criar ficha**.
+2. No pop-up "Enviar acesso ao portal?" → **Sim, enviar via WhatsApp** → a mensagem
+   abre pronta no WhatsApp dela, endereçada a ela mesma → enviar.
+3. Ela abre o link **no celular**: entra com o e-mail fictício + senha recebida →
+   troca a senha → faz **um check-in de humor** e escreve **uma linha de diário**.
+4. De volta ao computador: **Pacientes → Paciente Exemplo → Visão Geral** — o
+   check-in que ela acabou de fazer no celular está lá.
+   Frase-chave: **"isso é o que você passa a saber ANTES da sessão, sem perguntar."**
 
-### 15–24 · O momento-uau: sessão de teste → nota pronta
-1. Agenda → criar sessão de hoje com o Paciente Teste.
-2. Iniciar sessão por vídeo; ela entra pelo link da sala no celular (fazendo o papel de paciente).
-3. Registrar o consentimento de gravação (mostrar onde fica registrado — ponte para a página Segurança & Ética).
-4. 2–3 minutos de "sessão" encenada (ela fala qualquer coisa nos dois lados).
-5. Encerrar → transcrição → **nota SOAP gerada**. Deixar ELA ler em silêncio por 30 segundos.
-6. Frase-chave: "a nota é rascunho seu — você edita, aprova e assina. Nada vira prontuário sem você".
+### 15–24 · O momento-uau: sessão simulada → nota pronta
+1. No painel do paciente → botão **▶ Sessão** → tela da Sessão ao vivo.
+2. **▶ Entrar na sala de vídeo** → modal de consentimento: explicar em 20 segundos
+   (*"gravação é dado sensível; aqui fica registrado com hora que o paciente
+   consentiu — e o áudio não é armazenado, só vira transcrição"*) → confirmar.
+   Navegador vai pedir **câmera/microfone → Permitir**.
+3. Botão **🔗 → Copiar** o link da sala → ela manda para VOCÊ (WhatsApp) → você entra
+   pelo SEU celular fazendo o papel de paciente.
+4. **2–3 minutos de conversa simulada** (você improvisa um "paciente" leve: semana
+   corrida, dormiu mal, caminhada ajudou). Mostrar a ela o indicador
+   **"Capturando ambos os lados"** contando trechos.
+5. **✕ Encerrar** → modal "Transcrevendo…" → abre a **transcrição real + nota SOAP
+   rascunhada**. Peça: *"lê em voz alta o S e o O."* — **30 segundos de silêncio dela
+   lendo é o momento em que ela compra.** Não interrompa.
+6. Ela edita uma frase qualquer (mostra que manda na nota) → **✓ Salvar no
+   prontuário**.
+7. Na sequência o app abre o **Resumo da jornada** (versão acessível para o paciente):
+   *"nada chega ao paciente sem você aprovar — pode publicar, editar ou deixar para
+   depois."* Ela decide e clica.
+8. Fechar o ciclo: **Pacientes → Notas** — a nota está indexada no prontuário.
+   E se ela definiu valor de sessão: **Financeiro** — a cobrança da sessão já nasceu
+   pendente. *"Sessão encerrada = prontuário em dia + cobrança lançada."*
 
-### 24–28 · O plano dela para as 2 semanas
-- Combinar: **usar a nota IA em toda sessão on-line das próximas 2 semanas** (a cunha: pode continuar com agenda/prontuário antigos se quiser — só a nota já paga o teste).
-- Mostrar em 60 segundos onde vive o resto (financeiro/recibos em lote, briefing pré-sessão, declaração de convênio/IR) SEM demonstrar — "isso a gente destrava quando você precisar".
+### 24–28 · O plano das 2 semanas (a cunha)
+- Combinar POR ESCRITO no chat da chamada: **"toda sessão on-line das próximas 2
+  semanas passa pelo TheraFlow"**. Reforçar a cunha: *"não precisa migrar agenda nem
+  histórico — só a nota de IA já paga o teste; o resto vem no seu ritmo."*
+- Tour de 60 segundos SEM demonstrar (só apontar): Briefing pré-sessão, recibos em
+  lote, declaração de convênio/IR, portal do paciente. *"Isso a gente destrava quando
+  você precisar."*
 
 ### 28–30 · Fechamento de fundador
-- Confirmar o selo fundador(a) #N e o preço travado.
-- Pedir permissão para 2 mensagens de WhatsApp por semana ("como foi?").
-- Marcar desde já um retorno de 15 min daqui a 2 semanas.
-- Última frase: "seu pedido de mudança vira prioridade de roadmap — é isso que fundador significa aqui".
+- Confirmar: **selo Fundador(a) #N, preço travado para sempre**.
+- Pedir permissão para 2 mensagens/semana de acompanhamento.
+- **Marcar agora** o retorno de 15 min em D+14 (mandar convite na hora).
+- Última frase: *"seu nome fica na história do produto — e seu pedido de mudança fura
+  a fila. Bom trabalho essa semana."*
 
-## Depois da chamada (você, 5 min)
-- [ ] WhatsApp no mesmo dia: obrigado + passo a passo da verificação em 2 etapas + link da página /seguranca (ela vai ser perguntada por pacientes).
-- [ ] Anotar as 2–3 reações dela (o que travou, o que brilhou o olho) — isso é insumo de produto.
-- [ ] D+2: "conseguiu usar com paciente real?" · D+7: "o que está estranho?" · D+14: chamada de 15 min + pedir o depoimento se estiver satisfeita.
+---
 
-## Se algo falhar ao vivo (plano B)
-- Vídeo não conecta → seguir com a demonstração gravada (vídeo demo) e refazer a sessão de teste no D+2.
-- Transcrição estranha → honestidade: "por isso você revisa antes de assinar" (vira argumento, não desculpa).
-- Ela perguntar de dado/LGPD → página /seguranca aberta na hora + kit Consultório em Dia de presente.
+## SE ALGO FALHAR AO VIVO (plano B por etapa)
+
+| Falha | Saída |
+|---|---|
+| Vídeo não conecta | Seguir a chamada no Meet/WhatsApp normal; refazer a sessão de teste em D+1 já sem você (ela + alguém de casa) |
+| Permissão de câmera negada sem querer | Cadeado na barra de endereço → Permissões → permitir câmera/microfone → recarregar |
+| "Sem áudio agora — verifique o microfone" | Conferir microfone certo no sistema; falar mais perto; o indicador volta a "áudio ok ✓" |
+| Transcrição trocou uma palavra | Honestidade que vende: *"por isso a nota é rascunho e você assina depois de revisar — a caneta é sua"* |
+| Nota veio curta (conversa de 2 min) | Esperado: *"com sessão real de 50 min a nota vem proporcional"* |
+| Pergunta de LGPD/segurança | Abrir a página /seguranca na hora + prometer o Kit Consultório em Dia no follow-up |
+| Ela quer usar com paciente real JÁ | Ótimo sinal: orientar consentimento por escrito ANTES (termo B3 do kit) — nunca gravar sem termo |
+
+## DEPOIS DA CHAMADA (mesma tarde, 5 min)
+
+Mensagem pronta:
+> [Nome], foi ótimo! Recapitulando o combinado: sessões on-line das próximas 2 semanas
+> pelo TheraFlow, e nosso retorno dia [D+14, hora]. Seguem: (1) passo a passo da
+> verificação em duas etapas [link/print], (2) página de Segurança & Ética para
+> mostrar a pacientes que perguntarem: [/seguranca], (3) o Kit Consultório em Dia
+> (contrato + termo LGPD + guia CFP) de presente. Qualquer coisa estranha, manda áudio
+> aqui. 🌱
+
+E para você:
+- [ ] Anotar as 2–3 reações dela (onde travou, onde brilhou o olho) — insumo de produto.
+- [ ] D+2: "conseguiu usar com paciente real?" · D+7: "o que está estranho?" ·
+      D+14: chamada de 15 min + **pedir o depoimento** se estiver satisfeita.
+- [ ] Atualizar sua planilha de fundadores (n/10, estágio, pendências).
