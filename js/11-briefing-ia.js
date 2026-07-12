@@ -550,7 +550,9 @@ function renderTimeline() {
   var moodArr = (bp && bp.moodHistory) ? bp.moodHistory : [];
   el.innerHTML = history.map(function(s, idx) {
     var moodIdx = moodArr.length - 1 - idx;
-    var moodVal = (moodIdx >= 0 && moodArr[moodIdx] !== undefined) ? moodArr[moodIdx] : null;
+    var _mRaw = (moodIdx >= 0 && moodArr[moodIdx] !== undefined) ? moodArr[moodIdx] : null;
+    // check-in novo é objeto {value,emoji,date}; legado é número cru
+    var moodVal = (_mRaw && typeof _mRaw === 'object') ? (_mRaw.value != null ? _mRaw.value : null) : _mRaw;
     var moodHtml = '';
     if (moodVal !== null) {
       var moodColor = moodVal <= 3 ? '#e05060' : moodVal <= 6 ? '#c97d2e' : '#4a7c59';
