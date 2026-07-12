@@ -305,6 +305,10 @@ async function _supaSync_patients(opts) {
           planoEvolucaoDate: p.planoEvolucaoDate || null,
           planoEvolucaoUp: p.planoEvolucaoUp || null, // LWW honesto no servidor (027)
           nascimento: p.nascimento || null,
+          // Declaração convênio/IR: CPF do paciente + responsável pagador (js/12).
+          cpf: p.cpf || null,
+          pagadorNome: p.pagadorNome || null,
+          pagadorCpf: p.pagadorCpf || null,
           // P10: tombstones de exclusão (exercises/portalMetas/materials) — a RPC
           // 025 os une aos do servidor e o merge por elemento respeita.
           _tombs: p._tombs || {},

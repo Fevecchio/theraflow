@@ -2572,6 +2572,84 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-declaracao">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title" id="decl-titulo">Declaração para convênio</div>
+    <div class="modal-body" style="margin-bottom:16px" id="decl-sub"></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="decl-pac-cpf">CPF do paciente</label>
+        <input class="form-input" id="decl-pac-cpf" placeholder="000.000.000-00"/>
+      </div>
+      <div class="form-group" id="decl-grupo-modalidade">
+        <label for="decl-modalidade">Modalidade</label>
+        <select class="form-input" id="decl-modalidade">
+          <option>on-line</option>
+          <option>presencial</option>
+          <option>presencial e on-line</option>
+        </select>
+      </div>
+      <div class="form-group" id="decl-grupo-ano" style="display:none">
+        <label for="decl-ano">Ano-calendário</label>
+        <select class="form-input" id="decl-ano" onchange="_declAtualizaResumo()"></select>
+      </div>
+    </div>
+
+    <div class="form-row" id="decl-grupo-periodo">
+      <div class="form-group">
+        <label for="decl-de">De</label>
+        <input class="form-input" id="decl-de" type="date" onchange="_declAtualizaResumo()"/>
+      </div>
+      <div class="form-group">
+        <label for="decl-ate">Até</label>
+        <input class="form-input" id="decl-ate" type="date" onchange="_declAtualizaResumo()"/>
+      </div>
+    </div>
+
+    <div class="form-group" id="decl-grupo-cid">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:400">
+        <input type="checkbox" id="decl-cid-ok" style="width:auto"/>
+        <span>Incluir CID — <strong>somente</strong> com autorização por escrito do paciente</span>
+      </label>
+      <input class="form-input" id="decl-cid" placeholder="ex.: F41.1" style="margin-top:6px"/>
+    </div>
+
+    <div class="form-row" id="decl-grupo-pagador" style="display:none">
+      <div class="form-group">
+        <label for="decl-pagador-nome">Responsável pagador (opcional)</label>
+        <input class="form-input" id="decl-pagador-nome" placeholder="Se quem paga não é o paciente"/>
+      </div>
+      <div class="form-group">
+        <label for="decl-pagador-cpf">CPF do responsável</label>
+        <input class="form-input" id="decl-pagador-cpf" placeholder="000.000.000-00"/>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="decl-doc">Seu CPF ou CNPJ</label>
+        <input class="form-input" id="decl-doc" placeholder="000.000.000-00"/>
+      </div>
+      <div class="form-group">
+        <label for="decl-cidade">Cidade</label>
+        <input class="form-input" id="decl-cidade" placeholder="São Paulo — SP"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="decl-endereco">Endereço profissional</label>
+      <input class="form-input" id="decl-endereco" placeholder="Rua, nº, sala — bairro, cidade/UF"/>
+    </div>
+
+    <div id="decl-resumo" style="padding:12px;background:var(--blue-light);border-radius:8px;font-size:13px;color:var(--blue);line-height:1.5;margin-bottom:16px"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-declaracao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="gerarDeclaracaoPDF()">Gerar PDF</button>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <!-- ══ MODAL TOUR DE BOAS-VINDAS ══ -->

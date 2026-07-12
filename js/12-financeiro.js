@@ -1177,6 +1177,229 @@ function gerarRecibosLote() {
   }
 }
 
+/* ── DECLARAÇÃO P/ CONVÊNIO + RELATÓRIO ANUAL (IR) — por paciente ──
+ * Primos dos recibos: documento assinável gerado das cobranças PAGAS do
+ * paciente (textos-modelo em docs-rascunhos/modelos-declaracao-convenio-e-ir.md).
+ * CPF do paciente/pagador vivem na ficha (viajam no metadata do sync — a lista
+ * explícita em js/03 PRECISA contê-los); CPF/CNPJ e endereço do profissional
+ * ficam em tf_account (mesmo nível da chave PIX: só neste aparelho). */
+var _declCtx = { idx: null, tipo: 'convenio' };
+
+function _declPagos(p) {
+  return (typeof charges !== 'undefined' ? charges : [])
+    .filter(function(c){ return c && !c.deleted && c.status === 'paid' && c.patient === p.name && c.date; })
+    .sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+}
+
+function _declPagosSelecionados() {
+  var p = patients[_declCtx.idx];
+  if (!p) return [];
+  var pagos = _declPagos(p);
+  if (_declCtx.tipo === 'ir') {
+    var anoEl = document.getElementById('decl-ano');
+    var ano = anoEl ? anoEl.value : '';
+    return pagos.filter(function(c){ return c.date.slice(0, 4) === ano; });
+  }
+  var de = (document.getElementById('decl-de') || {}).value || '';
+  var ate = (document.getElementById('decl-ate') || {}).value || '';
+  return pagos.filter(function(c){ return (!de || c.date >= de) && (!ate || c.date <= ate); });
+}
+
+function abrirModalDeclaracao(i, tipo) {
+  var p = patients[i];
+  if (!p) return;
+  _declCtx = { idx: i, tipo: tipo };
+  var conv = tipo === 'convenio';
+  document.getElementById('decl-titulo').textContent = conv ? 'Declaração para convênio' : 'Relatório anual para o IR';
+  document.getElementById('decl-sub').textContent = conv
+    ? 'Documento para ' + p.name + ' pedir reembolso ao plano de saúde, com as sessões pagas do período. Os dados preenchidos ficam salvos para a próxima vez.'
+    : 'Declaração anual de pagamentos para ' + p.name + ' usar no Imposto de Renda. Os dados preenchidos ficam salvos para a próxima vez.';
+  document.getElementById('decl-grupo-modalidade').style.display = conv ? '' : 'none';
+  document.getElementById('decl-grupo-periodo').style.display = conv ? '' : 'none';
+  document.getElementById('decl-grupo-cid').style.display = conv ? '' : 'none';
+  document.getElementById('decl-grupo-ano').style.display = conv ? 'none' : '';
+  document.getElementById('decl-grupo-pagador').style.display = conv ? 'none' : '';
+
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch(e){}
+  document.getElementById('decl-pac-cpf').value = p.cpf || '';
+  document.getElementById('decl-doc').value = acc.doc_fiscal || '';
+  document.getElementById('decl-cidade').value = acc.cidade || '';
+  document.getElementById('decl-endereco').value = acc.endereco_prof || '';
+
+  var pagos = _declPagos(p);
+  if (conv) {
+    document.getElementById('decl-de').value = pagos.length ? pagos[0].date : '';
+    document.getElementById('decl-ate').value = pagos.length ? pagos[pagos.length - 1].date : '';
+    document.getElementById('decl-cid').value = (p.cid && p.cid !== '—') ? p.cid : '';
+    document.getElementById('decl-cid-ok').checked = false;
+  } else {
+    var anos = [];
+    pagos.forEach(function(c){ var a = c.date.slice(0, 4); if (anos.indexOf(a) < 0) anos.push(a); });
+    if (!anos.length) anos.push(String(new Date().getFullYear()));
+    anos.sort().reverse();
+    document.getElementById('decl-ano').innerHTML = anos.map(function(a){ return '<option>' + a + '</option>'; }).join('');
+    document.getElementById('decl-pagador-nome').value = p.pagadorNome || '';
+    document.getElementById('decl-pagador-cpf').value = p.pagadorCpf || '';
+  }
+  _declAtualizaResumo();
+  showModal('modal-declaracao');
+}
+
+function _declAtualizaResumo() {
+  var el = document.getElementById('decl-resumo');
+  if (!el) return;
+  var sel = _declPagosSelecionados();
+  var total = sel.reduce(function(s, c){ return s + (parseFloat(c.value) || 0); }, 0);
+  el.innerHTML = sel.length
+    ? '🧾 <strong>' + sel.length + ' pagamento' + (sel.length > 1 ? 's' : '') + '</strong> no ' + (_declCtx.tipo === 'ir' ? 'ano' : 'período') + ' — total <strong>' + fmtMoeda(total) + '</strong>.'
+    : '⚠ Nenhum pagamento nesse intervalo — o documento é gerado das cobranças marcadas como <strong>pagas</strong> no Financeiro.';
+}
+
+// Valor por extenso em pt-BR (recibos/declarações fiscais pedem).
+function _valorPorExtenso(v) {
+  var cents = Math.round((parseFloat(v) || 0) * 100);
+  var reais = Math.floor(cents / 100), cent = cents % 100;
+  var U = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+  var D = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  var C = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+  function ate999(n) {
+    if (n === 100) return 'cem';
+    var c = Math.floor(n / 100), r = n % 100, s = [];
+    if (c) s.push(C[c]);
+    if (r) s.push(r < 20 ? U[r] : D[Math.floor(r / 10)] + (r % 10 ? ' e ' + U[r % 10] : ''));
+    return s.join(' e ');
+  }
+  var mi = Math.floor(reais / 1000000), mil = Math.floor((reais % 1000000) / 1000), rst = reais % 1000;
+  var partes = [];
+  if (mi) partes.push(ate999(mi) + (mi === 1 ? ' milhão' : ' milhões'));
+  if (mil) partes.push(mil === 1 ? 'mil' : ate999(mil) + ' mil');
+  if (rst) partes.push(ate999(rst));
+  var txt = '';
+  if (reais) {
+    txt = partes.join(' e ') + (mi && !mil && !rst ? ' de' : '') + (reais === 1 ? ' real' : ' reais');
+  }
+  if (cent) txt += (txt ? ' e ' : '') + ate999(cent) + (cent === 1 ? ' centavo' : ' centavos');
+  return txt || 'zero reais';
+}
+
+// Casca de impressão da declaração (mesma estética dos recibos).
+function _declDoc(titulo, corpo) {
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"/>
+<title>${titulo} — TheraFlow</title>
+<style>
+  body{font-family:'Arial',sans-serif;color:#1a1a1a;font-size:13px;margin:0}
+  .decl-page{max-width:640px;margin:40px auto;padding:0 24px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #2d5a3d;padding-bottom:16px;margin-bottom:28px}
+  .logo{font-size:20px;font-weight:700;color:#2d5a3d}
+  .logo-sub{font-size:11px;color:#666;margin-top:3px}
+  .emissao{text-align:right;font-size:11px;color:#888}
+  h1{font-size:15px;text-align:center;letter-spacing:.5px;margin:0 0 24px}
+  p{line-height:1.8;text-align:justify;margin:0 0 14px}
+  table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:12.5px}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:#999;border-bottom:1px solid #ccc;padding:6px 8px}
+  td{padding:6px 8px;border-bottom:1px solid #eee}
+  .num{text-align:right}
+  .total-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;text-align:center;margin:20px 0}
+  .total-label{font-size:11px;color:#666;margin-bottom:4px}
+  .total-value{font-size:24px;font-weight:700;color:#2d5a3d}
+  .extenso{font-size:11.5px;color:#555;margin-top:4px}
+  .local{margin-top:28px}
+  .assinatura{margin-top:56px;border-top:1px solid #1a1a1a;padding-top:8px;font-size:12px;color:#444;width:300px}
+  .footer{margin-top:36px;padding-top:14px;border-top:1px solid #e0e0e0;font-size:10.5px;color:#999;text-align:center;line-height:1.7}
+</style></head><body><div class="decl-page">${corpo}</div></body></html>`;
+}
+
+function gerarDeclaracaoPDF() {
+  var p = patients[_declCtx.idx];
+  if (!p) return;
+  var conv = _declCtx.tipo === 'convenio';
+  var sel = _declPagosSelecionados();
+  if (!sel.length) { showToast('⚠ Nenhuma cobrança paga nesse intervalo — marque os pagamentos no Financeiro antes de gerar.', 'warning'); return; }
+  var pacCpf = document.getElementById('decl-pac-cpf').value.trim();
+  var doc = document.getElementById('decl-doc').value.trim();
+  var cidade = document.getElementById('decl-cidade').value.trim();
+  var endereco = document.getElementById('decl-endereco').value.trim();
+  if (!pacCpf) { showToast('⚠ Informe o CPF do paciente — convênio e Receita exigem.', 'warning'); return; }
+  if (!doc) { showToast('⚠ Informe seu CPF ou CNPJ — é ele que identifica quem recebeu.', 'warning'); return; }
+  var cidOk = conv && document.getElementById('decl-cid-ok').checked;
+  var cid = conv ? document.getElementById('decl-cid').value.trim() : '';
+  if (cidOk && !cid) { showToast('⚠ Preencha o CID a incluir ou desmarque a autorização.', 'warning'); return; }
+  var pagNome = conv ? '' : document.getElementById('decl-pagador-nome').value.trim();
+  var pagCpf = conv ? '' : document.getElementById('decl-pagador-cpf').value.trim();
+
+  // Persiste o que foi preenchido (paciente → ficha/sync; profissional → tf_account).
+  p.cpf = pacCpf;
+  if (!conv) { p.pagadorNome = pagNome || null; p.pagadorCpf = pagCpf || null; }
+  salvarPacientes();
+  try {
+    var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    acc.doc_fiscal = doc; acc.endereco_prof = endereco;
+    if (cidade) acc.cidade = cidade;
+    localStorage.setItem('tf_account', JSON.stringify(acc));
+  } catch(e){}
+
+  var t = _reciboTerapeuta();
+  var total = sel.reduce(function(s, c){ return s + (parseFloat(c.value) || 0); }, 0);
+  var nSess = sel.filter(function(c){ return c.billing !== 'mensal'; }).length;
+  var nMens = sel.length - nSess;
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var hojeLonga = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  var linhas = sel.map(function(c){
+    var desc = c.billing === 'mensal' ? escHTML(c.planLabel || 'Mensalidade — plano mensal') : 'Sessão de psicoterapia';
+    return '<tr><td>' + escHTML(fmtDataBR(c.date)) + '</td><td>' + desc + '</td><td class="num">' + fmtMoeda(c.value) + '</td><td class="num">' + _reciboNum(c) + '</td></tr>';
+  }).join('');
+  var tabela = '<table><thead><tr><th>Data</th><th>Descrição</th><th class="num">Valor</th><th class="num">Recibo nº</th></tr></thead><tbody>' + linhas + '</tbody></table>';
+  var cabecalho = '<div class="header"><div><div class="logo">TheraFlow</div><div class="logo-sub">Plataforma clínica para psicólogos</div></div><div class="emissao">Emitido em ' + hoje + '</div></div>';
+  var assinatura = '<div class="assinatura">' + escHTML(t.nome || '—')
+    + '<div style="font-size:11px;color:#888">CRP ' + escHTML(t.crp || '—') + ' · Psicólogo(a) · CPF/CNPJ ' + escHTML(doc) + '</div></div>';
+  var local = '<p class="local">' + (cidade ? escHTML(cidade) + ', ' : '') + hojeLonga + '.</p>';
+  var corpo, tituloDoc;
+
+  if (conv) {
+    var modalidade = document.getElementById('decl-modalidade').value;
+    var qtd = nMens
+      ? '<strong>' + sel.length + (sel.length === 1 ? ' pagamento</strong> referente' : ' pagamentos</strong> referentes') + ' a psicoterapia individual ('
+        + (nSess ? nSess + (nSess === 1 ? ' sessão avulsa' : ' sessões avulsas') + ' e ' : '')
+        + nMens + (nMens === 1 ? ' mensalidade' : ' mensalidades') + ', modalidade ' + modalidade + ')'
+      : '<strong>' + nSess + (nSess === 1 ? ' sessão' : ' sessões') + ' de psicoterapia individual</strong> (modalidade ' + modalidade + ')';
+    var linhaCid = cidOk
+      ? 'CID: <strong>' + escHTML(cid) + '</strong> — inclusão autorizada por escrito pelo paciente.'
+      : 'CID: não informado, por opção do paciente.';
+    tituloDoc = 'Declaração de atendimento';
+    corpo = cabecalho
+      + '<h1>DECLARAÇÃO DE ATENDIMENTO PSICOLÓGICO</h1>'
+      + '<p>Declaro, para fins de solicitação de reembolso junto ao plano de saúde, que <strong>' + escHTML(p.name) + '</strong>, CPF <strong>' + escHTML(pacCpf) + '</strong>, esteve em atendimento psicológico sob meus cuidados profissionais no período de <strong>' + escHTML(fmtDataBR(sel[0].date)) + '</strong> a <strong>' + escHTML(fmtDataBR(sel[sel.length - 1].date)) + '</strong>, totalizando ' + qtd + ', nas datas relacionadas abaixo:</p>'
+      + tabela
+      + '<div class="total-box"><div class="total-label">Valor total do período</div><div class="total-value">' + fmtMoeda(total) + '</div><div class="extenso">(' + _valorPorExtenso(total) + ')</div></div>'
+      + '<p>' + linhaCid + '</p>'
+      + local + assinatura
+      + '<div class="footer">Documento gerado pela plataforma TheraFlow a partir das cobranças registradas — confira os dados antes de assinar e enviar.</div>';
+  } else {
+    var ano = document.getElementById('decl-ano').value;
+    var pagClause = pagNome
+      ? ', por intermédio de <strong>' + escHTML(pagNome) + '</strong>' + (pagCpf ? ', CPF <strong>' + escHTML(pagCpf) + '</strong>' : '') + ', responsável pelo pagamento'
+      : '';
+    var qtdIR = nMens ? sel.length + (sel.length === 1 ? ' pagamento' : ' pagamentos') : nSess + (nSess === 1 ? ' sessão' : ' sessões');
+    tituloDoc = 'Declaração anual ' + ano;
+    corpo = cabecalho
+      + '<h1>DECLARAÇÃO ANUAL DE PAGAMENTOS — ANO-CALENDÁRIO ' + escHTML(ano) + '</h1>'
+      + '<p>Declaro que recebi de <strong>' + escHTML(p.name) + '</strong>, CPF <strong>' + escHTML(pacCpf) + '</strong>' + pagClause + ', a importância total de <strong>' + fmtMoeda(total) + '</strong> (' + _valorPorExtenso(total) + '), referente a ' + qtdIR + ' de atendimento psicológico no ano-calendário de ' + escHTML(ano) + ', conforme recibos emitidos e relação abaixo:</p>'
+      + tabela
+      + '<p style="background:#f7f7f5;border-radius:8px;padding:12px 14px;font-size:12px">Para fins de dedução no IRPF (despesas com saúde — profissional: psicólogo(a)):<br/>'
+      + 'Nome: <strong>' + escHTML(t.nome || '—') + '</strong> · CPF/CNPJ: <strong>' + escHTML(doc) + '</strong> · Registro: CRP <strong>' + escHTML(t.crp || '—') + '</strong>'
+      + (endereco ? '<br/>Endereço profissional: ' + escHTML(endereco) : '') + '</p>'
+      + local + assinatura
+      + '<div class="footer">Documento gerado pela plataforma TheraFlow a partir das cobranças registradas — confira com seu contador.<br/>O paciente deve guardar os recibos originais de cada pagamento.</div>';
+  }
+
+  if (_abrirImpressao(_declDoc(tituloDoc, corpo))) {
+    showToast('🧾 Documento gerado — revise antes de assinar e enviar.');
+    closeModal('modal-declaracao');
+  }
+}
+
 function filterFinMonth(val) {
   // val é 'YYYY-MM'
   var nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
