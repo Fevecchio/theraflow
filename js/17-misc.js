@@ -204,7 +204,7 @@ function atualizarTrialUI(count) {
 }
 
 function showSessionLink() {
-  const _slp = patients[currentSessionPatientIdx] || patients[0];
+  const _slp = _tfSessionPatient();
   const _slNome = _slp ? _slp.name : 'o paciente';
 
   // Modo LiveKit: gera o link REAL da sala (sala.html) com o token da paciente da sessão ativa.
@@ -264,7 +264,7 @@ function _renderSessionLinkModal(link, nome, real) {
 }
 
 function _salvarLinkNoPortal(link) {
-  var p = patients[currentSessionPatientIdx] || patients[0];
+  var p = _tfSessionPatient();
   if (!p) return;
   p.sessionLink = link.startsWith('http') ? link : ('https://' + link);
   // Carimbo p/ o portal saber que o convite é "ao vivo" (só link real de /sala fresco).
@@ -284,7 +284,7 @@ function copySessionLink(link, btn) {
 }
 
 function sendLinkWhatsApp(link) {
-  const _wsp = patients[currentSessionPatientIdx] || patients[0];
+  const _wsp = _tfSessionPatient();
   const _wsNome = _wsp ? _firstName(_wsp.name) : 'paciente';
   const fullLink = link ? (link.startsWith('http') ? link : 'https://' + link) : 'https://theraflow.app/s/sessao';
   _salvarLinkNoPortal(fullLink);
@@ -519,7 +519,7 @@ function agendaMesDetalhe(day, month, year) {
         '<div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">' +
           (a.presenca ? '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:' + (a.presenca==='compareceu'?'var(--sage-light)':a.presenca==='faltou'?'var(--red-light)':'var(--amber-light)') + ';color:' + (a.presenca==='compareceu'?'var(--sage)':a.presenca==='faltou'?'var(--red)':'var(--amber)') + ';font-weight:600">' + (a.presenca==='compareceu'?'✓ Compareceu':a.presenca==='faltou'?'✗ Faltou':'~ Atrasou') + '</span>' : '<button onclick="marcarPresenca(\''+a.id+'\',\'compareceu\')" style="padding:3px 7px;background:var(--sage-light);color:var(--sage);border:1px solid var(--sage);border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Compareceu">✓</button><button onclick="marcarPresenca(\''+a.id+'\',\'faltou\')" style="padding:3px 7px;background:var(--red-light);color:var(--red);border:1px solid var(--red);border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Faltou">✗</button><button onclick="marcarPresenca(\''+a.id+'\',\'atrasou\')" style="padding:3px 7px;background:var(--amber-light);color:var(--amber);border:1px solid var(--amber);border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Atrasou">~</button>') +
           '<button onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\');document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:5px 8px;background:#f3f0ff;color:#6d28d9;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">✦</button>' +
-          '<button onclick="currentSessionPatientIdx='+a.patientIdx+';navigate(\'sessao\');document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:5px 10px;background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">▶</button>' +
+          '<button onclick="_tfSetSessionPatientAppt(\''+a.id+'\');navigate(\'sessao\');document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:5px 10px;background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">▶</button>' +
         '</div>' +
       '</div>';
     }).join('') +

@@ -25,7 +25,7 @@ window._tfSessionConsent = window._tfSessionConsent || null;
 
 // Chamado pelo botão "Iniciar" quando o LiveKit está ligado: exige consentimento antes de conectar.
 function _startSessionWithConsent() {
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
   const pid = sp && sp.id;
   if (window._tfSessionConsent && window._tfSessionConsent.patientId === pid) {
     return startLiveKitSession();
@@ -41,7 +41,7 @@ function confirmarConsentimentoSessao() {
     if (typeof showToast === 'function') showToast('⚠ Marque a confirmação de consentimento para continuar.');
     return;
   }
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
   const pid = sp && sp.id;
   window._tfSessionConsent = { patientId: pid, at: Date.now() };
   if (typeof _logConsent === 'function' && /^[0-9a-f-]{36}$/i.test(pid || '')) {
@@ -315,7 +315,7 @@ async function startLiveKitSession() {
     if (typeof showToast === 'function') showToast('⚠ Não foi possível carregar a biblioteca de vídeo. Verifique a conexão e tente de novo.');
     return;
   }
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
 
   try {
     // Consentimento já foi registrado pelo gate (_startSessionWithConsent → modal-consent →
@@ -623,7 +623,7 @@ async function endLiveKitSession() {
   _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null; _lkMicDest = null;
   _lkPacRecorder = null; _lkPacDest = null; _lkRecStartMs = 0; _lkEnding = false;
   window._lkPatientToken = null; window._lkUrl = null; window._lkPatientCode = null; // link expira com a sessão
-  _lkClearPortalLink(window._lkSessionPatient || patients[currentSessionPatientIdx] || patients[0]); // some o convite do portal
+  _lkClearPortalLink(window._lkSessionPatient || _tfSessionPatient()); // some o convite do portal
   window._lkSessionPatient = null;
   window.removeEventListener('beforeunload', _lkGuardUnload); // gravação terminou — libera a saída
   if (typeof timerInterval !== 'undefined' && timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; } if (typeof _setSessionLiveUI === 'function') _setSessionLiveUI(false);
@@ -647,7 +647,7 @@ async function endLiveKitSession() {
 async function _lkProcessSession() {
   if (!_lkRetry || !_lkRetry.segsTher || !_lkRetry.segsTher.length) return;
   const { segsTher, segsPac } = _lkRetry;
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
 
   // Guard defensivo por SEGMENTO (não deveria disparar: 4min a 32kbps ≈ 1MB).
   const LIMITE = 4.4 * 1024 * 1024;
@@ -758,7 +758,7 @@ function _lkIsRefusal(t) {
 function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry, errMsg }) {
   const old = document.getElementById('lk-post-modal'); if (old) old.remove();
   const esc = (s) => (typeof escHTML === 'function' ? escHTML(s) : String(s || '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])));
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
   const nome = sp ? sp.name : 'Paciente';
   const isContent = !empty && !tooLong && !retry;
 
@@ -839,7 +839,7 @@ function _lkSalvarNotaPostSessao() {
   const ta = document.getElementById('lk-post-note');
   const texto = ta ? ta.value.trim() : '';
   if (!texto) { if (typeof showToast === 'function') showToast('⚠ A nota está vazia.'); return; }
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
   // indexPostSession lê a nota de #session-ai-note — injeta o texto revisado lá.
   const sideTa = document.getElementById('session-ai-note');
   if (sideTa) sideTa.value = texto;

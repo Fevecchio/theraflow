@@ -43,8 +43,12 @@ async function startSession() {
   if (!window._tfDemo && window._TF_LIVEKIT_ENABLED && typeof _lkLoadSdk === 'function') _lkLoadSdk().catch(function(){});
   const badge = document.querySelector('.session-live-badge');
   if (badge) badge.innerHTML = '<span class="live-dot"></span>AO VIVO';
-  // Atualiza header e ficha com paciente atual
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  // Atualiza header e ficha com o paciente da sessão. A identidade (id) foi
+  // fixada NO CLIQUE via _tfSetSessionPatient/_tfSetSessionPatientAppt (js/01);
+  // o resolvedor re-ancora o índice por ela. Entradas legadas sem setter caem
+  // no fallback por índice e a linha abaixo fixa a identidade a partir dele.
+  const sp = _tfSessionPatient();
+  window._tfSessionPatientId = sp ? sp.id : null;
   tfTrack('session_started', { session_number: sp?.sessions, trial_count: getTrialCount() });
   if (sp) {
     _popularSelectPaciente();
@@ -84,7 +88,7 @@ async function startSession() {
   // Auto-popula nota clínica com template por abordagem
   const _noteEl = document.getElementById('session-ai-note');
   if (_noteEl) {
-    const _sp2 = patients[currentSessionPatientIdx] || patients[0];
+    const _sp2 = _tfSessionPatient();
     if (_sp2) {
       const _ab = (_sp2.abordagem || 'TCC').toLowerCase();
       const _nomeP = _sp2.name.split(' ')[0];
@@ -129,6 +133,7 @@ function trocarPacienteSessao(newIdx) {
     return;
   }
   currentSessionPatientIdx = newIdx;
+  window._tfSessionPatientId = (patients[newIdx] || {}).id || null; // identidade acompanha a troca
   currentSessionApptId = null; // agendamento rastreado era do paciente anterior (Lote 1)
   var sp = patients[newIdx];
   // Sincroniza o select visualmente
@@ -317,7 +322,7 @@ function abrirBriefingOverlay() {
   var body = document.getElementById('sess-briefing-body');
   if (!ov || !body) return;
   ov.classList.add('open');
-  var p = patients[currentSessionPatientIdx] || patients[0];
+  var p = _tfSessionPatient();
   if (!p) { body.innerHTML = '<div style="color:var(--muted)">Nenhum paciente selecionado.</div>'; return; }
   var cache = (typeof _getBriefingCache === 'function') ? _getBriefingCache(p.id || p.name) : null;
   if (cache && cache.content) {
@@ -336,7 +341,7 @@ function fecharBriefingOverlay() {
 
 async function _gerarBriefingNoOverlay() {
   var body = document.getElementById('sess-briefing-body');
-  var p = patients[currentSessionPatientIdx] || patients[0];
+  var p = _tfSessionPatient();
   if (!body || !p) return;
   body.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--purple)"><div class="ai-dot"></div> Gerando análise clínica…</div>';
   try {
@@ -381,7 +386,7 @@ function startWherebySession() {
   if (!window._tfDemo && typeof _startSessionWithConsent === 'function') {
     return _startSessionWithConsent();
   }
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
   const link = sp && sp.sessionLink;
   // Link /sala é o convite DA PACIENTE (auto-publicado pelo LiveKit) — nunca abrir como
   // sala do terapeuta (token errado/expirado → aba que não carrega).
@@ -419,7 +424,7 @@ function showPostSessionFlow() {
   // Remove modal anterior se existir
   const existing = document.getElementById('modal-post-session');
   if (existing) existing.remove();
-  const _sp = patients[currentSessionPatientIdx] || patients[0];
+  const _sp = _tfSessionPatient();
   const _spNome = _sp ? _sp.name : 'Paciente';
   const _spFirst = _firstName(_spNome);
   const _spInitials = _sp?.initials || _spNome.slice(0,2).toUpperCase();
@@ -658,7 +663,7 @@ function showPostSessionFlow() {
         // (respeita a Preferência da IA "nota" — autonomia do terapeuta)
         if (_sessionNote && _iaPrefOn('nota')) {
           noteEl.insertAdjacentHTML('afterbegin', '<div id="_note-ia-loader" style="font-size:11px;color:var(--sage,#4a7c59);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;animation:spin .8s linear infinite">⟳</span> Claude gerando nota clínica a partir das suas anotações…</div>');
-          _gerarNotaClinicaIA(patients[currentSessionPatientIdx] || patients[0], _sessionNote).then(function(notaIA) {
+          _gerarNotaClinicaIA(_tfSessionPatient(), _sessionNote).then(function(notaIA) {
             if (notaIA) tfTrack('nota_ia_gerada', { origem: 'painel_anotacoes' });
             var el = document.getElementById('post-note-text');
             if (notaIA && el && el.tagName !== 'TEXTAREA') {
@@ -673,7 +678,7 @@ function showPostSessionFlow() {
         }
       }
       // Gera resumo para o portal do paciente via IA
-      var _spForResumo = patients[currentSessionPatientIdx] || patients[0];
+      var _spForResumo = _tfSessionPatient();
       var _noteTextForResumo = noteEl ? (noteEl.tagName === 'TEXTAREA' ? noteEl.value : noteEl.textContent) : '';
       _gerarResumoPortalIA(_spForResumo, _noteTextForResumo).then(function(resumo) {
         var loaderEl = document.getElementById('pos-sess-resumo-loader');
@@ -711,7 +716,7 @@ function showPostSessionFlow() {
 }
 
 function _gerarNotaEstrutural() {
-  var sp = patients[currentSessionPatientIdx] || patients[0];
+  var sp = _tfSessionPatient();
   var abord = (sp && sp.abordagem) ? sp.abordagem.toLowerCase() : profileAbordagem || 'tcc';
   var nome = sp ? _firstName(sp.name) : 'Paciente';
   var sessaoNum = sp ? (sp.sessions||0) + 1 : 1;
@@ -819,7 +824,7 @@ async function _gerarResumoPortalIA(sp, noteText) {
 }
 
 function baixarTranscricao() {
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
   const nome = sp?.name || 'Paciente';
   const sessao = sp ? (sp.sessions || 0) + 1 : 1;
   const hoje = new Date();
@@ -911,7 +916,7 @@ function indexPostSession() {
   if (modal) modal.remove();
   incrementarSessaoTrial();
   // Atualiza dados do paciente
-  const sp = patients[currentSessionPatientIdx];
+  const sp = _tfSessionPatient();
   if (sp) {
     sp.sessions = (sp.sessions || 0) + 1;
     const hoje = new Date();
@@ -1033,7 +1038,7 @@ function indexPostSession() {
 }
 
 function showExercisePosSession() {
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
   const existing = document.getElementById('modal-exercise-pos');
   if (existing) existing.remove();
 
@@ -1096,11 +1101,11 @@ function fecharExercicioPos() {
   document.getElementById('modal-exercise-pos')?.remove();
   navigate('supervisao');
   setTimeout(() => { const b = document.getElementById('sup-new-session-banner'); if (b) b.style.display = 'flex'; }, 400);
-  setTimeout(() => _mostrarPromptReflexao(patients[currentSessionPatientIdx]), 2200);
+  setTimeout(() => _mostrarPromptReflexao(_tfSessionPatient()), 2200);
 }
 
 function confirmarExercicioPos() {
-  const sp = patients[currentSessionPatientIdx] || patients[0];
+  const sp = _tfSessionPatient();
   if (!sp) { fecharExercicioPos(); return; }
   if (!sp.exercises) sp.exercises = [];
 
@@ -1124,6 +1129,6 @@ function confirmarExercicioPos() {
   }
   navigate('supervisao');
   setTimeout(() => { const b = document.getElementById('sup-new-session-banner'); if (b) b.style.display = 'flex'; }, 400);
-  setTimeout(() => _mostrarPromptReflexao(patients[currentSessionPatientIdx]), 2200);
+  setTimeout(() => _mostrarPromptReflexao(_tfSessionPatient()), 2200);
 }
 

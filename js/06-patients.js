@@ -957,7 +957,7 @@ function renderPatientDetailShell(i) {
         </div>
         <button class="btn btn-secondary btn-sm" onclick="showEditarPaciente(${i})" title="Editar dados do paciente">✎ Editar</button>
         <button class="btn btn-purple btn-sm" onclick="selectPatientTab('briefing')">✦ Briefing IA</button>
-        <button class="btn btn-primary btn-sm" onclick="currentSessionPatientIdx=${i};navigate('sessao')">▶ Sessão</button>
+        <button class="btn btn-primary btn-sm" onclick="_tfSetSessionPatient(${i});navigate('sessao')">▶ Sessão</button>
       </div>
     </div>
   ` + tabBarHtml + '<div id="patient-detail-tab-content" class="ptab-content"></div>';

@@ -1177,7 +1177,7 @@ function injectNewEvidenceIntoSupervisao() {
   banner.innerHTML = `
     <span style="font-size:18px">✦</span>
     <div style="flex:1">
-      <div style="font-size:13.5px;font-weight:600;color:var(--purple)">${(() => { const sp = patients[currentSessionPatientIdx]||patients[0]; return `Sessão ${sp.sessions} de ${escHTML(sp.name)} indexada agora`; })()}</div>
+      <div style="font-size:13.5px;font-weight:600;color:var(--purple)">${(() => { const sp = _tfSessionPatient(); return `Sessão ${sp.sessions} de ${escHTML(sp.name)} indexada agora`; })()}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px">2 trechos sinalizados · nota clínica aprovada · análise atualizada</div>
     </div>
     <span class="sup-new-badge">✦ Novo</span>`;

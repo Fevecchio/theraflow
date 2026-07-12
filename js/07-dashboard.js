@@ -197,7 +197,7 @@ function atualizarDashboard() {
     })[0];
     if (proxHoje && patients[proxHoje.patientIdx]) {
       heroBtn.textContent = '▶ Iniciar · ' + _firstName(proxHoje.patientName) + ' ' + (proxHoje.time || '');
-      heroBtn.onclick = function(){ currentSessionPatientIdx = proxHoje.patientIdx; navigate('sessao'); };
+      heroBtn.onclick = function(){ _tfSetSessionPatient(proxHoje.patientIdx, proxHoje.patientId); navigate('sessao'); };
     } else {
       heroBtn.textContent = '▶ Iniciar sessão';
       heroBtn.onclick = function(){ navigate('sessao'); };
@@ -327,7 +327,7 @@ function _renderDashSessoesHoje(sessoes) {
         + presencaHtml
         + contagem
         + '<button class="btn btn-purple btn-sm" onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\')" title="Briefing IA pré-sessão">✦</button>'
-        + (!passada ? '<button class="btn btn-primary btn-sm" onclick="currentSessionPatientIdx='+a.patientIdx+';navigate(\'sessao\')">▶ Entrar</button>' : '')
+        + (!passada ? '<button class="btn btn-primary btn-sm" onclick="_tfSetSessionPatientAppt('+a.id+');navigate(\'sessao\')">▶ Entrar</button>' : '')
       + '</div>'
       + '</div>';
   }).join('');

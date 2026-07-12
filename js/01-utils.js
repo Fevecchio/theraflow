@@ -236,3 +236,52 @@ function _tfTombstone(p, arrKey, id) {
   p._tombs[arrKey] = p._tombs[arrKey] || {};
   p._tombs[arrKey][String(id)] = Date.now();
 }
+// ── Paciente da SESSÃO AO VIVO por IDENTIDADE (id), não por posição ──────────
+// O array patients é SUBSTITUÍDO por restores/sync (ordem pode mudar) — um índice
+// capturado ao entrar na sessão pode apontar para OUTRA pessoa no encerramento
+// (bug real 12/07 no co-teste: nota clínica salvou no paciente errado).
+// A tela de sessão fixa window._tfSessionPatientId ao abrir; toda leitura passa
+// por aqui, que re-ancora o índice pela identidade antes de devolver o paciente.
+function _tfSessionPatient() {
+  try {
+    var id = window._tfSessionPatientId;
+    if (id && typeof patients !== 'undefined') {
+      for (var i = 0; i < patients.length; i++) {
+        if (patients[i] && patients[i].id === id) {
+          currentSessionPatientIdx = i;
+          return patients[i];
+        }
+      }
+    }
+  } catch (e) {}
+  return patients[currentSessionPatientIdx] || patients[0];
+}
+
+// Setter da identidade da sessão — chamar NO CLIQUE (síncrono), antes do
+// navigate('sessao'): startSession() é async e fixar lá deixa janela de corrida.
+function _tfSetSessionPatient(idx, optId) {
+  try {
+    var p = null, i;
+    if (optId) {
+      for (i = 0; i < patients.length; i++) {
+        if (patients[i] && patients[i].id === optId) { p = patients[i]; idx = i; break; }
+      }
+    }
+    if (!p) p = patients[idx];
+    currentSessionPatientIdx = idx;
+    window._tfSessionPatientId = (p && p.id) || null;
+  } catch (e) { currentSessionPatientIdx = idx; window._tfSessionPatientId = null; }
+}
+
+// Variante para botões de AGENDAMENTO: resolve pelo patientId (uuid) do
+// appointment — a.patientIdx é derivado e pode estar velho (CLAUDE.md).
+function _tfSetSessionPatientAppt(apptId) {
+  var a = (typeof appointments !== 'undefined' ? appointments : [])
+    .find(function (x) { return x && String(x.id) === String(apptId); });
+  if (a && a.patientId) {
+    for (var i = 0; i < patients.length; i++) {
+      if (patients[i] && patients[i].id === a.patientId) { _tfSetSessionPatient(i); return; }
+    }
+  }
+  _tfSetSessionPatient(a ? a.patientIdx : (typeof currentSessionPatientIdx !== 'undefined' ? currentSessionPatientIdx : 0));
+}
