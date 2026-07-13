@@ -1204,6 +1204,36 @@ function renderPatientApp(idx, pacs) {
   setTimeout(function(){ _checkNotifPortal(p); }, 0);
   setTimeout(function(){ renderMoodHistory(); }, 0);
   setTimeout(function(){ _pacStartSessionPoll(p); }, 0);
+  setTimeout(function(){ _pacAplicarPosSessao(); }, 200);
+}
+
+/* Pós-sessão (sala.html, 13/07): ao encerrar a videochamada a paciente pôde marcar
+ * "como sai da sessão" + uma linha opcional. Aqui (portal logado, mesmo aparelho) o
+ * check-in chega PRÉ-PREENCHIDO para ela confirmar no Registrar — nada é salvo sem
+ * o toque dela, e o dado segue o caminho normal do check-in. Aplica 1x, TTL 3h. */
+function _pacAplicarPosSessao() {
+  try {
+    if (typeof _loggedPatientData === 'undefined' || !_loggedPatientData) return; // só a paciente real, nunca a prévia do terapeuta
+    var raw = localStorage.getItem('tf_pac_pos_sessao');
+    if (!raw) return;
+    var d = JSON.parse(raw);
+    localStorage.removeItem('tf_pac_pos_sessao'); // aplica uma vez só
+    if (!d || (Date.now() - (d.at || 0)) > 3 * 60 * 60 * 1000) return; // velho demais — descarta
+    var row = document.getElementById('pac-mood-emojis');
+    if (!row) return;
+    if (d.val != null && typeof _PAC_MOODS !== 'undefined') {
+      var i = _PAC_MOODS.findIndex(function (m) { return m.val === d.val; });
+      var btns = row.querySelectorAll('.pac-mood-btn');
+      if (i >= 0 && btns[i] && typeof pacSelectMood === 'function') pacSelectMood(d.val, btns[i]);
+    }
+    if (d.nota) {
+      var inp = document.getElementById('pac-mood-note');
+      if (inp) inp.value = String(d.nota).slice(0, 140);
+    }
+    var hint = document.getElementById('pac-mood-saved');
+    if (hint) hint.textContent = 'Trouxemos seu registro de saída da sessão — toque em Registrar para salvar.';
+    try { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+  } catch (_) {}
 }
 
 /* Resolve paciente de tf_patients OU de _loggedPatientData (contexto standalone /paciente) */

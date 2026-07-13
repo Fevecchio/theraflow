@@ -61,6 +61,7 @@ function confirmarConsentimentoSessao() {
 let _lkRoom = null;
 let _lkRecorder = null;      // gravador do SEGMENTO ATUAL da faixa do terapeuta
 let _lkMicDest = null;       // destino WebAudio com o mic do terapeuta
+let _lkMicSource = null;     // fonte WebAudio do mic (guardada p/ religar na troca de dispositivo)
 let _lkPacDest = null;       // destino WebAudio só com o áudio da PACIENTE
 let _lkPacRecorder = null;   // gravador do segmento atual da faixa da paciente
 let _lkRecStartMs = 0;       // início da gravação do terapeuta (base de TODOS os offsets)
@@ -186,6 +187,35 @@ function _lkCheckDraftOnBoot() {
   };
 }
 
+// ── SALA ATIVA SOBREVIVE A TRAVAMENTO/RELOAD (co-teste 13/07) ──
+// Cada "Iniciar" criava uma sala NOVA: se o app travasse ou recarregasse com a
+// paciente ainda na sala antiga, os dois nunca mais se encontravam (ela esperando
+// lá, o terapeuta numa sala vazia — lido como "sala ocupada"). Guardamos url+tokens
+// da sala em andamento; reentrar RETOMA a MESMA sala e o link dela continua valendo.
+// TTL 2h30 (< 3h dos tokens); amarrado à conta (tf_owner_uid). Limpo no encerrar oficial.
+function _lkSaveRoomInfo(sp) {
+  try {
+    localStorage.setItem('tf_lk_room', JSON.stringify({
+      url: window._lkUrl, hostToken: window._lkHostToken,
+      patientToken: window._lkPatientToken, patientCode: window._lkPatientCode,
+      patientId: (sp && sp.id) || null,
+      owner: localStorage.getItem('tf_owner_uid') || null,
+      at: Date.now(),
+    }));
+  } catch (_) {}
+}
+function _lkLoadRoomInfo() {
+  try {
+    const r = JSON.parse(localStorage.getItem('tf_lk_room') || 'null');
+    if (!r || !r.url || !r.hostToken) return null;
+    if (Date.now() - (r.at || 0) > 2.5 * 60 * 60 * 1000) { _lkClearRoomInfo(); return null; }
+    const owner = localStorage.getItem('tf_owner_uid') || null;
+    if (r.owner && owner && r.owner !== owner) { _lkClearRoomInfo(); return null; } // sala de OUTRA conta
+    return r;
+  } catch (_) { return null; }
+}
+function _lkClearRoomInfo() { try { localStorage.removeItem('tf_lk_room'); } catch (_) {} }
+
 // Medidor de áudio ao vivo — confirma visualmente que o mic está sendo captado.
 function _lkStartMeter(sourceNode) {
   try {
@@ -304,10 +334,14 @@ function _lkLoadSdk() {
 }
 
 async function startLiveKitSession() {
-  // Já há sessão ativa: re-iniciar descartaria os segmentos gravados e abriria uma
-  // segunda sala sem desconectar a primeira. Lote 1.
+  // Já há sessão ativa E conectada: re-iniciar descartaria os segmentos gravados e
+  // abriria uma segunda sala sem desconectar a primeira. Lote 1. Se a sala existe
+  // mas a conexão MORREU (travamento/queda — co-teste 13/07), reconecta em vez de
+  // bloquear ("sala ocupada" sem saída).
   if (_lkRoom) {
-    if (typeof showToast === 'function') showToast('⚠ Já existe uma sessão em andamento — encerre-a antes de iniciar outra.');
+    var _st = ''; try { _st = String(_lkRoom.state || ''); } catch (_) {}
+    if (_st === 'disconnected') return _lkReconnect();
+    if (typeof showToast === 'function') showToast('⚠ Já existe uma sessão em andamento — encerre no ✕ ou use ↻ Reconectar se ela travou.');
     return;
   }
   let LK;
@@ -321,6 +355,22 @@ async function startLiveKitSession() {
     // Consentimento já foi registrado pelo gate (_startSessionWithConsent → modal-consent →
     // confirmarConsentimentoSessao → _logConsent). Aqui apenas conectamos.
 
+    // RETOMADA: há sala recente DESTE paciente ainda válida (o app travou/recarregou
+    // sem encerramento oficial). Reusa a MESMA sala e os MESMOS tokens: a paciente que
+    // ficou esperando lá (ou com o link antigo no WhatsApp/portal) é reencontrada.
+    const saved = _lkLoadRoomInfo();
+    if (saved && sp && saved.patientId && String(saved.patientId) === String(sp.id)) {
+      window._lkUrl = saved.url; window._lkHostToken = saved.hostToken;
+      window._lkPatientToken = saved.patientToken || null;
+      window._lkPatientCode = saved.patientCode || null;
+      window._lkSessionPatient = sp;
+      _lkPublishPortalLink(sp);
+      await _lkConnectRoom(LK, saved.url, saved.hostToken, true);
+      if (typeof showToast === 'function') showToast('↻ Sessão retomada na MESMA sala — o link da paciente continua valendo.');
+      return;
+    }
+    if (saved) _lkClearRoomInfo(); // sala pendente era de OUTRO paciente — não misturar
+
     // Cria a sala + tokens no backend
     const resp = await fetch('/api/create-session-room', {
       method: 'POST',
@@ -333,6 +383,7 @@ async function startLiveKitSession() {
     window._lkPatientToken = patientToken;
     window._lkPatientCode = patientCode || null; // código curto (/sala?c=…) — null se 018 ausente
     window._lkUrl = url;
+    window._lkHostToken = hostToken; // permite reconectar à mesma sala (↻)
     // Parte 2/2 da entrada da paciente: publica o link no PORTAL automaticamente ao iniciar.
     // A paciente logada vê o convite "ao vivo" em tempo real (poll em js/13). Além do link
     // WhatsApp (que só salva se a terapeuta copiar/enviar), isto cobre a paciente já logada.
@@ -340,121 +391,168 @@ async function startLiveKitSession() {
     // o encerrar limpa o link DESTA paciente (não a da ficha aberta no momento).
     window._lkSessionPatient = sp;
     _lkPublishPortalLink(sp);
+    _lkSaveRoomInfo(sp); // sala sobrevive a travamento/reload até o encerrar oficial
 
-    // 3) Conecta como host. Qualidade de vídeo: 540p — meio-termo testado. 720p forçado
-    //    (1,7 Mbps) TRAVAVA o vídeo em conexão residencial/celular; 540p (~0,8 Mbps) fica
-    //    nítido e fluido, e o simulcast + adaptiveStream degradam sozinhos se a rede cair.
-    const _roomOpts = { adaptiveStream: true, dynacast: true };
-    try {
-      if (LK.VideoPresets && LK.VideoPresets.h540) {
-        _roomOpts.videoCaptureDefaults = { resolution: LK.VideoPresets.h540.resolution };
-        _roomOpts.publishDefaults = {
-          videoEncoding: LK.VideoPresets.h540.encoding,
-          videoSimulcastLayers: [LK.VideoPresets.h360, LK.VideoPresets.h180],
-        };
-      }
-    } catch (_) {}
-    _lkRoom = new LK.Room(_roomOpts);
-    _lkAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // CRÍTICO: o AudioContext nasce "suspended" (foi criado após awaits, fora do gesto do
-    // usuário) — sem resume() o MediaStreamDestination sai MUDO e o Whisper alucina. Resume aqui.
-    try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
-    // DUAS faixas separadas (não um mix): terapeuta e paciente gravados à parte →
-    // transcritos à parte → intercalados por timestamp = transcrição com RÓTULO DE FALANTE.
-    _lkMicDest = _lkAudioCtx.createMediaStreamDestination();
-    _lkPacDest = _lkAudioCtx.createMediaStreamDestination();
-    let _lkMicMixed = false; // garante que o mic do terapeuta entrou na gravação
-    _lkSegsTher = []; _lkSegsPac = []; _lkRecStartMs = 0; _lkEnding = false;
-
-    // Áudio + vídeo do paciente ao serem assinados
-    _lkRoom.on(LK.RoomEvent.TrackSubscribed, (track) => {
-      try {
-        if (track.kind === 'video') { _lkMountRemoteVideo(track.attach()); }
-        if (track.kind === 'audio') {
-          // 1) PLAYBACK: sem attach() o terapeuta NÃO OUVE a paciente. E no Chrome o áudio
-          //    remoto só flui para o WebAudio (mix da transcrição) se também estiver tocando
-          //    num elemento de mídia — este attach destrava os dois de uma vez.
-          const audioEl = track.attach();
-          audioEl.setAttribute('data-lk-remote-audio', '1');
-          document.body.appendChild(audioEl);
-          // 2) FAIXA DA PACIENTE (gravação efêmera → transcrição com rótulo de falante).
-          if (track.mediaStreamTrack) {
-            _lkAudioCtx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack])).connect(_lkPacDest);
-            _lkStartTherRecorder(); // gravação SÓ começa com a paciente presente (privacidade)
-            _lkStartPacRecorder();
-          }
-        }
-      } catch (e) { console.warn('[livekit] track subscribe', e); }
-    });
-    // Paciente entrou (mesmo que de mic mudo): inicia a gravação do terapeuta.
-    _lkRoom.on(LK.RoomEvent.ParticipantConnected, () => { _lkStartTherRecorder(); });
-
-    // Auditoria B1: queda de rede no meio da consulta deixava "AO VIVO ·
-    // capturando" na tela PARA SEMPRE, sem captar mais nada (a sala.html da
-    // paciente já tratava desconexão; o lado do terapeuta não). O indicador
-    // agora conta a verdade em cada estado da conexão.
-    _lkRoom.on(LK.RoomEvent.Reconnecting, () => {
-      var txt = document.getElementById('sess-capture-text');
-      if (txt) txt.textContent = '⚠ Conexão instável — reconectando…';
-      if (typeof showToast === 'function') showToast('⚠ Conexão instável na sessão — tentando reconectar…');
-    });
-    _lkRoom.on(LK.RoomEvent.Reconnected, () => {
-      _lkLiveStatus(); // volta ao status real de captura
-      if (typeof showToast === 'function') showToast('✓ Conexão restabelecida — a captura continua.');
-    });
-    _lkRoom.on(LK.RoomEvent.Disconnected, () => {
-      if (_lkEnding) return; // encerramento normal pelo botão — sem alarme
-      var el = document.getElementById('sess-capture-status');
-      var txt = document.getElementById('sess-capture-text');
-      if (el && txt) {
-        txt.textContent = '⚠ Você foi desconectado da sala — a paciente não está mais sendo captada. Os trechos já gravados estão seguros: encerre a sessão para transcrever.';
-        el.style.display = 'flex';
-      }
-      if (typeof showToast === 'function') showToast('⚠ A conexão da sessão caiu. O que já foi gravado está seguro — encerre para transcrever, ou inicie a sessão de novo.');
-    });
-
-    await _lkRoom.connect(url, hostToken);
-    await _lkRoom.localParticipant.setCameraEnabled(true);
-    await _lkRoom.localParticipant.setMicrophoneEnabled(true);
-
-    // Mic local no mixer + vídeo local no canto. O mic pode não estar pronto no mesmo tick
-    // após setMicrophoneEnabled — tentamos algumas vezes até o track existir.
-    for (let i = 0; i < 10 && !_lkMicMixed; i++) {
-      const micPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Microphone);
-      const micTrack = micPub && micPub.track && micPub.track.mediaStreamTrack;
-      if (micTrack && micTrack.readyState === 'live') {
-        const micSource = _lkAudioCtx.createMediaStreamSource(new MediaStream([micTrack]));
-        micSource.connect(_lkMicDest);
-        _lkStartMeter(micSource); // barrinha ao vivo: confirma que o mic está sendo captado
-        _lkMicMixed = true;
-        break;
-      }
-      await new Promise(r => setTimeout(r, 150));
-    }
-    if (!_lkMicMixed) {
-      console.warn('[livekit] mic do terapeuta NAO entrou no mix — transcricao pode sair vazia');
-      if (typeof showToast === 'function') showToast('⚠ Não consegui captar seu microfone. Verifique a permissão/dispositivo.');
-    }
-    const camPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
-    if (camPub && camPub.track) _lkMountLocalVideo(camPub.track.attach());
-
-    // 4) GRAVAÇÃO SÓ COMEÇA QUANDO A PACIENTE ENTRA (_lkStartTherRecorder via
-    //    ParticipantConnected/TrackSubscribed): mic aberto antes disso captava conversa
-    //    alheia à consulta e sujava a transcrição/nota. O medidor 🎤 roda desde já
-    //    (testar o mic antes), mas nada é gravado até ela chegar.
-    //    v2: no desktop, trocar gravação+/api/transcribe por Whisper ON-DEVICE (Web Worker/WebGPU).
-    try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
-    // Cobre o caso raro de a paciente já estar na sala quando o host conecta (reconexão).
-    try { if (_lkRoom.remoteParticipants && _lkRoom.remoteParticipants.size > 0) _lkStartTherRecorder(); } catch (_) {}
-    _lkShowWaitingRemote(); // "aguardando a paciente" até o vídeo dela chegar
+    await _lkConnectRoom(LK, url, hostToken, false);
 
     // Timer NÃO começa aqui: dispara em _lkStartTherRecorder, quando a paciente entra —
     // o tempo exibido é o da CONSULTA, não o da espera do terapeuta na sala (F6).
     if (typeof showToast === 'function') showToast('Sessão iniciada · a nota será gerada ao encerrar.');
   } catch (err) {
     console.error('[livekit] start falhou', err);
+    // Conexão que falhou no meio deixa _lkRoom "morto" — limpa para o próximo clique
+    // não cair no guard de sessão em andamento.
+    try { if (_lkRoom && String(_lkRoom.state || '') === 'disconnected') await _lkTeardownMedia(true); } catch (_) {}
     if (typeof showToast === 'function') showToast('⚠ Não foi possível iniciar a sessão: ' + err.message);
   }
+}
+
+// Conecta e "cabeia" a sala: eventos, mixer das 2 faixas, medidor, vídeos. Usado
+// pelo início normal E pela retomada/reconexão (resume=true preserva os segmentos
+// já gravados e a base de offsets — a nota final costura tudo).
+async function _lkConnectRoom(LK, url, hostToken, resume) {
+  // Qualidade de vídeo: 540p — meio-termo testado. 720p forçado (1,7 Mbps) TRAVAVA
+  // o vídeo em conexão residencial/celular; 540p (~0,8 Mbps) fica nítido e fluido,
+  // e o simulcast + adaptiveStream degradam sozinhos se a rede cair.
+  const _roomOpts = { adaptiveStream: true, dynacast: true };
+  try {
+    if (LK.VideoPresets && LK.VideoPresets.h540) {
+      _roomOpts.videoCaptureDefaults = { resolution: LK.VideoPresets.h540.resolution };
+      _roomOpts.publishDefaults = {
+        videoEncoding: LK.VideoPresets.h540.encoding,
+        videoSimulcastLayers: [LK.VideoPresets.h360, LK.VideoPresets.h180],
+      };
+    }
+  } catch (_) {}
+  _lkRoom = new LK.Room(_roomOpts);
+  _lkAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // CRÍTICO: o AudioContext nasce "suspended" (foi criado após awaits, fora do gesto do
+  // usuário) — sem resume() o MediaStreamDestination sai MUDO e o Whisper alucina. Resume aqui.
+  try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
+  // DUAS faixas separadas (não um mix): terapeuta e paciente gravados à parte →
+  // transcritos à parte → intercalados por timestamp = transcrição com RÓTULO DE FALANTE.
+  _lkMicDest = _lkAudioCtx.createMediaStreamDestination();
+  _lkPacDest = _lkAudioCtx.createMediaStreamDestination();
+  let _lkMicMixed = false; // garante que o mic do terapeuta entrou na gravação
+  if (!resume) { _lkSegsTher = []; _lkSegsPac = []; _lkRecStartMs = 0; }
+  _lkEnding = false;
+
+  // Áudio + vídeo do paciente ao serem assinados
+  _lkRoom.on(LK.RoomEvent.TrackSubscribed, (track) => {
+    try {
+      if (track.kind === 'video') { _lkMountRemoteVideo(track.attach()); }
+      if (track.kind === 'audio') {
+        // 1) PLAYBACK: sem attach() o terapeuta NÃO OUVE a paciente. E no Chrome o áudio
+        //    remoto só flui para o WebAudio (mix da transcrição) se também estiver tocando
+        //    num elemento de mídia — este attach destrava os dois de uma vez.
+        const audioEl = track.attach();
+        audioEl.setAttribute('data-lk-remote-audio', '1');
+        document.body.appendChild(audioEl);
+        // 2) FAIXA DA PACIENTE (gravação efêmera → transcrição com rótulo de falante).
+        if (track.mediaStreamTrack) {
+          _lkAudioCtx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack])).connect(_lkPacDest);
+          _lkStartTherRecorder(); // gravação SÓ começa com a paciente presente (privacidade)
+          _lkStartPacRecorder();
+        }
+      }
+    } catch (e) { console.warn('[livekit] track subscribe', e); }
+  });
+  // Paciente entrou (mesmo que de mic mudo): inicia a gravação do terapeuta.
+  _lkRoom.on(LK.RoomEvent.ParticipantConnected, () => { _lkStartTherRecorder(); });
+
+  // Auditoria B1: queda de rede no meio da consulta deixava "AO VIVO ·
+  // capturando" na tela PARA SEMPRE, sem captar mais nada (a sala.html da
+  // paciente já tratava desconexão; o lado do terapeuta não). O indicador
+  // agora conta a verdade em cada estado da conexão.
+  _lkRoom.on(LK.RoomEvent.Reconnecting, () => {
+    var txt = document.getElementById('sess-capture-text');
+    if (txt) txt.textContent = '⚠ Conexão instável — reconectando…';
+    if (typeof showToast === 'function') showToast('⚠ Conexão instável na sessão — tentando reconectar…');
+  });
+  _lkRoom.on(LK.RoomEvent.Reconnected, () => {
+    _lkLiveStatus(); // volta ao status real de captura
+    if (typeof showToast === 'function') showToast('✓ Conexão restabelecida — a captura continua.');
+  });
+  _lkRoom.on(LK.RoomEvent.Disconnected, () => {
+    if (_lkEnding) return; // encerramento normal pelo botão — sem alarme
+    var el = document.getElementById('sess-capture-status');
+    var txt = document.getElementById('sess-capture-text');
+    if (el && txt) {
+      txt.innerHTML = '⚠ A conexão da sessão caiu — os trechos já gravados estão seguros. '
+        + '<button onclick="_lkReconnect()" style="margin-left:6px;background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">↻ Reconectar</button>';
+      el.style.display = 'flex';
+    }
+    if (typeof showToast === 'function') showToast('⚠ A conexão da sessão caiu. Use ↻ Reconectar para voltar SEM perder nada, ou encerre (✕) para transcrever o que já foi gravado.');
+  });
+
+  await _lkRoom.connect(url, hostToken);
+  await _lkRoom.localParticipant.setCameraEnabled(true);
+  await _lkRoom.localParticipant.setMicrophoneEnabled(true);
+
+  // Mic local no mixer + vídeo local no canto. O mic pode não estar pronto no mesmo tick
+  // após setMicrophoneEnabled — tentamos algumas vezes até o track existir.
+  for (let i = 0; i < 10 && !_lkMicMixed; i++) {
+    const micPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Microphone);
+    const micTrack = micPub && micPub.track && micPub.track.mediaStreamTrack;
+    if (micTrack && micTrack.readyState === 'live') {
+      _lkMicSource = _lkAudioCtx.createMediaStreamSource(new MediaStream([micTrack]));
+      _lkMicSource.connect(_lkMicDest);
+      _lkStartMeter(_lkMicSource); // barrinha ao vivo: confirma que o mic está sendo captado
+      _lkMicMixed = true;
+      break;
+    }
+    await new Promise(r => setTimeout(r, 150));
+  }
+  if (!_lkMicMixed) {
+    console.warn('[livekit] mic do terapeuta NAO entrou no mix — transcricao pode sair vazia');
+    if (typeof showToast === 'function') showToast('⚠ Não consegui captar seu microfone. Confira em ⚙ Dispositivos se o fone/mic certo está selecionado.');
+  }
+  const camPub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
+  if (camPub && camPub.track) _lkMountLocalVideo(camPub.track.attach());
+
+  // 4) GRAVAÇÃO SÓ COMEÇA QUANDO A PACIENTE ENTRA (_lkStartTherRecorder via
+  //    ParticipantConnected/TrackSubscribed): mic aberto antes disso captava conversa
+  //    alheia à consulta e sujava a transcrição/nota. O medidor 🎤 roda desde já
+  //    (testar o mic antes), mas nada é gravado até ela chegar.
+  //    v2: no desktop, trocar gravação+/api/transcribe por Whisper ON-DEVICE (Web Worker/WebGPU).
+  try { if (_lkAudioCtx.state === 'suspended') await _lkAudioCtx.resume(); } catch (_) {}
+  // Cobre o caso de a paciente JÁ estar na sala quando o host conecta (retomada/reconexão).
+  try { if (_lkRoom.remoteParticipants && _lkRoom.remoteParticipants.size > 0) _lkStartTherRecorder(); } catch (_) {}
+  _lkShowWaitingRemote(); // "aguardando a paciente" até o vídeo dela chegar
+}
+
+// Reconecta à MESMA sala sem encerrar (travamento/queda no meio da consulta —
+// pedido do usuário 13/07): os segmentos já gravados são PRESERVADOS e a
+// transcrição/nota/exercícios continuam acontecendo SÓ no encerramento oficial.
+let _lkReconnecting = false;
+async function _lkReconnect() {
+  if (_lkReconnecting) return;
+  const saved = _lkLoadRoomInfo();
+  const url = window._lkUrl || (saved && saved.url);
+  const hostToken = window._lkHostToken || (saved && saved.hostToken);
+  if (!url || !hostToken) {
+    if (typeof showToast === 'function') showToast('⚠ Não há sessão recente para reconectar — inicie a sessão normalmente.');
+    return;
+  }
+  _lkReconnecting = true;
+  if (typeof showToast === 'function') showToast('↻ Reconectando à sala — os trechos já gravados estão preservados…');
+  try {
+    const LK = await _lkLoadSdk();
+    await _lkTeardownMedia(true); // derruba a conexão morta; segmentos e offsets ficam
+    window._lkUrl = url; window._lkHostToken = hostToken;
+    if (saved) { // reload zera a memória — restaura o link da paciente do storage
+      if (!window._lkPatientToken) window._lkPatientToken = saved.patientToken || null;
+      if (!window._lkPatientCode) window._lkPatientCode = saved.patientCode || null;
+    }
+    const sp = window._lkSessionPatient || _tfSessionPatient();
+    window._lkSessionPatient = sp;
+    _lkPublishPortalLink(sp); // convite volta ao portal (o encerrar não rodou)
+    await _lkConnectRoom(LK, url, hostToken, true);
+    if (typeof showToast === 'function') showToast('✓ Reconectado — a captura recomeçou. Encerre no ✕ apenas no fim oficial.');
+  } catch (err) {
+    console.error('[livekit] reconexao falhou', err);
+    if (typeof showToast === 'function') showToast('⚠ Não foi possível reconectar: ' + (err && err.message || err) + '. Os trechos gravados continuam seguros — você pode encerrar para transcrever.');
+  } finally { _lkReconnecting = false; }
 }
 
 // Gravador da faixa do TERAPEUTA — só inicia quando a paciente ENTRA na sala.
@@ -463,7 +561,9 @@ async function startLiveKitSession() {
 function _lkStartTherRecorder() {
   if (_lkRecorder || !_lkMicDest) return;
   try {
-    _lkRecStartMs = Date.now(); // base de todos os offsets de segmento (as 2 faixas)
+    // Base de todos os offsets de segmento (as 2 faixas). Numa RECONEXÃO a base é
+    // preservada — os segmentos novos continuam na mesma linha do tempo da sessão.
+    if (!_lkRecStartMs) _lkRecStartMs = Date.now();
     _lkStartSegRec('ther');
     window.addEventListener('beforeunload', _lkGuardUnload); // avisa se fechar/recarregar gravando
     if (typeof _iniciarTimerSessao === 'function') _iniciarTimerSessao(); // timer conta a partir da entrada da paciente
@@ -593,36 +693,50 @@ function _lkHideProcessing() {
   const m = document.getElementById('lk-proc-modal'); if (m) m.remove();
 }
 
-async function endLiveKitSession() {
+// Para um MediaRecorder aguardando o blob final — com teto de 4s: um gravador
+// TRAVADO (aba congelada, dispositivo removido) não pode travar o encerramento.
+function _lkStopRec(rec) {
+  return new Promise((resolve) => {
+    if (!rec || rec.state === 'inactive') return resolve();
+    let done = false;
+    const fin = () => { if (!done) { done = true; resolve(); } };
+    try { rec.addEventListener('stop', fin, { once: true }); rec.stop(); } catch (_) { fin(); }
+    setTimeout(fin, 4000);
+  });
+}
+
+// Desmonta a parte de MÍDIA da sessão (gravadores, sala, mixer, vídeos).
+// keepSegments=true (reconexão): os blobs gravados e a base de offsets FICAM —
+// nada de nota/exercícios aqui; isso é papel do encerramento oficial.
+async function _lkTeardownMedia(keepSegments) {
   _lkStopMeter();
-  _lkShowProcessing();
-  _lkProcStep('s1', 'doing');
-  // Fecha os segmentos em andamento (a rotação não abre mais nenhum: _lkEnding).
-  // O onstop de cada gravador empurra o blob autocontido para _lkSegsTher/Pac.
-  _lkEnding = true;
+  _lkEnding = true; // a rotação não abre novo segmento durante o stop
   if (_lkTherRotTimer) { clearTimeout(_lkTherRotTimer); _lkTherRotTimer = null; }
   if (_lkPacRotTimer) { clearTimeout(_lkPacRotTimer); _lkPacRotTimer = null; }
-  try {
-    if (_lkRecorder && _lkRecorder.state !== 'inactive') {
-      await new Promise((resolve) => { _lkRecorder.addEventListener('stop', resolve, { once: true }); _lkRecorder.stop(); });
-    }
-  } catch (e) { console.warn('[livekit] stop recorder', e); }
-  try {
-    if (_lkPacRecorder && _lkPacRecorder.state !== 'inactive') {
-      await new Promise((resolve) => { _lkPacRecorder.addEventListener('stop', resolve, { once: true }); _lkPacRecorder.stop(); });
-    }
-  } catch (e) { console.warn('[livekit] stop pac recorder', e); }
-  const segsTher = _lkSegsTher, segsPac = _lkSegsPac;
-  const noPatient = !_lkRecStartMs; // paciente nunca entrou → nada foi gravado (by design)
-  _lkSegsTher = []; _lkSegsPac = [];
-
+  try { await _lkStopRec(_lkRecorder); } catch (e) { console.warn('[livekit] stop recorder', e); }
+  try { await _lkStopRec(_lkPacRecorder); } catch (e) { console.warn('[livekit] stop pac recorder', e); }
   try { if (_lkRoom) await _lkRoom.disconnect(); } catch (_) {}
   try { document.querySelectorAll('[data-lk-remote-audio]').forEach(function (el) { el.remove(); }); } catch (_) {}
   _lkResetVideoArea();
   try { if (_lkAudioCtx) _lkAudioCtx.close(); } catch (_) {}
-  _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null; _lkMicDest = null;
-  _lkPacRecorder = null; _lkPacDest = null; _lkRecStartMs = 0; _lkEnding = false;
-  window._lkPatientToken = null; window._lkUrl = null; window._lkPatientCode = null; // link expira com a sessão
+  _lkRoom = null; _lkAudioCtx = null; _lkRecorder = null; _lkMicDest = null; _lkMicSource = null;
+  _lkPacRecorder = null; _lkPacDest = null;
+  if (!keepSegments) { _lkSegsTher = []; _lkSegsPac = []; _lkRecStartMs = 0; }
+  _lkEnding = false;
+}
+
+async function endLiveKitSession() {
+  _lkShowProcessing();
+  _lkProcStep('s1', 'doing');
+  // Fecha os segmentos em andamento (a rotação não abre mais nenhum) e derruba a
+  // sala. O onstop de cada gravador empurra o blob autocontido para _lkSegsTher/Pac.
+  await _lkTeardownMedia(true);
+  const segsTher = _lkSegsTher, segsPac = _lkSegsPac;
+  const noPatient = !_lkRecStartMs; // paciente nunca entrou → nada foi gravado (by design)
+  _lkSegsTher = []; _lkSegsPac = []; _lkRecStartMs = 0;
+
+  window._lkPatientToken = null; window._lkUrl = null; window._lkPatientCode = null; window._lkHostToken = null; // link expira com a sessão
+  _lkClearRoomInfo(); // encerramento oficial — a sala não é mais retomável
   _lkClearPortalLink(window._lkSessionPatient || _tfSessionPatient()); // some o convite do portal
   window._lkSessionPatient = null;
   window.removeEventListener('beforeunload', _lkGuardUnload); // gravação terminou — libera a saída
@@ -725,6 +839,15 @@ async function _lkProcessSession() {
       if (_lkIsRefusal(note)) note = '';
       _lkProcStep('s3', 'done');
     }
+
+    // Pré-gera o resumo da jornada JÁ AQUI, em paralelo com a revisão da nota
+    // (feedback 13/07: a etapa Jornada demorava porque a IA só começava depois do
+    // "Salvar"). Se o terapeuta editar a nota, o salvar regenera; senão o rascunho
+    // chega pronto na sequência nota → exercícios → jornada.
+    window._lkResumoBase = note || '';
+    window._lkResumoPromise = (note && sp && typeof _gerarResumoPortalIA === 'function')
+      ? _gerarResumoPortalIA(sp, note).catch(function () { return null; })
+      : null;
 
     _lkSaveDraft(sp, transcript, note); // rascunho: sobrevive a fechar o navegador antes de salvar
     _lkRetry = null;                    // deu certo — não precisa mais reprocessar
@@ -862,10 +985,17 @@ function _lkSalvarNotaPostSessao() {
   if (typeof indexPostSession === 'function') indexPostSession();
 
   // Resumo acessível p/ a paciente ler no portal ("Minha jornada") — no fluxo clássico
-  // era gerado pelo modal legado; aqui geramos direto e salvamos no appointment que o
-  // indexPostSession marcou (_pendingResumoApptId).
+  // era gerado pelo modal legado; aqui salvamos no appointment que o indexPostSession
+  // marcou (_pendingResumoApptId). O resumo foi PRÉ-GERADO junto com a nota
+  // (_lkResumoPromise): se a nota não mudou, chega pronto; se mudou (ou a pré-geração
+  // falhou), regenera a partir do texto revisado.
   if (sp && typeof _gerarResumoPortalIA === 'function') {
-    _gerarResumoPortalIA(sp, texto).then(function (resumo) {
+    var _pre = (window._lkResumoPromise && String(window._lkResumoBase || '').trim() === texto)
+      ? window._lkResumoPromise : null;
+    window._lkResumoPromise = null; window._lkResumoBase = '';
+    (_pre || Promise.resolve(null)).then(function (pronto) {
+      return pronto || _gerarResumoPortalIA(sp, texto);
+    }).then(function (resumo) {
       if (!resumo || typeof _pendingResumoApptId === 'undefined' || !_pendingResumoApptId) return;
       var appt = (typeof appointments !== 'undefined' ? appointments : [])
         .find(function (a) { return String(a.id) === String(_pendingResumoApptId); });
@@ -891,7 +1021,11 @@ function _lkSalvarNotaPostSessao() {
 function _lkAbrirRevisaoJornada(apptId) {
   var tent = 0;
   var iv = setInterval(function () {
-    var ocupado = document.querySelector('.modal-overlay.open') || document.getElementById('lk-post-modal');
+    // Espera TODA a sequência anterior: nota (lk-post-modal), exercícios
+    // (modal-exercise-pos) e qualquer modal clássico aberto — a Jornada é a última etapa.
+    var ocupado = document.querySelector('.modal-overlay.open')
+      || document.getElementById('lk-post-modal')
+      || document.getElementById('modal-exercise-pos');
     if (ocupado && ++tent < 150) return; // espera até ~2,5min; depois desiste (fica na Trajetória)
     clearInterval(iv);
     if (ocupado) return;
@@ -943,6 +1077,7 @@ function _lkMountRemoteVideo(el) {
   main.appendChild(el);
 }
 function _lkMountLocalVideo(el) {
+  document.querySelectorAll('[data-lk-local-video]').forEach((v) => v.remove()); // troca de câmera → sem duplicar
   el.muted = true;
   el.setAttribute('data-lk-local-video', '1');
   el.style.cssText = 'position:absolute;bottom:14px;right:14px;width:150px;aspect-ratio:4/3;object-fit:cover;border-radius:10px;z-index:3;box-shadow:0 4px 12px rgba(0,0,0,.4);background:#111';
@@ -956,4 +1091,85 @@ function _lkResetVideoArea() {
     const wait = document.getElementById('lk-wait-remote'); if (wait) wait.remove();
     const ph = document.getElementById('whereby-prestate'); if (ph) ph.style.display = '';
   } catch (_) {}
+}
+
+// ── DISPOSITIVOS (mic/câmera/saída) — feedback do co-teste 13/07: o fone no
+// notebook "custou a ser detectado" e não havia onde escolher. Painel simples
+// para trocar AO VIVO, sem derrubar a sessão. ──
+async function _lkAbrirDispositivos() {
+  const old = document.getElementById('lk-dev-modal'); if (old) { old.remove(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+    if (typeof showToast === 'function') showToast('⚠ Este navegador não permite listar dispositivos.');
+    return;
+  }
+  let devs = [];
+  try { devs = await navigator.mediaDevices.enumerateDevices(); } catch (_) {}
+  const esc = (s) => (typeof escHTML === 'function' ? escHTML(String(s || '')) : String(s || '').replace(/[<>&"]/g, ''));
+  const kinds = [
+    { kind: 'audioinput', label: '🎤 Microfone' },
+    { kind: 'videoinput', label: '📷 Câmera' },
+    { kind: 'audiooutput', label: '🔊 Saída de som' },
+  ];
+  const wrap = document.createElement('div');
+  wrap.id = 'lk-dev-modal';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px';
+  wrap.addEventListener('click', function (e) { if (e.target === wrap) wrap.remove(); });
+  const rows = kinds.map(function (k) {
+    const list = devs.filter(function (d) { return d.kind === k.kind; });
+    if (!list.length) return '';
+    let active = null;
+    try { active = _lkRoom ? _lkRoom.getActiveDevice(k.kind) : null; } catch (_) {}
+    return '<label style="display:block;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px;margin:12px 0 5px">' + k.label + '</label>'
+      + '<select onchange="_lkTrocarDispositivo(\'' + k.kind + '\', this.value)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #d1e7d9;border-radius:10px;font-size:13px;font-family:inherit;background:#fff;outline:none">'
+      + list.map(function (d, i) {
+          return '<option value="' + esc(d.deviceId) + '"' + (active && active === d.deviceId ? ' selected' : '') + '>'
+            + esc(d.label || (k.label.replace(/^\S+\s/, '') + ' ' + (i + 1))) + '</option>';
+        }).join('')
+      + '</select>';
+  }).join('');
+  wrap.innerHTML = '<div style="background:#fff;border-radius:16px;width:100%;max-width:400px;box-shadow:0 24px 80px rgba(0,0,0,.3);padding:22px 24px">'
+    + '<div style="font-weight:600;font-size:15px;color:#1a1a1a">Dispositivos de áudio e vídeo</div>'
+    + '<div style="font-size:12px;color:#888;margin-top:2px">A troca vale na hora — a sessão não cai. Fale e confira a barrinha 🎤.</div>'
+    + rows
+    + (!_lkRoom ? '<div style="margin-top:12px;background:#fff8e6;border:1px solid #f0d060;border-radius:10px;padding:9px 12px;color:#8a5a1a;font-size:12px;line-height:1.5">A sessão ainda não começou — a troca é aplicada quando a sala estiver aberta.</div>' : '')
+    + '<button onclick="document.getElementById(\'lk-dev-modal\').remove()" style="margin-top:16px;width:100%;padding:11px;background:#4a7c59;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Fechar</button>'
+    + '</div>';
+  document.body.appendChild(wrap);
+}
+
+async function _lkTrocarDispositivo(kind, deviceId) {
+  if (!_lkRoom) {
+    if (typeof showToast === 'function') showToast('▶ Inicie a sessão para aplicar a troca de dispositivo.');
+    return;
+  }
+  try {
+    await _lkRoom.switchActiveDevice(kind, deviceId);
+    if (kind === 'audioinput') {
+      // Religa o MIXER da transcrição: a gravação capta o _lkMicDest, que estava
+      // ligado ao track ANTIGO — sem isto o fone novo sai no vídeo mas NÃO entra na nota.
+      try { if (_lkMicSource) _lkMicSource.disconnect(); } catch (_) {}
+      _lkStopMeter();
+      const LK = window.LivekitClient;
+      for (let i = 0; i < 10; i++) {
+        const pub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Microphone);
+        const trk = pub && pub.track && pub.track.mediaStreamTrack;
+        if (trk && trk.readyState === 'live' && _lkAudioCtx && _lkMicDest) {
+          _lkMicSource = _lkAudioCtx.createMediaStreamSource(new MediaStream([trk]));
+          _lkMicSource.connect(_lkMicDest);
+          _lkStartMeter(_lkMicSource);
+          break;
+        }
+        await new Promise(function (r) { setTimeout(r, 150); });
+      }
+    }
+    if (kind === 'videoinput') {
+      const LK2 = window.LivekitClient;
+      const camPub = _lkRoom.localParticipant.getTrackPublication(LK2.Track.Source.Camera);
+      if (camPub && camPub.track) _lkMountLocalVideo(camPub.track.attach());
+    }
+    if (typeof showToast === 'function') showToast('✓ Dispositivo alterado.');
+  } catch (e) {
+    console.warn('[livekit] trocar dispositivo', e);
+    if (typeof showToast === 'function') showToast('⚠ Não consegui trocar o dispositivo: ' + (e && e.message || e));
+  }
 }

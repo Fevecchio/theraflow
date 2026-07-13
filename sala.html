@@ -47,6 +47,13 @@
   /* ── Estados de erro/fim ── */
   #msg-screen { align-items: center; justify-content: center; padding: 24px; text-align: center; }
   .msg-emoji { font-size: 44px; margin-bottom: 14px; }
+  /* ── Encerramento com registro opcional ── */
+  #end-screen { align-items: center; justify-content: center; padding: 24px; }
+  .end-mood-btn { width: 52px; height: 56px; border-radius: 12px; border: 1.5px solid #e4e0d6; background: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 22px; transition: all .15s; padding: 0; }
+  .end-mood-btn span { font-size: 8.5px; color: var(--muted); line-height: 1.1; }
+  .end-mood-btn.sel { border-color: var(--sage); background: var(--sage-light); }
+  /* ── Painel de dispositivos ── */
+  #dev-sheet select { width: 100%; box-sizing: border-box; padding: 10px 11px; border: 1px solid #ddd; border-radius: 9px; font-size: 13px; font-family: inherit; background: #fff; outline: none; }
 </style>
 </head>
 <body>
@@ -85,6 +92,7 @@
   <div class="controls">
     <button class="ctrl" id="btn-mic" onclick="toggleMic()" title="Microfone">🎤</button>
     <button class="ctrl" id="btn-cam" onclick="toggleCam()" title="Câmera">📷</button>
+    <button class="ctrl" id="btn-dev" onclick="abrirDispositivos()" title="Trocar microfone, câmera ou som">⚙️</button>
     <button class="ctrl ctrl-leave" onclick="sairDaSala()" title="Sair">📞</button>
   </div>
 </div>
@@ -95,6 +103,25 @@
     <div class="msg-emoji" id="msg-emoji">👋</div>
     <h1 id="msg-title">Você saiu da sessão</h1>
     <div class="sub" id="msg-sub">Pode fechar esta página.</div>
+  </div>
+</div>
+
+<!-- Encerramento: despedida + registro OPCIONAL de como a paciente sai da sessão.
+     Nada é enviado daqui: ao "Guardar", o portal abre com o check-in pré-preenchido
+     e ELA confirma lá (mesmo caminho seguro de sempre). -->
+<div class="screen" id="end-screen" style="display:none">
+  <div class="card">
+    <div class="msg-emoji" style="text-align:center">🌿</div>
+    <h1 id="end-title">Sessão encerrada</h1>
+    <div class="sub" id="end-sub">Obrigado por estar presente hoje. Cuide de você.</div>
+    <div style="border-top:1px solid #eee;padding-top:16px">
+      <div style="font-size:13.5px;font-weight:600;text-align:center;margin-bottom:2px">Como você sai desta sessão?</div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">Opcional — abre no seu portal já preenchido, e você confirma lá.</div>
+      <div id="end-moods" style="display:flex;gap:6px;justify-content:center;margin-bottom:12px"></div>
+      <input id="end-note" placeholder="Quer escrever algo? (opcional)" style="width:100%;box-sizing:border-box;border:1px solid #e4e0d6;border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit;outline:none;margin-bottom:12px" />
+      <button class="btn btn-primary" id="end-save" onclick="salvarSaidaSessao()">Guardar no meu portal</button>
+      <button class="btn" onclick="pularSaidaSessao()" style="background:none;color:var(--muted);font-size:13px;margin-top:4px">Agora não · só fechar</button>
+    </div>
   </div>
 </div>
 
@@ -118,7 +145,7 @@
   }
 
   function _showScreen(id) {
-    ['consent-screen','call-screen','msg-screen'].forEach(function(s){
+    ['consent-screen','call-screen','msg-screen','end-screen'].forEach(function(s){
       document.getElementById(s).style.display = (s === id) ? 'flex' : 'none';
     });
   }
@@ -218,9 +245,28 @@
       });
       _room.on(LK.RoomEvent.ParticipantConnected, function () {
         var wait = document.getElementById('remote-wait'); if (wait) wait.style.display = 'none';
+        _remoteWaitMsg('Aguardando sua terapeuta entrar…'); // restaura o texto padrão p/ próxima espera
+      });
+      // Terapeuta CAIU (queda/travamento do lado dela) ≠ sessão encerrada: a sala
+      // continua aberta e ela consegue RECONECTAR na mesma sala — a paciente só
+      // precisa esperar. Antes não havia aviso nenhum (vídeo congelado, sem pista).
+      _room.on(LK.RoomEvent.ParticipantDisconnected, function () {
+        if (_room && _room.numParticipants > 0) return; // ainda há alguém (futuro multi)
+        _remoteWaitMsg('Sua terapeuta perdeu a conexão — aguarde um instante, ela já volta.\nSe a sessão tiver terminado, você pode sair no botão vermelho.');
+        var wait = document.getElementById('remote-wait'); if (wait) wait.style.display = 'flex';
+      });
+      // Conexão instável DA PACIENTE: avisa em vez de congelar sem explicação.
+      _room.on(LK.RoomEvent.Reconnecting, function () {
+        _remoteWaitMsg('Sua conexão ficou instável — reconectando…');
+        var wait = document.getElementById('remote-wait'); if (wait) wait.style.display = 'flex';
+      });
+      _room.on(LK.RoomEvent.Reconnected, function () {
+        var wait = document.getElementById('remote-wait');
+        if (wait && _room && _room.numParticipants > 0) wait.style.display = 'none';
+        _remoteWaitMsg('Aguardando sua terapeuta entrar…');
       });
       _room.on(LK.RoomEvent.Disconnected, function () {
-        _fatal('A sessão foi encerrada', 'Sua terapeuta encerrou a videochamada. Obrigado!', '👋');
+        _telaEncerramento('Sessão encerrada', 'Obrigado por estar presente hoje. Cuide de você.');
       });
 
       await _room.connect(url, token);
@@ -271,7 +317,104 @@
   async function sairDaSala() {
     try { if (_room) await _room.disconnect(); } catch (e) {}
     _room = null;
-    _fatal('Você saiu da sessão', 'Pode fechar esta página. Até a próxima!', '👋');
+    _telaEncerramento('Você saiu da sessão', 'Obrigado por estar presente hoje. Até a próxima!');
+  }
+
+  // Atualiza o texto do overlay "aguardando" (2º filho do #remote-wait).
+  function _remoteWaitMsg(txt) {
+    var wait = document.getElementById('remote-wait');
+    if (!wait || !wait.children[1]) return;
+    wait.children[1].textContent = txt;
+    wait.children[1].style.whiteSpace = 'pre-line';
+  }
+
+  // ── ENCERRAMENTO com registro opcional (feedback do co-teste 13/07: o "tchau"
+  // seco desperdiçava o momento). A paciente pode marcar como sai da sessão e/ou
+  // escrever uma linha; ao Guardar, o PORTAL abre com o check-in pré-preenchido
+  // para ELA confirmar — nada é salvo por fora do caminho normal. ──
+  var _endMood = null, _endEmoji = null;
+  var _END_MOODS = [ // mesma escala do check-in do portal (val 1/3/5/7/10)
+    [1, '😢', 'Muito difícil'], [3, '😕', 'Difícil'], [5, '😐', 'Neutro'],
+    [7, '🙂', 'Bem'], [10, '😄', 'Muito bem'],
+  ];
+  function _telaEncerramento(titulo, sub) {
+    try { if (_room) _room.disconnect(); } catch (_) {}
+    _room = null;
+    document.getElementById('end-title').textContent = titulo;
+    document.getElementById('end-sub').textContent = sub;
+    var box = document.getElementById('end-moods');
+    if (box && !box.childElementCount) {
+      _END_MOODS.forEach(function (m) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'end-mood-btn';
+        b.innerHTML = m[1] + '<span>' + m[2] + '</span>';
+        b.onclick = function () {
+          _endMood = m[0]; _endEmoji = m[1];
+          Array.prototype.forEach.call(box.children, function (x) { x.classList.remove('sel'); });
+          b.classList.add('sel');
+        };
+        box.appendChild(b);
+      });
+    }
+    _showScreen('end-screen');
+  }
+  function salvarSaidaSessao() {
+    var nota = (document.getElementById('end-note').value || '').trim().slice(0, 200);
+    try {
+      if (_endMood != null || nota) {
+        // O portal (mesmo navegador) lê esta chave, pré-preenche o check-in e apaga. TTL 3h.
+        localStorage.setItem('tf_pac_pos_sessao', JSON.stringify({
+          val: _endMood, emoji: _endEmoji, nota: nota, at: Date.now(),
+        }));
+      }
+    } catch (_) {}
+    location.href = '/paciente';
+  }
+  function pularSaidaSessao() {
+    _fatal('Até a próxima!', 'Pode fechar esta página. Cuide de você. 💚', '👋');
+  }
+
+  // ── DISPOSITIVOS (feedback 13/07: fone custou a ser detectado e não havia onde
+  // trocar). Lista mic/câmera/som e troca ao vivo, sem derrubar a chamada. ──
+  async function abrirDispositivos() {
+    var old = document.getElementById('dev-sheet'); if (old) { old.remove(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    var devs = [];
+    try { devs = await navigator.mediaDevices.enumerateDevices(); } catch (e) {}
+    var esc = function (s) { return String(s || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); };
+    var kinds = [['audioinput', '🎤 Microfone'], ['videoinput', '📷 Câmera'], ['audiooutput', '🔊 Som']];
+    var sheet = document.createElement('div');
+    sheet.id = 'dev-sheet';
+    sheet.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:9;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.35);width:min(92vw,360px)';
+    sheet.innerHTML = '<div style="font-size:13.5px;font-weight:600;margin-bottom:4px">Microfone, câmera e som</div>'
+      + '<div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">Se o fone não foi detectado, escolha ele aqui — a chamada não cai.</div>'
+      + kinds.map(function (k) {
+          var list = devs.filter(function (d) { return d.kind === k[0]; });
+          if (!list.length) return '';
+          var act = null; try { act = _room && _room.getActiveDevice(k[0]); } catch (_) {}
+          return '<label style="display:block;font-size:11px;color:var(--muted);margin:9px 0 3px">' + k[1] + '</label>'
+            + '<select data-kind="' + k[0] + '">'
+            + list.map(function (d, i) {
+                return '<option value="' + esc(d.deviceId) + '"' + (act && act === d.deviceId ? ' selected' : '') + '>'
+                  + esc(d.label || (k[1] + ' ' + (i + 1))) + '</option>';
+              }).join('')
+            + '</select>';
+        }).join('')
+      + '<button onclick="document.getElementById(\'dev-sheet\').remove()" style="margin-top:14px;width:100%;padding:10px;border:none;border-radius:9px;background:var(--sage);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Fechar</button>';
+    document.body.appendChild(sheet);
+    sheet.querySelectorAll('select').forEach(function (sel) {
+      sel.onchange = async function () {
+        if (!_room) return;
+        try {
+          await _room.switchActiveDevice(sel.getAttribute('data-kind'), sel.value);
+          if (sel.getAttribute('data-kind') === 'videoinput') {
+            var camPub = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
+            if (camPub && camPub.track) { var lv = document.getElementById('local-video'); lv.innerHTML = ''; lv.appendChild(camPub.track.attach()); }
+          }
+        } catch (e) { console.warn('[sala] trocar dispositivo', e); }
+      };
+    });
   }
 </script>
 </body>
