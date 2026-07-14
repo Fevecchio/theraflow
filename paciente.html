@@ -226,6 +226,16 @@ posthog.capture('portal_aberto');
 <script src="/js/13-portal.js" defer></script>
 <!-- js/16 (busca global + termos do terapeuta) não é usado no portal — removido (F7). -->
 
+<script>
+// PWA offline (fallback): SW registrado SÓ aqui — network-first, o cache só
+// responde sem rede (nunca serve código velho com rede boa). sw-paciente.js.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw-paciente.js').catch(function () {});
+  });
+}
+</script>
+
 <script defer>
 // ══════════════════════════════════════════════════════════
 //  INICIALIZAÇÃO DO PORTAL STANDALONE DO PACIENTE
