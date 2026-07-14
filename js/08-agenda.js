@@ -691,8 +691,13 @@ function renderDayView() {
   // antes o Lembrar não mudava estado nenhum e a lista nunca esvaziava (item 5
   // dos desligados, LIGADO no V3: fluxo anti no-show completo).
   var amanha = new Date(hoje); amanha.setDate(amanha.getDate()+2);
+  var agoraTs = Date.now();
   var pendentes = appointments.filter(function(a){
-    return a.status==='agendada' && !a.confirmada && a.date>=hoje && a.date<=localDateISO(amanha);
+    if (!(a.status==='agendada' && !a.confirmada && a.date>=hoje && a.date<=localDateISO(amanha))) return false;
+    // Sessão cujo horário já passou não tem o que confirmar (aparecia "Lembrar"
+    // para sessão de hoje já realizada — revisão 14/07).
+    var ini = new Date(a.date + 'T' + (a.time || '23:59'));
+    return isNaN(ini.getTime()) || ini.getTime() > agoraTs;
   }).slice(0,4);
   var pendHtml = pendentes.length === 0
     ? '<div style="font-size:13px;color:var(--muted);font-style:italic">Nenhuma pendência de confirmação. ✓</div>'

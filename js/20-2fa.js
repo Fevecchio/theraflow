@@ -114,6 +114,17 @@ async function _init2FACard() {
   const enrollArea = document.getElementById('tfa-enroll-area');
   if (enrollArea) enrollArea.style.display = 'none';
 
+  // Demo: não consultar o servidor (podia ler o 2FA de uma conta REAL logada no
+  // mesmo navegador e ficar em "verificando…" — revisão 14/07).
+  if (window._tfDemo) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--muted)">Indisponível no modo demonstração — crie sua conta para ativar.</span>';
+    if (btnAtivar) btnAtivar.style.display = 'none';
+    if (btnDesativar) btnDesativar.style.display = 'none';
+    var _rowD = document.getElementById('tfa-backup-row');
+    if (_rowD) _rowD.style.display = 'none';
+    return;
+  }
+
   if (!(await _tfaHasSession())) {
     if (statusEl) statusEl.innerHTML = '<span style="color:var(--muted)">Disponível apenas com login online (conta Supabase).</span>';
     if (btnAtivar) btnAtivar.style.display = 'none';

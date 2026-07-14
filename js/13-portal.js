@@ -550,7 +550,13 @@ function proximaSessaoDate() {
   // 1. Busca próximo appointment real deste paciente
   if (typeof appointments !== 'undefined' && appointments.length) {
     var futuros = appointments.filter(function(a) {
-      return a.patientIdx === pidx && a.status !== 'cancelada' && a.date >= nowIso;
+      if (!(a.patientIdx === pidx && a.status !== 'cancelada' && a.date >= nowIso)) return false;
+      // Sessão de hoje que JÁ TERMINOU (hora + duração + 15min de margem) não é
+      // "próxima" — antes o card dizia "Agora!" o dia inteiro (revisão 14/07).
+      var ini = new Date(a.date + 'T' + (a.time || '09:00'));
+      if (isNaN(ini.getTime())) return true;
+      var fim = ini.getTime() + ((parseInt(a.duration) || 50) + 15) * 60000;
+      return fim > now.getTime();
     }).sort(function(a,b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : a.time < b.time ? -1 : 1; });
     if (futuros.length) {
       var ap = futuros[0];

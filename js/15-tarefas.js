@@ -9,6 +9,25 @@ var tarefasSort = { key: 'date', asc: true };
 var editingTaskId = null;
 
 function carregarTarefas() {
+  // Demo HERMÉTICO: nunca lê o localStorage (podia exibir tarefas de conta real
+  // deslogada + acumulava "Cobrança D+…" fantasmas entre visitas, contradizendo
+  // o Financeiro). Seed fresco em memória; recarregar dentro do demo preserva.
+  if (window._tfDemo) {
+    if (tasks.length === 0) {
+      var hojeD = new Date();
+      var fmtD = localDateISO;
+      var ontemD = new Date(hojeD); ontemD.setDate(hojeD.getDate()-1);
+      var amanhaD = new Date(hojeD); amanhaD.setDate(hojeD.getDate()+1);
+      tasks = [
+        { id: 1, title: 'Enviar recibo de março', patientName: 'Camila Rocha', dueDate: fmtD(ontemD), status: 'aberta', createdAt: fmtD(hojeD) },
+        { id: 2, title: 'Ligar — faltou à sessão', patientName: 'Rafael Andrade', dueDate: fmtD(hojeD), status: 'aberta', createdAt: fmtD(hojeD) },
+        { id: 3, title: 'Preparar material TCC para amanhã', patientName: 'Camila Rocha', dueDate: fmtD(amanhaD), status: 'aberta', createdAt: fmtD(hojeD) },
+        { id: 4, title: 'Renovar CRP', patientName: '', dueDate: fmtD(amanhaD), status: 'aberta', createdAt: fmtD(hojeD) },
+        { id: 5, title: 'Agendar supervisão mensal', patientName: '', dueDate: '', status: 'aberta', createdAt: fmtD(hojeD) }
+      ];
+    }
+    return;
+  }
   try {
     tasks = JSON.parse(localStorage.getItem('tf_tasks') || '[]');
     // Migração: normaliza tarefas antigas sem campo title
@@ -19,30 +38,16 @@ function carregarTarefas() {
   } catch(e) { tasks = []; }
   // Limpeza única: contas reais foram contaminadas pelas tarefas demo (semeadas sem
   // guard e sincronizadas ao Supabase). Match estrito por id+título exatos. Lote 1.
-  if (!window._tfDemo && tasks.length) {
+  if (tasks.length) {
     var _demoTitles = { 1:'Enviar recibo de março', 2:'Ligar — faltou à sessão', 3:'Preparar material TCC para amanhã', 4:'Renovar CRP', 5:'Agendar supervisão mensal' };
     var _clean = tasks.filter(function(t){ return !(t && _demoTitles[t.id] === t.title); });
     if (_clean.length !== tasks.length) { tasks = _clean; salvarTarefas(); }
   }
-  // demo tasks se vazio — SÓ EM MODO DEMO: conta real recém-criada (ou que apagou
-  // tudo) via 5 tarefas falsas ("Camila Rocha"…) que ainda subiam ao Supabase. Lote 1.
-  if (tasks.length === 0 && window._tfDemo) {
-    var hoje = new Date();
-    var fmt = localDateISO;
-    var ontem = new Date(hoje); ontem.setDate(hoje.getDate()-1);
-    var amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
-    tasks = [
-      { id: 1, title: 'Enviar recibo de março', patientName: 'Camila Rocha', dueDate: fmt(ontem), status: 'aberta', createdAt: fmt(hoje) },
-      { id: 2, title: 'Ligar — faltou à sessão', patientName: 'Rafael Andrade', dueDate: fmt(hoje), status: 'aberta', createdAt: fmt(hoje) },
-      { id: 3, title: 'Preparar material TCC para amanhã', patientName: 'Camila Rocha', dueDate: fmt(amanha), status: 'aberta', createdAt: fmt(hoje) },
-      { id: 4, title: 'Renovar CRP', patientName: '', dueDate: fmt(amanha), status: 'aberta', createdAt: fmt(hoje) },
-      { id: 5, title: 'Agendar supervisão mensal', patientName: '', dueDate: '', status: 'aberta', createdAt: fmt(hoje) }
-    ];
-    // Demo NÃO persiste (salvarTarefas sobe ao Supabase) — vive só em memória.
-  }
 }
 
 function salvarTarefas() {
+  // Demo não persiste nem sobe: tarefas demo vivem só em memória (hermético).
+  if (window._tfDemo) { atualizarBadgeTarefas(); return; }
   localStorage.setItem('tf_tasks', JSON.stringify(tasks));
   atualizarBadgeTarefas();
   _supaSync_tasks().catch(() => {});

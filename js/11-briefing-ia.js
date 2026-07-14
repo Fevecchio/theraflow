@@ -624,11 +624,15 @@ function carregarCharges() {
   // falsas ("Camila Rocha"…) no Financeiro/stats/CSV — e o 1º salvarCharges as
   // persistia. Limpeza única remove as que já contaminaram contas reais (match
   // estrito id 1-8 + nome demo + valor). Lote 1.
+  // Demo HERMÉTICO: nunca lê o localStorage (podia exibir cobranças de uma conta
+  // real deslogada ou lixo de visitas antigas — Financeiro vazio vs tarefas de
+  // cobrança fantasmas). Seed fresco em memória a cada entrada no demo.
+  if (window._tfDemo) return _getDemoCharges();
   try {
     const raw = localStorage.getItem('tf_charges');
-    if (!raw) return window._tfDemo ? _getDemoCharges() : [];
+    if (!raw) return [];
     let list = JSON.parse(raw);
-    if (!window._tfDemo && Array.isArray(list) && list.length) {
+    if (Array.isArray(list) && list.length) {
       const _demoKey = {};
       _getDemoCharges().forEach(function(d){ _demoKey[d.id + '|' + d.patient + '|' + d.value] = true; });
       const clean = list.filter(function(c){ return !(c && _demoKey[c.id + '|' + c.patient + '|' + c.value]); });
@@ -638,10 +642,15 @@ function carregarCharges() {
       }
     }
     return list;
-  } catch(e) { return window._tfDemo ? _getDemoCharges() : []; }
+  } catch(e) { return []; }
 }
 
 function salvarCharges() {
+  // Demo não persiste nem sobe: cobranças demo vivem só em memória (hermético).
+  if (window._tfDemo) {
+    if (typeof _recalcFinStatus === 'function') _recalcFinStatus();
+    return;
+  }
   // A6: quota cheia perdia baixa de pagamento em silêncio (com "✓ confirmado" na tela)
   try { localStorage.setItem('tf_charges', JSON.stringify(charges)); }
   catch(e) { if (typeof showToast === 'function') showToast('⚠ Armazenamento local cheio — a alteração financeira pode não ter sido gravada neste aparelho.'); }
