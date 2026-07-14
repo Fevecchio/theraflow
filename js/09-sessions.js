@@ -804,12 +804,17 @@ async function _gerarResumoPortalIA(sp, noteText) {
   var metas = ((sp.portalMetas && sp.portalMetas.length ? sp.portalMetas : sp.metas) || [])
     .filter(function(m){ return m && (m.text || m.texto); }).slice(0, 3)
     .map(function(m){ return m.text || m.texto; }).join('; ');
-  var system = 'Você é um assistente que transforma notas clínicas de psicologia em resumos acessíveis para o próprio paciente ler. Nunca use jargão clínico. Seja caloroso, direto e encorajador. Máximo 3 frases curtas. Responda em português brasileiro.';
+  // Regra dura (feedback do usuário 14/07): a nota clínica pode registrar quedas de
+  // conexão/interrupções (registro legítimo do terapeuta), mas o resumo que a
+  // PACIENTE lê jamais deve ecoar isso — "problemas técnicos atrapalharam nossa
+  // conexão" no portal mina a confiança na terapia e na plataforma.
+  var system = 'Você é um assistente que transforma notas clínicas de psicologia em resumos acessíveis para o próprio paciente ler. Nunca use jargão clínico. Seja caloroso, direto e encorajador. Máximo 3 frases curtas. '
+    + 'REGRA INEGOCIÁVEL: fale somente do conteúdo terapêutico (o que a pessoa trouxe, trabalhou e leva da sessão). NUNCA mencione problemas técnicos, queda ou qualidade de conexão, interrupções, gravação, transcrição, áudio, vídeo, plataforma ou qualquer aspecto tecnológico do atendimento — se a nota citar algo assim, ignore por completo, como se não estivesse lá. Responda em português brasileiro.';
   var user = 'Abordagem: ' + (sp.abordagem || 'Psicologia Clínica') + '.'
     + (metas ? ' Objetivos terapêuticos: ' + metas + '.' : '')
     + ' Sessão ' + (sp.sessions || 1) + '.\n'
     + 'Nota clínica: ' + plainNote + '\n'
-    + 'Escreva um breve resumo desta sessão para o paciente ler no app. Use "você" ao se referir ao paciente. Não mencione diagnósticos nem termos clínicos.';
+    + 'Escreva um breve resumo desta sessão para o paciente ler no app. Use "você" ao se referir ao paciente. Não mencione diagnósticos nem termos clínicos. Lembre-se: nada de tecnologia, conexão ou interrupções — apenas o conteúdo terapêutico.';
   try {
     var res = await fetchWithTimeout('/api/briefing', {
       method: 'POST',
@@ -822,6 +827,14 @@ async function _gerarResumoPortalIA(sp, noteText) {
     var content = (data.content || '').trim();
     // Descarta respostas de recusa/erro do Claude (não devem aparecer para o paciente)
     if (!content || /^desculpe|nota.*incompleta|preciso.*detalhes|não (posso|consigo)|unable to/i.test(content)) return null;
+    // Rede de segurança: mesmo instruída, se a IA citar tecnologia/conexão, as
+    // frases ofensoras caem antes de virar rascunho (o resumo é da TERAPIA).
+    var _tech = /t[ée]cnic|tecnolog|conex[ãa]o|interrup|grava[çc]|transcri|[áa]udio|v[íi]deo|plataforma|sinal|internet|chamada caiu|ca[íi]da/i;
+    if (_tech.test(content)) {
+      var _frases = content.match(/[^.!?…]+[.!?…]*\s*/g) || [content];
+      content = _frases.filter(function(f){ return !_tech.test(f); }).join('').trim();
+      if (!content) return null;
+    }
     return typeof _stripMd === 'function' ? _stripMd(content) : content;
   } catch(e) {
     console.warn('[ResumoPortalIA]', e.message);
