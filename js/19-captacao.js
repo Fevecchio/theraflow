@@ -3,14 +3,18 @@
 var captacaoLeads = [];
 var _captacaoEditId = null;
 
+// Esteira enxuta (pedido do usuário 14/07, pensando na terapeuta real): as duas
+// etapas de triagem ("agendada"/"realizada") viraram UMA — na prática a conversa
+// inicial acontece e o próximo passo já é proposta ou perda; a coluna extra só
+// dava trabalho de arrastar.
 var CAPTACAO_COLS = [
   { label: 'Novo contato',      icon: '📥', color: '#8a9490' },
-  { label: 'Triagem agendada',  icon: '📅', color: '#4a7c59' },
-  { label: 'Triagem realizada', icon: '✓',  color: '#2a5238' },
+  { label: 'Conversa inicial',  icon: '💬', color: '#4a7c59' },
   { label: 'Proposta enviada',  icon: '📋', color: '#c97d2e' },
   { label: 'Em espera de vaga', icon: '⏳', color: '#6b7c8a' },
   { label: 'Perdido',           icon: '✗',  color: '#c0392b' },
 ];
+var CAPTACAO_PERDIDO = CAPTACAO_COLS.length - 1;
 
 var CAPTACAO_ORIGENS = {
   indicacao:  'Indicação',
@@ -25,6 +29,18 @@ var _CAP_CORES = ['#4a7c59','#2c5f8a','#c97d2e','#7b5ea7','#2a7c7c','#8a4a4a'];
 function carregarCaptacao() {
   try { captacaoLeads = JSON.parse(localStorage.getItem('tf_captacao') || '[]'); }
   catch(e) { captacaoLeads = []; }
+  // Migração v2 (fusão das triagens): esquema antigo tinha 6 colunas —
+  // 2 (realizada) funde na 1 (conversa); 3/4/5 deslocam uma casa. Idempotente
+  // pela flag v:2 em cada lead.
+  var mudou = false;
+  var mapa = { 0: 0, 1: 1, 2: 1, 3: 2, 4: 3, 5: 4 };
+  captacaoLeads.forEach(function(l) {
+    if (!l || l.v === 2) return;
+    l.coluna = mapa[l.coluna] !== undefined ? mapa[l.coluna] : 0;
+    l.v = 2;
+    mudou = true;
+  });
+  if (mudou) { try { localStorage.setItem('tf_captacao', JSON.stringify(captacaoLeads)); } catch(e) {} }
 }
 
 function salvarCaptacao() {
@@ -37,7 +53,7 @@ function atualizarBadgeCaptacao() {
   if (captacaoLeads.length === 0) {
     try { captacaoLeads = JSON.parse(localStorage.getItem('tf_captacao') || '[]'); } catch(e) {}
   }
-  var ativos = captacaoLeads.filter(function(l){ return l.coluna < 5; }).length;
+  var ativos = captacaoLeads.filter(function(l){ return l.coluna < CAPTACAO_PERDIDO; }).length;
   var badge = document.getElementById('nav-captacao-badge');
   if (!badge) return;
   if (ativos > 0) { badge.textContent = ativos; badge.style.display = ''; }
@@ -51,8 +67,8 @@ function initCaptacao() {
 }
 
 function _captacaoSubtitle() {
-  var ativos = captacaoLeads.filter(function(l){ return l.coluna < 5; }).length;
-  var perdidos = captacaoLeads.filter(function(l){ return l.coluna === 5; }).length;
+  var ativos = captacaoLeads.filter(function(l){ return l.coluna < CAPTACAO_PERDIDO; }).length;
+  var perdidos = captacaoLeads.filter(function(l){ return l.coluna === CAPTACAO_PERDIDO; }).length;
   var txt = ativos === 0 ? 'Nenhum lead em aberto'
           : ativos === 1 ? '1 lead em aberto'
           : ativos + ' leads em aberto';
@@ -133,7 +149,7 @@ function _renderCard(lead, colIdx) {
   var ini = _capIniciais(lead.nome);
   var cor = _capCor(lead.id);
   var origemLabel = CAPTACAO_ORIGENS[lead.origem] || (lead.origem || '');
-  var isPerdido = (colIdx === 5);
+  var isPerdido = (colIdx === CAPTACAO_PERDIDO);
 
   // _wppNumero normaliza o prefixo 55 (não duplica quando o número já vem com +55) e
   // rejeita 0800/0300. Antes: 'wa.me/55'+num gerava '5555...' p/ leads com +55. F4.5.
@@ -181,6 +197,42 @@ function _renderCard(lead, colIdx) {
 
   html += '</div></div>';
   return html;
+}
+
+/* 🔗 Link para bio/campanhas (pedido do usuário 14/07): wa.me da terapeuta com
+ * mensagem pronta — quem clica na bio do Instagram/anúncio cai direto no
+ * WhatsApp dela já se apresentando. Honesto: o lead chega no WhatsApp; o
+ * registro no pipeline continua manual (+ Novo lead). */
+function abrirLinkCaptacao() {
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch (e) {}
+  var n = (typeof _wppNumero === 'function') ? _wppNumero(acc.whatsapp) : null;
+  var existente = document.getElementById('modal-link-captacao');
+  if (existente) existente.remove();
+  var modal = document.createElement('div');
+  modal.id = 'modal-link-captacao';
+  modal.className = 'modal-overlay';
+  var corpo;
+  if (!n) {
+    corpo = '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">Para gerar o link, cadastre seu <strong>WhatsApp</strong> no Perfil (campo "WhatsApp" em Dados profissionais).</div>'
+      + '<button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="closeModal(\'modal-link-captacao\');navigate(\'perfil\')">Abrir Perfil →</button>';
+  } else {
+    var msg = 'Olá! Vi seu perfil e gostaria de agendar uma conversa inicial.';
+    var link = 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
+    corpo = '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:12px">Cole este link na <strong>bio do Instagram</strong>, em anúncios ou onde divulgar seu trabalho. Quem clicar cai direto no seu WhatsApp com a mensagem pronta:</div>'
+      + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);font-style:italic;margin-bottom:12px">“' + msg + '”</div>'
+      + '<div style="display:flex;gap:6px;align-items:center">'
+      + '<input id="cap-link-input" readonly value="' + escHTML(link) + '" style="flex:1;font-size:11.5px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;color:var(--ink);background:var(--white);outline:none"/>'
+      + '<button class="btn btn-primary btn-sm" onclick="var i=document.getElementById(\'cap-link-input\');i.select();navigator.clipboard.writeText(i.value).then(function(){showToast(\'🔗 Link copiado — cole na sua bio!\')})">Copiar</button>'
+      + '</div>'
+      + '<div style="font-size:11.5px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2);line-height:1.5">Quando alguém chamar, registre aqui com <strong>+ Novo lead</strong> (origem: Instagram/anúncio) — assim nenhum contato se perde no WhatsApp.</div>';
+  }
+  modal.innerHTML = '<div class="modal" style="max-width:480px">'
+    + '<div class="modal-header"><div class="modal-title">🔗 Link para bio e campanhas</div>'
+    + '<button class="modal-close" onclick="closeModal(\'modal-link-captacao\')">✕</button></div>'
+    + '<div class="modal-body">' + corpo + '</div></div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if (e.target === modal) modal.classList.remove('open'); });
+  modal.classList.add('open');
 }
 
 function abrirModalLead(id) {
