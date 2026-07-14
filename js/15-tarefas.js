@@ -174,18 +174,18 @@ function renderTarefas() {
         : dtCls==='today' ? '<span class="tag tag-amber" style="font-size:11px">Hoje</span>'
         : '<span class="tag" style="font-size:11px;background:var(--line-2);color:var(--ink-soft)">Aberta</span>');
     var acaoBtn = concluida
-      ? '<button class="task-reabrir-btn" onclick="toggleTarefa('+t.id+')">↩ Reabrir</button>'
-      : '<button class="task-concluir-btn" onclick="toggleTarefa('+t.id+')">✓ Concluir</button>';
+      ? '<button class="task-reabrir-btn" onclick="toggleTarefa(\''+t.id+'\')">↩ Reabrir</button>'
+      : '<button class="task-concluir-btn" onclick="toggleTarefa(\''+t.id+'\')">✓ Concluir</button>';
     // Tarefa da régua de cobrança ganha o 📲: WhatsApp com a mensagem da etapa pronta
     if (!concluida && t._cobr && typeof _cobrWppTarefa === 'function') {
-      acaoBtn += '<button class="task-concluir-btn" style="margin-left:4px;padding-left:8px;padding-right:8px" onclick="_cobrWppTarefa('+t.id+')" title="Abrir WhatsApp com a mensagem desta etapa pronta">'+_tfIcon('wpp')+'</button>';
+      acaoBtn += '<button class="task-concluir-btn" style="margin-left:4px;padding-left:8px;padding-right:8px" onclick="_cobrWppTarefa(\''+t.id+'\')" title="Abrir WhatsApp com a mensagem desta etapa pronta">'+_tfIcon('wpp')+'</button>';
     }
     var assuntoCell = concluida
       ? '<span class="task-assunto done">'+escHTML(t.title)+'</span>'
-      : '<span class="task-assunto task-inline-trigger" onclick="tarefaEditInline(this,'+t.id+',\'title\')" title="Clique para editar">'+escHTML(t.title)+'<span class="task-inline-icon">✏</span></span>';
+      : '<span class="task-assunto task-inline-trigger" onclick="tarefaEditInline(this,\''+t.id+'\',\'title\')" title="Clique para editar">'+escHTML(t.title)+'<span class="task-inline-icon">✏</span></span>';
     var dataCell = concluida
       ? '<span class="task-date '+dtCls+'">'+escHTML(dtText)+'</span>'
-      : '<span class="task-date '+dtCls+' task-inline-trigger" onclick="tarefaEditInline(this,'+t.id+',\'date\')" title="Clique para editar">'+escHTML(dtText)+'<span class="task-inline-icon">✏</span></span>';
+      : '<span class="task-date '+dtCls+' task-inline-trigger" onclick="tarefaEditInline(this,\''+t.id+'\',\'date\')" title="Clique para editar">'+escHTML(dtText)+'<span class="task-inline-icon">✏</span></span>';
     return headerRow + '<tr class="task-row'+(concluida?' concluida':'')+'" data-id="'+t.id+'">'
       +'<td data-label="">'+acaoBtn+'</td>'
       +'<td class="task-num" data-label="#">'+(i+1)+'</td>'
@@ -194,15 +194,23 @@ function renderTarefas() {
       +'<td data-label="Vencimento">'+dataCell+'</td>'
       +'<td data-label="Status">'+statusTag+'</td>'
       +'<td data-label="" style="display:flex;gap:2px;align-items:center">'
-        +(concluida ? '' : '<button class="task-delete" onclick="editarTarefa('+t.id+')" title="Editar tudo (inclusive paciente)" style="color:var(--muted)">✏</button>')
-        +'<button class="task-delete" onclick="excluirTarefa('+t.id+')" title="Excluir">✕</button>'
+        +(concluida ? '' : '<button class="task-delete" onclick="editarTarefa(\''+t.id+'\')" title="Editar tudo (inclusive paciente)" style="color:var(--muted)">✏</button>')
+        +'<button class="task-delete" onclick="excluirTarefa(\''+t.id+'\')" title="Excluir">✕</button>'
       +'</td>'
       +'</tr>';
   }).join('');
 }
 
+/* IDs de tarefa viram STRING no round-trip do Supabase (local_id) — comparação
+ * estrita com o número do onclick falhava em silêncio ("Concluir não faz nada",
+ * bug real 14/07). Mesma praga já corrigida nas cobranças (F4.4): comparar
+ * sempre por String e passar o id entre aspas nos onclick. */
+function _taskById(id) {
+  return tasks.find(function(x){ return String(x.id) === String(id); });
+}
+
 function toggleTarefa(id) {
-  var t = tasks.find(function(x){ return x.id===id; });
+  var t = _taskById(id);
   if (!t) return;
   t.status = t.status === 'aberta' ? 'concluida' : 'aberta';
   salvarTarefas();
@@ -213,7 +221,7 @@ function toggleTarefa(id) {
 
 function excluirTarefa(id) {
   if (!confirm('Excluir esta tarefa?')) return;
-  tasks = tasks.filter(function(t){ return t.id!==id; });
+  tasks = tasks.filter(function(t){ return String(t.id) !== String(id); });
   salvarTarefas();
   renderTarefas();
   renderDashTarefas();
@@ -241,7 +249,7 @@ function abrirModalNovaTarefaPaciente(nomePaciente) {
 }
 
 function editarTarefa(id) {
-  var t = tasks.find(function(x){ return x.id===id; });
+  var t = _taskById(id);
   if (!t) return;
   editingTaskId = id;
   document.getElementById('modal-tarefa-titulo').textContent = 'Editar tarefa';
@@ -270,7 +278,7 @@ function salvarNovaTarefa() {
   var paciente = document.getElementById('tarefa-paciente-select').value;
   var data = document.getElementById('tarefa-data-input').value;
   if (editingTaskId !== null) {
-    var t = tasks.find(function(x){ return x.id===editingTaskId; });
+    var t = _taskById(editingTaskId);
     if (t) { t.title = titulo; t.titulo = titulo; t.patientName = paciente; t.dueDate = data; }
     showToast('Tarefa atualizada!');
   } else {
@@ -318,7 +326,7 @@ function renderDashTarefas() {
     var dtCls  = typeof dtObj==='object'?dtObj.cls:'';
     var meta = t.patientName ? t.patientName+(t.dueDate?' · '+dtText:'') : (t.dueDate?dtText:'Sem data');
     return '<div class="dash-task-row">'
-      +'<button class="dash-concluir-btn" onclick="toggleTarefa('+t.id+')">✓ Concluir</button>'
+      +'<button class="dash-concluir-btn" onclick="toggleTarefa(\''+t.id+'\')">✓ Concluir</button>'
       +'<span class="dash-task-title">'+escHTML(t.title)+'</span>'
       +'<span class="dash-task-meta '+dtCls+'">'+escHTML(meta)+'</span>'
       +'</div>';
@@ -329,7 +337,7 @@ function renderDashTarefas() {
 }
 
 function tarefaEditInline(el, id, field) {
-  var t = tasks.find(function(x){ return x.id===id; });
+  var t = _taskById(id);
   if (!t) return;
   var isDate = field === 'date';
   var input = document.createElement('input');

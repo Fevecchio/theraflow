@@ -898,10 +898,14 @@ function _gerarTarefasCobranca() {
 
       var marca = cid + ':e' + etapaIdx;
       var legada = cid + ':' + [3, 7, 14][etapaIdx]; // marca da v1 (dias fixos)
-      if (tasks.some(function(t) { return t._cobr === marca || t._cobr === legada; })) return;
       var et = regua[etapaIdx];
       var titulo = 'Cobrança D+' + et.dias + ': ' + et.rotulo + ' — ' + (c.patient || 'paciente')
         + ' (R$ ' + (parseFloat(c.value) || 0) + ', venceu ' + _cobrDataBR(iso) + ')';
+      // O sync de tarefas NÃO leva o campo _cobr (round-trip Supabase o perde) —
+      // readota pela assinatura do título, senão a régua duplicaria a tarefa a
+      // cada login em outro aparelho (bug real 14/07).
+      tasks.forEach(function(t) { if (t && !t._cobr && t.title === titulo) t._cobr = marca; });
+      if (tasks.some(function(t) { return t._cobr === marca || t._cobr === legada || t.title === titulo; })) return;
       tasks.push({ id: Date.now() + novas, title: titulo, titulo: titulo, patientName: c.patient || '',
                    dueDate: (typeof hojeISO === 'function' ? hojeISO() : ''), status: 'aberta',
                    createdAt: (typeof hojeISO === 'function' ? hojeISO() : ''), _cobr: marca });
@@ -929,7 +933,7 @@ function _cobrMsg(c, etapa) {
 
 // 📲 da tarefa de cobrança: abre o WhatsApp com a mensagem da etapa pronta.
 function _cobrWppTarefa(taskId) {
-  var t = (typeof tasks !== 'undefined' ? tasks : []).find(function(x) { return x.id === taskId; });
+  var t = (typeof tasks !== 'undefined' ? tasks : []).find(function(x) { return String(x.id) === String(taskId); });
   if (!t || !t._cobr) return;
   var cid = String(t._cobr).split(':')[0];
   var c = charges.find(function(x) { return String(x.id) === cid && !x.deleted; });
