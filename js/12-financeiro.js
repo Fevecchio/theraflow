@@ -808,47 +808,228 @@ function lembreteInadimplentes() {
   modal.classList.add('open');
 }
 
-// ── Escalação de cobrança (item 6 dos desligados — LIGADA 11/07, v1 enxuta) ──
-// A régua do guia (D+3 lembrete gentil / D+7 segundo lembrete / D+14 conversa)
-// vira TAREFA automática por cobrança vencida. Nada é enviado ao paciente sem
-// o terapeuta: a tarefa só lembra a ação — o disparo continua manual (WhatsApp).
-// Dedup por marca _cobr (id da cobrança + etapa): idempotente, roda quantas vezes for.
+// ── Escalação de cobrança (v2 — revisão 14/07: config real + uma etapa por vez) ──
+// A régua vira TAREFA automática por cobrança vencida, mas SÓ A ETAPA ATUAL fica
+// aberta (a v1 empilhava D+3/D+7/D+14 da mesma cobrança como 3 tarefas). Prazos e
+// mensagens agora são CONFIGURÁVEIS (tf_account.cobr_regua — local, nível da chave
+// PIX; a promessa "configuráveis nas preferências" do guia era falsa). Nada é
+// enviado sem o terapeuta: a tarefa lembra a ação e o 📲 abre o WhatsApp com a
+// mensagem da etapa pronta. Pagou/excluiu a cobrança → as tarefas dela se fecham.
+var _COBR_REGUA_DEF = [
+  { dias: 3,  rotulo: 'lembrete gentil',  msg: 'Olá {nome}! Tudo bem? Passando para lembrar do pagamento da sessão ({valor}, venceu {vencimento}).{pix}\n\nQualquer coisa me avisa! 💚\n— {terapeuta}' },
+  { dias: 7,  rotulo: 'segundo lembrete', msg: 'Oi {nome}! O pagamento da sessão ({valor}, venceu {vencimento}) ainda está em aberto.{pix}\n\nSe algo estiver dificultando, me conta que a gente encontra um caminho.\n— {terapeuta}' },
+  { dias: 14, rotulo: 'conversa sobre o pagamento', msg: 'Oi {nome}. O pagamento da sessão ({valor}) está em aberto desde {vencimento}.{pix}\n\nPodemos conversar sobre isso na nossa próxima sessão? Um abraço,\n— {terapeuta}' }
+];
+
+function _cobrRegua() {
+  try {
+    var cfg = window._tfDemo
+      ? window._tfDemoRegua // demo hermético: config demo vive só em memória
+      : JSON.parse(localStorage.getItem('tf_account') || '{}').cobr_regua;
+    if (cfg && Array.isArray(cfg) && cfg.length === 3) {
+      var out = cfg.map(function(e, i) {
+        return { dias: Math.max(1, parseInt(e && e.dias, 10) || _COBR_REGUA_DEF[i].dias),
+                 rotulo: _COBR_REGUA_DEF[i].rotulo,
+                 msg: (e && typeof e.msg === 'string' && e.msg.trim()) ? e.msg.trim() : _COBR_REGUA_DEF[i].msg };
+      });
+      // Dias precisam crescer entre etapas — corrige na leitura, sem drama.
+      if (out[1].dias <= out[0].dias) out[1].dias = out[0].dias + 1;
+      if (out[2].dias <= out[1].dias) out[2].dias = out[1].dias + 1;
+      return out;
+    }
+  } catch (e) {}
+  return _COBR_REGUA_DEF.map(function(e) { return { dias: e.dias, rotulo: e.rotulo, msg: e.msg }; });
+}
+
+// Data da cobrança → ISO (aceita YYYY-MM-DD, DD/MM/AAAA e DD/MM)
+function _cobrIso(c) {
+  var d = ((c && c.date) || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0, 10);
+  var pp = d.split('/');
+  if (pp.length >= 2 && pp[0] && pp[1]) return (pp[2] || new Date().getFullYear()) + '-' + String(pp[1]).padStart(2, '0') + '-' + String(pp[0]).padStart(2, '0');
+  return null;
+}
+function _cobrDataBR(iso) {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(iso || '')) return iso || '—';
+  var p = iso.slice(0, 10).split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+// Etapa (0/1/2) de uma marca _cobr — aceita o formato novo (id:e1) e o legado (id:7)
+function _cobrEtapaDaMarca(marca) {
+  var suf = String(marca || '').split(':')[1] || '';
+  if (suf.charAt(0) === 'e') { var n = parseInt(suf.slice(1), 10); return isNaN(n) ? null : n; }
+  return ({ '3': 0, '7': 1, '14': 2 })[suf] != null ? ({ '3': 0, '7': 1, '14': 2 })[suf] : null;
+}
+
 function _gerarTarefasCobranca() {
   try {
     if (typeof tasks === 'undefined' || typeof charges === 'undefined') return;
     if (typeof carregarTarefas === 'function' && !tasks.length) carregarTarefas();
+    var regua = _cobrRegua();
     var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    var novas = 0;
-    charges.forEach(function(c) {
-      if (!c || c.deleted || !_chargeVencida(c)) return;
-      var d = (c.date || '').trim(), iso = null;
-      if (/^\d{4}-\d{2}-\d{2}/.test(d)) iso = d.slice(0, 10);
-      else { var pp = d.split('/'); if (pp.length >= 2) iso = (pp[2] || hoje.getFullYear()) + '-' + String(pp[1]).padStart(2, '0') + '-' + String(pp[0]).padStart(2, '0'); }
+    var novas = 0, mudou = false;
+
+    // 1) Autolimpeza: cobrança paga/excluída/sumida fecha as tarefas abertas dela.
+    var vencidas = {};
+    charges.forEach(function(c) { if (c && !c.deleted && _chargeVencida(c)) vencidas[String(c.id)] = c; });
+    tasks.forEach(function(t) {
+      if (!t || !t._cobr || t.status !== 'aberta') return;
+      if (!vencidas[String(t._cobr).split(':')[0]]) { t.status = 'concluida'; t._cobrAuto = 'resolvida'; mudou = true; }
+    });
+
+    // 2) Por cobrança vencida: só a etapa MAIS AVANÇADA aplicável fica aberta.
+    Object.keys(vencidas).forEach(function(cid) {
+      var c = vencidas[cid];
+      var iso = _cobrIso(c);
       if (!iso) return;
       var dias = Math.floor((hoje - new Date(iso + 'T00:00:00')) / 86400000);
-      [[14, 'conversar com ' + (c.patient || 'paciente') + ' sobre o pagamento'],
-       [7,  'segundo lembrete de pagamento para ' + (c.patient || 'paciente')],
-       [3,  'lembrete gentil de pagamento para ' + (c.patient || 'paciente')]].forEach(function(et) {
-        if (dias < et[0]) return;
-        var marca = String(c.id) + ':' + et[0];
-        if (tasks.some(function(t) { return t._cobr === marca; })) return;
-        var titulo = 'Cobrança D+' + et[0] + ': ' + et[1] + ' (R$ ' + (parseFloat(c.value) || 0) + ', venceu ' + (c.date || '—') + ')';
-        tasks.push({ id: Date.now() + novas, title: titulo, titulo: titulo, patientName: c.patient || '',
-                     dueDate: (typeof hojeISO === 'function' ? hojeISO() : ''), status: 'aberta',
-                     createdAt: (typeof hojeISO === 'function' ? hojeISO() : ''), _cobr: marca });
-        novas++;
+      var etapaIdx = -1;
+      for (var i = regua.length - 1; i >= 0; i--) { if (dias >= regua[i].dias) { etapaIdx = i; break; } }
+      if (etapaIdx < 0) return;
+
+      // Etapas anteriores ainda abertas foram superadas — fecham sozinhas.
+      tasks.forEach(function(t) {
+        if (!t || t.status !== 'aberta' || !t._cobr) return;
+        if (String(t._cobr).split(':')[0] !== cid) return;
+        var tIdx = _cobrEtapaDaMarca(t._cobr);
+        if (tIdx != null && tIdx < etapaIdx) { t.status = 'concluida'; t._cobrAuto = 'superada'; mudou = true; }
       });
+
+      var marca = cid + ':e' + etapaIdx;
+      var legada = cid + ':' + [3, 7, 14][etapaIdx]; // marca da v1 (dias fixos)
+      if (tasks.some(function(t) { return t._cobr === marca || t._cobr === legada; })) return;
+      var et = regua[etapaIdx];
+      var titulo = 'Cobrança D+' + et.dias + ': ' + et.rotulo + ' — ' + (c.patient || 'paciente')
+        + ' (R$ ' + (parseFloat(c.value) || 0) + ', venceu ' + _cobrDataBR(iso) + ')';
+      tasks.push({ id: Date.now() + novas, title: titulo, titulo: titulo, patientName: c.patient || '',
+                   dueDate: (typeof hojeISO === 'function' ? hojeISO() : ''), status: 'aberta',
+                   createdAt: (typeof hojeISO === 'function' ? hojeISO() : ''), _cobr: marca });
+      novas++;
     });
-    if (novas > 0) {
+
+    if (novas > 0 || mudou) {
       if (typeof salvarTarefas === 'function') salvarTarefas();
       if (typeof atualizarBadgeTarefas === 'function') atualizarBadgeTarefas();
-      if (typeof showToast === 'function') showToast('📋 Régua de cobrança: ' + novas + (novas === 1 ? ' tarefa criada' : ' tarefas criadas') + ' para cobranças vencidas.');
+      if (novas > 0 && typeof showToast === 'function') showToast('📋 Régua de cobrança: ' + novas + (novas === 1 ? ' tarefa criada' : ' tarefas criadas') + ' para cobranças vencidas.');
     }
   } catch (e) { console.warn('[TF] escalação de cobrança:', e.message); }
 }
 
+// Mensagem da etapa com os dados reais (placeholders documentados no modal de config)
+function _cobrMsg(c, etapa) {
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch (e) {}
+  return etapa.msg
+    .replace(/\{nome\}/g, _firstName(c.patient || ''))
+    .replace(/\{valor\}/g, 'R$ ' + (parseFloat(c.value) || 0))
+    .replace(/\{vencimento\}/g, _cobrDataBR(_cobrIso(c)))
+    .replace(/\{pix\}/g, acc.pix_key ? '\n\nChave PIX: ' + acc.pix_key : '')
+    .replace(/\{terapeuta\}/g, acc.nome ? acc.nome.split(' ')[0] : 'sua terapeuta');
+}
+
+// 📲 da tarefa de cobrança: abre o WhatsApp com a mensagem da etapa pronta.
+function _cobrWppTarefa(taskId) {
+  var t = (typeof tasks !== 'undefined' ? tasks : []).find(function(x) { return x.id === taskId; });
+  if (!t || !t._cobr) return;
+  var cid = String(t._cobr).split(':')[0];
+  var c = charges.find(function(x) { return String(x.id) === cid && !x.deleted; });
+  if (!c || !_chargeVencida(c)) { showToast('Esta cobrança já foi resolvida — pode concluir a tarefa.'); return; }
+  var regua = _cobrRegua();
+  var idx = _cobrEtapaDaMarca(t._cobr);
+  var etapa = regua[Math.min(Math.max(idx == null ? 0 : idx, 0), regua.length - 1)];
+  var p = patients.find(function(x) { return x.name === c.patient; });
+  if (!p || !p.whatsapp) { showToast('⚠ ' + _firstName(c.patient || 'Paciente') + ' está sem WhatsApp cadastrado — adicione em Pacientes → Editar.'); return; }
+  var n = _wppNumero(p.whatsapp);
+  if (!n) { showToast('⚠ Número de WhatsApp inválido — confira em Pacientes → Editar.'); return; }
+  window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(_cobrMsg(c, etapa)), '_blank');
+  showToast('📲 Mensagem da etapa D+' + etapa.dias + ' pronta no WhatsApp — revise e envie.');
+}
+
+// Guia do Financeiro: linhas da régua desenhadas da CONFIG real (o guia era estático)
+function _renderReguaGuia() {
+  var el = document.getElementById('fin-regua-lista');
+  var regua = _cobrRegua();
+  if (el) {
+    var cores = ['var(--amber)', 'var(--amber)', 'var(--red)'];
+    el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:10px;height:10px;border-radius:50%;background:var(--sage);flex-shrink:0"></div><div><strong>Dia da sessão</strong> — Envie o link PIX via WhatsApp</div></div>'
+      + regua.map(function(et, i) {
+        var rot = et.rotulo.charAt(0).toUpperCase() + et.rotulo.slice(1);
+        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:10px;height:10px;border-radius:50%;background:' + cores[i] + ';flex-shrink:0"></div><div><strong>Dia ' + et.dias + '</strong> — ' + escHTML(rot) + ' via WhatsApp</div></div>';
+      }).join('');
+  }
+  var sub = document.getElementById('fin-regua-sub');
+  if (sub) sub.textContent = 'Cobrança vencida gera a tarefa da etapa atual (D+' + regua[0].dias + ' → D+' + regua[1].dias + ' → D+' + regua[2].dias + ') em Tarefas. Cada envio você dispara pelo 📲 da tarefa ou da cobrança — nada é enviado sem você.';
+}
+
+function abrirConfigRegua() {
+  var regua = _cobrRegua();
+  var blocos = regua.map(function(et, i) {
+    var rot = et.rotulo.charAt(0).toUpperCase() + et.rotulo.slice(1);
+    return '<div style="margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg)">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+        + '<span style="font-size:13px;font-weight:600;color:var(--ink)">' + (i + 1) + 'ª etapa — ' + escHTML(rot) + '</span>'
+        + '<span style="margin-left:auto;font-size:12px;color:var(--muted)">D+</span>'
+        + '<input type="number" min="1" max="90" id="regua-dias-' + i + '" value="' + et.dias + '" style="width:58px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--white);color:var(--ink)"/>'
+        + '<span style="font-size:12px;color:var(--muted)">dias após o vencimento</span>'
+      + '</div>'
+      + '<textarea id="regua-msg-' + i + '" style="width:100%;min-height:88px;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--white);color:var(--ink);line-height:1.5;box-sizing:border-box">' + escHTML(et.msg) + '</textarea>'
+      + '</div>';
+  }).join('');
+  var modal = document.getElementById('modal-cobr-regua');
+  if (modal) modal.remove();
+  modal = document.createElement('div');
+  modal.id = 'modal-cobr-regua';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = '<div class="modal" style="max-width:560px">'
+    + '<div class="modal-header"><div class="modal-title">Régua de cobrança — prazos e mensagens</div>'
+    + '<button class="modal-close" onclick="closeModal(\'modal-cobr-regua\')">✕</button></div>'
+    + '<div class="modal-body">'
+      + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6">Use <strong>{nome}</strong> (paciente), <strong>{valor}</strong>, <strong>{vencimento}</strong>, <strong>{pix}</strong> (sua chave, se cadastrada no Perfil) e <strong>{terapeuta}</strong> — eles são trocados pelos dados reais na hora do envio.</div>'
+      + blocos
+      + '<div style="display:flex;gap:8px;justify-content:space-between;margin-top:4px">'
+        + '<button class="btn btn-secondary btn-sm" onclick="_restaurarConfigRegua()">Restaurar padrão</button>'
+        + '<button class="btn btn-primary" onclick="_salvarConfigRegua()">Salvar régua</button>'
+      + '</div>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('open'); });
+  modal.classList.add('open');
+}
+
+function _restaurarConfigRegua() {
+  _COBR_REGUA_DEF.forEach(function(et, i) {
+    var d = document.getElementById('regua-dias-' + i);
+    var m = document.getElementById('regua-msg-' + i);
+    if (d) d.value = et.dias;
+    if (m) m.value = et.msg;
+  });
+}
+
+function _salvarConfigRegua() {
+  var arr = [0, 1, 2].map(function(i) {
+    var d = document.getElementById('regua-dias-' + i);
+    var m = document.getElementById('regua-msg-' + i);
+    return { dias: Math.max(1, Math.min(90, parseInt(d && d.value, 10) || _COBR_REGUA_DEF[i].dias)),
+             msg: ((m && m.value) || '').trim() || _COBR_REGUA_DEF[i].msg };
+  });
+  if (window._tfDemo) {
+    window._tfDemoRegua = arr; // hermético: não contamina tf_account de conta real
+  } else {
+    try {
+      var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+      acc.cobr_regua = arr;
+      localStorage.setItem('tf_account', JSON.stringify(acc));
+    } catch (e) { showToast('⚠ Não consegui salvar a régua neste aparelho (armazenamento cheio?).'); return; }
+  }
+  closeModal('modal-cobr-regua');
+  _renderReguaGuia();
+  _gerarTarefasCobranca();
+  showToast('✓ Régua de cobrança salva — as próximas tarefas usam os novos prazos.');
+}
+
 function initFinanceiro() {
   _gerarTarefasCobranca();
+  _renderReguaGuia();
   _gerarCobrancasDosPlanos(); // planos mensais: gera a cobrança do mês se ainda não existe
   _popularMesesFinanceiro();
   var sel = document.getElementById('fin-month-select');

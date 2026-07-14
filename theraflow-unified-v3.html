@@ -1244,8 +1244,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card">
           <div class="section-title" style="margin-bottom:4px">Escalação de cobrança <span style="font-size:10px;font-weight:600;background:var(--sage-light);color:var(--sage);padding:2px 7px;border-radius:6px;vertical-align:middle">ativa · cria tarefas</span></div>
-          <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Cobrança vencida gera tarefas automáticas em D+3, D+7 e D+14 (veja em Tarefas). Cada envio você dispara pelo botão WhatsApp da cobrança — nada é enviado sem você.</div>
-          <div style="font-size:13px;color:var(--ink-soft);line-height:1.7">
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px" id="fin-regua-sub">Cobrança vencida gera a tarefa da etapa atual (D+3 → D+7 → D+14) em Tarefas. Cada envio você dispara pelo 📲 da tarefa ou da cobrança — nada é enviado sem você.</div>
+          <div style="font-size:13px;color:var(--ink-soft);line-height:1.7" id="fin-regua-lista">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
               <div style="width:10px;height:10px;border-radius:50%;background:var(--sage);flex-shrink:0"></div>
               <div><strong>Dia da sessão</strong> — Envie o link PIX via WhatsApp</div>
@@ -1262,12 +1262,10 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
               <div style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0"></div>
               <div><strong>Dia 14</strong> — Alerta no painel da terapeuta</div>
             </div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:10px;height:10px;border-radius:50%;background:var(--ink);flex-shrink:0"></div>
-              <div><strong>Dia 21</strong> — Bloqueio de agenda <em>(opcional)</em></div>
-            </div>
           </div>
-          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">Todos os prazos e mensagens são configuráveis nas preferências.</div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+            <button class="btn btn-secondary btn-sm" onclick="abrirConfigRegua()">⚙ Configurar prazos e mensagens</button>
+          </div>
         </div>
 
         <div class="card">
