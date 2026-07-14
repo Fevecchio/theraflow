@@ -385,7 +385,7 @@ function showAgendarModal(preData, preHora) {
                 <input type="checkbox" disabled style="accent-color:var(--sage)"> Adicionar ao Google Calendar / Outlook <span style="font-size:10px;background:#eee;color:#888;padding:1px 6px;border-radius:6px">em breve</span>
               </label>
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#555;cursor:pointer">
-                <input type="checkbox" id="agendar-chk-reminder" checked style="accent-color:var(--sage)"> Lembrete 24h antes (email ao paciente)
+                <input type="checkbox" id="agendar-chk-reminder" checked style="accent-color:var(--sage)"> Lembretes 24h e 15 min antes (email ao paciente)
               </label>
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#555;cursor:pointer">
                 <input type="checkbox" id="agendar-chk-wpp" style="accent-color:var(--sage)"> Enviar link pelo WhatsApp também

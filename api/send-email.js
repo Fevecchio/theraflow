@@ -208,6 +208,37 @@ function tmplReminder({ terapeutaNome, pacienteNome, data, hora, sessionLink }) 
 </html>`;
 }
 
+function tmplReminder15({ terapeutaNome, pacienteNome, hora, sessionLink }) {
+  const safeLink = safeUrl(sessionLink);
+  const linkHtml = safeLink
+    ? `<a href="${safeLink}" style="display:inline-block;margin-top:20px;padding:14px 28px;background:#4a7c59;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px">▶ Entrar na sessão</a>`
+    : '';
+  terapeutaNome = esc(terapeutaNome); pacienteNome = esc(pacienteNome); hora = esc(hora);
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f3ee;font-family:'DM Sans',Arial,sans-serif">
+  <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+    <div style="background:#4a7c59;padding:28px 32px">
+      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">TheraFlow</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px">Sua sessão começa em instantes</div>
+    </div>
+    <div style="padding:32px">
+      <p style="font-size:16px;color:#1a1a1a;margin:0 0 8px">Olá, <strong>${pacienteNome}</strong></p>
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px">Sua sessão com <strong>${terapeutaNome}</strong> começa <strong>em 15 minutos</strong>, às <strong>${hora}</strong>. Encontre um lugar tranquilo e prepare fones de ouvido, se puder.</p>
+
+      ${linkHtml ? `<div style="text-align:center">${linkHtml}</div>` : ''}
+
+      <p style="font-size:12px;color:#aaa;margin-top:32px;border-top:1px solid #f0f0f0;padding-top:16px">
+        <em>Lembrete automático gerado pelo TheraFlow.</em>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 function tmplPortal({ terapeutaNome, pacienteNome, email, senha, portalUrl }) {
   const safePortal = safeUrl(portalUrl) || 'https://theraflow-one.vercel.app/paciente';
   terapeutaNome = esc(terapeutaNome); pacienteNome = esc(pacienteNome); email = esc(email); senha = esc(senha);
@@ -288,28 +319,53 @@ export default async function handler(req, res) {
   const toApproved = ownership.allowed && ownership.allowed.length ? ownership.allowed : normalizeAll(to);
 
   const resend = new Resend(RESEND_KEY);
+  // RESEND_FROM: use noreply@<dominio> após verificar o domínio na Resend
+  const fromAddr = process.env.RESEND_FROM || 'TheraFlow <onboarding@resend.dev>';
+
+  // 'reminder' agenda DOIS emails via scheduledAt (Resend dispara sozinho, sem
+  // cron): 24h antes ("é amanhã") e 15min antes ("começa em instantes", com o
+  // link da sala quando houver). Cada um só entra se ainda couber no relógio.
+  if (template === 'reminder') {
+    if (!data?.sessionDateISO || !data?.hora) {
+      return res.status(400).json({ error: 'reminder exige data.sessionDateISO e data.hora' });
+    }
+    const sessionDt = new Date(`${data.sessionDateISO}T${data.hora}:00`);
+    if (isNaN(sessionDt.getTime())) return res.status(400).json({ error: 'Data/hora da sessão inválida' });
+    const agora = new Date();
+    const etapas = [
+      { rotulo: '24h',   dt: new Date(sessionDt.getTime() - 24 * 60 * 60 * 1000),
+        subject: `Lembrete: sua sessão é amanhã às ${data.hora}`, html: tmplReminder(data) },
+      { rotulo: '15min', dt: new Date(sessionDt.getTime() - 15 * 60 * 1000),
+        subject: `Sua sessão começa em 15 minutos (${data.hora})`, html: tmplReminder15(data) },
+    ];
+    const agendados = [], pulados = [];
+    try {
+      for (const e of etapas) {
+        if (e.dt <= agora) { pulados.push(e.rotulo); continue; }
+        const r = await resend.emails.send({
+          from: fromAddr, to: toApproved, subject: e.subject, html: e.html,
+          scheduledAt: e.dt.toISOString(),
+        });
+        if (r.error) {
+          console.error('[send-email] Resend error (reminder ' + e.rotulo + '):', r.error);
+          return res.status(502).json({ error: r.error.message, agendados });
+        }
+        agendados.push({ etapa: e.rotulo, id: r.data?.id, scheduledAt: e.dt.toISOString() });
+      }
+      console.log('[send-email] Reminders:', JSON.stringify({ agendados, pulados }));
+      if (!agendados.length) return res.status(200).json({ ok: true, skipped: true, reason: 'session_too_soon', pulados });
+      return res.status(200).json({ ok: true, agendados, pulados });
+    } catch (e) {
+      console.error('[send-email] Exceção (reminder):', e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  }
 
   let subject, html, scheduledAt = null;
 
   if (template === 'invite') {
     subject = `Sessão confirmada — ${data?.data || ''} às ${data?.hora || ''}`;
     html = tmplInvite(data || {});
-  } else if (template === 'reminder') {
-    subject = `Lembrete: sua sessão é amanhã às ${data?.hora || ''}`;
-    html = tmplReminder(data || {});
-    // Agendar para 24h antes da sessão (Resend scheduledAt)
-    if (data?.sessionDateISO && data?.hora) {
-      const sessionDt = new Date(`${data.sessionDateISO}T${data.hora}:00`);
-      const reminderDt = new Date(sessionDt.getTime() - 24 * 60 * 60 * 1000);
-      if (reminderDt > new Date()) {
-        scheduledAt = reminderDt.toISOString();
-        console.log('[send-email] Lembrete agendado para:', scheduledAt);
-      } else {
-        // Sessão já em menos de 24h — não faz sentido enviar lembrete "amanhã"
-        console.log('[send-email] Sessão em menos de 24h, lembrete não enviado');
-        return res.status(200).json({ ok: true, skipped: true, reason: 'session_within_24h' });
-      }
-    }
   } else if (template === 'portal') {
     subject = `${data?.terapeutaNome || 'Seu terapeuta'} ativou seu portal TheraFlow`;
     html = tmplPortal(data || {});
@@ -318,9 +374,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // RESEND_FROM: use noreply@theraflow.com.br após verificar o domínio na Resend
-    const fromAddr = process.env.RESEND_FROM || 'TheraFlow <onboarding@resend.dev>';
-    const emailPayload = { from: fromAddr, to, subject, html };
+    // Envia SÓ para a lista aprovada (o comentário lá em cima prometia isso, mas
+    // o payload usava o `to` cru do body — corrigido 14/07).
+    const emailPayload = { from: fromAddr, to: toApproved, subject, html };
     if (scheduledAt) emailPayload.scheduledAt = scheduledAt;
     const result = await resend.emails.send(emailPayload);
 

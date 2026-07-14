@@ -419,13 +419,16 @@ function confirmarAgendamento() {
       };
       if (_enviarInvite)   _sendEmail('invite',   p.email, _emailData);
       if (_enviarReminder) {
-        // Verifica se sessão é em mais de 24h — senão lembrete não faz sentido
+        // O servidor agenda 24h E 15min antes (Resend scheduledAt) — cada etapa só
+        // entra se ainda couber no relógio. Só pulamos tudo se nem 15min couber.
         var _sessionDt = new Date(datas[0] + 'T' + horaVal + ':00');
-        var _reminderDt = new Date(_sessionDt.getTime() - 24*60*60*1000);
-        if (_reminderDt > new Date()) {
+        if (_sessionDt.getTime() - 15 * 60 * 1000 > Date.now()) {
           _sendEmail('reminder', p.email, _emailData);
+          if (_sessionDt.getTime() - 24 * 60 * 60 * 1000 <= Date.now()) {
+            showToast('ℹ Sessão em menos de 24h — só o lembrete de 15 min foi agendado');
+          }
         } else {
-          showToast('ℹ Sessão em menos de 24h — lembrete não enviado');
+          showToast('ℹ Sessão em menos de 15 min — lembretes não agendados');
         }
       }
     }
