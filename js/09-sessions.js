@@ -85,31 +85,36 @@ async function startSession() {
   // Limpa anotações rápidas
   const qn = document.getElementById('session-quick-notes');
   if (qn) qn.value = '';
-  // Auto-popula nota clínica com template por abordagem
+  // Auto-popula nota clínica com template por abordagem (TEXTO puro — é textarea)
   const _noteEl = document.getElementById('session-ai-note');
   if (_noteEl) {
     const _sp2 = _tfSessionPatient();
-    if (_sp2) {
-      const _ab = (_sp2.abordagem || 'TCC').toLowerCase();
-      const _nomeP = _sp2.name.split(' ')[0];
-      const _sessN = (_sp2.sessions || 0) + 1;
-      let _tpl = '';
-      if (_ab.includes('tcc') || _ab.includes('cognitivo')) {
-        _tpl = `Sessão ${_sessN} · ${_nomeP} · Abordagem: TCC\n\nS — Subjetivo: [relato do paciente após revisão da transcrição]\nO — Objetivo: [observações clínicas]\nA — Avaliação: [análise e progresso]\nP — Plano: [próximos passos e tarefas]`;
-      } else if (_ab.includes('psicanalit') || _ab.includes('psicanál')) {
-        _tpl = `Sessão ${_sessN} · ${_nomeP} · Abordagem: Psicanálise\n\nMaterial trazido: [conteúdo da sessão]\nTransferência/Contratransferência: [observações]\nInterpretações: [intervenções realizadas]\nPróxima sessão: [direções]`;
-      } else if (_ab.includes('sistêm') || _ab.includes('sistem')) {
-        _tpl = `Sessão ${_sessN} · ${_nomeP} · Abordagem: Sistêmica\n\nDinâmica relacional: [padrões observados]\nRecursos e fortalezas: [pontos positivos]\nIntervenções: [técnicas utilizadas]\nTarefa para casa: [combinado]`;
-      } else if (_ab.includes('humanis')) {
-        _tpl = `Sessão ${_sessN} · ${_nomeP} · Abordagem: Humanista\n\nPresença e vínculo: [qualidade da relação terapêutica]\nExperiências trabalhadas: [conteúdo emocional]\nReflexões: [insights do paciente]\nCaminho: [próximos passos]`;
-      } else {
-        _tpl = `Sessão ${_sessN} · ${_nomeP} · Abordagem: ${_sp2.abordagem || '—'}\n\nConteúdo: [relato após revisão da transcrição]\nObservações clínicas: [intervenções e reações]\nPlano: [próximos passos]`;
-      }
-      _noteEl.value = _tpl;
-    }
+    if (_sp2) _noteEl.value = _notaTemplateTexto(_sp2);
   }
   // Preenche painel de contexto clínico
   _renderSessionContext(sp);
+}
+
+/* Template de nota em TEXTO PURO para o textarea #session-ai-note.
+ * (O primo _gerarNotaEstrutural devolve HTML para painéis renderizados — jogar
+ * HTML num textarea mostrava o código cru na tela, bug reportado 14/07.) */
+function _notaTemplateTexto(sp) {
+  var ab = (sp.abordagem || 'TCC').toLowerCase();
+  var nomeP = sp.name.split(' ')[0];
+  var sessN = (sp.sessions || 0) + 1;
+  if (ab.includes('tcc') || ab.includes('cognitivo')) {
+    return 'Sessão ' + sessN + ' · ' + nomeP + ' · Abordagem: TCC\n\nS — Subjetivo: [relato do paciente após revisão da transcrição]\nO — Objetivo: [observações clínicas]\nA — Avaliação: [análise e progresso]\nP — Plano: [próximos passos e tarefas]';
+  }
+  if (ab.includes('psicanalit') || ab.includes('psicanál') || ab.includes('psicanalise') || ab.includes('psicodinami')) {
+    return 'Sessão ' + sessN + ' · ' + nomeP + ' · Abordagem: Psicanálise\n\nMaterial trazido: [conteúdo da sessão]\nTransferência/Contratransferência: [observações]\nInterpretações: [intervenções realizadas]\nPróxima sessão: [direções]';
+  }
+  if (ab.includes('sistêm') || ab.includes('sistem')) {
+    return 'Sessão ' + sessN + ' · ' + nomeP + ' · Abordagem: Sistêmica\n\nDinâmica relacional: [padrões observados]\nRecursos e fortalezas: [pontos positivos]\nIntervenções: [técnicas utilizadas]\nTarefa para casa: [combinado]';
+  }
+  if (ab.includes('humanis')) {
+    return 'Sessão ' + sessN + ' · ' + nomeP + ' · Abordagem: Humanista\n\nPresença e vínculo: [qualidade da relação terapêutica]\nExperiências trabalhadas: [conteúdo emocional]\nReflexões: [insights do paciente]\nCaminho: [próximos passos]';
+  }
+  return 'Sessão ' + sessN + ' · ' + nomeP + ' · Abordagem: ' + (sp.abordagem || '—') + '\n\nConteúdo: [relato após revisão da transcrição]\nObservações clínicas: [intervenções e reações]\nPlano: [próximos passos]';
 }
 
 function _popularSelectPaciente() {
@@ -151,9 +156,10 @@ function trocarPacienteSessao(newIdx) {
   var sfA = document.getElementById('sf-abordagem'); if (sfA) sfA.textContent = sp.abordagem || '—';
   var sfS = document.getElementById('sf-sessao');    if (sfS) sfS.textContent = 'Sessão ' + ((sp.sessions||0)+1);
   var sfC = document.getElementById('sf-cid');       if (sfC) sfC.textContent = sp.cid || '—';
-  // Gera novo template de nota para o paciente trocado
+  // Gera novo template de nota para o paciente trocado (TEXTO puro — despejar
+  // o HTML de _gerarNotaEstrutural aqui mostrava código cru no textarea, 14/07)
   var noteEl = document.getElementById('session-ai-note');
-  if (noteEl) noteEl.value = _gerarNotaEstrutural();
+  if (noteEl) noteEl.value = _notaTemplateTexto(sp);
   // Repopula painel direito (histórico, contexto, perguntas)
   _renderSessionContext(sp);
   // Sincroniza índice do briefing
