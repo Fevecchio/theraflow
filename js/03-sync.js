@@ -22,7 +22,8 @@ function _setSyncStatus(state) {
     bar.style.color = '#c97d2e'; bar.style.background = 'rgba(201,125,46,.08)';
   } else {
     icon.textContent = '✓'; text.textContent = 'Sincronizado';
-    bar.style.color = '#8fb89c'; bar.style.background = 'rgba(74,124,89,.06)';
+    // Sidebar é CLARA — verde-claro #8fb89c era ilegível (revisão 14/07)
+    bar.style.color = 'var(--sage-dark)'; bar.style.background = 'rgba(74,122,99,.08)';
   }
 }
 // Recheck sob demanda (clique na barrinha): o estado 'noauth' ficava CONGELADO

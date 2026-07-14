@@ -150,11 +150,12 @@ function atualizarTrialUI(count) {
       // de preço travado, espelhando a landing.
       var _fAcc = {}; try { _fAcc = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch(_) {}
       var _fN = _fAcc.founder_number;
-      bar.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px">✦</span><div><div style="font-size:12px;font-weight:700;color:#7fcf97">' + (_fN ? 'Fundador(a) #' + _fN : 'Plano Pro') + '</div><div style="font-size:10.5px;color:#5a9a6d;margin-top:1px">' + (_fN ? 'Preço travado para sempre' : 'Sessões ilimitadas') + '</div></div></div>'
+      // Sidebar CLARA: tinta escura legível (verde-claro #7fcf97 sumia — revisão 14/07)
+      bar.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;color:var(--sage-dark)">✦</span><div><div style="font-size:12px;font-weight:700;color:var(--sage-dark)">' + (_fN ? 'Fundador(a) #' + _fN : 'Plano Pro') + '</div><div style="font-size:10.5px;color:var(--ink-soft);margin-top:1px">' + (_fN ? 'Preço travado para sempre' : 'Sessões ilimitadas') + '</div></div></div>'
         // B-A4 (decisão #5): gerenciar/cancelar assinatura pelo app (Stripe Billing Portal)
-        + '<button onclick="gerenciarAssinatura(this)" style="margin-top:8px;width:100%;padding:6px;background:transparent;color:#7fcf97;border:1px solid rgba(127,207,151,.4);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Gerenciar assinatura</button>';
-      bar.style.background = 'rgba(74,124,89,.2)';
-      bar.style.borderColor = 'rgba(74,124,89,.4)';
+        + '<button onclick="gerenciarAssinatura(this)" style="margin-top:8px;width:100%;padding:6px;background:var(--white);color:var(--sage-dark);border:1px solid rgba(74,122,99,.35);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Gerenciar assinatura</button>';
+      bar.style.background = 'rgba(74,122,99,.10)';
+      bar.style.borderColor = 'rgba(74,122,99,.28)';
     }
     return;
   }
@@ -173,8 +174,8 @@ function atualizarTrialUI(count) {
     if (_fT && !_fTag) {
       _fTag = document.createElement('div');
       _fTag.id = 'trial-founder-tag';
-      _fTag.style.cssText = 'margin-bottom:6px;font-size:11px;font-weight:700;color:#7fcf97;display:flex;align-items:center;gap:5px';
-      _fTag.innerHTML = '✦ Fundador(a) #' + _fT + ' <span style="font-weight:500;color:#5a9a6d">· preço travado quando assinar</span>';
+      _fTag.style.cssText = 'margin-bottom:6px;font-size:11px;font-weight:700;color:var(--sage-dark);display:flex;align-items:center;gap:5px';
+      _fTag.innerHTML = '✦ Fundador(a) #' + _fT + ' <span style="font-weight:500;color:var(--ink-soft)">· preço travado quando assinar</span>';
       bar.insertBefore(_fTag, bar.firstChild);
     } else if (!_fT && _fTag) { _fTag.remove(); }
   }
