@@ -257,14 +257,17 @@ function _mostrarOpcoesAppt(pi, apptId) {
   popup.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.35);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
   popup.innerHTML = '<div style="background:var(--white);border-radius:14px;padding:20px 24px;max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-      + '<div><div style="font-weight:600;font-size:15px;color:#1a1a1a">'+escHTML(p.name)+'</div>'
+      + '<div><div style="font-weight:600;font-size:15px;color:var(--ink)">'+escHTML(p.name)+'</div>'
       + '<div style="font-size:12px;color:var(--muted)">'+(a ? escHTML(a.abordagem || '—')+' · '+a.time : '—')+'</div></div>'
-      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:#999;padding:0;line-height:1">✕</button>'
+      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--muted);padding:0;line-height:1">✕</button>'
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:8px">'
       + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();_tfSetSessionPatientAppt(\''+apptId+'\');currentSessionApptId=\''+apptId+'\';navigate(\'sessao\')" style="width:100%;padding:10px;background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">▶ Iniciar sessão agora</button>'
       + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="width:100%;padding:10px;background:var(--purple-light,#f0ecfa);color:var(--purple,#5a3e8a);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">✦ Briefing IA</button>'
-      + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();reagendarAppointment('+apptId+')" style="width:100%;padding:10px;background:#f5f5f5;color:#555;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left">↻ Reagendar</button>' : '')
+      // "Ver paciente": conferir a ficha sem sair caçando em Pacientes (pedido do
+      // usuário 14/07 — o fluxo agenda→ficha exigia navegar e buscar de novo).
+      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();navigate(\'pacientes\');setTimeout(function(){if(typeof selectPatient===\'function\')selectPatient('+pi+')},150)" style="width:100%;padding:10px;background:var(--sage-light,#eaf1ec);color:var(--sage-dark,#3d6653);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">⊙ Ver paciente</button>'
+      + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();reagendarAppointment('+apptId+')" style="width:100%;padding:10px;background:var(--line-2,#f5f5f5);color:var(--ink-soft,#555);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left">↻ Reagendar</button>' : '')
     + '</div>'
   + '</div>';
   document.body.appendChild(popup);
