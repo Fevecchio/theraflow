@@ -110,11 +110,9 @@ function initBriefing() {
     document.getElementById('b-state-result').style.display = 'block';
     document.getElementById('b-section-themes').style.display = 'block';
     document.getElementById('b-section-timeline').style.display = 'block';
-    var _ct = new Date(_bcache.generatedAt);
-    var _ts = String(_ct.getHours()).padStart(2,'0') + ':' + String(_ct.getMinutes()).padStart(2,'0');
     var subEl = document.getElementById('b-result-subtitle');
     var _unch = _briefingCacheUnchanged(_bcache, p);
-    if (subEl) subEl.textContent = 'Cache de ' + _ts + ' · ' + (p.sessions||0) + ' sessões · ' + (_unch ? 'sem alterações' : 'há alterações');
+    if (subEl) subEl.textContent = 'Gerado ' + _briefingQuando(_bcache) + ' · ' + (p.sessions||0) + ' sessões · ' + (_unch ? 'sem alterações desde então' : 'há informações novas');
     renderBriefingContent(_bcache.content);
     renderThemes(); renderTimeline();
     _setRegenBtn(_unch);
@@ -126,20 +124,28 @@ function trocarPacienteBriefing(idx) {
   initBriefing();
 }
 
+/* Reforma 14/07 (pedido do usuário + economia de tokens): o cache NÃO morre mais
+ * à meia-noite — o briefing fica SEMPRE disponível e só pede regeneração quando
+ * os DADOS mudaram (fingerprint abaixo). Antes: sumia todo dia e forçava gerar
+ * de novo sem nenhum dado novo. TTL de segurança de 30 dias. */
 function _getBriefingCache(key) {
   try {
     var raw = localStorage.getItem('tf_bc_' + key);
     if (!raw) return null;
     var c = JSON.parse(raw);
-    var todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    if (c.generatedAt < todayStart.getTime()) return null;
+    if (Date.now() - c.generatedAt > 30 * 86400000) return null;
     return c;
   } catch(_) { return null; }
 }
 
+/* Fingerprint dos dados clínicos: sessões, notas e (caches novos) humor/diário.
+ * Campos ausentes em caches antigos não invalidam (compat). */
 function _briefingCacheUnchanged(c, bp) {
-  return c.sessionCount === (bp.sessions || 0) &&
-         c.noteCount === (bp.prontuarioNotes || []).length;
+  if (c.sessionCount !== (bp.sessions || 0)) return false;
+  if (c.noteCount !== (bp.prontuarioNotes || []).length) return false;
+  if (c.moodCount !== undefined && c.moodCount !== (bp.moodHistory || []).length) return false;
+  if (c.diaryCount !== undefined && c.diaryCount !== (bp.diary || []).length) return false;
+  return true;
 }
 
 function _saveBriefingCache(key, content) {
@@ -150,9 +156,33 @@ function _saveBriefingCache(key, content) {
       content: content,
       generatedAt: Date.now(),
       sessionCount: bp.sessions || 0,
-      noteCount: (bp.prontuarioNotes || []).length
+      noteCount: (bp.prontuarioNotes || []).length,
+      moodCount: (bp.moodHistory || []).length,
+      diaryCount: (bp.diary || []).length
     }));
   } catch(_) {}
+}
+
+/* Rótulo do momento da geração ("hoje às 14:32" / "12/07 às 09:10"). */
+function _briefingQuando(c) {
+  var d = new Date(c.generatedAt);
+  var hm = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  var hoje = new Date();
+  var mesmoDia = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
+  return mesmoDia ? 'hoje às ' + hm : String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + ' às ' + hm;
+}
+
+/* Pontinho âmbar sutil para os botões ✦: só aparece quando EXISTE briefing e os
+ * dados mudaram desde a geração ("precisa atualizar" — pedido 14/07). */
+function _briefingDotHtml(p) {
+  try {
+    if (!p) return '';
+    var c = _getBriefingCache(p.id || p.name);
+    if (c && !_briefingCacheUnchanged(c, p)) {
+      return '<span title="Há informações novas desde o último briefing — vale atualizar" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-left:5px;vertical-align:middle;flex-shrink:0"></span>';
+    }
+  } catch(e) {}
+  return '';
 }
 
 function _setRegenBtn(disabled) {

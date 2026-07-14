@@ -914,9 +914,10 @@ function renderPatientDetailShell(i) {
     ['anamnese','Anamnese'],['briefing','Briefing IA'],
     ['config','Acesso & Config']
   ];
+  var _bdot = (typeof _briefingDotHtml === 'function') ? _briefingDotHtml(p) : '';
   var tabBarHtml = '<div class="patient-tab-bar" id="ptab-bar">'
     + tabDefs.map(function(td){
-        return '<button class="ptab'+(currentPatientTab===td[0]?' active':'')+'" data-tab="'+td[0]+'" onclick="selectPatientTab(\''+td[0]+'\')">'+td[1]+'</button>';
+        return '<button class="ptab'+(currentPatientTab===td[0]?' active':'')+'" data-tab="'+td[0]+'" onclick="selectPatientTab(\''+td[0]+'\')">'+td[1]+(td[0]==='briefing'?_bdot:'')+'</button>';
       }).join('')
     + '</div>';
 
@@ -948,7 +949,7 @@ function renderPatientDetailShell(i) {
           </div>
         </div>
         <button class="btn btn-secondary btn-sm" onclick="showEditarPaciente(${i})" title="Editar dados do paciente">✎ Editar</button>
-        <button class="btn btn-purple btn-sm" onclick="selectPatientTab('briefing')">✦ Briefing IA</button>
+        <button class="btn btn-purple btn-sm" onclick="selectPatientTab('briefing')">✦ Briefing IA${_bdot}</button>
         <button class="btn btn-primary btn-sm" onclick="_tfSetSessionPatient(${i});navigate('sessao')">▶ Sessão</button>
       </div>
     </div>
@@ -1487,13 +1488,11 @@ function renderPatientBriefing(i) {
 
   var bodyHtml;
   if (cache) {
-    var ts = new Date(cache.generatedAt);
-    var tsStr = String(ts.getHours()).padStart(2,'0') + ':' + String(ts.getMinutes()).padStart(2,'0');
     var unchanged = typeof _briefingCacheUnchanged === 'function' ? _briefingCacheUnchanged(cache, p) : true;
     bodyHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:var(--sage-light);border-radius:8px;border:1px solid rgba(74,124,89,.15)">'
       + '<span style="font-size:18px">✦</span>'
-      + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--sage)">Cache de hoje às ' + tsStr + '</div>'
-      + '<div style="font-size:11px;color:var(--muted)">' + (p.sessions||0) + ' sessões · ' + (unchanged ? 'sem alterações' : 'há novas informações') + '</div></div>'
+      + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--sage)">Gerado ' + (typeof _briefingQuando === 'function' ? _briefingQuando(cache) : '') + '</div>'
+      + '<div style="font-size:11px;color:var(--muted)">' + (p.sessions||0) + ' sessões · ' + (unchanged ? 'sem alterações desde então' : 'há novas informações — vale atualizar') + '</div></div>'
       + '<div style="display:flex;gap:6px">'
       + '<button class="btn btn-secondary btn-sm" onclick="_openBriefingPage(' + i + ')">↗ Abrir completo</button>'
       + (!unchanged ? '<button class="btn btn-primary btn-sm" onclick="_openBriefingPage(' + i + ',true)">↻ Regenerar</button>' : '')

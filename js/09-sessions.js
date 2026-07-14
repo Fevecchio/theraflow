@@ -93,6 +93,9 @@ async function startSession() {
   }
   // Preenche painel de contexto clínico
   _renderSessionContext(sp);
+  // Pontinho sutil no ✦ Briefing quando há dados novos desde a última geração
+  var _bbtn = document.getElementById('sess-briefing-btn');
+  if (_bbtn && sp && typeof _briefingDotHtml === 'function') _bbtn.innerHTML = '✦ Briefing' + _briefingDotHtml(sp);
 }
 
 /* Template de nota em TEXTO PURO para o textarea #session-ai-note.
@@ -257,7 +260,9 @@ function _renderSessFromBriefing(p, content) {
   if (foco)   html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(foco) + '</span></div>';
   if (padrao) html2 += '<div class="insight-item"><span class="insight-icon">🔁</span><span>' + escHTML(padrao) + '</span></div>';
   if (alerta) html2 += '<div class="insight-item"><span class="insight-icon">⚠</span><span>' + escHTML(alerta) + '</span></div>';
-  html2 += '<div class="sess-briefing-badge">✦ Baseado no briefing de hoje</div>';
+  var _c9 = (typeof _getBriefingCache === 'function') ? _getBriefingCache(p.id || p.name) : null;
+  var _q9 = (_c9 && typeof _briefingQuando === 'function') ? _briefingQuando(_c9) : 'hoje';
+  html2 += '<div class="sess-briefing-badge">✦ Baseado no briefing gerado ' + escHTML(_q9) + _briefingStaleSuffix(p) + '</div>';
   var el2 = document.getElementById('sess-contexto-body');
   if (el2) el2.innerHTML = html2;
 
@@ -332,10 +337,19 @@ function abrirBriefingOverlay() {
   if (!p) { body.innerHTML = '<div style="color:var(--muted)">Nenhum paciente selecionado.</div>'; return; }
   var cache = (typeof _getBriefingCache === 'function') ? _getBriefingCache(p.id || p.name) : null;
   if (cache && cache.content) {
-    body.innerHTML = _briefingParaHtml(cache.content)
-      + '<div class="sess-briefing-badge" style="margin-top:16px">✦ Briefing de hoje · ' + escHTML(p.name) + '</div>';
+    // Cache persistente (reforma 14/07): mostra o último briefing SEMPRE; se os
+    // dados mudaram desde a geração, oferece atualizar — senão, nada de queimar
+    // tokens à toa.
+    var _stale = (typeof _briefingCacheUnchanged === 'function') && !_briefingCacheUnchanged(cache, p);
+    var _quando = (typeof _briefingQuando === 'function') ? _briefingQuando(cache) : '';
+    body.innerHTML = (_stale
+        ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:var(--amber-light);border-radius:8px;font-size:12px;color:var(--amber)">Há informações novas desde este briefing.'
+          + '<button class="btn btn-purple btn-sm" style="margin-left:auto" onclick="_gerarBriefingNoOverlay()">↻ Atualizar</button></div>'
+        : '')
+      + _briefingParaHtml(cache.content)
+      + '<div class="sess-briefing-badge" style="margin-top:16px">✦ Briefing gerado ' + escHTML(_quando) + ' · ' + escHTML(p.name) + '</div>';
   } else {
-    body.innerHTML = '<div style="color:var(--muted);margin-bottom:12px">O briefing de hoje ainda não foi gerado para ' + escHTML(_firstName(p.name)) + '.</div>'
+    body.innerHTML = '<div style="color:var(--muted);margin-bottom:12px">Ainda não há briefing gerado para ' + escHTML(_firstName(p.name)) + '. Depois de gerado, ele fica sempre disponível aqui.</div>'
       + '<button class="btn btn-purple btn-sm" onclick="_gerarBriefingNoOverlay()">✦ Gerar agora</button>';
   }
 }
@@ -361,16 +375,26 @@ async function _gerarBriefingNoOverlay() {
   }
 }
 
-/* Formata o texto do briefing (títulos em MAIÚSCULAS viram cabeçalhos) */
+// Formata o texto do briefing. Reforma 14/07: a IA responde em markdown leve
+// (cerquilhas, asteriscos, traços) e o overlay mostrava os SÍMBOLOS crus na
+// tela (print do usuário). Conversor próprio, escapa antes de converter.
 function _briefingParaHtml(content) {
   var linhas = String(content || '').split(/\n/);
+  function _inline(t) {
+    return escHTML(t).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  }
   return linhas.map(function(l) {
     var t = l.trim();
     if (!t) return '';
+    if (/^-{3,}$/.test(t)) return ''; // separador --- vira só respiro
+    var mH = t.match(/^#{1,3}\s*(.+)$/);
+    if (mH) return '<h4>' + _inline(mH[1].replace(/^\d+\.?\s*/, '').trim()) + '</h4>';
     if (/^\d?\.?\s*[A-ZÁÉÍÓÚÇÃÕ][A-ZÁÉÍÓÚÇÃÕ\s]{4,}:?$/.test(t)) {
       return '<h4>' + escHTML(t.replace(/^\d\.\s*/, '').replace(/:$/, '')) + '</h4>';
     }
-    return '<div style="margin-bottom:6px">' + escHTML(t) + '</div>';
+    var mLi = t.match(/^[-•]\s+(.+)$/);
+    if (mLi) return '<div style="margin:0 0 6px 10px;display:flex;gap:6px"><span style="color:var(--sage);flex-shrink:0">•</span><span>' + _inline(mLi[1]) + '</span></div>';
+    return '<div style="margin-bottom:6px">' + _inline(t) + '</div>';
   }).join('');
 }
 
