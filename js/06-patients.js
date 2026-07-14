@@ -1106,31 +1106,38 @@ function renderPatientConfig(i) {
   if (!p) return;
   content.innerHTML = `
     <div class="divider"></div>
-    <div style="background:var(--blue-light);border:1px solid rgba(44,95,138,.15);border-radius:10px;padding:12px 14px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🔑 Acesso ao portal</div>
-      <div style="font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px">
-        <div>Email: <strong>${escHTML(p.email||'não cadastrado')}</strong></div>
-        <div style="font-size:11.5px;color:var(--muted);line-height:1.5">${p.portalPasswordHash
-          ? '🔒 Acesso ativo. A senha do paciente é pessoal e não fica visível aqui — para gerar uma nova, use “Reenviar acesso”.'
-          : 'O paciente recebe uma senha forte pelo WhatsApp e a troca no primeiro acesso.'}</div>
-        <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">${_tfIcon('wpp')} ${p.portalPasswordHash ? 'Reenviar acesso (nova senha)' : 'Enviar acesso via WhatsApp'}</button>
-        <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(220,38,38,.12);text-align:right">
-          <button onclick="revogarPortalPaciente(${i})" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">Desativar acesso ao portal</button>
-        </div>
-        <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(44,95,138,.12)">
-          <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:5px">🔗 Link da sala de sessão</div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <input id="pac-session-link-${i}" type="url" placeholder="Cole o link da videochamada aqui"
-              value="${escHTML(p.sessionLink||'')}"
-              style="flex:1;font-size:12px;padding:5px 8px;border:1px solid rgba(44,95,138,.25);border-radius:7px;font-family:inherit;color:var(--ink);background:var(--white);outline:none"
-              onkeydown="if(event.key==='Enter')salvarSessionLink(${i})"
-            />
-            <button onclick="salvarSessionLink(${i})" style="background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Salvar</button>
-            ${p.sessionLink ? `<button onclick="limparSessionLink(${i})" style="background:none;border:1px solid rgba(192,57,43,.3);color:var(--red);border-radius:7px;font-size:11px;padding:5px 8px;cursor:pointer;font-family:inherit">✕</button>` : ''}
-          </div>
-          ${p.sessionLink ? `<div style="font-size:11px;color:var(--sage);margin-top:4px">✓ Link ativo — visível para o paciente no portal</div>` : `<div style="font-size:11px;color:var(--ink-soft);opacity:.7;margin-top:4px">Sem link — paciente verá mensagem de aguardo</div>`}
-        </div>
+    <!-- Redesign 14/07 (pedido do usuário): caixa azul + botão verde gigante + campo
+         de link sempre exposto viravam ruído. Agora: card no tom da casa, status
+         enxuto, ação compacta; o link EXTERNO (Zoom/Meet) fica recolhido — a sala
+         nativa é criada sozinha ao iniciar a sessão e não precisa de configuração. -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--sage-dark);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Acesso ao portal</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${p.portalPasswordHash ? 'var(--sage)' : 'var(--muted-2)'};flex-shrink:0"></span>
+        <span style="font-size:13px;color:var(--ink);font-weight:600">${p.portalPasswordHash ? 'Ativo' : 'Ainda não enviado'}</span>
+        <span style="font-size:12.5px;color:var(--muted)">· ${escHTML(p.email||'sem email cadastrado')}</span>
       </div>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">${p.portalPasswordHash
+        ? 'A senha é pessoal do paciente e não fica visível aqui — "Reenviar acesso" gera uma nova.'
+        : 'O paciente recebe uma senha forte pelo WhatsApp e a troca no primeiro acesso.'}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="compartilharAcessoPortal(${i})" style="color:var(--sage-dark);border-color:rgba(37,211,102,.35);background:rgba(37,211,102,.08)">${_tfIcon('wpp')} ${p.portalPasswordHash ? 'Reenviar acesso (nova senha)' : 'Enviar acesso via WhatsApp'}</button>
+        ${p.portalPasswordHash ? `<button onclick="revogarPortalPaciente(${i})" style="margin-left:auto;background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.6" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">Desativar acesso</button>` : ''}
+      </div>
+      <details style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2)"${p.sessionLink ? ' open' : ''}>
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;user-select:none;list-style-position:inside">Usa Zoom ou Meet? Adicionar link externo de sala</summary>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 8px">As sessões por vídeo do TheraFlow criam a sala sozinhas ao clicar em "Iniciar sessão" — este campo é só para quem prefere uma ferramenta externa.</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="pac-session-link-${i}" type="url" placeholder="https://meet.google.com/…"
+            value="${escHTML(p.sessionLink||'')}"
+            style="flex:1;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:8px;font-family:inherit;color:var(--ink);background:var(--white);outline:none"
+            onkeydown="if(event.key==='Enter')salvarSessionLink(${i})"
+          />
+          <button class="btn btn-secondary btn-sm" onclick="salvarSessionLink(${i})" style="white-space:nowrap">Salvar</button>
+          ${p.sessionLink ? `<button onclick="limparSessionLink(${i})" title="Remover link" style="background:none;border:1px solid var(--border);color:var(--red);border-radius:8px;font-size:11px;padding:6px 9px;cursor:pointer;font-family:inherit">✕</button>` : ''}
+        </div>
+        ${p.sessionLink ? `<div style="font-size:11px;color:var(--sage);margin-top:5px">✓ Link externo ativo — o paciente vê o botão de entrar no portal</div>` : ''}
+      </details>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarProntuario()" title="PDF completo do prontuário deste paciente">${_tfIcon('csv')} Prontuário PDF</button>
