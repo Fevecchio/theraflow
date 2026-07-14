@@ -131,7 +131,8 @@ function excluirMetaPortal(id) {
 }
 
 function tagLabel(tag) {
-  const m = { tcc:'📋 TCC', relaxa:'🧘 Relaxamento', diario:'📊 Diário', exposicao:'🎯 Exposição', mindfulness:'🌱 Mindfulness', outro:'💡 Outro' };
+  // Fase C: sem emojis de UI — chip monocromático sage (linguagem do redesign)
+  const m = { tcc:'TCC', relaxa:'Relaxamento', diario:'Diário', exposicao:'Exposição', mindfulness:'Mindfulness', outro:'Outro' };
   return m[tag] || tag;
 }
 
@@ -147,7 +148,7 @@ function renderExercises() {
   const exercises = p?.exercises || [];
   if (exercises.length === 0) {
     list.innerHTML = `<div style="text-align:center;padding:24px 16px;color:var(--muted)">
-      <div style="font-size:32px;margin-bottom:8px">📋</div>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
       <div style="font-size:13px;margin-bottom:12px">Nenhum exercício atribuído ainda.</div>
       <button class="btn btn-primary btn-sm" onclick="abrirModalExercicio()">+ Adicionar primeiro exercício</button>
     </div>`;
@@ -161,9 +162,9 @@ function renderExercises() {
       var prazoColor = 'var(--muted)';
       if (ex.prazo) {
         var diasRestantes = Math.ceil((new Date(ex.prazo) - new Date()) / 86400000);
-        if (diasRestantes < 0) { prazoStr = '⚠ Prazo vencido'; prazoColor = 'var(--red)'; }
-        else if (diasRestantes === 0) { prazoStr = '⏰ Vence hoje'; prazoColor = 'var(--amber)'; }
-        else { prazoStr = '📅 ' + diasRestantes + 'd restantes'; }
+        if (diasRestantes < 0) { prazoStr = 'Prazo vencido'; prazoColor = 'var(--red)'; }
+        else if (diasRestantes === 0) { prazoStr = 'Vence hoje'; prazoColor = 'var(--amber)'; }
+        else { prazoStr = diasRestantes + 'd restantes'; }
       }
       var progressBar = total > 1
         ? '<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px"><span>' + concluidos + '/' + total + ' realizados</span><span>' + pct + '%</span></div>' +

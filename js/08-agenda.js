@@ -779,7 +779,7 @@ function renderWeekView() {
       });
       var isLast = ci===4;
       var _foraHorarioW = h < _hTrabalhoIniW || h > _hTrabalhoFimW;
-      var bg = di.isHoje ? 'rgba(74,124,89,.04)' : (_foraHorarioW ? 'var(--bg)' : '#fff');
+      var bg = di.isHoje ? 'rgba(74,124,89,.04)' : (_foraHorarioW ? 'var(--bg)' : 'var(--white)');
       var clickEmpty = 'onclick="showAgendarModal(\''+di.iso+'\',\''+horaStr+'\')"';
       var isBloq = isDiaBlockeado(di.iso);
       var bgFinal = isBloq ? 'var(--bg)' : bg;
