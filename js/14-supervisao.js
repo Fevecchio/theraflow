@@ -465,7 +465,7 @@ function renderPlanoProntuario(idx) {
 
   // Seção de objetivos/metas com edição inline
   var metasHtml = metas.length ? metas.map(function(m) {
-    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;background:' + (m.done ? '#f0fdf4' : '#fafafa') + ';border:1px solid ' + (m.done ? 'rgba(74,124,89,.2)' : 'var(--border)') + '">'
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;background:' + (m.done ? 'var(--sage-light)' : 'var(--bg)') + ';border:1px solid ' + (m.done ? 'rgba(74,122,99,.25)' : 'var(--border)') + '">'
       + '<input type="checkbox" ' + (m.done ? 'checked' : '') + ' onchange="_toggleMetaPlano(' + m.id + ',this)" style="width:16px;height:16px;accent-color:var(--sage);flex-shrink:0">'
       + '<span style="flex:1;font-size:13.5px;' + (m.done ? 'text-decoration:line-through;color:var(--muted)' : 'color:var(--ink-soft)') + '">' + escHTML(m.text) + '</span>'
       + '<button onclick="_excluirMetaPlano(' + m.id + ')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px">✕</button>'
@@ -473,15 +473,10 @@ function renderPlanoProntuario(idx) {
   }).join('') : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">Nenhum objetivo definido ainda.</div>';
 
   el.innerHTML = ''
-    // Cabeçalho resumo
-    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
-    +   '<div style="background:var(--sage-light);border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--sage)">' + progresso + '%</div><div style="font-size:11px;color:var(--sage);margin-top:2px">progresso geral</div></div>'
-    +   '<div style="background:#f0f8ff;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--blue)">' + sessoes + '</div><div style="font-size:11px;color:var(--blue);margin-top:2px">sessões realizadas</div></div>'
-    +   '<div style="background:' + (moodMedia ? '#fdf3e7' : '#fafafa') + ';border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:' + (moodMedia ? 'var(--amber)' : 'var(--muted)') + '">' + (moodMedia || '—') + '</div><div style="font-size:11px;color:' + (moodMedia ? 'var(--amber)' : 'var(--muted)') + ';margin-top:2px">humor médio</div></div>'
-    + '</div>'
-    // Dados clínicos (Abordagem/CID/Queixa) moram só na Ficha Clínica — aqui
-    // eram a 3ª cópia dos mesmos campos (V4); link no lugar.
-    + '<div style="font-size:12px;color:var(--muted)">Abordagem, CID e queixa: <a onclick="selectPatientTab(\'ficha\')" style="color:var(--sage);font-weight:600;cursor:pointer">ver Ficha Clínica →</a></div>'
+    // Reorganização 14/07: os 3 stat cards (progresso/sessões/humor) saíram —
+    // eram a 3ª cópia dos números que moram na strip da Visão Geral. O Plano é
+    // OBJETIVOS + EVOLUÇÃO; uma linha de contexto compacta basta.
+    + '<div style="font-size:12px;color:var(--muted)">Progresso geral <strong style="color:var(--sage)">' + progresso + '%</strong> · ' + sessoes + ' sessões' + (moodMedia ? ' · humor médio ' + moodMedia : '') + ' — números completos na <a onclick="selectPatientTab(\'overview\')" style="color:var(--sage);font-weight:600;cursor:pointer">Visão Geral</a>; abordagem, CID e queixa na <a onclick="selectPatientTab(\'ficha\')" style="color:var(--sage);font-weight:600;cursor:pointer">Ficha Clínica</a>.</div>'
     // Objetivos terapêuticos
     + '<div>'
     +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'

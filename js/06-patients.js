@@ -955,6 +955,104 @@ function renderPatientDetailShell(i) {
   ` + tabBarHtml + '<div id="patient-detail-tab-content" class="ptab-content"></div>';
 }
 
+/* Appointments do paciente por IDENTIDADE (patientId) com fallback índice/nome —
+ * patientIdx desloca com exclusões (família do bug crítico de 12/07). */
+function _apptsDoPaciente(p, i) {
+  return (typeof appointments !== 'undefined' ? appointments : []).filter(function(a) {
+    if (!a) return false;
+    if (p && p.id && a.patientId) return String(a.patientId) === String(p.id);
+    return a.patientIdx === i || (p && a.patientName === p.name);
+  });
+}
+
+/* "Há X dias" amigável a partir de um timestamp (ms). */
+function _diasAtras(ts) {
+  if (!ts) return '';
+  var d = Math.floor((Date.now() - ts) / 86400000);
+  return d <= 0 ? 'hoje' : d === 1 ? 'ontem' : 'há ' + d + ' dias';
+}
+
+/* ── Zona "Entre as sessões" (reorganização 14/07): o que o paciente trouxe do
+ * PORTAL — check-in, diário, exercícios e nota pré-sessão. Antes essa informação
+ * viva não aparecia em lugar NENHUM do painel (a nota pré-sessão ficava enterrada
+ * na aba Notas; diário e exercícios só na prévia do Portal). ── */
+function _zonaEntreSessoes(p, i) {
+  var linhas = [];
+
+  // Check-in de humor (moodHistory: number legado ou {value,emoji,date})
+  var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
+  if (mh.length) {
+    var ultimo = mh[mh.length - 1];
+    var val = (typeof _normMoodVal === 'function') ? _normMoodVal(ultimo) : (typeof ultimo === 'object' ? ultimo.value : ultimo);
+    var quando = (typeof ultimo === 'object' && ultimo.date) ? ultimo.date : (p.lastCheckInDate || '');
+    var corMood = val >= 7 ? 'var(--sage)' : val >= 5 ? 'var(--amber)' : 'var(--red)';
+    var notaHumor = '';
+    if (p.moodNotes && p.moodNotes.length) {
+      var mn = p.moodNotes[p.moodNotes.length - 1];
+      if (mn && mn.nota) notaHumor = ' · <span style="font-style:italic">“' + escHTML(String(mn.nota).substring(0, 90)) + (String(mn.nota).length > 90 ? '…' : '') + '”</span>';
+    }
+    linhas.push('<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line-2)">'
+      + '<span style="font-size:11.5px;color:var(--muted);width:74px;flex-shrink:0">Check-in</span>'
+      + '<span style="font-size:13px;color:var(--ink)"><strong style="color:' + corMood + '">' + val + '/10</strong>'
+      + (quando ? ' <span style="color:var(--muted);font-size:12px">· ' + escHTML(String(quando)) + '</span>' : '') + notaHumor + '</span>'
+      + '</div>');
+  }
+
+  // Diário (mais recente primeiro; entrada {tipo, texto|campos, date, hora, ts})
+  var diary = p.diary || [];
+  if (diary.length) {
+    var d0 = diary[0];
+    var trechoD = d0.tipo === 'esp' ? (d0.campos && d0.campos[0] ? d0.campos[0] : '') : (d0.texto || '');
+    trechoD = String(trechoD).substring(0, 110) + (String(trechoD).length > 110 ? '…' : '');
+    linhas.push('<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line-2)">'
+      + '<span style="font-size:11.5px;color:var(--muted);width:74px;flex-shrink:0">Diário</span>'
+      + '<span style="font-size:13px;color:var(--ink-soft);line-height:1.5">'
+      + (d0.ts ? '<span style="color:var(--muted);font-size:12px">' + _diasAtras(d0.ts) + ' · </span>' : '')
+      + '<span style="font-style:italic">“' + escHTML(trechoD) + '”</span>'
+      + ' <span style="color:var(--muted);font-size:11.5px">(' + diary.length + ' registro' + (diary.length !== 1 ? 's' : '') + ')</span>'
+      + '</span></div>');
+  }
+
+  // Exercícios entre sessões
+  var exs = p.exercises || [];
+  if (exs.length) {
+    var feitos = exs.filter(function(e){ return e.done || ((e.concluidos || 0) >= (e.total || 1)); }).length;
+    var corEx = feitos === exs.length ? 'var(--sage)' : 'var(--ink)';
+    linhas.push('<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line-2)">'
+      + '<span style="font-size:11.5px;color:var(--muted);width:74px;flex-shrink:0">Exercícios</span>'
+      + '<span style="font-size:13px;color:' + corEx + '"><strong>' + feitos + ' de ' + exs.length + '</strong> concluído' + (feitos !== 1 ? 's' : '') + '</span>'
+      + '</div>');
+  }
+
+  // Nota pré-sessão (mudou da aba Notas para cá — é preparação, pertence ao panorama)
+  var preHtml = '';
+  if (p.portalNota && p.portalNota.trim()) {
+    preHtml = '<div style="margin-top:10px;background:var(--amber-light);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:10px 12px">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+      + '<span style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.4px">Nota para a próxima sessão</span>'
+      + '<button onclick="_limparPortalNota(' + i + ');selectPatient(' + i + ')" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;padding:0 4px">× limpar</button>'
+      + '</div>'
+      + '<div style="font-size:13px;color:var(--ink);line-height:1.6;font-style:italic">“' + escHTML(p.portalNota.trim()) + '”</div>'
+      + '</div>';
+  }
+
+  var corpo;
+  if (!linhas.length && !preHtml) {
+    corpo = '<div style="font-size:12.5px;color:var(--muted);padding:6px 0">O portal ainda não trouxe registros — quando ' + escHTML(_firstName(p.name)) + ' fizer check-ins, diário ou exercícios, aparecem aqui.</div>';
+  } else {
+    corpo = linhas.join('') + preHtml;
+  }
+
+  return '<div style="margin-bottom:16px;padding:12px 14px;background:var(--white);border:1px solid var(--border);border-radius:12px">'
+    + '<div style="display:flex;align-items:center;margin-bottom:4px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--sage-dark);text-transform:uppercase;letter-spacing:.5px">Entre as sessões — do portal</div>'
+    + '<button onclick="currentPortalPatientIdx=' + i + ';navigate(\'portal\')" style="margin-left:auto;background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;padding:0">Abrir portal →</button>'
+    + '</div>'
+    + corpo
+    + '<div style="font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line-2)">Para falar com ' + escHTML(_firstName(p.name)) + ' entre as sessões: <strong>Mensagem da semana</strong> no Portal ou WhatsApp.</div>'
+    + '</div>';
+}
+
 function renderPatientOverview(i) {
   var content = document.getElementById('patient-detail-tab-content');
   if (!content) return;
@@ -963,7 +1061,6 @@ function renderPatientOverview(i) {
 
   const moodColor = p.mood >= 7 ? 'var(--sage)' : p.mood >= 5 ? 'var(--amber)' : 'var(--red)';
   const moodTrendIcon = p.moodTrend === 'up' ? '↑' : p.moodTrend === 'down' ? '↓' : '→';
-  const moodTrendColor = p.moodTrend === 'up' ? 'var(--sage)' : p.moodTrend === 'down' ? 'var(--red)' : 'var(--muted)';
   const alertBlock = p.alert ? `
     <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;background:var(--amber-light);border-radius:10px;border-left:3px solid var(--amber);margin-bottom:16px">
       <span style="font-size:16px">⚠</span>
@@ -975,33 +1072,60 @@ function renderPatientOverview(i) {
     </div>` : '';
   var moodSparkline = '';
   if (p.moodHistory && p.moodHistory.length >= 3) {
-    var mh = p.moodHistory.slice(-10).filter(function(v){ return v !== null && v !== undefined; });
+    var mh = p.moodHistory.slice(-10).filter(function(v){ return v !== null && v !== undefined; })
+      .map(function(v){ return (typeof _normMoodVal === 'function') ? _normMoodVal(v) : (typeof v === 'object' ? v.value : v); });
     if (mh.length >= 2) {
-      var spW = 60, spH = 24;
+      var spW = 56, spH = 20;
       var spPts = mh.map(function(v, ii){ return { x: (ii/(mh.length-1))*spW, y: spH - (v/10)*spH }; });
       var spLine = spPts.map(function(pt, ii){ return (ii===0?'M':'L')+pt.x.toFixed(1)+','+pt.y.toFixed(1); }).join(' ');
-      moodSparkline = '<svg viewBox="0 0 '+spW+' '+spH+'" style="width:60px;height:24px;margin-left:auto" preserveAspectRatio="none">'
+      moodSparkline = '<svg viewBox="0 0 '+spW+' '+spH+'" style="width:56px;height:20px" preserveAspectRatio="none">'
         + '<path d="'+spLine+'" fill="none" stroke="'+moodColor+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
         + '<circle cx="'+spPts[spPts.length-1].x.toFixed(1)+'" cy="'+spPts[spPts.length-1].y.toFixed(1)+'" r="2.5" fill="'+moodColor+'"/>'
         + '</svg>';
     }
   }
-  const moodBlock = p.mood !== null ? `
-    <div class="stat-card card-sm" style="display:flex;align-items:center;gap:12px">
-      <div style="flex:1">
-        <div class="stat-label">Humor (portal)</div>
-        <div style="font-family:'Instrument Serif',serif;font-size:26px;color:${moodColor};margin-top:4px">${p.mood}<span style="font-size:14px;color:var(--muted)">/10</span></div>
-        <div style="font-size:11px;color:${moodTrendColor};margin-top:2px">${moodTrendIcon} ${p.moodTrend==='up'?'Melhorando':p.moodTrend==='down'?'Em queda':'Estável'}</div>
-      </div>
-      ${moodSparkline}
-    </div>` : `<div class="stat-card card-sm"><div class="stat-label">Humor</div><div style="font-size:13px;color:var(--muted);margin-top:8px">Sem registro no portal</div></div>`;
-  const finBlock = `
-    <div class="stat-card card-sm">
-      <div class="stat-label">Financeiro</div>
-      <div style="margin-top:6px">
-        <span class="tag ${p.finStatus==='ok'?'tag-green':p.finStatus==='overdue'?'tag-red':'tag-amber'}">${p.fin}</span>
-      </div>
-    </div>`;
+
+  // ── Strip de indicadores (reorganização 14/07): os números moram AQUI e só
+  // aqui — Ficha e Plano repetiam sessões/humor/progresso/presença em 3 telas.
+  var apptsP = _apptsDoPaciente(p, i);
+  var comPresenca = apptsP.filter(function(a){ return a.presenca; });
+  var compareceuN = comPresenca.filter(function(a){ return a.presenca === 'compareceu'; }).length;
+  var taxaP = comPresenca.length >= 2 ? Math.round(compareceuN / comPresenca.length * 100) : null;
+  var taxaCor = taxaP === null ? 'var(--muted)' : taxaP >= 80 ? 'var(--sage)' : taxaP >= 60 ? 'var(--amber)' : 'var(--red)';
+  function _cell(label, valorHtml, sub) {
+    return '<div style="flex:1;min-width:104px;padding:10px 12px">'
+      + '<div class="stat-label" style="margin-bottom:2px">' + label + '</div>'
+      + '<div style="font-family:\'Instrument Serif\',serif;font-size:21px;line-height:1.2">' + valorHtml + '</div>'
+      + (sub ? '<div style="font-size:10.5px;color:var(--muted);margin-top:1px">' + sub + '</div>' : '')
+      + '</div>';
+  }
+  var stripHtml = '<div style="display:flex;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;overflow:hidden">'
+    + _cell('Sessões', String(p.sessions || 0), p.lastSession ? 'última ' + escHTML(p.lastSession) : '')
+    + _cell('Próxima', p.next && p.next !== '—' ? '<span style="font-size:16px">' + escHTML(p.next) + '</span>' : '<span style="font-size:13px;color:var(--muted)">não marcada</span>', '')
+    + _cell('Humor', p.mood !== null && p.mood !== undefined
+        ? '<span style="color:' + moodColor + '">' + p.mood + '<span style="font-size:12px;color:var(--muted)">/10</span></span> ' + moodSparkline
+        : '<span style="font-size:13px;color:var(--muted)">—</span>',
+        p.mood !== null && p.mood !== undefined ? moodTrendIcon + ' ' + (p.moodTrend==='up'?'melhorando':p.moodTrend==='down'?'em queda':'estável') : 'sem registro')
+    + _cell('Presença', taxaP !== null ? '<span style="color:' + taxaCor + '">' + taxaP + '%</span>' : '<span style="font-size:13px;color:var(--muted)">—</span>', taxaP !== null ? compareceuN + '✓ de ' + comPresenca.length : 'poucos registros')
+    + _cell('Financeiro', '<span class="tag ' + (p.finStatus==='ok'?'tag-green':p.finStatus==='overdue'?'tag-red':'tag-amber') + '" style="font-size:11px">' + (p.fin || '—') + '</span>', '')
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:0 2px">'
+    + '<div class="progress-bar" style="flex:1;height:5px"><div class="progress-fill" style="width:' + (p.progress || 0) + '%;transition:width .6s"></div></div>'
+    + '<div style="font-size:11px;font-weight:600;color:' + ((p.progress||0)>=60?'var(--sage)':(p.progress||0)>=30?'var(--amber)':'var(--muted)') + ';white-space:nowrap">plano ' + (p.progress || 0) + '%</div>'
+    + '</div>';
+
+  // ── Última sessão: trecho da nota + ESTADO do resumo da jornada (a Trajetória
+  // completa, com editores, mudou para Notas & Timeline — aqui só o sinal).
+  var passadosP = apptsP.filter(function(a){ return a.date <= hojeISO() && a.presenca; })
+    .sort(function(a, b){ return b.date.localeCompare(a.date); });
+  var ultAppt = passadosP[0] || null;
+  var nRascunhos = passadosP.filter(function(a){ return a.resumoPendente && !a.resumoParaPaciente; }).length;
+  var resumoChip = '';
+  if (nRascunhos > 0) {
+    resumoChip = '<button onclick="selectPatientTab(\'notas\')" style="background:var(--amber-light);border:1px solid rgba(184,118,42,.3);color:var(--amber);border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">🕓 ' + nRascunhos + ' resumo' + (nRascunhos !== 1 ? 's' : '') + ' da IA aguardando revisão →</button>';
+  } else if (ultAppt && ultAppt.resumoParaPaciente) {
+    resumoChip = '<span style="font-size:11.5px;color:var(--sage);font-weight:600">✓ resumo da jornada publicado</span>';
+  }
   const tarefasPaciente = (typeof tasks !== 'undefined' ? tasks : []).filter(function(t){ return t.status==='aberta' && t.patientName===p.name; });
   const taskBlock = tarefasPaciente.length === 0 ? '' : `
     <div style="margin-bottom:16px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
@@ -1025,71 +1149,40 @@ function renderPatientOverview(i) {
   content.innerHTML = `
     <div class="divider"></div>
     ${alertBlock}
-
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-      <div class="stat-card card-sm">
-        <div class="stat-label">Sessões</div>
-        <div style="font-family:'Instrument Serif',serif;font-size:26px;margin-top:4px">${p.sessions}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Última: ${p.lastSession || '—'}</div>
-      </div>
-      <div class="stat-card card-sm">
-        <div class="stat-label">Próxima sessão</div>
-        <div style="font-size:13px;font-weight:500;margin-top:8px;line-height:1.4">${p.next && p.next !== '—' ? escHTML(p.next) : '<span style="color:var(--muted)">não marcada</span>'}</div>
-      </div>
-      ${moodBlock}
-      ${finBlock}
-    </div>
-
-    <div style="margin-bottom:20px">` +
-    (function(){
-      var pidx = i;
-      var sessoesPac = appointments.filter(function(a){ return a.patientIdx===pidx; });
-      var compareceu = sessoesPac.filter(function(a){ return a.presenca==='compareceu'; }).length;
-      var faltou = sessoesPac.filter(function(a){ return a.presenca==='faltou'; }).length;
-      var total = sessoesPac.filter(function(a){ return a.presenca; }).length;
-      if (total < 2) return '';
-      var taxa = Math.round(compareceu/total*100);
-      var taxaCor = taxa>=80?'var(--sage)':taxa>=60?'var(--amber)':'var(--red)';
-      return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">' +
-        '<div style="flex:1;font-size:12px;color:var(--muted)">Taxa de presença</div>' +
-        '<div style="font-weight:700;color:'+taxaCor+'">'+taxa+'%</div>' +
-        '<div style="font-size:11px;color:var(--muted)">'+compareceu+'✓ '+faltou+'✗ de '+total+' registradas</div></div>';
-    })() +
-    `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="font-size:12px;color:var(--muted);font-weight:500">Progresso do plano terapêutico</div>
-        <div style="font-size:12px;font-weight:600;color:${p.progress>=60?'var(--sage)':p.progress>=30?'var(--amber)':'var(--muted)'}">${p.progress}%</div>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${p.progress}%;transition:width .6s"></div></div>
-    </div>
+    ${stripHtml}
+    ${_zonaEntreSessoes(p, i)}
 
     ` + (function(){
-      // "Última observação clínica" mostrava a QUEIXA inicial com rótulo errado —
-      // agora mostra a última nota real; sem notas, rotula honesto (V4).
-      var ultNota = (p.prontuarioNotes && p.prontuarioNotes.length) ? p.prontuarioNotes[p.prontuarioNotes.length - 1] : null;
+      // Última sessão: trecho da última nota COM conteúdo (uma nota recém-criada
+      // vazia não pode apagar o bloco) + estado do resumo da jornada.
+      var ultNota = null;
+      var _pn = p.prontuarioNotes || [];
+      for (var k = _pn.length - 1; k >= 0; k--) {
+        if (_pn[k] && String(_pn[k].text || '').trim()) { ultNota = _pn[k]; break; }
+      }
       var texto = ultNota ? (ultNota.text || '') : (p.notes || '');
-      if (!texto) return '';
-      var rotulo = ultNota ? 'Última nota clínica — ' + escHTML(ultNota.date || '') : 'Queixa inicial';
+      if (!texto && !resumoChip) return '';
+      var rotulo = ultNota ? 'Última sessão — ' + escHTML(ultNota.date || '') : 'Queixa inicial';
       var trecho = texto.length > 320 ? texto.substring(0, 320) + '…' : texto;
       return '<div class="card card-sm" style="background:var(--bg);margin-bottom:16px">'
-        + '<div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">' + rotulo + '</div>'
-        + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7;font-style:italic">"' + escHTML(trecho) + '"</div>'
+        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">' + rotulo + '</div>'
+        + (resumoChip ? '<div style="margin-left:auto">' + resumoChip + '</div>' : '')
+        + '</div>'
+        + (trecho ? '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.7;font-style:italic">"' + escHTML(trecho) + '"</div>' : '')
         + (ultNota ? '<button onclick="selectPatientTab(\'notas\')" style="margin-top:8px;background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;padding:0">Ver todas as notas →</button>' : '')
         + '</div>';
     })() + `
 
     ${taskBlock}
 
-    ${renderTrajetoriaTerapeuta(i)}
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('notas')">≡ Notas & Timeline</button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('financeiro')">◈ Ver financeiro</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarExtratoPaciente(${i})">${_tfIcon('doc')} Extrato PDF</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center;background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.3);color:var(--sage-dark)" onclick="enviarWhatsappLembrete(${i})">
         ${_tfIcon('wpp')} WhatsApp lembrete
       </button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('portal')">♡ Portal do paciente</button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('config')">${_tfIcon('gear')} Acesso & Config</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('financeiro')">◈ Ver financeiro</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="currentPortalPatientIdx=${i};navigate('portal')">♡ Portal do paciente</button>
     </div>
     <div id="pac-chat-section-${i}" style="margin-top:16px">
       ${renderChatTerapeuta(i, _msgCache[p.id] || [])}
@@ -1157,43 +1250,34 @@ function renderPatientNotas(i) {
   var p = patients[i];
   if (!p) return;
 
-  // ── Notas clínicas ──
+  // ── Notas clínicas ── (a nota pré-sessão do paciente mudou para o bloco
+  // "Entre as sessões" da Visão Geral — reorganização 14/07)
   var notasHtml = '<div style="display:flex;flex-direction:column;gap:12px">';
 
-  if (p.portalNota && p.portalNota.trim()) {
-    notasHtml += '<div style="background:#fffbec;border:1.5px solid #f0d060;border-radius:12px;padding:14px 16px">'
-      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
-      + '<span style="font-size:16px">📝</span>'
-      + '<span style="font-size:11px;font-weight:700;color:#c97d2e;text-transform:uppercase;letter-spacing:.5px">Nota pré-sessão do paciente</span>'
-      + '<button onclick="_limparPortalNota('+i+')" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:4px">× Limpar</button>'
-      + '</div>'
-      + '<div style="font-size:14px;color:var(--ink);line-height:1.7;font-style:italic">"' + escHTML(p.portalNota.trim()) + '"</div>'
-      + '<div style="font-size:11px;color:var(--muted);margin-top:8px">Escrita pelo paciente no portal antes da sessão</div>'
-      + '</div>';
-  }
-
   if (p.prontuarioNotes && p.prontuarioNotes.length > 0) {
-    p.prontuarioNotes.slice().reverse().forEach(function(n, ni) {
+    // Numeração de sessão só conta notas de sessão (registro avulso não é sessão)
+    var _notasOrdem = p.prontuarioNotes.slice();
+    var _numPorData = {};
+    var _seq = 0;
+    _notasOrdem.forEach(function(n){ if (!n.manual) { _seq++; _numPorData[n.date] = _seq; } });
+    _notasOrdem.slice().reverse().forEach(function(n, ni) {
       var textoId = 'ptab-nota-' + i + '-' + ni;
-      notasHtml += '<div class="card card-sm" style="border-left:3px solid var(--sage)">'
+      var titulo = n.manual ? 'Registro avulso — ' + escHTML(n.date) : 'Sessão ' + (_numPorData[n.date] || '?') + ' — ' + escHTML(n.date);
+      notasHtml += '<div class="card card-sm" data-nota-date="' + escHTML(n.date) + '" style="border-left:3px solid ' + (n.manual ? 'var(--muted-2)' : 'var(--sage)') + '">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-        + '<span style="font-weight:500">Sessão ' + (p.sessions - ni) + ' — ' + escHTML(n.date) + '</span>'
-        + '<div style="display:flex;gap:6px;align-items:center">'
-        + '<span class="tag tag-green">Indexada</span>'
+        + '<span style="font-weight:500">' + titulo + '</span>'
         + '<button onclick="editarNotaTab(\'' + textoId + '\',this,' + i + ',\'' + n.date + '\')" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;padding:2px 8px;color:var(--muted)">✎ Editar</button>'
-        + '</div>'
         + '</div>'
         + '<p id="' + textoId + '" style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">' + escHTML(n.text) + '</p>'
         + '</div>';
     });
-  } else if (!p.portalNota) {
-    notasHtml += '<div style="padding:20px 0;color:var(--muted);font-size:13px;font-style:italic;text-align:center">Nenhuma nota clínica registrada ainda.</div>';
+  } else {
+    notasHtml += '<div style="padding:20px 0;color:var(--muted);font-size:13px;font-style:italic;text-align:center">Nenhuma nota clínica registrada ainda. As notas nascem das sessões — ou crie um registro avulso.</div>';
   }
   notasHtml += '</div>';
 
-  // ── Linha do tempo ──
-  var apptsPac = (typeof appointments !== 'undefined' ? appointments : [])
-    .filter(function(a){ return a.patientIdx === i; })
+  // ── Linha do tempo ── (por identidade — patientIdx desloca com exclusões)
+  var apptsPac = _apptsDoPaciente(p, i)
     .sort(function(a, b){ return (a.date + a.time) < (b.date + b.time) ? 1 : -1; });
   var notasIdx = (p.prontuarioNotes || []).reduce(function(m, n){ m[n.date] = n; return m; }, {});
   var timelineHtml;
@@ -1210,7 +1294,7 @@ function renderPatientNotas(i) {
         ? '<span class="tag tag-gray" style="font-size:10px">Cancelada</span>'
         : a.presenca === 'faltou' ? '<span class="tag tag-red" style="font-size:10px">Faltou</span>'
         : a.presenca === 'atrasou' ? '<span class="tag tag-amber" style="font-size:10px">Atrasou</span>'
-        : nota ? '<span class="tag tag-green" style="font-size:10px">Nota indexada</span>' : '';
+        : nota ? '<span class="tag tag-green" style="font-size:10px">Com nota</span>' : '';
       var _tot = (typeof p.sessions === 'number' && p.sessions > 0) ? p.sessions : apptsPac.length;
       var numSessao = Math.max(1, _tot - ai);
       var dateBR = fmtDataBR(a.date);
@@ -1232,10 +1316,41 @@ function renderPatientNotas(i) {
   }
 
   content.innerHTML = '<div class="divider"></div>'
-    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Notas clínicas</div>'
+    + '<div style="display:flex;align-items:center;margin-bottom:14px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Notas clínicas</div>'
+    + '<button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="novaNotaManual(' + i + ')">+ Nova nota</button>'
+    + '</div>'
     + notasHtml
     + '<div style="margin-top:24px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Linha do tempo</div>'
-    + timelineHtml;
+    + timelineHtml
+    + '<div style="margin-top:24px">' + renderTrajetoriaTerapeuta(i) + '</div>';
+}
+
+/* + Nova nota (reorganização 14/07): registro clínico fora de sessão — antes só
+ * existia nota nascida do encerramento, sem como anotar um telefonema, um contato
+ * da família etc. Uma nota por data (o sync 027 une por date); se já há nota de
+ * hoje, abre a existente para completar. */
+function novaNotaManual(i) {
+  var p = patients[i];
+  if (!p) return;
+  var hojeBR = fmtDataBR(hojeISO());
+  if (!p.prontuarioNotes) p.prontuarioNotes = [];
+  var existente = p.prontuarioNotes.find(function(n){ return n.date === hojeBR; });
+  if (!existente) {
+    p.prontuarioNotes.push({ date: hojeBR, text: '', manual: true, _up: Date.now() });
+    salvarPacientes();
+  } else {
+    showToast('Já existe nota de hoje — abrindo para completar.');
+  }
+  renderPatientNotas(i);
+  // Abre o editor da nota de hoje direto
+  setTimeout(function() {
+    var card = document.querySelector('#patient-detail-tab-content [data-nota-date="' + hojeBR + '"]');
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var btn = card.querySelector('button');
+    if (btn) btn.click();
+  }, 80);
 }
 
 // C11: o "Limpar" da nota pré-sessão só apagava localmente (sem sync) e
@@ -1271,42 +1386,8 @@ function renderPatientFicha(i) {
   var p = patients[i];
   if (!p) return;
 
-  // ── Evolução (sparkline) ──
-  var mh = (p.moodHistory || []).filter(function(v){ return v !== null && v !== undefined; });
-  var sparkHtml = '';
-  if (mh.length >= 2) {
-    var pts = mh.slice(-12);
-    var W = 200, H = 44, pad = 5;
-    var stepX = (W - pad * 2) / (pts.length - 1);
-    var coords = pts.map(function(v, ii) {
-      return (pad + ii * stepX).toFixed(1) + ',' + (H - pad - ((v - 1) / 9) * (H - pad * 2)).toFixed(1);
-    }).join(' ');
-    var trend = pts[pts.length - 1] - pts[0];
-    var cor = trend > 0.5 ? '#4a7c59' : trend < -0.5 ? '#c0392b' : '#c97d2e';
-    sparkHtml = '<div style="display:flex;align-items:center;gap:10px;margin-top:6px">'
-      + '<svg width="' + W + '" height="' + H + '" style="flex-shrink:0"><polyline points="' + coords + '" fill="none" stroke="' + cor + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'
-      + '<div style="flex-shrink:0;text-align:center"><div style="font-size:20px;font-weight:700;color:' + cor + '">' + pts[pts.length - 1] + '</div><div style="font-size:10px;color:var(--muted)">/10</div></div>'
-      + '</div>'
-      + '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + (trend > 0.5 ? '↗ Melhora' : trend < -0.5 ? '↘ Queda' : '→ Estável') + ' — últimas ' + pts.length + ' sessões</div>';
-  } else {
-    sparkHtml = '<div style="font-size:12px;color:var(--muted);font-style:italic">Humor não registrado ainda.</div>';
-  }
-  var totalSessoes = p.sessions || 0;
-  var prog = p.progress || 0;
-  var apptsPac2 = (typeof appointments !== 'undefined' ? appointments : []).filter(function(a){ return a.patientIdx === i && a.presenca; });
-  var compareceu2 = apptsPac2.filter(function(a){ return a.presenca === 'compareceu'; }).length;
-  var taxaPresenca = apptsPac2.length ? Math.round(compareceu2 / apptsPac2.length * 100) : null;
-  var evolucaoHtml = '<div style="margin:0 0 20px;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">'
-    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Evolução do paciente</div>'
-    + '<div style="display:flex;gap:12px;margin-bottom:10px">'
-    + '<div style="text-align:center;background:var(--white);border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">' + totalSessoes + '</div><div style="font-size:10px;color:var(--muted)">Sessões</div></div>'
-    + '<div style="text-align:center;background:var(--white);border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--sage)">' + prog + '%</div><div style="font-size:10px;color:var(--muted)">Progresso</div></div>'
-    + '<div style="text-align:center;background:var(--white);border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">' + (mh.length ? mh[mh.length - 1] : '—') + '</div><div style="font-size:10px;color:var(--muted)">Humor atual</div></div>'
-    + (taxaPresenca !== null ? '<div style="text-align:center;background:var(--white);border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:' + (taxaPresenca >= 80 ? 'var(--sage)' : taxaPresenca >= 60 ? 'var(--amber)' : 'var(--red)') + '">' + taxaPresenca + '%</div><div style="font-size:10px;color:var(--muted)">Presença</div></div>' : '')
-    + '</div>'
-    + '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Histórico de humor (últimas sessões)</div>'
-    + sparkHtml
-    + '</div>';
+  // (O bloco "Evolução do paciente" — 4 mini-stats + sparkline — saiu daqui:
+  //  duplicava a strip da Visão Geral. Reorganização 14/07.)
 
   // ── Materiais ──
   _materialPatientIdx = i;
@@ -1340,6 +1421,12 @@ function renderPatientFicha(i) {
   }
 
   content.innerHTML = '<div class="divider"></div>'
+    // Reorganização 14/07: o bloco "Evolução do paciente" saiu — era a 2ª cópia
+    // dos números que moram na Visão Geral. A Ficha é DADOS clínicos + materiais.
+    + '<div style="display:flex;align-items:center;margin-bottom:8px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Dados clínicos</div>'
+    + '<button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="showEditarPaciente(' + i + ')">✎ Editar dados</button>'
+    + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'
     + '<div>'
     + '<div class="form-group"><label>CID principal</label><div style="font-size:14px;padding:9px 0">' + (p.cid && p.cid !== '—' ? escHTML(p.cid) : 'Não informado') + '</div></div>'
@@ -1349,7 +1436,6 @@ function renderPatientFicha(i) {
     + '<div class="form-group"><label>Queixa principal</label><div style="font-size:13.5px;line-height:1.6;color:var(--ink-soft);padding:9px 0">' + escHTML(p.notes || '—') + '</div></div>'
     + '</div>'
     + '</div>'
-    + evolucaoHtml
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
     + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Materiais</div>'
     + '<button class="btn btn-primary btn-sm" onclick="abrirModalMaterial()">+ Adicionar</button>'
@@ -1544,10 +1630,10 @@ function selectPatient(i, el) {
 function renderTrajetoriaTerapeuta(i) {
   var p = patients[i];
   if (!p) return '';
-  // Filtra appointments passados deste paciente, ordem DESC
+  // Filtra appointments passados deste paciente (por identidade), ordem DESC
   var hojeIso2 = hojeISO();
-  var passados = appointments.filter(function(a) {
-    return (a.patientIdx === i || a.patientName === p.name) && a.date <= hojeIso2 && a.presenca;
+  var passados = _apptsDoPaciente(p, i).filter(function(a) {
+    return a.date <= hojeIso2 && a.presenca;
   }).sort(function(a, b) { return b.date.localeCompare(a.date); });
   if (!passados.length) return '';
 
@@ -1679,12 +1765,9 @@ function renderChatTerapeuta(i, msgs) {
   // O chat bidirecional foi removido (Lote 2 P3, decisão do usuário): a paciente não
   // envia mais pelo app. Se houver histórico, mostra READ-ONLY; o canal ativo agora
   // é a "Mensagem da semana" (1-via, visível no portal) e o WhatsApp.
-  if (!thread) {
-    return '<div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
-      + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Mensagens</div>'
-      + '<div style="font-size:12.5px;color:var(--muted);line-height:1.5">O chat pelo app foi descontinuado. Para falar com '+escHTML(_firstName2(p.name))+', use a <strong>Mensagem da semana</strong> no Portal (ela vê entre as sessões) ou o WhatsApp.</div>'
-      + '</div>';
-  }
+  // Sem histórico → nada (o card estático "foi descontinuado" era ruído permanente
+  // na Visão Geral; a dica vive no bloco "Entre as sessões" — reorganização 14/07).
+  if (!thread) return '';
   return '<div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
     + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Mensagens (histórico)</div>'
     + '<div class="chat-thread" id="chat-thread-t-'+i+'">'+thread+'</div>'
