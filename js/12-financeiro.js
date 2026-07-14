@@ -1730,6 +1730,15 @@ function removerPlano(id) {
   renderFinPlanos();
 }
 
+/* Mostra o campo de dia livre quando "Outro dia…" é escolhido no vencimento. */
+function _planVencOutroToggle(sel) {
+  var inp = document.getElementById('plan-venc-outro');
+  if (!inp) return;
+  var mostrar = sel && sel.value === 'outro';
+  inp.style.display = mostrar ? '' : 'none';
+  if (mostrar) inp.focus();
+}
+
 function createNewPlan() {
   var isMensal = document.getElementById('ptype-mensal').classList.contains('selected');
   var nome = (document.getElementById('plan-paciente-select') || {}).value || '';
@@ -1747,8 +1756,22 @@ function createNewPlan() {
     // Um plano ATIVO por paciente — evita cobrança dupla silenciosa.
     var jaTemPlano = plans.some(function(pl){ return pl && pl.patient === nome && pl.status === 'ativo'; });
     if (jaTemPlano) { showToast('⚠ ' + _firstName(nome) + ' já tem um plano mensal ativo. Cancele-o na aba "Planos e pacientes" antes de criar outro.'); return; }
-    // Vencimento: usa o "Dia X" no mês corrente (ou próximo mês se já passou).
-    var diaVenc = parseInt((venc.match(/\d+/) || ['5'])[0]) || 5;
+    // Vencimento: "Dia X" fixo, "Outro dia…" com dia livre (1–28, para valer em
+    // TODOS os meses — fevereiro incluso), ou "Combinado" (sai com dia 5).
+    var diaVenc;
+    if (venc === 'outro') {
+      diaVenc = parseInt((document.getElementById('plan-venc-outro') || {}).value, 10);
+      if (!diaVenc || diaVenc < 1 || diaVenc > 28) {
+        showToast('⚠ Informe o dia de vencimento entre 1 e 28 (para existir em todos os meses).');
+        var _vo = document.getElementById('plan-venc-outro'); if (_vo) _vo.focus();
+        return;
+      }
+    } else {
+      diaVenc = parseInt((venc.match(/\d+/) || ['5'])[0]) || 5;
+      // "Combinado com paciente" e o parêntese "(cobrança sai com dia 5)": o
+      // regex pegaria o 5 do rótulo — que é exatamente o comportamento desejado.
+      if (/combinado/i.test(venc)) diaVenc = 5;
+    }
     var hoje = new Date();
     var dtVenc = new Date(hoje.getFullYear(), hoje.getMonth(), diaVenc);
     if (dtVenc < hoje) dtVenc.setMonth(dtVenc.getMonth() + 1);
