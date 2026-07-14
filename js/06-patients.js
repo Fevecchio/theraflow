@@ -409,7 +409,7 @@ async function revogarPortalPaciente(i) {
   var p = patients[i];
   if (!p) return;
   var nome = _firstName(p.name);
-  if (!confirm('Desativar acesso de ' + nome + ' ao portal? Eles não conseguirão mais fazer login até você compartilhar o acesso novamente.')) return;
+  if (!confirm('Desativar o acesso de ' + nome + ' ao portal?\n\nIndicado em alta, encerramento do vínculo ou por segurança (ex.: celular perdido). Nenhum dado é apagado — ' + nome + ' apenas deixa de conseguir entrar até você reenviar o acesso.')) return;
   try {
     var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
     var therapistId = acc.supa_id;
@@ -1215,11 +1215,11 @@ function renderPatientConfig(i) {
         : 'O paciente recebe uma senha forte pelo WhatsApp e a troca no primeiro acesso.'}</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="compartilharAcessoPortal(${i})" style="color:var(--sage-dark);border-color:rgba(37,211,102,.35);background:rgba(37,211,102,.08)">${_tfIcon('wpp')} ${p.portalPasswordHash ? 'Reenviar acesso (nova senha)' : 'Enviar acesso via WhatsApp'}</button>
-        ${p.portalPasswordHash ? `<button onclick="revogarPortalPaciente(${i})" style="margin-left:auto;background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.6" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">Desativar acesso</button>` : ''}
+        ${p.portalPasswordHash ? `<button onclick="revogarPortalPaciente(${i})" title="Para alta, encerramento do vínculo ou segurança (celular perdido). O paciente deixa de conseguir entrar até você reenviar o acesso — nenhum dado é apagado." style="margin-left:auto;background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.6" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">Desativar acesso</button>` : ''}
       </div>
       <details style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2)"${p.sessionLink ? ' open' : ''}>
         <summary style="font-size:12px;color:var(--muted);cursor:pointer;user-select:none;list-style-position:inside">Usa Zoom ou Meet? Adicionar link externo de sala</summary>
-        <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 8px">As sessões por vídeo do TheraFlow criam a sala sozinhas ao clicar em "Iniciar sessão" — este campo é só para quem prefere uma ferramenta externa.</div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 8px"><strong style="color:var(--sage-dark)">A sala do TheraFlow se cria sozinha ao clicar em "Iniciar sessão"</strong> — com captura dos dois lados, transcrição e nota por IA. Um link externo (Zoom/Meet) serve apenas de atalho para o paciente: vira o botão "Entrar na sessão" no portal e entra nos convites — mas a sessão acontece lá fora, <strong>sem transcrição nem nota automática</strong>.</div>
         <div style="display:flex;gap:6px;align-items:center">
           <input id="pac-session-link-${i}" type="url" placeholder="https://meet.google.com/…"
             value="${escHTML(p.sessionLink||'')}"
