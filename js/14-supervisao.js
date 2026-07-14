@@ -435,13 +435,8 @@ function enviarLembreteAgenda(nomeCompleto) {
   }
   var n = _wppNumero(p.whatsapp);
   if (!n) { showToast('Número de WhatsApp inválido.'); return false; }
-  var detalhe = '';
-  if (appt) {
-    var d = new Date(appt.date + 'T12:00');
-    var dStr = d.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long' });
-    detalhe = ' marcada para ' + dStr + ' às ' + appt.time;
-  }
-  var msg = 'Olá ' + _firstName(p.name) + '! Lembrete da sua sessão de psicoterapia' + detalhe + '. Até breve! 😊';
+  // Mensagem única (template do Perfil) com dia/hora reais — revisão 14/07.
+  var msg = _wppMsgLembreteSessao(p, appt);
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank');
   showToast('📨 Lembrete enviado para ' + _firstName(p.name) + '!');
   return true;

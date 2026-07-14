@@ -288,7 +288,7 @@ function sendLinkWhatsApp(link) {
   const _wsNome = _wsp ? _firstName(_wsp.name) : 'paciente';
   const fullLink = link ? (link.startsWith('http') ? link : 'https://' + link) : 'https://theraflow.app/s/sessao';
   _salvarLinkNoPortal(fullLink);
-  const msg = `Olá ${_wsNome}! Aqui está o link para nossa sessão de hoje: ${fullLink}\n\nAcesse também pelo seu portal TheraFlow.`;
+  const msg = `Olá ${_wsNome}! Nossa sessão de hoje já está com a sala aberta:\n${fullLink}\n\nVocê também encontra esse acesso no seu portal. Até já! 💚\n— ${_wppNomeTerapeuta()}`;
   window.open(_wppLink(_wsp?.whatsapp, msg), '_blank');
   document.querySelector('.modal-overlay')?.remove();
   showToast('📲 Link enviado e salvo no portal de ' + _wsNome);

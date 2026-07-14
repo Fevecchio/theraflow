@@ -239,18 +239,10 @@ function enviarWhatsappLembrete(i) {
   if (!p?.whatsapp) { showToast('Número de WhatsApp não cadastrado.'); return; }
   const n = _wppNumero(p.whatsapp);
   if (!n) { showToast('Número de WhatsApp inválido para este paciente.'); return; }
-  // Busca próxima sessão real na agenda
-  const hojeIso = hojeISO();
-  const proxima = appointments.filter(function(a){
-    return a.patientIdx === i && a.status !== 'cancelada' && a.date >= hojeIso;
-  }).sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); })[0];
-  var detalhe = '';
-  if (proxima) {
-    var d = new Date(proxima.date + 'T12:00');
-    var dStr = d.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long' });
-    detalhe = ' marcada para ' + dStr + ' às ' + proxima.time;
-  }
-  const msg = `Olá ${_firstName(p.name)}! Lembrete da sua sessão de psicoterapia${detalhe}. Até breve! 😊`;
+  // Próxima sessão por IDENTIDADE (patientIdx deslocava e a mensagem saía sem
+  // dia/hora — revisão 14/07); mensagem única via template do Perfil.
+  const proxima = _proximaSessaoDoPaciente(p, i);
+  const msg = _wppMsgLembreteSessao(p, proxima);
   window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 

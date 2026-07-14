@@ -505,7 +505,7 @@ function renderFinInadimplencia() {
       // MORTO, com return silencioso). Lote 1.
       html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppCharge(\'' + c.id + '\')">' + _tfIcon('wpp') + ' Cobrar</button>';
     } else if (p && p.email) {
-      html += '<a class="charge-btn charge-btn-wpp" href="mailto:' + escHTML(p.email) + '?subject=' + encodeURIComponent('Lembrete de pagamento') + '&body=' + encodeURIComponent('Olá ' + _firstName(c.patient||'') + ',\n\nPassando para lembrar sobre o pagamento de ' + fmtMoedaInt(parseFloat(c.value)||0) + ' referente à sua sessão de psicoterapia.\n\nQualquer dúvida, estou à disposição.') + '" style="text-decoration:none">📧 Email</a>';
+      html += '<a class="charge-btn charge-btn-wpp" href="mailto:' + escHTML(p.email) + '?subject=' + encodeURIComponent('Lembrete de pagamento') + '&body=' + encodeURIComponent('Olá ' + _firstName(c.patient||'') + ', tudo bem?\n\nPassando o lembrete do pagamento da sessão: ' + fmtMoedaInt(parseFloat(c.value)||0) + '.\n\nQualquer dúvida, é só me responder por aqui.\n\nUm abraço,\n' + _wppNomeTerapeuta()) + '" style="text-decoration:none">📧 Email</a>';
     } else {
       html += '<span style="font-size:11px;color:var(--muted);padding:4px 0">Sem contato</span>';
     }
@@ -654,10 +654,10 @@ function sendWppCharge(chargeId) {
   if (!n) { showToast('📲 Cobrança anotada — número WhatsApp inválido.'); return; }
   var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
   var pixKey = acc.pix_key || '';
-  var nomeT = acc.nome ? acc.nome.split(' ')[0] : 'sua terapeuta';
-  var msg = 'Olá ' + _firstName(p.name) + '! Segue o lembrete de pagamento da sessão de psicoterapia no valor de R$' + value + '.'
+  var msg = 'Olá ' + _firstName(p.name) + '! Tudo bem? 🌿\n\nPassando o lembrete do pagamento da sessão: ' + fmtMoedaInt(parseFloat(value) || 0)
+    + (c.date ? ' (vencimento ' + _cobrDataBR(_cobrIso(c)) + ')' : '') + '.'
     + (pixKey ? '\n\nChave PIX: ' + pixKey : '')
-    + '\n\nPode pagar quando puder! 💚\n— ' + nomeT;
+    + '\n\nQualquer dúvida, é só me chamar por aqui! 💚\n— ' + _wppNomeTerapeuta();
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank');
   showToast('📲 Cobrança enviada para ' + _firstName(p.name) + '!');
 }
@@ -750,13 +750,18 @@ function sendWppBatch() {
   var pendentes = charges.filter(function(c){ return !c.deleted && (c.status==='pending'||c.status==='overdue'); });
   if (!pendentes.length) { showToast('Nenhuma cobrança pendente no momento.'); return; }
   var enviados = 0;
+  var _accB = {}; try { _accB = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+  var _pixB = _accB.pix_key || '';
+  var _nomeTB = _wppNomeTerapeuta();
   pendentes.forEach(function(c){
     var p = patients.find(function(pt){ return pt.name === c.patient; });
     if (!p || !p.whatsapp) return;
     var n = p.whatsapp.replace(/\D/g,'');
     n = n.startsWith('55') ? n : '55' + n;
-    var val = fmtMoeda(c.value);
-    var msg = 'Olá ' + _firstName(p.name) + '! Segue o lembrete de pagamento da sua sessão de psicoterapia no valor de ' + val + '. Qualquer dúvida, é só me chamar aqui! 💚';
+    var msg = 'Olá ' + _firstName(p.name) + '! Tudo bem? 🌿\n\nPassando o lembrete do pagamento da sessão: ' + fmtMoedaInt(parseFloat(c.value) || 0)
+      + (c.date ? ' (vencimento ' + _cobrDataBR(_cobrIso(c)) + ')' : '') + '.'
+      + (_pixB ? '\n\nChave PIX: ' + _pixB : '')
+      + '\n\nQualquer dúvida, é só me chamar por aqui! 💚\n— ' + _nomeTB;
     setTimeout(function(){ window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank'); }, enviados * 500);
     enviados++;
   });
@@ -779,9 +784,10 @@ function lembreteInadimplentes() {
     var wpp = p && p.whatsapp ? p.whatsapp.replace(/\D/g,'') : '';
     if (wpp && !wpp.startsWith('55')) wpp = '55' + wpp;
     var dataPt = fmtDataBR(c.date);
-    var msg = 'Olá ' + escHTML(_firstName(c.patient)) + '! 😊\n\nPassando para lembrar que temos uma cobrança em aberto: sessão de ' + dataPt + ' no valor de R$' + c.value + '.'
+    // Texto de wa.me NÃO leva escHTML (não é HTML — nomes com & saíam "&amp;").
+    var msg = 'Olá ' + _firstName(c.patient) + '! Tudo bem? 🌿\n\nPassando o lembrete do pagamento da sessão de ' + dataPt + ': ' + fmtMoedaInt(parseFloat(c.value) || 0) + '.'
       + (pixKey ? '\n\nChave PIX: ' + pixKey : '')
-      + '\n\nQualquer dúvida estou à disposição! 🌿\n— ' + nomeT;
+      + '\n\nQualquer dúvida, é só me chamar por aqui! 💚\n— ' + nomeT;
     var link = wpp ? 'https://wa.me/' + wpp + '?text=' + encodeURIComponent(msg) : '';
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">'
       + '<div>'

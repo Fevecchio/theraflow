@@ -108,6 +108,64 @@ function _wppLink(phone, texto) {
   return 'https://wa.me/' + (n || '') + (texto ? '?text=' + encodeURIComponent(texto) : '');
 }
 
+/* ── MENSAGENS AO PACIENTE (revisão 14/07 — tom único: acolhedor, completo e
+ * assinado; antes cada tela improvisava a sua, algumas sem dia/hora) ── */
+
+/* Primeiro nome da terapeuta sem título (Dra./Dr./Prof.) para assinar mensagens. */
+function _wppNomeTerapeuta() {
+  var nome = '';
+  try { nome = (JSON.parse(localStorage.getItem('tf_account') || '{}').nome) || ''; } catch (e) {}
+  if (!nome && typeof tfUserData !== 'undefined' && tfUserData) nome = tfUserData.nome || '';
+  var partes = String(nome).split(' ').filter(function (w) { return w && !/^(Dr|Dra|Prof|Profa|Me)\.?$/i.test(w); });
+  return partes[0] || 'sua terapeuta';
+}
+
+/* Template do Perfil ([Nome] [dia] [hora] [Terapeuta]) com fallback padrão.
+ * (Morava em js/07 e só o disparo em lote usava — agora é o caminho único.) */
+function _wppInterpolate(tpl, nome, dia, hora, terapeuta) {
+  var base = tpl && tpl.trim()
+    ? tpl
+    : 'Olá [Nome]! 🌿\n\nLembrete da sua sessão de psicoterapia [dia] às [hora].\n\nQualquer imprevisto, é só me avisar por aqui. Até logo! 💚\n— [Terapeuta]';
+  // Se o template já usa [hora] explicitamente, [dia] vira só a data (evita duplicar a hora).
+  // Caso contrário (templates antigos só com [dia]), embute "às [hora]" no [dia] como antes.
+  var temHora = /\[hora\]/.test(base);
+  return base
+    .replace(/\[Nome\]/g, nome)
+    .replace(/\[dia\]/g, (hora && !temHora) ? dia + ' às ' + hora : dia)
+    .replace(/\[hora\]/g, hora || '')
+    .replace(/\[Terapeuta\]/g, terapeuta);
+}
+
+/* Próxima sessão do paciente por IDENTIDADE (patientId) — patientIdx é derivado
+ * e desloca com exclusões (a mensagem saía SEM dia/hora por índice trocado). */
+function _proximaSessaoDoPaciente(p, idx) {
+  if (typeof appointments === 'undefined' || !appointments.length) return null;
+  var hoje = (typeof hojeISO === 'function') ? hojeISO() : '';
+  return appointments.filter(function (a) {
+    if (!a || a.status === 'cancelada' || !a.date || a.date < hoje) return false;
+    if (p && p.id && a.patientId) return String(a.patientId) === String(p.id);
+    return a.patientIdx === idx; // fallback demo/legado sem ids
+  }).sort(function (a, b) { return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); })[0] || null;
+}
+
+/* Lembrete de sessão pronto para wa.me. Com appt usa o template do Perfil com a
+ * data real ("hoje" quando for hoje); sem appt, versão genérica honesta. */
+function _wppMsgLembreteSessao(p, appt) {
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch (e) {}
+  var nomeT = _wppNomeTerapeuta();
+  if (appt && appt.date) {
+    var hojeStr = (typeof hojeISO === 'function') ? hojeISO() : '';
+    var dia;
+    if (appt.date === hojeStr) { dia = 'hoje'; }
+    else {
+      var d = new Date(appt.date + 'T12:00');
+      dia = isNaN(d.getTime()) ? appt.date : d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+    }
+    return _wppInterpolate(acc.wpp_template || '', _firstName(p.name), dia, appt.time || '', nomeT);
+  }
+  return 'Olá ' + _firstName(p.name) + '! 🌿\n\nLembrete da sua sessão de psicoterapia.\n\nQualquer imprevisto, é só me avisar por aqui. Até breve! 💚\n— ' + nomeT;
+}
+
 /* Contexto de abordagem do TERAPEUTA para os prompts de IA (decisão do usuário:
  * terapeutas integrativos usam abordagens secundárias). Retorna algo como
  * " O terapeuta também integra: Psicanálise, ACT." ou '' se não houver. As

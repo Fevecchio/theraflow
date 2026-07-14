@@ -30,19 +30,8 @@ function _stopDashAutoRefresh() {
   if (_dashRefreshInterval) { clearInterval(_dashRefreshInterval); _dashRefreshInterval = null; }
 }
 
-function _wppInterpolate(tpl, nome, dia, hora, terapeuta) {
-  var base = tpl && tpl.trim()
-    ? tpl
-    : 'Olá [Nome]! 🌿\n\nLembrete da sua sessão de psicoterapia [dia] às [hora].\n\nAté logo! 💚\n— [Terapeuta]';
-  // Se o template já usa [hora] explicitamente, [dia] vira só a data (evita duplicar a hora).
-  // Caso contrário (templates antigos só com [dia]), embute "às [hora]" no [dia] como antes.
-  var temHora = /\[hora\]/.test(base);
-  return base
-    .replace(/\[Nome\]/g, nome)
-    .replace(/\[dia\]/g, (hora && !temHora) ? dia + ' às ' + hora : dia)
-    .replace(/\[hora\]/g, hora || '')
-    .replace(/\[Terapeuta\]/g, terapeuta);
-}
+// _wppInterpolate agora mora em js/01 (mensagem única p/ TODOS os lembretes —
+// antes só este disparo em lote usava o template do Perfil). Revisão 14/07.
 
 function enviarLembretesSessoesDia() {
   var hoje = hojeISO();
@@ -53,9 +42,7 @@ function enviarLembretesSessoesDia() {
   var tpl = acc.wpp_template || '';
   var links = [];
   var semWpp = 0;
-  var _nTRaw = (typeof tfUserData !== 'undefined' && tfUserData && tfUserData.nome) ? tfUserData.nome : '';
-  var _nTParts = _nTRaw.split(' ').filter(function(w){ return !/^(Dr|Dra|Prof|Profa|Me)\.?$/i.test(w); });
-  var nomeT = _nTParts[0] || 'sua terapeuta';
+  var nomeT = _wppNomeTerapeuta();
   sessoesHoje.forEach(function(a) {
     var p = patients[a.patientIdx];
     if (!p || !p.whatsapp) { semWpp++; return; }

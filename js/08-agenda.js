@@ -439,7 +439,7 @@ function confirmarAgendamento() {
       if (_wn) {
         var _dBR = fmtDataBR(datas[0]);
         var _lk = p.sessionLink ? ('\n\n🔗 Link da sala: ' + (String(p.sessionLink).startsWith('http') ? p.sessionLink : 'https://' + p.sessionLink)) : '';
-        var _msg = 'Olá ' + _firstName(p.name) + '! Sua sessão está agendada para ' + _dBR + ' às ' + horaVal + '.' + _lk + '\n\nAté lá! 🌿';
+        var _msg = 'Olá ' + _firstName(p.name) + '! 🌿\n\nSua sessão de psicoterapia está agendada para ' + _dBR + ' às ' + horaVal + '.' + _lk + '\n\nQualquer imprevisto, é só me avisar por aqui. Até lá! 💚\n— ' + _wppNomeTerapeuta();
         window.open(_wppLink(p.whatsapp, _msg), '_blank');
       } else {
         showToast('⚠ Paciente sem WhatsApp válido — link não enviado.');
