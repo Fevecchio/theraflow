@@ -128,7 +128,7 @@ function renderCharges(mesFilter) {
   list.innerHTML = visible.map(c => {
     const _dOpen = _calcDaysOpen(c);
     const statusTag = c.status === 'paid'
-      ? `<span class="tag tag-green tag-dot">Pago${c.paidDate?' · '+c.paidDate:''}</span>`
+      ? `<span class="tag tag-green tag-dot">Pago${c.paidDate?' · '+_cobrDataBR(_cobrIso({date:c.paidDate})):''}</span>`
       : c.status === 'overdue'
         ? `<span class="tag tag-red tag-dot">${_dOpen}d atraso</span>`
         : `<span class="tag tag-amber tag-dot">Pendente${_dOpen?' · '+_dOpen+'d':''}</span>`;
@@ -162,7 +162,7 @@ function renderCharges(mesFilter) {
         <div class="patient-avatar" style="background:${c.color};color:#fff;width:30px;height:30px;font-size:10px">${c.initials}</div>
         <div><span class="patient-name" style="font-size:13.5px">${escHTML(c.patient||'')}</span><span class="patient-meta"> · ${escHTML(sessionLabel)}</span>${billingBadge}${timingLabel}</div>
       </div>
-      <span class="fin-editable" onclick="editField(this,'${c.id}','date')" title="Clique para editar">${escHTML(c.date||'')}</span>
+      <span class="fin-editable" onclick="editField(this,'${c.id}','date')" title="Clique para editar">${escHTML(c.date ? _cobrDataBR(_cobrIso(c)) : '')}</span>
       <span class="fin-editable" onclick="editField(this,'${c.id}','value')" title="Clique para editar" style="font-weight:500">R$${escHTML(String(c.value))}</span>
       <span style="font-size:12px;display:flex;align-items:center;gap:4px"><span style="color:#00BDAE">◉</span> ${escHTML(c.method||'PIX')}</span>
       ${statusTag}
@@ -698,7 +698,7 @@ function exportarRelatorioAnual() {
   + 'h1{font-size:22px;color:#2d5a3d;margin-bottom:4px}p.sub{color:#888;margin-bottom:28px}'
   + 'h2{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#666;border-left:4px solid #4a7c59;padding-left:10px;margin:24px 0 12px}'
   + 'table{width:100%;border-collapse:collapse}th{background:#f9fafb;text-align:left;padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#666;border-bottom:2px solid #e5e7eb}'
-  + 'td{padding:8px 10px;border-bottom:1px solid #f3f4f6}.total-row{font-weight:700;background:#f0fdf4}'
+  + 'td{padding:8px 10px;border-bottom:1px solid var(--line-2)}.total-row{font-weight:700;background:#f0fdf4}'
   + '.disclaimer{margin-top:32px;padding:16px;background:#fef9c3;border-radius:8px;font-size:12px;color:#713f12}'
   + '.footer{margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;color:#999;font-size:11px;text-align:center}'
   + '@media print{body{margin:20px}}</style></head><body>'
@@ -1163,8 +1163,8 @@ function exportarRelatorioMensal() {
   const mesAtual = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const fmt = fmtMoeda;
   const statusLabel = s => s === 'paid' ? 'Pago' : s === 'overdue' ? 'Em atraso' : 'Pendente';
-  const statusColor = s => s === 'paid' ? '#166534' : s === 'overdue' ? '#991b1b' : '#92400e';
-  const statusBg = s => s === 'paid' ? '#dcfce7' : s === 'overdue' ? '#fee2e2' : '#fef3c7';
+  const statusColor = s => s === 'paid' ? '#166534' : s === 'overdue' ? 'var(--red)' : 'var(--amber)';
+  const statusBg = s => s === 'paid' ? '#dcfce7' : s === 'overdue' ? 'var(--red-light)' : 'var(--amber-light)';
 
   const receitaTotal = rows.filter(c=>c.status==='paid').reduce((s,c)=>s+c.value,0);
   const aReceber = rows.filter(c=>c.status==='pending').reduce((s,c)=>s+c.value,0);
@@ -1197,15 +1197,15 @@ function exportarRelatorioMensal() {
     <tr>
       <td>${escHTML(nome)}</td>
       <td style="text-align:right;color:#166534;font-weight:600">${fmt(v.pago)}</td>
-      <td style="text-align:right;color:#92400e">${fmt(v.pendente)}</td>
-      <td style="text-align:right;color:#991b1b">${fmt(v.atrasado)}</td>
+      <td style="text-align:right;color:var(--amber)">${fmt(v.pendente)}</td>
+      <td style="text-align:right;color:var(--red)">${fmt(v.atrasado)}</td>
       <td style="text-align:right">${v.sessoes}</td>
     </tr>`).join('');
 
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
 <title>Relatório Financeiro — ${mesAtual}</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,Arial,sans-serif;color:#1a1a1a;background:#fff;padding:40px 48px;font-size:13px}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,Arial,sans-serif;color:#1a1a1a;background:var(--white);padding:40px 48px;font-size:13px}
 .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #4a7c59}
 .logo{font-size:22px;font-weight:700;color:#4a7c59;letter-spacing:-.5px}
 .header-right{text-align:right;color:#666;font-size:12px;line-height:1.6}
@@ -1215,7 +1215,7 @@ h2{font-size:16px;font-weight:700;margin:28px 0 12px;color:#1a1a1a;border-left:4
 .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#666;margin-bottom:6px}
 .stat-value{font-size:20px;font-weight:700}
 table{width:100%;border-collapse:collapse;font-size:12px}th{background:#f9fafb;text-align:left;padding:8px 10px;font-weight:600;border-bottom:2px solid #e5e7eb;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666}
-td{padding:8px 10px;border-bottom:1px solid #f3f4f6;vertical-align:middle}tr:hover td{background:#fafafa}
+td{padding:8px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle}tr:hover td{background:#fafafa}
 .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;color:#999;font-size:11px;text-align:center}
 @media print{body{padding:20px 28px}.stats{break-inside:avoid}h2{break-before:auto}}
 </style></head><body>
@@ -1231,8 +1231,8 @@ td{padding:8px 10px;border-bottom:1px solid #f3f4f6;vertical-align:middle}tr:hov
 
 <div class="stats">
   <div class="stat"><div class="stat-label">Receita recebida</div><div class="stat-value" style="color:#166534">${fmt(receitaTotal)}</div></div>
-  <div class="stat"><div class="stat-label">A receber</div><div class="stat-value" style="color:#92400e">${fmt(aReceber)}</div></div>
-  <div class="stat"><div class="stat-label">Em atraso</div><div class="stat-value" style="color:#991b1b">${fmt(emAtraso)}</div></div>
+  <div class="stat"><div class="stat-label">A receber</div><div class="stat-value" style="color:var(--amber)">${fmt(aReceber)}</div></div>
+  <div class="stat"><div class="stat-label">Em atraso</div><div class="stat-value" style="color:var(--red)">${fmt(emAtraso)}</div></div>
   <div class="stat"><div class="stat-label">Adimplência</div><div class="stat-value" style="color:#4a7c59">${taxaAdimplencia}%</div></div>
 </div>
 
@@ -1951,7 +1951,7 @@ function renderDiarioLivre(p) {
     // Entrada do paciente
     var replyHtml = '';
     if (entry.reply) {
-      replyHtml = '<div style="margin-top:10px;padding:10px 12px;background:#fff;border-radius:8px;border-left:3px solid var(--purple)">'
+      replyHtml = '<div style="margin-top:10px;padding:10px 12px;background:var(--white);border-radius:8px;border-left:3px solid var(--purple)">'
         + '<div style="font-size:10px;color:var(--purple);font-weight:600;margin-bottom:4px">✦ Resposta de ' + escHTML(therapistFirst) + '</div>'
         + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(entry.reply) + '</div>'
         + '</div>';

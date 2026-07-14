@@ -112,7 +112,7 @@ function _showConvitePortalModal(idx) {
   modal.id = 'modal-convite-portal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.2);text-align:center">
+    <div style="background:var(--white);border-radius:16px;padding:28px;max-width:380px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.2);text-align:center">
       <div style="font-size:36px;margin-bottom:12px">📲</div>
       <div style="font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:8px">Enviar acesso ao portal?</div>
       <div style="font-size:13.5px;color:#6b7280;line-height:1.6;margin-bottom:20px">
@@ -1130,7 +1130,7 @@ function renderPatientConfig(i) {
           <div style="display:flex;gap:6px;align-items:center">
             <input id="pac-session-link-${i}" type="url" placeholder="Cole o link da videochamada aqui"
               value="${escHTML(p.sessionLink||'')}"
-              style="flex:1;font-size:12px;padding:5px 8px;border:1px solid rgba(44,95,138,.25);border-radius:7px;font-family:inherit;color:var(--ink);background:#fff;outline:none"
+              style="flex:1;font-size:12px;padding:5px 8px;border:1px solid rgba(44,95,138,.25);border-radius:7px;font-family:inherit;color:var(--ink);background:var(--white);outline:none"
               onkeydown="if(event.key==='Enter')salvarSessionLink(${i})"
             />
             <button onclick="salvarSessionLink(${i})" style="background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Salvar</button>
@@ -1300,10 +1300,10 @@ function renderPatientFicha(i) {
   var evolucaoHtml = '<div style="margin:0 0 20px;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">'
     + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Evolução do paciente</div>'
     + '<div style="display:flex;gap:12px;margin-bottom:10px">'
-    + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">' + totalSessoes + '</div><div style="font-size:10px;color:var(--muted)">Sessões</div></div>'
-    + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--sage)">' + prog + '%</div><div style="font-size:10px;color:var(--muted)">Progresso</div></div>'
-    + '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">' + (mh.length ? mh[mh.length - 1] : '—') + '</div><div style="font-size:10px;color:var(--muted)">Humor atual</div></div>'
-    + (taxaPresenca !== null ? '<div style="text-align:center;background:#fff;border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:' + (taxaPresenca >= 80 ? 'var(--sage)' : taxaPresenca >= 60 ? 'var(--amber)' : 'var(--red)') + '">' + taxaPresenca + '%</div><div style="font-size:10px;color:var(--muted)">Presença</div></div>' : '')
+    + '<div style="text-align:center;background:var(--white);border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">' + totalSessoes + '</div><div style="font-size:10px;color:var(--muted)">Sessões</div></div>'
+    + '<div style="text-align:center;background:var(--white);border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--sage)">' + prog + '%</div><div style="font-size:10px;color:var(--muted)">Progresso</div></div>'
+    + '<div style="text-align:center;background:var(--white);border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:var(--ink)">' + (mh.length ? mh[mh.length - 1] : '—') + '</div><div style="font-size:10px;color:var(--muted)">Humor atual</div></div>'
+    + (taxaPresenca !== null ? '<div style="text-align:center;background:var(--white);border-radius:8px;padding:8px 14px;flex:1"><div style="font-size:18px;font-weight:700;color:' + (taxaPresenca >= 80 ? 'var(--sage)' : taxaPresenca >= 60 ? 'var(--amber)' : 'var(--red)') + '">' + taxaPresenca + '%</div><div style="font-size:10px;color:var(--muted)">Presença</div></div>' : '')
     + '</div>'
     + '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Histórico de humor (últimas sessões)</div>'
     + sparkHtml
@@ -1324,7 +1324,7 @@ function renderPatientFicha(i) {
         : escHTML(m.titulo);
       var descHtml = m.desc ? '<div class="material-desc">' + escHTML(m.desc) + '</div>' : '';
       var labelMap = (typeof MATERIAL_LABELS !== 'undefined' ? MATERIAL_LABELS : {});
-      var tag = '<span style="font-size:10.5px;background:#f0f2f0;color:var(--muted);padding:2px 7px;border-radius:10px;font-weight:500">' + escHTML(labelMap[m.tipo] || m.tipo) + '</span>';
+      var tag = '<span style="font-size:10.5px;background:var(--line-2);color:var(--muted);padding:2px 7px;border-radius:10px;font-weight:500">' + escHTML(labelMap[m.tipo] || m.tipo) + '</span>';
       return '<div class="material-card">'
         + '<div class="material-icon ' + m.tipo + '">' + icon + '</div>'
         + '<div style="flex:1;min-width:0">'
@@ -1573,13 +1573,13 @@ function renderTrajetoriaTerapeuta(i) {
       + '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">' + (pendente ? 'Revise o rascunho — o paciente só vê depois que você publicar:' : 'Resumo para o paciente (opcional):') + '</div>'
       + '<div style="display:flex;gap:6px;align-items:flex-start">'
       + '<textarea id="resumo-pac-' + a.id + '" placeholder="Escreva um resumo acessível desta sessão para o paciente ver na jornada…" '
-      + 'style="flex:1;border:1.5px solid ' + (pendente ? '#f0d060' : 'var(--border)') + ';border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:' + (pendente ? '#fffdf5' : '#fafaf8') + ';color:var(--ink);line-height:1.5" '
+      + 'style="flex:1;border:1.5px solid ' + (pendente ? '#f0d060' : 'var(--border)') + ';border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:' + (pendente ? '#fffdf5' : 'var(--bg)') + ';color:var(--ink);line-height:1.5" '
       + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
       + escHTML(resumo || pendente)
       + '</textarea>'
       + '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
       + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">' + (pendente ? '✓ Publicar' : 'Salvar') + '</button>'
-      + '<button onclick="regenerarResumoIA(' + i + ',\'' + escHTML(a.id) + '\')" style="background:#fff;border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">✨ IA</button>'
+      + '<button onclick="regenerarResumoIA(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--white);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">✨ IA</button>'
       + '</div>'
       + '</div>'
       + '</div>';
@@ -1681,12 +1681,12 @@ function renderChatTerapeuta(i, msgs) {
   // envia mais pelo app. Se houver histórico, mostra READ-ONLY; o canal ativo agora
   // é a "Mensagem da semana" (1-via, visível no portal) e o WhatsApp.
   if (!thread) {
-    return '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
+    return '<div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
       + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Mensagens</div>'
       + '<div style="font-size:12.5px;color:var(--muted);line-height:1.5">O chat pelo app foi descontinuado. Para falar com '+escHTML(_firstName2(p.name))+', use a <strong>Mensagem da semana</strong> no Portal (ela vê entre as sessões) ou o WhatsApp.</div>'
       + '</div>';
   }
-  return '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
+  return '<div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)">'
     + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Mensagens (histórico)</div>'
     + '<div class="chat-thread" id="chat-thread-t-'+i+'">'+thread+'</div>'
     + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);line-height:1.5">O chat pelo app foi descontinuado — use a <strong>Mensagem da semana</strong> no Portal ou o WhatsApp.</div>'

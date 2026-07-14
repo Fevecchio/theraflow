@@ -658,7 +658,7 @@ function _lkShowProcessing() {
   modal.id = 'lk-proc-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:430px;box-shadow:0 24px 80px rgba(0,0,0,.3);padding:26px 28px">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:430px;box-shadow:0 24px 80px rgba(0,0,0,.3);padding:26px 28px">
       <div style="text-align:center;margin-bottom:18px">
         <div style="width:44px;height:44px;margin:0 auto 12px;border-radius:50%;border:3px solid #e6efe9;border-top-color:#4a7c59;animation:lkspin .9s linear infinite"></div>
         <div style="font-weight:600;font-size:15px;color:#1a1a1a">Preparando sua nota clínica…</div>
@@ -905,7 +905,7 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
     </div>`;
 
   const retryBlock = `
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;color:#991b1b;font-size:13px;line-height:1.55">
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;color:var(--red);font-size:13px;line-height:1.55">
       <strong>⚠ Não consegui concluir a transcrição/nota.</strong><br/>
       A gravação desta sessão <strong>ainda está guardada nesta aba</strong> — você pode tentar de novo sem regravar.
       ${errMsg ? `<div style="margin-top:6px;font-size:11px;opacity:.8">Detalhe técnico: ${esc(errMsg)}</div>` : ''}
@@ -952,7 +952,7 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
   modal.id = 'lk-post-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
       <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
         <div style="width:38px;height:38px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px">${icon}</div>
         <div><div style="font-weight:600;font-size:15px;color:#1a1a1a">Sessão encerrada · ${esc(nome)}</div>
@@ -960,7 +960,7 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
       </div>
       <div style="padding:20px 24px">${bodyHTML}</div>
       <div style="padding:12px 24px 20px;display:flex;gap:8px;border-top:1px solid #f0f0f0;justify-content:flex-end">
-        <button onclick="${closeGuard}" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555">Fechar</button>
+        <button onclick="${closeGuard}" style="padding:10px 16px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;color:#555">Fechar</button>
         ${retry ? `<button onclick="_lkRetryProcess()" style="padding:10px 18px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">↻ Tentar de novo</button>` : ''}
         ${isContent ? `<button onclick="_lkSalvarNotaPostSessao()" style="padding:10px 18px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✓ Salvar no prontuário</button>` : ''}
       </div>
@@ -1037,7 +1037,7 @@ function _lkAbrirRevisaoJornada(apptId) {
     var m = document.createElement('div');
     m.id = 'lk-jornada-modal';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-    m.innerHTML = '<div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">'
+    m.innerHTML = '<div style="background:var(--white);border-radius:16px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">'
       + '<div style="padding:18px 22px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">'
       + '<div style="width:38px;height:38px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;font-size:18px">📅</div>'
       + '<div><div style="font-weight:600;font-size:15px;color:#1a1a1a">Resumo da jornada · para ' + escHTML(primeiro) + '</div>'
@@ -1047,7 +1047,7 @@ function _lkAbrirRevisaoJornada(apptId) {
       + '<div style="font-size:11px;color:#999;margin-top:6px">Linguagem acessível, sem jargão — é o que aparece em "Minha jornada" no portal.</div>'
       + '</div>'
       + '<div style="padding:12px 22px 18px;display:flex;gap:8px;border-top:1px solid #f0f0f0;justify-content:flex-end">'
-      + '<button onclick="document.getElementById(\'lk-jornada-modal\').remove();if(typeof showToast===\'function\')showToast(\'🕓 Rascunho guardado — publique quando quiser em Pacientes → Visão Geral → Trajetória.\')" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555">Deixar para depois</button>'
+      + '<button onclick="document.getElementById(\'lk-jornada-modal\').remove();if(typeof showToast===\'function\')showToast(\'🕓 Rascunho guardado — publique quando quiser em Pacientes → Visão Geral → Trajetória.\')" style="padding:10px 16px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;color:#555">Deixar para depois</button>'
       + '<button onclick="_lkPublicarJornada(\'' + escHTML(String(appt.id)) + '\')" style="padding:10px 18px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✓ Publicar para ' + escHTML(primeiro) + '</button>'
       + '</div></div>';
     document.body.appendChild(m);
@@ -1120,14 +1120,14 @@ async function _lkAbrirDispositivos() {
     let active = null;
     try { active = _lkRoom ? _lkRoom.getActiveDevice(k.kind) : null; } catch (_) {}
     return '<label style="display:block;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px;margin:12px 0 5px">' + k.label + '</label>'
-      + '<select onchange="_lkTrocarDispositivo(\'' + k.kind + '\', this.value)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #d1e7d9;border-radius:10px;font-size:13px;font-family:inherit;background:#fff;outline:none">'
+      + '<select onchange="_lkTrocarDispositivo(\'' + k.kind + '\', this.value)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #d1e7d9;border-radius:10px;font-size:13px;font-family:inherit;background:var(--white);outline:none">'
       + list.map(function (d, i) {
           return '<option value="' + esc(d.deviceId) + '"' + (active && active === d.deviceId ? ' selected' : '') + '>'
             + esc(d.label || (k.label.replace(/^\S+\s/, '') + ' ' + (i + 1))) + '</option>';
         }).join('')
       + '</select>';
   }).join('');
-  wrap.innerHTML = '<div style="background:#fff;border-radius:16px;width:100%;max-width:400px;box-shadow:0 24px 80px rgba(0,0,0,.3);padding:22px 24px">'
+  wrap.innerHTML = '<div style="background:var(--white);border-radius:16px;width:100%;max-width:400px;box-shadow:0 24px 80px rgba(0,0,0,.3);padding:22px 24px">'
     + '<div style="font-weight:600;font-size:15px;color:#1a1a1a">Dispositivos de áudio e vídeo</div>'
     + '<div style="font-size:12px;color:#888;margin-top:2px">A troca vale na hora — a sessão não cai. Fale e confira a barrinha 🎤.</div>'
     + rows

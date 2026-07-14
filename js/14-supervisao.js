@@ -256,7 +256,7 @@ function showCalendarSync() {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
 
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25)">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25)">
       <div style="padding:28px 28px 0">
         <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:6px">🔗 Sincronizar agenda</div>
         <div style="font-size:13px;color:#888;margin-bottom:24px">Conecte sua agenda profissional. Sessões criadas no TheraFlow aparecerão automaticamente — e bloqueios da sua agenda pessoal serão respeitados.</div>
@@ -264,7 +264,7 @@ function showCalendarSync() {
         <!-- Google Calendar -->
         <div id="gcal-card" style="border:1px solid #e0e0e0;border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all .2s" onclick="connectCalendar('google')">
           <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:10px;background:#fff;border:1px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:22px">📅</div>
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--white);border:1px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:22px">📅</div>
             <div style="flex:1">
               <div style="font-weight:600;font-size:14px;color:#1a1a1a">Google Calendar</div>
               <div style="font-size:12px;color:#888">Sincronização bidirecional via OAuth</div>
@@ -298,7 +298,7 @@ function showCalendarSync() {
         </div>
       </div>
       <div style="padding:0 28px 24px;display:flex;justify-content:flex-end">
-        <button onclick="document.getElementById('modal-cal-sync').remove()" style="padding:10px 20px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555;font-family:inherit">Fechar</button>
+        <button onclick="document.getElementById('modal-cal-sync').remove()" style="padding:10px 20px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;color:#555;font-family:inherit">Fechar</button>
       </div>
     </div>
   `;
@@ -327,7 +327,7 @@ function showAgendarModal(preData, preHora) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
 
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:440px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:440px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
       <div style="padding:28px">
         <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:20px">+ Nova sessão</div>
 
@@ -395,7 +395,7 @@ function showAgendarModal(preData, preHora) {
         </div>
 
         <div style="display:flex;gap:10px;margin-top:20px">
-          <button onclick="document.getElementById('modal-agendar').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555;font-family:inherit">Cancelar</button>
+          <button onclick="document.getElementById('modal-agendar').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;color:#555;font-family:inherit">Cancelar</button>
           <button onclick="confirmarAgendamento()" style="flex:1;padding:11px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Agendar e enviar</button>
         </div>
       </div>
@@ -754,7 +754,7 @@ function exportarProntuario() {
   var htmlOut = '<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n<meta charset="UTF-8"/>\n' +
     '<title>Prontuário — ' + escHTML(p.name) + '</title>\n<style>\n' +
     '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
-    'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; color: #1a1f1c; background: #fff; }\n' +
+    'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; color: #1a1f1c; background:var(--white); }\n' +
     '.page { max-width: 760px; margin: 0 auto; padding: 48px 48px 60px; }\n' +
     '.letterhead { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 20px; border-bottom: 2px solid #4a7c59; margin-bottom: 28px; }\n' +
     '.lh-left h1 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #4a7c59; margin-bottom: 4px; }\n' +

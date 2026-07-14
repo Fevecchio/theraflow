@@ -446,7 +446,7 @@ function showPostSessionFlow() {
   const _durStr = _durMin > 0 ? `${_durMin} min` : '< 1 min';
 
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
 
       <!-- STEP 1: gravação finalizando + transcrição processando -->
       <div id="post-step-1" style="padding:36px 40px;text-align:center">
@@ -560,7 +560,7 @@ function showPostSessionFlow() {
             <div style="font-size:11px;font-weight:700;color:#4a7c59;margin-bottom:8px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.4px">
               ✦ Nota clínica — gerada pelo Claude a partir da transcrição
             </div>
-            <div style="font-size:13px;color:#333;line-height:1.6" id="post-note-text">${_quickNotes ? `<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:6px 10px;margin-bottom:10px;border-radius:0 6px 6px 0;font-size:12px;color:#92400e"><strong>Suas anotações:</strong> ${_quickNotes}</span>` : ''}Paciente chegou relatando cansaço intenso e sobrecarga no trabalho. Identificada crença nuclear recorrente: "preciso ser perfeita para não decepcionar" — 4ª ocorrência nos últimos 6 atendimentos. Foram trabalhadas técnicas de reestruturação cognitiva, com foco no pensamento dicotômico. Paciente demonstrou insight ao reconhecer o padrão de paralisia frente à exigência autoimposta. Exercício de casa: registro de pensamentos automáticos por 3 dias, com atenção especial ao momento de "travar".</div>
+            <div style="font-size:13px;color:#333;line-height:1.6" id="post-note-text">${_quickNotes ? `<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:6px 10px;margin-bottom:10px;border-radius:0 6px 6px 0;font-size:12px;color:var(--amber)"><strong>Suas anotações:</strong> ${_quickNotes}</span>` : ''}Paciente chegou relatando cansaço intenso e sobrecarga no trabalho. Identificada crença nuclear recorrente: "preciso ser perfeita para não decepcionar" — 4ª ocorrência nos últimos 6 atendimentos. Foram trabalhadas técnicas de reestruturação cognitiva, com foco no pensamento dicotômico. Paciente demonstrou insight ao reconhecer o padrão de paralisia frente à exigência autoimposta. Exercício de casa: registro de pensamentos automáticos por 3 dias, com atenção especial ao momento de "travar".</div>
           </div>
         </div>
 
@@ -581,7 +581,7 @@ function showPostSessionFlow() {
 
         <!-- Ações -->
         <div style="padding:12px 24px 20px;display:flex;gap:8px;border-top:1px solid #f0f0f0">
-          <button onclick="editPostNote()" id="btn-edit-note" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555;white-space:nowrap;font-family:inherit">
+          <button onclick="editPostNote()" id="btn-edit-note" style="padding:10px 16px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;color:#555;white-space:nowrap;font-family:inherit">
             ✏️ Editar nota
           </button>
           <button onclick="indexPostSession()" style="flex:1;padding:10px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
@@ -668,7 +668,7 @@ function showPostSessionFlow() {
             var el = document.getElementById('post-note-text');
             if (notaIA && el && el.tagName !== 'TEXTAREA') {
               el.innerHTML =
-                '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:8px 12px;margin-bottom:14px;border-radius:0 8px 8px 0;font-size:12px;color:#92400e;white-space:pre-wrap"><strong>📝 Suas notas da sessão:</strong>\n' + escHTML(_sessionNote.substring(0, 600)) + '</span>' +
+                '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:8px 12px;margin-bottom:14px;border-radius:0 8px 8px 0;font-size:12px;color:var(--amber);white-space:pre-wrap"><strong>📝 Suas notas da sessão:</strong>\n' + escHTML(_sessionNote.substring(0, 600)) + '</span>' +
                 '<div style="white-space:pre-wrap;font-size:13px;color:#333;line-height:1.6">' + escHTML(notaIA) + '</div>';
             } else {
               var loader = document.getElementById('_note-ia-loader');
@@ -722,7 +722,7 @@ function _gerarNotaEstrutural() {
   var sessaoNum = sp ? (sp.sessions||0) + 1 : 1;
   var hoje = new Date().toLocaleDateString('pt-BR');
   var qn = (document.getElementById('session-quick-notes')?.value || document.getElementById('session-ai-note')?.value || '').trim();
-  var notasHtml = qn ? '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:6px 10px;margin-bottom:10px;border-radius:0 6px 6px 0;font-size:12px;color:#92400e"><strong>Notas da sessão:</strong> ' + escHTML(qn.substring(0, 300)) + '</span>' : '';
+  var notasHtml = qn ? '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:6px 10px;margin-bottom:10px;border-radius:0 6px 6px 0;font-size:12px;color:var(--amber)"><strong>Notas da sessão:</strong> ' + escHTML(qn.substring(0, 300)) + '</span>' : '';
   var corpo = '';
   if (abord.includes('tcc') || abord.includes('cognitivo')) {
     corpo = '<strong>S — Subjetivo:</strong> ' + nome + ' apresentou-se à sessão ' + sessaoNum + '. Relato do paciente a ser preenchido após revisão da transcrição.<br/><br/>' +
@@ -870,7 +870,7 @@ function editPostNote() {
   textarea.style.cssText = `
     width:100%;min-height:110px;font-size:13px;color:#333;line-height:1.6;
     border:1px solid #d0e8d8;border-radius:8px;padding:10px;
-    font-family:inherit;resize:vertical;outline:none;background:#fff;
+    font-family:inherit;resize:vertical;outline:none;background:var(--white);
     box-sizing:border-box;
   `;
   noteEl.replaceWith(textarea);
@@ -1061,7 +1061,7 @@ function showExercisePosSession() {
   modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
   modal.addEventListener('click', function(e){ if(e.target===modal) fecharExercicioPos(); });
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.3)">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.3)">
       <div style="padding:22px 28px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
         <div style="width:36px;height:36px;border-radius:50%;background:#f0ecfa;display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>
         <div>
@@ -1086,7 +1086,7 @@ function showExercisePosSession() {
         </div>
       </div>
       <div style="padding:16px 28px 22px;display:flex;gap:10px;border-top:1px solid #f0f0f0">
-        <button onclick="fecharExercicioPos()" style="padding:10px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555;font-family:inherit">Pular por agora</button>
+        <button onclick="fecharExercicioPos()" style="padding:10px 16px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;color:#555;font-family:inherit">Pular por agora</button>
         <button onclick="confirmarExercicioPos()" style="flex:1;padding:10px;background:#5a3e8a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Enviar para o portal</button>
       </div>
     </div>`;

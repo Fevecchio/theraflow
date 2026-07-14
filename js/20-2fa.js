@@ -293,7 +293,7 @@ async function gerarBackupCodes(btn) {
     tfTrack('2fa_backup_codes_generated');
     if (area) {
       const grid = d.codes.map(function (c) {
-        return '<div style="font-family:monospace;font-size:15px;font-weight:600;letter-spacing:1px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">' + c + '</div>';
+        return '<div style="font-family:monospace;font-size:15px;font-weight:600;letter-spacing:1px;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">' + c + '</div>';
       }).join('');
       area.innerHTML =
         '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px">🔑 Seus códigos de backup</div>' +

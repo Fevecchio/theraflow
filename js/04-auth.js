@@ -251,7 +251,7 @@ function _verificarTermosPortal(patientId, callback) {
   var modal = document.createElement('div');
   modal.id = 'modal-termos-portal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
-  modal.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;padding:28px 24px;box-shadow:0 8px 40px rgba(0,0,0,.2)">'
+  modal.innerHTML = '<div style="background:var(--white);border-radius:16px;max-width:480px;width:100%;padding:28px 24px;box-shadow:0 8px 40px rgba(0,0,0,.2)">'
     + '<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Termos de uso e privacidade</div>'
     + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.7;margin-bottom:18px;max-height:200px;overflow-y:auto;padding-right:4px">'
     + '<b>TheraFlow — Portal do Paciente</b><br><br>'

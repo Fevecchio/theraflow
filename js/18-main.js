@@ -90,7 +90,7 @@ function abrirReferral() {
   overlay.id = 'modal-referral';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:480px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
       <div style="font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px">🎁 Indicar um colega</div>
       <div style="background:#f0f7f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
         <span style="font-size:22px">🎉</span>
@@ -117,7 +117,7 @@ function abrirReferral() {
           <button onclick="compartilharWhatsApp()" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 WhatsApp</button>
           <button onclick="compartilharEmail()" style="flex:1;padding:10px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✉ Email</button>
         </div>
-        <button onclick="document.getElementById('modal-referral').remove()" style="width:100%;padding:10px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Fechar</button>
+        <button onclick="document.getElementById('modal-referral').remove()" style="width:100%;padding:10px;border:1px solid var(--border);background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Fechar</button>
       </div>
     </div>`;
   overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });

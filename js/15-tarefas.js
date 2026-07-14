@@ -172,7 +172,7 @@ function renderTarefas() {
       ? '<span class="tag tag-green" style="font-size:11px">Concluída</span>'
       : (dtCls==='overdue' ? '<span class="tag" style="font-size:11px;background:var(--red-light);color:var(--red)">Atrasada</span>'
         : dtCls==='today' ? '<span class="tag tag-amber" style="font-size:11px">Hoje</span>'
-        : '<span class="tag" style="font-size:11px;background:#f0f2f0;color:var(--ink-soft)">Aberta</span>');
+        : '<span class="tag" style="font-size:11px;background:var(--line-2);color:var(--ink-soft)">Aberta</span>');
     var acaoBtn = concluida
       ? '<button class="task-reabrir-btn" onclick="toggleTarefa('+t.id+')">↩ Reabrir</button>'
       : '<button class="task-concluir-btn" onclick="toggleTarefa('+t.id+')">✓ Concluir</button>';

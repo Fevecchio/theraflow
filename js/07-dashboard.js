@@ -86,11 +86,11 @@ function enviarLembretesSessoesDia() {
   var overlay = document.createElement('div');
   overlay.id = 'modal-wpp-links';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9990;display:flex;align-items:center;justify-content:center';
-  overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:360px;width:90%;max-height:80vh;overflow-y:auto">'
+  overlay.innerHTML = '<div style="background:var(--white);border-radius:16px;padding:24px;max-width:360px;width:90%;max-height:80vh;overflow-y:auto">'
     + '<h3 style="margin:0 0 4px;font-size:16px;color:#1a2a1a">💬 Lembretes WhatsApp</h3>'
     + '<p style="margin:0 0 16px;font-size:13px;color:#666">Clique em cada paciente para abrir o WhatsApp.</p>'
     + links.map(function(l) {
-        return '<a href="' + l.url + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#e8f5e9;border-radius:10px;margin-bottom:8px;text-decoration:none;color:#1a2a1a;font-size:14px;font-weight:600">'
+        return '<a href="' + l.url + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--sage-light);border-radius:10px;margin-bottom:8px;text-decoration:none;color:#1a2a1a;font-size:14px;font-weight:600">'
           + '<span style="font-size:20px">💚</span>' + escHTML(l.nome) + '</a>';
       }).join('')
     + (semWpp > 0 ? '<p style="font-size:12px;color:#999;margin:8px 0 0">⚠ ' + semWpp + ' paciente(s) sem WhatsApp omitidos.</p>' : '')
@@ -316,9 +316,9 @@ function _renderDashSessoesHoje(sessoes) {
     else contagem = '<span class="tag tag-green tag-dot">Agendada</span>';
     var presencaHtml = '';
     if (passada) {
-      if (a.presenca === 'compareceu') presencaHtml = '<span style="font-size:10px;color:#065f46;background:#d1fae5;padding:1px 6px;border-radius:8px">✓</span>';
-      else if (a.presenca === 'faltou') presencaHtml = '<span style="font-size:10px;color:#991b1b;background:#fee2e2;padding:1px 6px;border-radius:8px">✗</span>';
-      else presencaHtml = '<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;background:#f3f4f6;border:none;border-radius:6px;cursor:pointer;color:var(--muted)" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" title="Confirmar comparecimento">✓ confirmar</button>';
+      if (a.presenca === 'compareceu') presencaHtml = '<span style="font-size:10px;color:var(--sage-dark);background:var(--sage-light);padding:1px 6px;border-radius:8px">✓</span>';
+      else if (a.presenca === 'faltou') presencaHtml = '<span style="font-size:10px;color:var(--red);background:var(--red-light);padding:1px 6px;border-radius:8px">✗</span>';
+      else presencaHtml = '<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;background:var(--line-2);border:none;border-radius:6px;cursor:pointer;color:var(--muted)" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" title="Confirmar comparecimento">✓ confirmar</button>';
     }
     return '<div class="list-item" style="display:flex;align-items:center;gap:14px;opacity:'+(passada?.65:1)+'">'
       + '<div style="text-align:center;min-width:48px"><div style="font-size:15px;font-weight:600;color:'+(muitoProximo?'var(--red)':emBreve?'var(--amber)':'var(--ink)')+'">'+escHTML(a.time)+'</div><div style="font-size:11px;color:var(--muted)">'+a.duration+'min</div></div>'

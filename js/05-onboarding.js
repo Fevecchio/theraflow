@@ -518,7 +518,7 @@ function _showTherapistPasswordReset() {
   var ov = document.createElement('div');
   ov.id = 'tf-pwd-recovery-overlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,30,24,.82);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px';
-  ov.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:400px;width:100%;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit">'
+  ov.innerHTML = '<div style="background:var(--white);border-radius:16px;max-width:400px;width:100%;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit">'
     + '<div style="font-size:20px;font-weight:700;color:#1a2a1e;margin-bottom:6px">Defina uma nova senha 🔐</div>'
     + '<div style="font-size:13px;color:#5a6b60;line-height:1.5;margin-bottom:18px">Escolha a nova senha da sua conta TheraFlow.</div>'
     + '<input id="tf-pwd-rec-1" type="password" placeholder="Nova senha (mín. 8 caracteres)" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'

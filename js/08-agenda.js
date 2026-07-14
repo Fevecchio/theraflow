@@ -106,14 +106,14 @@ function _promptNotaRapida(appt) {
   var overlay = document.createElement('div');
   overlay.id = 'modal-nota-presenca';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding-bottom:0';
-  overlay.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:560px;padding:20px 24px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.18)">'
+  overlay.innerHTML = '<div style="background:var(--white);border-radius:16px 16px 0 0;width:100%;max-width:560px;padding:20px 24px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.18)">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
       + '<div style="font-size:14px;font-weight:700;color:var(--ink)">📋 Nota rápida — ' + escHTML(_firstName(p.name)) + '</div>'
       + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>'
     + '</div>'
     + '<textarea id="nota-rapida-text" placeholder="Registre brevemente o que ocorreu na sessão de hoje…" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--sage);border-radius:10px;font-size:13.5px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;line-height:1.6;color:var(--ink)"></textarea>'
     + '<div style="display:flex;gap:10px;margin-top:12px">'
-      + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Pular</button>'
+      + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Pular</button>'
       + '<button onclick="_salvarNotaRapida(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Salvar nota</button>'
       + '<button id="btn-preench-ia-nota" onclick="_preencherNotaComIA(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✦ Rascunho IA</button>'
     + '</div>'
@@ -255,7 +255,7 @@ function _mostrarOpcoesAppt(pi, apptId) {
   var popup = document.createElement('div');
   popup.id = '_appt-opts-popup';
   popup.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.35);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
-  popup.innerHTML = '<div style="background:#fff;border-radius:14px;padding:20px 24px;max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
+  popup.innerHTML = '<div style="background:var(--white);border-radius:14px;padding:20px 24px;max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
       + '<div><div style="font-weight:600;font-size:15px;color:#1a1a1a">'+escHTML(p.name)+'</div>'
       + '<div style="font-size:12px;color:var(--muted)">'+(a ? escHTML(a.abordagem || '—')+' · '+a.time : '—')+'</div></div>'
@@ -274,10 +274,10 @@ function _mostrarOpcoesAppt(pi, apptId) {
 function _agendaConfirm(msg, onConfirm) {
   var over = document.createElement('div');
   over.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
-  over.innerHTML = '<div style="background:#fff;border-radius:14px;padding:24px 28px;max-width:380px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
+  over.innerHTML = '<div style="background:var(--white);border-radius:14px;padding:24px 28px;max-width:380px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
     + '<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#1a1a1a;white-space:pre-line">'+escHTML(msg)+'</p>'
     + '<div style="display:flex;gap:10px;justify-content:flex-end">'
-    + '<button class="_aga-cancel" style="padding:9px 18px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:#555">Cancelar</button>'
+    + '<button class="_aga-cancel" style="padding:9px 18px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:#555">Cancelar</button>'
     + '<button class="_aga-ok" style="padding:9px 18px;background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Continuar</button>'
     + '</div></div>';
   document.body.appendChild(over);
@@ -462,7 +462,7 @@ function cancelarAppointment(id) {
   overlay.id = 'modal-cancelar-appt';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:420px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
       <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:6px">Cancelar sessão</div>
       <div style="font-size:13px;color:#666;margin-bottom:20px">${escHTML(appt.patientName)} · ${dateLbl} às ${appt.time}</div>
       <div style="margin-bottom:16px">
@@ -477,7 +477,7 @@ function cancelarAppointment(id) {
         <input type="text" id="cancel-outro" placeholder="Descreva o motivo…" style="display:none;width:100%;margin-top:8px;padding:9px 12px;border:1.5px solid #4a7c59;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;outline:none">
       </div>
       <div style="display:flex;gap:10px">
-        <button onclick="document.getElementById('modal-cancelar-appt').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Voltar</button>
+        <button onclick="document.getElementById('modal-cancelar-appt').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Voltar</button>
         <button onclick="confirmarCancelamento(${id})" style="flex:1;padding:11px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Confirmar cancelamento</button>
       </div>
     </div>`;
@@ -526,7 +526,7 @@ function reagendarAppointment(id) {
   overlay.id = 'modal-reagendar';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:380px;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.2)">
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:380px;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.2)">
       <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px">↻ Reagendar sessão</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:20px">${escHTML(appt.patientName)} · atual: ${appt.date} às ${appt.time}</div>
       <div style="display:flex;flex-direction:column;gap:14px">
@@ -546,7 +546,7 @@ function reagendarAppointment(id) {
         </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:20px">
-        <button onclick="document.getElementById('modal-reagendar').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
+        <button onclick="document.getElementById('modal-reagendar').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
         <button onclick="confirmarReagendamento(${id})" style="flex:1;padding:11px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Confirmar</button>
       </div>
     </div>`;
@@ -640,20 +640,20 @@ function renderDayView() {
           var isPast = a.date < hoje || (a.date === hoje && parseInt((a.time||'23:59').split(':')[0]) < new Date().getHours());
           var presencaBadge = '';
           if (a.presenca === 'compareceu') {
-            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#d1fae5;color:#065f46;font-weight:600">✓ compareceu</span>';
+            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--sage-light);color:var(--sage-dark);font-weight:600">✓ compareceu</span>';
           } else if (a.presenca === 'faltou') {
-            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fee2e2;color:#991b1b;font-weight:600">✗ faltou</span>';
+            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--red-light);color:var(--red);font-weight:600">✗ faltou</span>';
           } else if (a.presenca === 'atrasou') {
-            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fef3c7;color:#92400e;font-weight:600">~ atrasou</span>';
+            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--amber-light);color:var(--amber);font-weight:600">~ atrasou</span>';
           } else if (isPast) {
             presencaBadge = '<span style="display:flex;gap:3px">'
-              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:10px;padding:2px 6px;background:#d1fae5;color:#065f46;border:none;border-radius:8px;cursor:pointer" title="Compareceu">✓</button>'
-              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:10px;padding:2px 6px;background:#fee2e2;color:#991b1b;border:none;border-radius:8px;cursor:pointer" title="Faltou">✗</button>'
-              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'atrasou\')" style="font-size:10px;padding:2px 6px;background:#fef3c7;color:#92400e;border:none;border-radius:8px;cursor:pointer" title="Atrasou">~</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:10px;padding:2px 6px;background:var(--sage-light);color:var(--sage-dark);border:none;border-radius:8px;cursor:pointer" title="Compareceu">✓</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:10px;padding:2px 6px;background:var(--red-light);color:var(--red);border:none;border-radius:8px;cursor:pointer" title="Faltou">✗</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'atrasou\')" style="font-size:10px;padding:2px 6px;background:var(--amber-light);color:var(--amber);border:none;border-radius:8px;cursor:pointer" title="Atrasou">~</button>'
               + '</span>';
           }
           var confTag = (a.confirmada && !a.presenca && !isPast)
-            ? ' <span style="font-size:9.5px;padding:1px 6px;border-radius:8px;background:#d1fae5;color:#065f46;font-weight:600;vertical-align:middle">✓ confirmada</span>' : '';
+            ? ' <span style="font-size:9.5px;padding:1px 6px;border-radius:8px;background:var(--sage-light);color:var(--sage-dark);font-weight:600;vertical-align:middle">✓ confirmada</span>' : '';
           return '<div class="'+escHTML(a.color)+' appt-block" style="display:flex;flex-direction:column;gap:5px;margin-bottom:4px;padding:8px">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
               + '<div onclick="event.stopPropagation();_mostrarOpcoesAppt('+pi+','+a.id+')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong>'+confTag+'<br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
@@ -667,7 +667,7 @@ function renderDayView() {
             + '</div>';
         }).join('');
     var _foraHorario = h < _hTrabalhoIni || h > _hTrabalhoFim;
-    return '<div style="display:grid;grid-template-columns:56px 1fr;border-top:1px solid var(--border);'+(_foraHorario?'background:var(--bg)':'background:#fff')+'">'
+    return '<div style="display:grid;grid-template-columns:56px 1fr;border-top:1px solid var(--border);'+(_foraHorario?'background:var(--bg)':'background:var(--white)')+'">'
       + '<div class="time-slot" style="padding:10px 8px;font-size:11px;color:var(--muted);display:flex;align-items:flex-start;padding-top:12px;opacity:'+(_foraHorario?'.5':'1')+'">'+horaStr+'</div>'
       + '<div class="appt-slot" style="padding:6px 8px;min-height:56px">'+slotContent+'</div>'
       + '</div>';
@@ -793,14 +793,14 @@ function renderWeekView() {
         if (a.patientIdx < 0 || !a.id || !a.time) return;
         var isPastW = di.iso < hoje || (di.iso === hoje && parseInt((a.time||'23:59').split(':')[0]) < new Date().getHours());
         var pBadge = '';
-        if (a.presenca === 'compareceu') pBadge = '<div style="font-size:9px;color:#065f46;background:#d1fae5;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✓</div>';
-        else if (a.presenca === 'faltou') pBadge = '<div style="font-size:9px;color:#991b1b;background:#fee2e2;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✗</div>';
-        else if (a.presenca === 'atrasou') pBadge = '<div style="font-size:9px;color:#92400e;background:#fef3c7;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">~</div>';
+        if (a.presenca === 'compareceu') pBadge = '<div style="font-size:9px;color:var(--sage-dark);background:var(--sage-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✓</div>';
+        else if (a.presenca === 'faltou') pBadge = '<div style="font-size:9px;color:var(--red);background:var(--red-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✗</div>';
+        else if (a.presenca === 'atrasou') pBadge = '<div style="font-size:9px;color:var(--amber);background:var(--amber-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">~</div>';
         else if (isPastW) pBadge = '<div style="display:flex;gap:2px;margin-top:2px">'
-          + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:9px;cursor:pointer;color:#065f46;background:#d1fae5;border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
-          + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:9px;cursor:pointer;color:#991b1b;background:#fee2e2;border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
+          + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:9px;cursor:pointer;color:var(--sage-dark);background:var(--sage-light);border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
+          + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:9px;cursor:pointer;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
           + '</div>';
-        else if (a.confirmada) pBadge = '<div style="font-size:9px;color:#065f46;background:#d1fae5;border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block" title="Presença confirmada pelo paciente">✓ conf.</div>';
+        else if (a.confirmada) pBadge = '<div style="font-size:9px;color:var(--sage-dark);background:var(--sage-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block" title="Presença confirmada pelo paciente">✓ conf.</div>';
         // Clique unificado com a view Dia: abre o popup de opções (antes entrava
         // direto na Sessão — um clique de consulta iniciava atendimento). V3.
         gridHtml += '<div class="'+escHTML(a.color)+' appt-block" style="font-size:11px;padding:3px 5px;margin-bottom:2px" title="'+escHTML(a.patientName)+' — '+escHTML(a.abordagem||'')+'">'

@@ -69,7 +69,7 @@ function _mostrarMarco(m) {
   var el = document.createElement('div');
   el.id = 'marco-toast';
   el.style.cssText = 'position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(30px);z-index:10001;'
-    + 'background:#fff;border:2px solid '+m.cor+';border-radius:14px;padding:16px 24px;'
+    + 'background:var(--white);border:2px solid '+m.cor+';border-radius:14px;padding:16px 24px;'
     + 'box-shadow:0 8px 32px rgba(0,0,0,.18);font-family:inherit;max-width:480px;width:90%;'
     + 'display:flex;align-items:center;gap:14px;opacity:0;transition:all .4s cubic-bezier(.16,1,.3,1)';
   el.innerHTML = '<div style="font-size:28px;flex-shrink:0">🏆</div>'
@@ -500,7 +500,7 @@ function agendaMesDetalhe(day, month, year) {
   var overlay = document.createElement('div');
   overlay.id = 'modal-mes-detalhe';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
-  overlay.innerHTML = '<div style="background:#fff;border-radius:16px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden">' +
+  overlay.innerHTML = '<div style="background:var(--white);border-radius:16px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden">' +
     '<div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">' +
       '<div style="font-family:\'Instrument Serif\',serif;font-size:18px">Sessões — ' + titulo + '</div>' +
       '<button onclick="document.getElementById(\'modal-mes-detalhe\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>' +
@@ -526,7 +526,7 @@ function agendaMesDetalhe(day, month, year) {
     '</div>' +
     '<div style="padding:12px 24px 20px;display:flex;justify-content:space-between;align-items:center">' +
       '<button onclick="showAgendarModal(\''+isoDay+'\');document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:8px 14px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Agendar neste dia</button>' +
-      '<button onclick="document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:8px 18px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink-soft)">Fechar</button>' +
+      '<button onclick="document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:8px 18px;border:1px solid var(--border);background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink-soft)">Fechar</button>' +
     '</div>' +
   '</div>';
   overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });

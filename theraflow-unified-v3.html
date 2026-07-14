@@ -271,7 +271,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
     <!-- FOOTER DO CARD -->
     <div class="ob-footer" id="ob-footer">
-      <span class="ob-footer-left" id="footer-left">Já tem conta? <button onclick="showLogin()" style="background:#fff;border:1.5px solid var(--sage);border-radius:8px;cursor:pointer;color:var(--sage);font-weight:700;font-size:12.5px;font-family:inherit;padding:5px 14px;margin-left:4px;transition:all .15s" onmouseover="this.style.background='var(--sage-light)'" onmouseout="this.style.background='#fff'">Entrar</button></span>
+      <span class="ob-footer-left" id="footer-left">Já tem conta? <button onclick="showLogin()" style="background:var(--white);border:1.5px solid var(--sage);border-radius:8px;cursor:pointer;color:var(--sage);font-weight:700;font-size:12.5px;font-family:inherit;padding:5px 14px;margin-left:4px;transition:all .15s" onmouseover="this.style.background='var(--sage-light)'" onmouseout="this.style.background='#fff'">Entrar</button></span>
       <div style="display:flex;gap:10px;align-items:center">
         <button class="btn btn-ghost" id="btn-back" onclick="goBack()" style="display:none">← Editar cadastro</button>
         <button class="btn btn-primary" id="btn-next" onclick="goNext()">Continuar →</button>
@@ -365,7 +365,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <!-- FOOTER -->
     <div class="ob-footer" style="justify-content:center;flex-direction:column;gap:12px;align-items:center">
       <div style="width:100%;border-top:1px solid var(--border);padding-top:16px">
-        <button onclick="irParaLoginPaciente()" style="width:100%;padding:11px 16px;background:#fff;border:1.5px solid var(--sage);border-radius:10px;color:var(--sage);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s" onmouseover="this.style.background='var(--sage-light)'" onmouseout="this.style.background='#fff'">
+        <button onclick="irParaLoginPaciente()" style="width:100%;padding:11px 16px;background:var(--white);border:1.5px solid var(--sage);border-radius:10px;color:var(--sage);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s" onmouseover="this.style.background='var(--sage-light)'" onmouseout="this.style.background='#fff'">
           🌿 Sou paciente — Acessar meu portal
         </button>
       </div>
@@ -690,15 +690,15 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <!-- Modos de visualização -->
       <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">
         <button id="agenda-btn-dia" onclick="agendaSetView('dia')" style="padding:6px 14px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:var(--sage);color:#fff;font-weight:600">Dia</button>
-        <button id="agenda-btn-semana" onclick="agendaSetView('semana')" style="padding:6px 14px;border:none;border-left:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">Semana</button>
-        <button id="agenda-btn-mes" onclick="agendaSetView('mes')" style="padding:6px 14px;border:none;border-left:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">Mês</button>
+        <button id="agenda-btn-semana" onclick="agendaSetView('semana')" style="padding:6px 14px;border:none;border-left:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:var(--white);color:var(--ink-soft)">Semana</button>
+        <button id="agenda-btn-mes" onclick="agendaSetView('mes')" style="padding:6px 14px;border:none;border-left:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:var(--white);color:var(--ink-soft)">Mês</button>
       </div>
 
       <!-- Navegação agrupada -->
       <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">
-        <button onclick="agendaNav(-1)" aria-label="Período anterior" title="Período anterior" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">←</button>
-        <button onclick="agendaNav(0)" style="padding:6px 12px;border:none;border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink);font-weight:600">Hoje</button>
-        <button onclick="agendaNav(1)" aria-label="Próximo período" title="Próximo período" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:var(--ink-soft)">→</button>
+        <button onclick="agendaNav(-1)" aria-label="Período anterior" title="Período anterior" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:var(--white);color:var(--ink-soft)">←</button>
+        <button onclick="agendaNav(0)" style="padding:6px 12px;border:none;border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:12px;cursor:pointer;font-family:inherit;background:var(--white);color:var(--ink);font-weight:600">Hoje</button>
+        <button onclick="agendaNav(1)" aria-label="Próximo período" title="Próximo período" style="padding:6px 12px;border:none;font-size:12px;cursor:pointer;font-family:inherit;background:var(--white);color:var(--ink-soft)">→</button>
       </div>
 
       <!-- Ações secundárias -->
@@ -973,7 +973,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div class="grid-2" style="gap:14px">
             <div class="form-group">
               <label for="ana-estado-civil">Estado civil</label>
-              <select id="ana-estado-civil" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;background:#fff;box-sizing:border-box">
+              <select id="ana-estado-civil" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;background:var(--white);box-sizing:border-box">
                 <option value="">Selecionar…</option>
                 <option value="Solteiro(a)">Solteiro(a)</option>
                 <option value="Namorando">Namorando</option>
@@ -985,7 +985,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             </div>
             <div class="form-group">
               <label for="ana-sit-prof">Situação profissional</label>
-              <select id="ana-sit-prof" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;background:#fff;box-sizing:border-box">
+              <select id="ana-sit-prof" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;background:var(--white);box-sizing:border-box">
                 <option value="">Selecionar…</option>
                 <option value="Empregado(a) CLT">Empregado(a) CLT</option>
                 <option value="Autônomo / PJ">Autônomo / PJ</option>
@@ -1937,9 +1937,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
         <div id="tfa-enroll-area" style="display:none;margin-top:16px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px">
           <div style="font-size:13px;color:var(--ink);margin-bottom:12px">1. Escaneie o QR code com um app autenticador (Google Authenticator, Authy, 1Password…):</div>
-          <div id="tfa-qr" style="width:184px;height:184px;background:#fff;border-radius:8px;padding:8px;margin:0 auto 12px;box-sizing:border-box"></div>
+          <div id="tfa-qr" style="width:184px;height:184px;background:var(--white);border-radius:8px;padding:8px;margin:0 auto 12px;box-sizing:border-box"></div>
           <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:4px">Ou digite a chave manualmente:</div>
-          <div id="tfa-secret" style="font-family:monospace;font-size:12px;text-align:center;word-break:break-all;background:#fff;border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:16px"></div>
+          <div id="tfa-secret" style="font-family:monospace;font-size:12px;text-align:center;word-break:break-all;background:var(--white);border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:16px"></div>
           <div style="font-size:13px;color:var(--ink);margin-bottom:8px">2. Digite o código de 6 dígitos gerado pelo app:</div>
           <input id="tfa-enroll-code" class="perfil-input" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:18px" onkeydown="if(event.key==='Enter')confirmar2FA()"/>
           <div id="tfa-enroll-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:8px 12px;font-size:12px;color:#c0392b;margin-top:10px"></div>
@@ -2076,7 +2076,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="page-subtitle" id="portal-subtitle">Prévia do que o paciente vê entre as sessões</div>
     </div>
     <div class="topbar-actions">
-      <select id="portal-patient-select" onchange="switchPortalPatient(parseInt(this.value))" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff;min-width:180px"></select>
+      <select id="portal-patient-select" onchange="switchPortalPatient(parseInt(this.value))" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:var(--white);min-width:180px"></select>
     </div>
   </div>
 
@@ -2523,7 +2523,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <option>TED / Transferência</option>
         </select>
       </div>
-      <div style="padding:12px;background:#f0f2f0;border-radius:8px;font-size:13px;color:var(--ink-soft);line-height:1.5;margin-bottom:16px">
+      <div style="padding:12px;background:var(--line-2);border-radius:8px;font-size:13px;color:var(--ink-soft);line-height:1.5;margin-bottom:16px">
         💡 <strong>Sessão única:</strong> para pacientes que fizeram 1 sessão e não retornaram, avaliações pontuais ou encaminhamentos. A cobrança é gerada uma vez só.
       </div>
     </div>
@@ -2722,7 +2722,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
 
     <!-- Rodapé fixo com checkbox + botão -->
-    <div style="flex-shrink:0;padding:16px 24px;border-top:1px solid var(--border);background:#fff;border-radius:0 0 16px 16px">
+    <div style="flex-shrink:0;padding:16px 24px;border-top:1px solid var(--border);background:var(--white);border-radius:0 0 16px 16px">
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:14px;font-size:13px;color:var(--ink);line-height:1.5;user-select:none">
         <input type="checkbox" id="terms-checkbox" onchange="termsCheckboxChange()"
           style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--sage);cursor:pointer">
