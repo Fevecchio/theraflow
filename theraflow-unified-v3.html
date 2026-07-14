@@ -591,7 +591,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="dash-hero-sub" id="dash-subtitle">Carregando…</div>
     </div>
     <div class="dash-hero-actions">
-      <button class="btn btn-secondary btn-sm" onclick="navigate('perfil')">⚙ Configurações</button>
+      <button class="btn btn-secondary btn-sm" onclick="navigate('perfil')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> Configurações</button>
       <button class="btn btn-primary btn-sm" id="btn-hero-sessao" onclick="navigate('sessao')">▶ Iniciar sessão</button>
     </div>
   </div>
@@ -665,7 +665,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div class="topbar-actions">
       <select id="patient-status-filter" onchange="filterPatientsByStatus(this.value)"><option value="">Todos os status</option><option value="Ativa">Ativos</option><option value="Nova">Novos</option><option value="Pausa">Em pausa</option><option value="Atenção">Atenção</option></select>
       <select id="patient-abordagem-filter" onchange="filterPatientsByAbordagem(this.value)"><option value="">Todas as abordagens</option><option value="TCC">TCC</option><option value="Psicanálise">Psicanálise</option><option value="Sistêmica">Sistêmica</option><option value="Humanista">Humanista</option><option value="ACT">ACT</option><option value="EMDR">EMDR</option></select>
-      <button class="btn btn-secondary btn-sm" onclick="exportarListaPacientesCSV()" title="Exportar lista em CSV">⬇ CSV</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportarListaPacientesCSV()" title="Exportar lista em CSV"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> CSV</button>
       <button class="btn btn-primary btn-sm" onclick="abrirModalNovoPaciente()">+ Novo paciente</button>
     </div>
   </div>
@@ -703,8 +703,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
       <!-- Ações secundárias -->
       <button id="btn-agenda-compacto" class="btn btn-secondary btn-sm" onclick="toggleAgendaCompacto()" title="Alternar modo compacto">⊡</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportarAgendaICS()" title="Exportar agenda (.ics)">📅</button>
-      <button class="btn btn-secondary btn-sm" onclick="showCalendarSync()" title="Sincronizar com Google Calendar">🔗</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportarAgendaICS()" title="Exportar agenda (.ics)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button>
+      <button class="btn btn-secondary btn-sm" onclick="showCalendarSync()" title="Sincronizar com Google Calendar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></button>
 
       <button class="btn btn-primary" onclick="showAgendarModal()" style="display:flex;align-items:center;gap:6px;font-size:13px;padding:9px 20px;border-radius:10px;font-weight:700;letter-spacing:.2px;box-shadow:0 2px 8px rgba(74,124,89,.35)">
         <span style="font-size:18px;line-height:1">+</span> Nova sessão
@@ -786,8 +786,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
         <div class="video-controls">
           <!-- Controles do TheraFlow — independentes do provedor de vídeo -->
-<button class="ctrl-btn ctrl-btn-light" title="Copiar link do paciente" onclick="showSessionLink()" style="font-size:13px">🔗</button>
-          <button class="ctrl-btn ctrl-btn-light" title="Dispositivos: microfone, câmera e som" onclick="_lkAbrirDispositivos()" style="font-size:13px">⚙</button>
+<button class="ctrl-btn ctrl-btn-light" title="Copiar link do paciente" onclick="showSessionLink()" style="font-size:13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></button>
+          <button class="ctrl-btn ctrl-btn-light" title="Dispositivos: microfone, câmera e som" onclick="_lkAbrirDispositivos()" style="font-size:13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
           <button class="ctrl-btn ctrl-btn-light" onclick="_lkReconnect()" title="Reconectar à mesma sala (a gravação é preservada — use se travar ou cair)" style="font-size:13px;position:relative">↻<span style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.7);white-space:nowrap">Reconectar</span></button>
           <div style="height:28px;width:1px;background:rgba(255,255,255,.1);margin:0 4px"></div>
           <button class="ctrl-btn ctrl-btn-red" onclick="endWherebySession()" title="Encerrar sessão" style="font-size:13px;position:relative">✕<span style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.7);white-space:nowrap">Encerrar</span></button>
@@ -1083,8 +1083,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div><div style="font-family:'Instrument Serif',serif;font-size:17px" id="b-result-title">Briefing — Paciente</div><div style="font-size:12px;color:var(--muted);margin-top:2px" id="b-result-subtitle">Gerado agora</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="regen-btn" id="briefing-regen-btn" onclick="regenerateBriefing()">↺ Regenerar</button>
-          <button class="btn btn-ghost btn-sm" onclick="copiarBriefing()">📋 Copiar</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportarBriefing()">⬇ Exportar</button>
+          <button class="btn btn-ghost btn-sm" onclick="copiarBriefing()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg> Copiar</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportarBriefing()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Exportar</button>
           <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨 Imprimir</button>
         </div>
       </div>
@@ -1126,9 +1126,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
     <div class="topbar-actions">
       <select onchange="filterFinMonth(this.value)" id="fin-month-select"><option value="">Todos os meses</option></select>
-      <button class="btn btn-ghost btn-sm" onclick="lembreteInadimplentes()">⚠ Inadimplentes</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportarRelatorioMensal()">📊 Relatório PDF</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportarFinanceiro()">⬇ CSV</button>
+      <button class="btn btn-ghost btn-sm" onclick="lembreteInadimplentes()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> Inadimplentes</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarRelatorioMensal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M12 20V10M18 20V4M6 20v-4"/></svg> Relatório PDF</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportarFinanceiro()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> CSV</button>
     </div>
   </div>
 
@@ -1196,7 +1196,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <span class="tag tag-red" style="font-size:11px" id="fin-count-overdue">— atrasadas</span>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-primary btn-sm" onclick="abrirWppLote()">📲 Cobrar pendentes via WhatsApp</button>
+          <button class="btn btn-primary btn-sm" onclick="abrirWppLote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> Cobrar pendentes via WhatsApp</button>
         </div>
       </div>
 
@@ -1264,7 +1264,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             </div>
           </div>
           <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-            <button class="btn btn-secondary btn-sm" onclick="abrirConfigRegua()">⚙ Configurar prazos e mensagens</button>
+            <button class="btn btn-secondary btn-sm" onclick="abrirConfigRegua()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> Configurar prazos e mensagens</button>
           </div>
         </div>
 
@@ -1287,7 +1287,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="card">
         <div class="section-header" style="margin-bottom:14px">
           <div class="section-title">Recibos emitidos</div>
-          <button class="btn btn-primary btn-sm" onclick="gerarRecibosLote()">📋 Gerar recibos do mês</button>
+          <button class="btn btn-primary btn-sm" onclick="gerarRecibosLote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg> Gerar recibos do mês</button>
         </div>
         <!-- V1: tabela era FABRICADA (Camila/Marcos/Rafael fixos) e o PDF gerava
              recibo vazio (sem data-charge-id) — renderFinRecibos (js/12) preenche
@@ -1299,8 +1299,8 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           </tbody>
         </table>
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px">
-          <button class="btn btn-secondary btn-sm" onclick="abrirWppLote()">📲 Cobrar pendentes via WhatsApp</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportarRelatorioAnual()">📊 Relatório anual (IR)</button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirWppLote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> Cobrar pendentes via WhatsApp</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportarRelatorioAnual()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M12 20V10M18 20V4M6 20v-4"/></svg> Relatório anual (IR)</button>
           <button class="btn btn-secondary btn-sm" onclick="exportarFinanceiro()">📁 Exportar CSV (contador)</button>
         </div>
       </div>
@@ -1362,9 +1362,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div class="card">
           <div class="section-title" style="margin-bottom:12px">Ações rápidas</div>
           <div style="display:flex;flex-direction:column;gap:8px">
-            <button class="btn btn-secondary" style="justify-content:flex-start" onclick="abrirWppLote()">📲 Cobrar pendentes via WhatsApp</button>
-            <button class="btn btn-secondary" style="justify-content:flex-start" onclick="exportarRelatorioMensal()">📊 Relatório mensal PDF</button>
-            <button class="btn btn-secondary" style="justify-content:flex-start" onclick="exportarRelatorioAnual()">📅 Relatório anual (IR)</button>
+            <button class="btn btn-secondary" style="justify-content:flex-start" onclick="abrirWppLote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> Cobrar pendentes via WhatsApp</button>
+            <button class="btn btn-secondary" style="justify-content:flex-start" onclick="exportarRelatorioMensal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M12 20V10M18 20V4M6 20v-4"/></svg> Relatório mensal PDF</button>
+            <button class="btn btn-secondary" style="justify-content:flex-start" onclick="exportarRelatorioAnual()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Relatório anual (IR)</button>
             <button class="btn btn-secondary" style="justify-content:flex-start" onclick="exportarFinanceiro()">📁 Exportar CSV (contador)</button>
           </div>
         </div>
@@ -1460,7 +1460,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <!-- Tabs -->
     <div class="sup-tab-bar">
       <button class="sup-tab active" onclick="switchSupTab(this,'sup-tab-alertas')">⚡ Alertas e padrões</button>
-      <button class="sup-tab" onclick="switchSupTab(this,'sup-tab-carteira')">📊 Saúde da carteira</button>
+      <button class="sup-tab" onclick="switchSupTab(this,'sup-tab-carteira')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M12 20V10M18 20V4M6 20v-4"/></svg> Saúde da carteira</button>
       <button class="sup-tab" onclick="switchSupTab(this,'sup-tab-reflexoes')">✍ Reflexões</button>
       <button class="sup-tab" onclick="switchSupTab(this,'sup-tab-autoconhecimento')">🪞 Minha supervisão</button>
     </div>
@@ -1635,7 +1635,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <span class="section-lbl" style="margin:0">Reflexões</span>
           <span id="reflexoes-consistencia-badge" style="font-size:12px;padding:3px 10px;border-radius:20px;font-weight:600"></span>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="exportarReflexoes()">⬇ Exportar</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportarReflexoes()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Exportar</button>
       </div>
       <div class="grid-2">
         <div>
@@ -1736,7 +1736,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
     <div class="topbar-actions">
       <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">← Voltar</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportarBackupLGPD()" title="Exporta todos os dados locais em JSON (direito LGPD)">⬇ Exportar dados (LGPD)</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportarBackupLGPD()" title="Exporta todos os dados locais em JSON (direito LGPD)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Exportar dados (LGPD)</button>
       <button class="btn btn-primary btn-sm" onclick="saveProfile()">Salvar alterações</button>
     </div>
   </div>
@@ -2403,7 +2403,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('modal-wpp-lote')">Cancelar</button>
-      <button class="btn btn-primary" id="wpp-lote-send-btn" onclick="sendWppBatch()">📲 Enviar cobranças</button>
+      <button class="btn btn-primary" id="wpp-lote-send-btn" onclick="sendWppBatch()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> Enviar cobranças</button>
     </div>
   </div>
 </div>

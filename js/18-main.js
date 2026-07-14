@@ -112,9 +112,9 @@ function abrirReferral() {
         <div id="referral-msg-text" style="font-size:13px;color:var(--ink-soft);line-height:1.6">${escHTML(msg)}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button onclick="copiarReferral()" style="width:100%;padding:11px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📋 Copiar mensagem</button>
+        <button onclick="copiarReferral()" style="width:100%;padding:11px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">${_tfIcon('clip')} Copiar mensagem</button>
         <div style="display:flex;gap:8px">
-          <button onclick="compartilharWhatsApp()" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 WhatsApp</button>
+          <button onclick="compartilharWhatsApp()" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">${_tfIcon('wpp')} WhatsApp</button>
           <button onclick="compartilharEmail()" style="flex:1;padding:10px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✉ Email</button>
         </div>
         <button onclick="document.getElementById('modal-referral').remove()" style="width:100%;padding:10px;border:1px solid var(--border);background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Fechar</button>

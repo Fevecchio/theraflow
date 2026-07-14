@@ -1092,12 +1092,12 @@ function renderPatientOverview(i) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('notas')">≡ Notas & Timeline</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('financeiro')">◈ Ver financeiro</button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarExtratoPaciente(${i})">📄 Extrato PDF</button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center;background:#e8faf0;border-color:rgba(37,211,102,.3);color:#075E54" onclick="enviarWhatsappLembrete(${i})">
-        📲 WhatsApp lembrete
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarExtratoPaciente(${i})">${_tfIcon('doc')} Extrato PDF</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center;background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.3);color:var(--sage-dark)" onclick="enviarWhatsappLembrete(${i})">
+        ${_tfIcon('wpp')} WhatsApp lembrete
       </button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="navigate('portal')">♡ Portal do paciente</button>
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('config')">🔑 Acesso & Config</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="selectPatientTab('config')">${_tfIcon('gear')} Acesso & Config</button>
     </div>
     <div id="pac-chat-section-${i}" style="margin-top:16px">
       ${renderChatTerapeuta(i, _msgCache[p.id] || [])}
@@ -1121,7 +1121,7 @@ function renderPatientConfig(i) {
         <div style="font-size:11.5px;color:var(--muted);line-height:1.5">${p.portalPasswordHash
           ? '🔒 Acesso ativo. A senha do paciente é pessoal e não fica visível aqui — para gerar uma nova, use “Reenviar acesso”.'
           : 'O paciente recebe uma senha forte pelo WhatsApp e a troca no primeiro acesso.'}</div>
-        <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">📲 ${p.portalPasswordHash ? 'Reenviar acesso (nova senha)' : 'Enviar acesso via WhatsApp'}</button>
+        <button onclick="compartilharAcessoPortal(${i})" style="margin-top:8px;display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;justify-content:center">${_tfIcon('wpp')} ${p.portalPasswordHash ? 'Reenviar acesso (nova senha)' : 'Enviar acesso via WhatsApp'}</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(220,38,38,.12);text-align:right">
           <button onclick="revogarPortalPaciente(${i})" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">Desativar acesso ao portal</button>
         </div>
@@ -1141,7 +1141,7 @@ function renderPatientConfig(i) {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarProntuario()" title="PDF completo do prontuário deste paciente">⬇ Prontuário PDF</button>
+      <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarProntuario()" title="PDF completo do prontuário deste paciente">${_tfIcon('csv')} Prontuário PDF</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="exportarRelatorioEvolucao()" title="PDF de evolução (humor, presença, progresso)">📈 Evolução PDF</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="abrirModalDeclaracao(${i},'convenio')" title="Declaração de atendimento para o paciente pedir reembolso ao plano de saúde">🧾 Declaração convênio</button>
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="abrirModalDeclaracao(${i},'ir')" title="Declaração anual de pagamentos para o Imposto de Renda do paciente">🧾 Relatório p/ IR</button>

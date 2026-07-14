@@ -128,7 +128,7 @@ function enviarLembretesAmanha() {
       + '<div><div style="font-size:14px;font-weight:500">' + escHTML(nome) + '</div>'
       + '<div style="font-size:12px;color:var(--muted)">' + amanhaFmt + (hora ? ' às ' + hora : '') + '</div></div>'
       + (temWpp
-          ? '<a href="' + link + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none">📲 Enviar</a>'
+          ? '<a href="' + link + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none">' + _tfIcon('wpp') + ' Enviar</a>'
           : '<span style="font-size:12px;color:var(--muted)">⚠ Sem WhatsApp</span>')
       + '</div>';
   }).join('');

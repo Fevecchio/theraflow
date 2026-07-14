@@ -136,9 +136,9 @@ function renderCharges(mesFilter) {
     // ids SEMPRE entre aspas nos onclick: cobranças antigas têm id string com hífen
     // (interpolado cru virava SyntaxError e o botão morria em silêncio). Lote 1.
     const paidActions = c.status === 'paid'
-      ? `<button class="charge-btn" onclick="event.stopPropagation();gerarReciboPDF(this)">📄 Recibo</button>
+      ? `<button class="charge-btn" onclick="event.stopPropagation();gerarReciboPDF(this)">${_tfIcon('doc')} Recibo</button>
          <button class="charge-btn" onclick="event.stopPropagation();undoPayment('${c.id}')" style="color:var(--muted);font-size:11px" title="Desfazer pagamento">↩ Desfazer</button>`
-      : `<button class="charge-btn charge-btn-wpp" onclick="event.stopPropagation();sendWppCharge('${c.id}')">📲 WhatsApp</button>
+      : `<button class="charge-btn charge-btn-wpp" onclick="event.stopPropagation();sendWppCharge('${c.id}')">${_tfIcon('wpp')} WhatsApp</button>
          <button class="charge-btn charge-btn-check" onclick="event.stopPropagation();confirmPayment(this,'${c.id}')">✓ Pago</button>`;
 
     const deleteBtn = `<button class="charge-btn-delete" onclick="event.stopPropagation();deleteCharge('${c.id}',this)" title="Excluir cobrança">✕</button>`;
@@ -353,7 +353,7 @@ function renderFinPlanos() {
     if (temPendente && wpp) {
       html += '</div>';
       html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">';
-      html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppReminder(\'' + escHTML(nome) + '\')">📲 Cobrar via WhatsApp</button>';
+      html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppReminder(\'' + escHTML(nome) + '\')">' + _tfIcon('wpp') + ' Cobrar via WhatsApp</button>';
       html += '</div>';
     } else {
       html += '</div>';
@@ -503,7 +503,7 @@ function renderFinInadimplencia() {
       // Passa o ID da cobrança (a assinatura antiga nome+valor virou chargeId no
       // F4.4 e este chamador ficou para trás — o botão de cobrar quem deve estava
       // MORTO, com return silencioso). Lote 1.
-      html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppCharge(\'' + c.id + '\')">📲 Cobrar</button>';
+      html += '<button class="charge-btn charge-btn-wpp" onclick="sendWppCharge(\'' + c.id + '\')">' + _tfIcon('wpp') + ' Cobrar</button>';
     } else if (p && p.email) {
       html += '<a class="charge-btn charge-btn-wpp" href="mailto:' + escHTML(p.email) + '?subject=' + encodeURIComponent('Lembrete de pagamento') + '&body=' + encodeURIComponent('Olá ' + _firstName(c.patient||'') + ',\n\nPassando para lembrar sobre o pagamento de ' + fmtMoedaInt(parseFloat(c.value)||0) + ' referente à sua sessão de psicoterapia.\n\nQualquer dúvida, estou à disposição.') + '" style="text-decoration:none">📧 Email</a>';
     } else {
@@ -740,7 +740,7 @@ function abrirWppLote() {
         }).join('')
         + '</div>';
     }
-    if (btn) btn.textContent = '📲 Enviar ' + pendentes.length + ' cobrança' + (pendentes.length!==1?'s':'');
+    if (btn) btn.innerHTML = _tfIcon('wpp') + ' Enviar ' + pendentes.length + ' cobrança' + (pendentes.length!==1?'s':'');
   }
   showModal('modal-wpp-lote');
 }
@@ -789,7 +789,7 @@ function lembreteInadimplentes() {
         + '<div style="font-size:12px;color:var(--muted)">Sessão ' + escHTML(dataPt) + ' · R$' + c.value + ' · ' + (_calcDaysOpen(c)||'?') + 'd em atraso</div>'
       + '</div>'
       + (link
-        ? '<a href="' + link + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;flex-shrink:0">📲 Cobrar</a>'
+        ? '<a href="' + link + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;flex-shrink:0">' + _tfIcon('wpp') + ' Cobrar</a>'
         : '<span style="font-size:12px;color:var(--muted)">⚠ Sem WhatsApp</span>')
       + '</div>';
   }).join('');
@@ -1043,7 +1043,7 @@ function initFinanceiro() {
   // Atualiza label do botão de cobranças
   var pendentes = charges.filter(function(c){ return !c.deleted && (c.status==='pending'||c.status==='overdue'); }).length;
   var btnCobrar = document.getElementById('fin-btn-cobrar');
-  if (btnCobrar) btnCobrar.textContent = '📲 Cobrar ' + (pendentes||'') + ' pendente' + (pendentes!==1?'s':'') + ' via WhatsApp';
+  if (btnCobrar) btnCobrar.innerHTML = _tfIcon('wpp') + ' Cobrar ' + (pendentes||'') + ' pendente' + (pendentes!==1?'s':'') + ' via WhatsApp';
 }
 
 function _popularMesesFinanceiro() {

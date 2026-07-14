@@ -704,7 +704,7 @@ function renderDayView() {
     : pendentes.map(function(a){
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
           + '<span style="font-size:13px;flex:1">'+escHTML(_firstName(a.patientName))+' · '+escHTML(a.date.split('-').reverse().slice(0,2).join('/'))+'</span>'
-          + '<button class="btn btn-secondary btn-sm" onclick="_lembrarConfirmacao('+a.id+')" title="Envia lembrete WhatsApp e marca como confirmada">📨 Lembrar</button>'
+          + '<button class="btn btn-secondary btn-sm" onclick="_lembrarConfirmacao('+a.id+')" title="Envia lembrete WhatsApp e marca como confirmada">'+_tfIcon('send')+' Lembrar</button>'
           + '<button class="btn btn-secondary btn-sm" onclick="_marcarConfirmada('+a.id+')" title="Paciente já confirmou por fora — marcar sem enviar" style="padding-left:8px;padding-right:8px;color:var(--sage)">✓</button>'
           + '</div>';
       }).join('');

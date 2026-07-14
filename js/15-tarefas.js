@@ -178,7 +178,7 @@ function renderTarefas() {
       : '<button class="task-concluir-btn" onclick="toggleTarefa('+t.id+')">✓ Concluir</button>';
     // Tarefa da régua de cobrança ganha o 📲: WhatsApp com a mensagem da etapa pronta
     if (!concluida && t._cobr && typeof _cobrWppTarefa === 'function') {
-      acaoBtn += '<button class="task-concluir-btn" style="margin-left:4px;padding-left:8px;padding-right:8px" onclick="_cobrWppTarefa('+t.id+')" title="Abrir WhatsApp com a mensagem desta etapa pronta">📲</button>';
+      acaoBtn += '<button class="task-concluir-btn" style="margin-left:4px;padding-left:8px;padding-right:8px" onclick="_cobrWppTarefa('+t.id+')" title="Abrir WhatsApp com a mensagem desta etapa pronta">'+_tfIcon('wpp')+'</button>';
     }
     var assuntoCell = concluida
       ? '<span class="task-assunto done">'+escHTML(t.title)+'</span>'

@@ -245,14 +245,14 @@ function _renderSessionLinkModal(link, nome, real) {
       <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Envie para ${escHTML(nome)} entrar na videochamada agora.</div>
       <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px">
         <span style="font-size:13px;color:var(--ink-soft);flex:1;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHTML(shown)}</span>
-        <button class="btn btn-secondary btn-sm" data-act="copy" style="white-space:nowrap">📋 Copiar</button>
+        <button class="btn btn-secondary btn-sm" data-act="copy" style="white-space:nowrap">${_tfIcon('clip')} Copiar</button>
       </div>
       <div style="display:flex;align-items:center;gap:6px;background:#f0f7f3;border:1px solid rgba(74,143,110,.2);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:12px;color:var(--sage)">
         <span>${real ? '🔒' : '🔗'}</span>
         <span>${real ? 'Link válido só durante esta sessão. A paciente entra direto, sem senha.' : 'Ao enviar ou copiar, o link é salvo automaticamente no portal do paciente'}</span>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" data-act="wa" style="flex:1;justify-content:center;background:#e8faf0;border-color:rgba(37,211,102,.3);color:#075E54">📲 Enviar pelo WhatsApp</button>
+        <button class="btn btn-secondary" data-act="wa" style="flex:1;justify-content:center;background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.3);color:var(--sage-dark)">${_tfIcon('wpp')} Enviar pelo WhatsApp</button>
         <button class="btn btn-secondary" data-act="close" style="flex:1;justify-content:center">Fechar</button>
       </div>
     </div>`;
