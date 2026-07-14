@@ -958,18 +958,29 @@ function _popularAnamnese(idx) {
   _set('ana-objetivos',       ana.objetivosTerapia);
   _set('ana-obs',             ana.observacoesLivres);
 
-  // Atualiza status bar
+  // Atualiza status bar — SEMPRE visível na aba (revisão 14/07: sem anamnese
+  // criada a barra sumia e levava o botão de enviar junto — paciente novo não
+  // tinha COMO receber a anamnese no portal). Estados honestos:
   var bar = document.getElementById('anamnese-status-bar');
   var txt = document.getElementById('anamnese-status-text');
+  var btnEnv = document.getElementById('btn-enviar-anamnese-pac');
   if (bar && txt) {
+    var pAtual = (typeof patients !== 'undefined') ? patients[idx] : null;
+    var aguardando = !!(pAtual && pAtual.portalAnamneseAtiva);
     if (ana.dataCriacao) {
       var quem = ana.preenchidoPor === 'paciente' ? 'pelo paciente' : ana.preenchidoPor === 'conjunto' ? 'em conjunto' : 'pelo terapeuta';
       var dt = new Date(ana.dataCriacao).toLocaleDateString('pt-BR');
-      txt.textContent = '✓ Anamnese preenchida ' + quem + ' em ' + dt;
-      bar.style.display = '';
+      txt.textContent = '✓ Anamnese preenchida ' + quem + ' em ' + dt
+        + (aguardando ? ' · no portal do paciente, aguardando respostas' : '');
     } else {
-      bar.style.display = 'none';
+      txt.textContent = aguardando
+        ? '⏳ Anamnese no portal do paciente — aguardando as respostas'
+        : 'Anamnese ainda não preenchida — preencha aqui ou envie para o paciente responder no portal.';
     }
+    bar.style.display = '';
+    if (btnEnv) btnEnv.textContent = aguardando
+      ? '📤 Reenviar ao paciente'
+      : (ana.dataCriacao ? '📤 Enviar ao paciente completar' : '📤 Enviar para o paciente preencher');
   }
 }
 
