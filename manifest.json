@@ -5,19 +5,19 @@
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f0f4f0",
-  "theme_color": "#5a8a6a",
+  "background_color": "#FAF7F2",
+  "theme_color": "#3D6653",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%235a8a6a'/%3E%3Ctext x='50%25' y='56%25' font-size='110' text-anchor='middle' dominant-baseline='middle' fill='%23fff'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='26' fill='%233D6653'/%3E%3Cpath d='M32 34 H88' fill='none' stroke='%23F3EFE6' stroke-width='12' stroke-linecap='round'/%3E%3Cpath d='M60 47 C46 61, 74 71, 60 92' fill='none' stroke='%23F3EFE6' stroke-width='12' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='92' r='8' fill='%23E8B79E'/%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%235a8a6a'/%3E%3Ctext x='50%25' y='56%25' font-size='300' text-anchor='middle' dominant-baseline='middle' fill='%23fff'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='26' fill='%233D6653'/%3E%3Cpath d='M32 34 H88' fill='none' stroke='%23F3EFE6' stroke-width='12' stroke-linecap='round'/%3E%3Cpath d='M60 47 C46 61, 74 71, 60 92' fill='none' stroke='%23F3EFE6' stroke-width='12' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='92' r='8' fill='%23E8B79E'/%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
