@@ -627,6 +627,12 @@ tr:last-child td { border-bottom: none; }
 .ctrl-btn-light { background: rgba(255,255,255,.12); color: #fff; }
 .ctrl-btn-light:hover { background: rgba(255,255,255,.22); }
 .ctrl-btn-red { background: #c0392b; color: #fff; }
+/* Estados dos controles da chamada (js/21): desligado = cinza; ativo (tela/fundo) = sálvia */
+.ctrl-btn.off { background: #64748b; color: #fff; }
+.ctrl-btn.off:hover { background: #556070; }
+.ctrl-btn.sharing { background: var(--sage); color: #fff; }
+.ctrl-btn.sharing:hover { background: var(--sage-dark, #3D6653); }
+@media (max-width: 900px) { .video-controls { flex-wrap: wrap; gap: 10px; row-gap: 24px; } }
 #page-agenda.agenda-compacto .appt-slot { min-height: 32px !important; }
 #page-agenda.agenda-compacto .appt-block { padding: 4px 8px !important; font-size: 11px !important; gap: 3px !important; margin-bottom: 2px !important; }
 #page-agenda.agenda-compacto .time-slot { padding: 4px 8px !important; font-size: 10px !important; padding-top: 5px !important; }

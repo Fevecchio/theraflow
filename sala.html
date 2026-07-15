@@ -38,10 +38,15 @@
   .rec-badge { position: absolute; top: 14px; left: 14px; z-index: 3; display: flex; align-items: center; gap: 7px; background: rgba(0,0,0,.5); color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 12px; }
   .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; animation: blink 1.4s infinite; }
   @keyframes blink { 50% { opacity: .3; } }
-  .controls { padding: 18px; display: flex; gap: 14px; align-items: center; justify-content: center; background: #0a0f0b; }
-  .ctrl { width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(255,255,255,.14); transition: all .15s; }
+  .controls { padding: 18px 10px; display: flex; gap: 10px; align-items: center; justify-content: center; background: #0a0f0b; flex-wrap: wrap; }
+  .ctrl { width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer; font-size: 19px; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(255,255,255,.14); transition: all .15s; }
   .ctrl:hover { background: rgba(255,255,255,.24); }
   .ctrl.off { background: #64748b; }
+  .ctrl.on { background: var(--sage); }
+  /* Miniatura da CÂMERA da terapeuta quando ela compartilha a tela (a tela vira o
+     palco principal e o rosto dela continua visível aqui) */
+  #remote-cam-mini { display: none; position: absolute; top: 14px; right: 14px; width: 96px; height: 128px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.5); z-index: 3; background: #111; }
+  #remote-cam-mini video { width: 100%; height: 100%; object-fit: cover; }
   .ctrl-leave { background: #c0392b; }
   .ctrl-leave:hover { background: #a5321f; }
   /* ── Estados de erro/fim ── */
@@ -81,8 +86,9 @@
 <!-- Chamada -->
 <div class="screen" id="call-screen">
   <div class="video-stage">
-    <div class="rec-badge"><span class="rec-dot"></span>Sessão em andamento</div>
+    <div class="rec-badge"><span class="rec-dot"></span>Sessão em andamento<span id="sala-timer" style="opacity:.85"></span></div>
     <div id="remote-video"></div>
+    <div id="remote-cam-mini"></div>
     <div id="remote-wait">
       <div class="pulse">⏳</div>
       <div>Aguardando sua terapeuta entrar…</div>
@@ -92,6 +98,8 @@
   <div class="controls">
     <button class="ctrl" id="btn-mic" onclick="toggleMic()" title="Microfone">🎤</button>
     <button class="ctrl" id="btn-cam" onclick="toggleCam()" title="Câmera">📷</button>
+    <button class="ctrl" id="btn-blur" onclick="toggleBlur()" title="Desfocar meu fundo">🌫️</button>
+    <button class="ctrl" id="btn-pip" onclick="togglePip()" title="Vídeo flutuante — continue vendo sua terapeuta em outros apps">⧉</button>
     <button class="ctrl" id="btn-dev" onclick="abrirDispositivos()" title="Trocar microfone, câmera ou som">⚙️</button>
     <button class="ctrl ctrl-leave" onclick="sairDaSala()" title="Sair">📞</button>
   </div>
@@ -127,6 +135,57 @@
 
 <script>
   var _room = null, _micOn = true, _camOn = true;
+  var _remoteCam = null, _remoteScreen = null;   // tracks de vídeo da terapeuta (câmera / tela)
+  var _blurOn = false, _procsPromise = null;      // fundo desfocado (biblioteca sob demanda)
+  var _salaTimerIv = null, _salaT0 = 0;           // cronômetro da sessão (desde o encontro real)
+
+  // Toast minimalista da sala (a página não tem o showToast do app).
+  function _salaToast(msg) {
+    var t = document.getElementById('sala-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'sala-toast';
+      t.style.cssText = 'position:fixed;bottom:96px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(20,28,22,.95);color:#fff;border-radius:12px;padding:10px 16px;font-size:13px;max-width:88vw;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.4);transition:opacity .3s';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._tm);
+    t._tm = setTimeout(function () { t.style.opacity = '0'; }, 3500);
+  }
+
+  // Cronômetro: começa quando a terapeuta de fato aparece (áudio ou vídeo dela).
+  function _salaStartTimer() {
+    if (_salaTimerIv) return;
+    _salaT0 = Date.now();
+    _salaTimerIv = setInterval(function () {
+      var s = Math.floor((Date.now() - _salaT0) / 1000);
+      var el = document.getElementById('sala-timer');
+      if (el) el.textContent = ' · ' + String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    }, 1000);
+  }
+
+  // Palco principal: tela compartilhada (se houver) > câmera. Com tela ativa, a
+  // câmera da terapeuta vai para a miniatura no canto.
+  function _renderRemote() {
+    var cont = document.getElementById('remote-video');
+    var mini = document.getElementById('remote-cam-mini');
+    var wait = document.getElementById('remote-wait');
+    var main = _remoteScreen || _remoteCam;
+    cont.innerHTML = '';
+    if (mini) { mini.innerHTML = ''; mini.style.display = 'none'; }
+    if (!main) { if (wait) wait.style.display = 'flex'; return; }
+    if (wait) wait.style.display = 'none';
+    var el = main.attach();
+    el.style.width = '100%'; el.style.height = '100%';
+    // Tela precisa aparecer INTEIRA (contain); rosto preenche (cover).
+    el.style.objectFit = _remoteScreen ? 'contain' : 'cover';
+    cont.appendChild(el);
+    if (mini && _remoteScreen && _remoteCam) {
+      mini.style.display = 'block';
+      mini.appendChild(_remoteCam.attach());
+    }
+  }
 
   // Parâmetros por ordem de preferência (F3.3):
   //  1. _lkOvr — resolvidos do CÓDIGO CURTO (/sala?c=…) trocado no servidor: o token
@@ -234,14 +293,23 @@
 
       _room.on(LK.RoomEvent.TrackSubscribed, function (track) {
         if (track.kind === 'video') {
-          var wait = document.getElementById('remote-wait'); if (wait) wait.style.display = 'none';
-          var cont = document.getElementById('remote-video');
-          cont.innerHTML = '';
-          cont.appendChild(track.attach());
+          // Tela compartilhada vira o palco principal; a câmera da terapeuta
+          // continua visível na miniatura (#remote-cam-mini).
+          if (track.source === LK.Track.Source.ScreenShare) _remoteScreen = track;
+          else _remoteCam = track;
+          _renderRemote();
+          _salaStartTimer();
         }
         if (track.kind === 'audio') {
           document.body.appendChild(track.attach()); // toca o áudio da terapeuta
+          _salaStartTimer();
         }
+      });
+      _room.on(LK.RoomEvent.TrackUnsubscribed, function (track) {
+        if (track.kind !== 'video') return;
+        if (track === _remoteScreen) _remoteScreen = null;
+        if (track === _remoteCam) _remoteCam = null;
+        _renderRemote();
       });
       _room.on(LK.RoomEvent.ParticipantConnected, function () {
         var wait = document.getElementById('remote-wait'); if (wait) wait.style.display = 'none';
@@ -312,6 +380,70 @@
     if (_camOn) {
       var camPub = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
       if (camPub && camPub.track) { var lv = document.getElementById('local-video'); lv.innerHTML = ''; lv.appendChild(camPub.track.attach()); }
+      _reapplyBlur(); // religar cria track novo — o desfoque não migra sozinho
+    }
+  }
+
+  // ── FUNDO DESFOCADO (privacidade — ex.: sessão do quarto/da sala de casa).
+  // Biblioteca oficial do LiveKit carregada só quando usada; navegador sem
+  // suporte (ex.: Safari antigo/Firefox) recebe aviso honesto. ──
+  function _loadProcs() {
+    if (!_procsPromise) {
+      _procsPromise = import('https://cdn.jsdelivr.net/npm/@livekit/track-processors@0.7.2/+esm')
+        .catch(function (e) { _procsPromise = null; throw e; });
+    }
+    return _procsPromise;
+  }
+  async function toggleBlur() {
+    if (!_room) return;
+    var pub = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
+    if (!pub || !pub.track) { _salaToast('Ligue a câmera para desfocar o fundo.'); return; }
+    try {
+      if (!_blurOn) _salaToast('Preparando o desfoque…');
+      var mod = await _loadProcs();
+      if (typeof mod.supportsBackgroundProcessors === 'function' && !mod.supportsBackgroundProcessors()) {
+        _salaToast('Seu navegador não suporta o fundo desfocado.');
+        return;
+      }
+      if (_blurOn) { await pub.track.stopProcessor(); _blurOn = false; _salaToast('Fundo desfocado desligado.'); }
+      else { await pub.track.setProcessor(mod.BackgroundBlur(10)); _blurOn = true; _salaToast('Fundo desfocado ativo ✓'); }
+      var b = document.getElementById('btn-blur'); if (b) b.classList.toggle('on', _blurOn);
+    } catch (e) {
+      console.warn('[sala] blur', e);
+      _salaToast('Não consegui aplicar o desfoque neste aparelho.');
+    }
+  }
+  async function _reapplyBlur() {
+    if (!_blurOn || !_room) return;
+    try {
+      var pub = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
+      if (pub && pub.track) {
+        var mod = await _loadProcs();
+        await pub.track.setProcessor(mod.BackgroundBlur(10));
+      }
+    } catch (e) {
+      _blurOn = false;
+      var b = document.getElementById('btn-blur'); if (b) b.classList.remove('on');
+    }
+  }
+
+  // ── VÍDEO FLUTUANTE (PiP): a terapeuta continua visível ao trocar de app/aba. ──
+  async function togglePip() {
+    var v = document.querySelector('#remote-video video');
+    if (!v) { _salaToast('O vídeo da sua terapeuta ainda não apareceu.'); return; }
+    try {
+      if (document.pictureInPictureElement) { await document.exitPictureInPicture(); return; }
+      if (v.requestPictureInPicture) {
+        await v.requestPictureInPicture();
+        _salaToast('Vídeo flutuante aberto ✓ — ele te acompanha em outros apps.');
+      } else if (v.webkitSetPresentationMode) {
+        v.webkitSetPresentationMode('picture-in-picture'); // iPhone/iPad (Safari)
+      } else {
+        _salaToast('Este navegador não suporta o vídeo flutuante.');
+      }
+    } catch (e) {
+      console.warn('[sala] pip', e);
+      _salaToast('Não consegui abrir o vídeo flutuante.');
     }
   }
   async function sairDaSala() {
@@ -411,6 +543,7 @@
           if (sel.getAttribute('data-kind') === 'videoinput') {
             var camPub = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
             if (camPub && camPub.track) { var lv = document.getElementById('local-video'); lv.innerHTML = ''; lv.appendChild(camPub.track.attach()); }
+            _reapplyBlur(); // câmera nova = track novo — o desfoque não migra sozinho
           }
         } catch (e) { console.warn('[sala] trocar dispositivo', e); }
       };

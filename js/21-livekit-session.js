@@ -246,7 +246,10 @@ function _lkStartMeter(sourceNode) {
       const lbl = document.getElementById('lk-mic-label');
       if (fill) fill.style.width = pct + '%';
       if (rms > 0.01) lastSoundTs = Date.now();
-      if (lbl) lbl.textContent = !lastSoundTs ? 'fale para testar…'
+      // Mic SILENCIADO de propósito (botão mudo): avisa isso em vez do alarme
+      // "verifique o microfone" — o silêncio é intencional.
+      if (lbl) lbl.textContent = !_lkMicOn ? 'microfone silenciado'
+        : !lastSoundTs ? 'fale para testar…'
         : (Date.now() - lastSoundTs < 4000) ? 'áudio ok ✓'
         : 'sem áudio agora — verifique o microfone';
       _lkMeterRAF = requestAnimationFrame(tick);
@@ -485,9 +488,21 @@ async function _lkConnectRoom(LK, url, hostToken, resume) {
     if (typeof showToast === 'function') showToast('⚠ A conexão da sessão caiu. Use ↻ Reconectar para voltar SEM perder nada, ou encerre (✕) para transcrever o que já foi gravado.');
   });
 
+  // "Parar compartilhamento" da barrinha do NAVEGADOR (fora da nossa UI) também
+  // encerra o share — o botão precisa refletir isso.
+  _lkRoom.on(LK.RoomEvent.LocalTrackUnpublished, (pub) => {
+    try {
+      if (pub && pub.source === LK.Track.Source.ScreenShare) { _lkScreenOn = false; _lkSyncCallCtrls(); }
+    } catch (_) {}
+  });
+
   await _lkRoom.connect(url, hostToken);
   await _lkRoom.localParticipant.setCameraEnabled(true);
   await _lkRoom.localParticipant.setMicrophoneEnabled(true);
+  // Estados dos controles da chamada voltam ao padrão (mic/câmera ligados, sem
+  // share/blur) — vale para início normal E retomada (tracks novos, sem processador).
+  _lkMicOn = true; _lkCamOn = true; _lkScreenOn = false; _lkBlurOn = false;
+  _lkSyncCallCtrls();
 
   // Mic local no mixer + vídeo local no canto. O mic pode não estar pronto no mesmo tick
   // após setMicrophoneEnabled — tentamos algumas vezes até o track existir.
@@ -710,6 +725,10 @@ function _lkStopRec(rec) {
 // nada de nota/exercícios aqui; isso é papel do encerramento oficial.
 async function _lkTeardownMedia(keepSegments) {
   _lkStopMeter();
+  // Fecha o vídeo flutuante e zera os controles da chamada (mudo/câmera/tela/fundo).
+  try { if (document.pictureInPictureElement) document.exitPictureInPicture(); } catch (_) {}
+  _lkMicOn = true; _lkCamOn = true; _lkScreenOn = false; _lkBlurOn = false;
+  _lkSyncCallCtrls();
   _lkEnding = true; // a rotação não abre novo segmento durante o stop
   if (_lkTherRotTimer) { clearTimeout(_lkTherRotTimer); _lkTherRotTimer = null; }
   if (_lkPacRotTimer) { clearTimeout(_lkPacRotTimer); _lkPacRotTimer = null; }
@@ -1166,6 +1185,7 @@ async function _lkTrocarDispositivo(kind, deviceId) {
       const LK2 = window.LivekitClient;
       const camPub = _lkRoom.localParticipant.getTrackPublication(LK2.Track.Source.Camera);
       if (camPub && camPub.track) _lkMountLocalVideo(camPub.track.attach());
+      _lkReapplyBlur(); // câmera nova = track novo — o desfoque não migra sozinho
     }
     if (typeof showToast === 'function') showToast('✓ Dispositivo alterado.');
   } catch (e) {
@@ -1173,3 +1193,207 @@ async function _lkTrocarDispositivo(kind, deviceId) {
     if (typeof showToast === 'function') showToast('⚠ Não consegui trocar o dispositivo: ' + (e && e.message || e));
   }
 }
+
+// ── CONTROLES DA CHAMADA (pedido do fundador 15/07): mudo, câmera, compartilhar
+// tela, fundo desfocado e vídeo flutuante (PiP). Botões em .video-controls
+// (app.html, ids lk-btn-*). Tudo exige sala ativa; fora dela, toast honesto. ──
+var _lkMicOn = true, _lkCamOn = true, _lkScreenOn = false, _lkBlurOn = false;
+var _lkProcsPromise = null; // @livekit/track-processors sob demanda (só quem usa o blur baixa)
+
+function _lkSyncCallCtrls() {
+  var st = [['lk-btn-mic', !_lkMicOn, 'off'], ['lk-btn-cam', !_lkCamOn, 'off'],
+            ['lk-btn-screen', _lkScreenOn, 'sharing'], ['lk-btn-blur', _lkBlurOn, 'sharing']];
+  st.forEach(function (s) {
+    var b = document.getElementById(s[0]);
+    if (b) { b.classList.remove('off', 'sharing'); if (s[1]) b.classList.add(s[2]); }
+  });
+}
+
+function _lkExigeSala() {
+  if (_lkRoom) return true;
+  if (typeof showToast === 'function') showToast('▶ Inicie a sessão para usar este controle.');
+  return false;
+}
+
+async function _lkToggleMic() {
+  if (!_lkExigeSala()) return;
+  var alvo = !_lkMicOn;
+  try {
+    await _lkRoom.localParticipant.setMicrophoneEnabled(alvo);
+    _lkMicOn = alvo;
+    if (_lkMicOn) {
+      // Religa o MIXER da transcrição no track ATUAL (mesmo caminho comprovado da
+      // troca de dispositivo): se o navegador recriou o track no unmute, o mixer
+      // antigo apontaria para um track morto e a nota sairia sem a sua voz.
+      try { if (_lkMicSource) _lkMicSource.disconnect(); } catch (_) {}
+      _lkStopMeter();
+      var LK = window.LivekitClient;
+      for (var i = 0; i < 10; i++) {
+        var pub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Microphone);
+        var trk = pub && pub.track && pub.track.mediaStreamTrack;
+        if (trk && trk.readyState === 'live' && _lkAudioCtx && _lkMicDest) {
+          _lkMicSource = _lkAudioCtx.createMediaStreamSource(new MediaStream([trk]));
+          _lkMicSource.connect(_lkMicDest);
+          _lkStartMeter(_lkMicSource);
+          break;
+        }
+        await new Promise(function (r) { setTimeout(r, 150); });
+      }
+    }
+    _lkSyncCallCtrls();
+    // Honestidade: o mudo silencia a chamada E a transcrição (o mixer recebe silêncio).
+    if (typeof showToast === 'function') showToast(_lkMicOn
+      ? '🎤 Microfone reativado.'
+      : '🔇 Microfone silenciado — sua voz não entra na chamada nem na transcrição.');
+  } catch (e) {
+    console.warn('[livekit] toggle mic', e);
+    if (typeof showToast === 'function') showToast('⚠ Não consegui alterar o microfone: ' + (e && e.message || e));
+  }
+}
+
+async function _lkToggleCam() {
+  if (!_lkExigeSala()) return;
+  var alvo = !_lkCamOn;
+  try {
+    await _lkRoom.localParticipant.setCameraEnabled(alvo);
+    _lkCamOn = alvo;
+    if (_lkCamOn) {
+      // Religar cria um track NOVO: remonta a prévia local e reaplica o desfoque.
+      var LK = window.LivekitClient;
+      var pub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
+      if (pub && pub.track) _lkMountLocalVideo(pub.track.attach());
+      _lkReapplyBlur();
+    } else {
+      document.querySelectorAll('[data-lk-local-video]').forEach(function (v) { v.remove(); });
+    }
+    _lkSyncCallCtrls();
+    if (typeof showToast === 'function') showToast(_lkCamOn ? '📷 Câmera ligada.' : 'Câmera desligada — a paciente não vê sua imagem.');
+  } catch (e) {
+    console.warn('[livekit] toggle cam', e);
+    if (typeof showToast === 'function') showToast('⚠ Não consegui alterar a câmera: ' + (e && e.message || e));
+  }
+}
+
+async function _lkToggleScreen() {
+  if (!_lkExigeSala()) return;
+  try {
+    if (_lkScreenOn) {
+      await _lkRoom.localParticipant.setScreenShareEnabled(false);
+      _lkScreenOn = false;
+      if (typeof showToast === 'function') showToast('Compartilhamento de tela encerrado.');
+    } else {
+      await _lkRoom.localParticipant.setScreenShareEnabled(true);
+      _lkScreenOn = true;
+      if (typeof showToast === 'function') showToast('🖥 Tela compartilhada — a paciente está vendo sua tela. Pare no mesmo botão ou na barrinha do navegador.');
+    }
+    _lkSyncCallCtrls();
+  } catch (e) {
+    // Cancelar o seletor de tela do navegador NÃO é erro — sem alarde.
+    if (!/NotAllowed|Permission denied|cancel/i.test(String(e && e.message || e))) {
+      console.warn('[livekit] screen share', e);
+      if (typeof showToast === 'function') showToast('⚠ Não consegui compartilhar a tela: ' + (e && e.message || e));
+    }
+  }
+}
+
+function _lkLoadProcs() {
+  if (!_lkProcsPromise) {
+    _lkProcsPromise = import('https://cdn.jsdelivr.net/npm/@livekit/track-processors@0.7.2/+esm')
+      .catch(function (e) { _lkProcsPromise = null; throw e; });
+  }
+  return _lkProcsPromise;
+}
+
+async function _lkToggleBlur() {
+  if (!_lkExigeSala()) return;
+  var LK = window.LivekitClient;
+  var pub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
+  if (!pub || !pub.track) {
+    if (typeof showToast === 'function') showToast('⚠ Ligue a câmera para desfocar o fundo.');
+    return;
+  }
+  try {
+    if (typeof showToast === 'function' && !_lkBlurOn) showToast('Preparando o desfoque…');
+    var mod = await _lkLoadProcs();
+    if (typeof mod.supportsBackgroundProcessors === 'function' && !mod.supportsBackgroundProcessors()) {
+      if (typeof showToast === 'function') showToast('⚠ Este navegador não suporta o fundo desfocado (funciona no Chrome/Edge recentes).');
+      return;
+    }
+    if (_lkBlurOn) {
+      await pub.track.stopProcessor();
+      _lkBlurOn = false;
+      if (typeof showToast === 'function') showToast('Fundo desfocado desligado.');
+    } else {
+      await pub.track.setProcessor(mod.BackgroundBlur(10));
+      _lkBlurOn = true;
+      if (typeof showToast === 'function') showToast('✓ Fundo desfocado ativo.');
+    }
+    _lkSyncCallCtrls();
+  } catch (e) {
+    console.warn('[livekit] blur', e);
+    if (typeof showToast === 'function') showToast('⚠ Não consegui aplicar o desfoque: ' + (e && e.message || e));
+  }
+}
+
+// Track de câmera NOVO (religar/troca de dispositivo) não herda o processador —
+// reaplica em silêncio se o desfoque estava ligado.
+async function _lkReapplyBlur() {
+  if (!_lkBlurOn || !_lkRoom) return;
+  try {
+    var LK = window.LivekitClient;
+    var pub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
+    if (pub && pub.track) {
+      var mod = await _lkLoadProcs();
+      await pub.track.setProcessor(mod.BackgroundBlur(10));
+    }
+  } catch (e) {
+    console.warn('[livekit] reapply blur', e);
+    _lkBlurOn = false;
+    _lkSyncCallCtrls();
+  }
+}
+
+async function _lkTogglePip() {
+  var v = document.querySelector('[data-lk-remote-video]');
+  if (!v) {
+    if (typeof showToast === 'function') showToast('⚠ O vídeo da paciente ainda não chegou — o flutuante abre a imagem dela.');
+    return;
+  }
+  try {
+    if (document.pictureInPictureElement) { await document.exitPictureInPicture(); return; }
+    if (v.requestPictureInPicture) {
+      await v.requestPictureInPicture();
+      if (typeof showToast === 'function') showToast('✓ Vídeo flutuante aberto — ele te acompanha em outras telas e apps.');
+    } else if (v.webkitSetPresentationMode) {
+      v.webkitSetPresentationMode('picture-in-picture');
+    } else if (typeof showToast === 'function') {
+      showToast('⚠ Este navegador não suporta o vídeo flutuante.');
+    }
+  } catch (e) {
+    console.warn('[livekit] pip', e);
+    if (typeof showToast === 'function') showToast('⚠ Não consegui abrir o vídeo flutuante: ' + (e && e.message || e));
+  }
+}
+
+// PiP AUTOMÁTICO ao navegar (pedido 15/07): com sessão ativa, sair da página
+// Sessão abre o vídeo flutuante (estamos dentro do gesto de clique — o navegador
+// permite); voltar fecha. Envelopa o navigate global SEM tocar no js/02 — os
+// guards de sessão de lá continuam valendo (o original roda primeiro).
+(function () {
+  var orig = window.navigate;
+  if (typeof orig !== 'function') return;
+  window.navigate = function (page) {
+    var r = orig.apply(this, arguments);
+    try {
+      if (_lkRoom && String(_lkRoom.state || '') === 'connected' && document.pictureInPictureEnabled) {
+        var v = document.querySelector('[data-lk-remote-video]');
+        if (page !== 'sessao' && v && !document.pictureInPictureElement) {
+          v.requestPictureInPicture().catch(function () {});
+        } else if (page === 'sessao' && document.pictureInPictureElement) {
+          document.exitPictureInPicture().catch(function () {});
+        }
+      }
+    } catch (_) {}
+    return r;
+  };
+})();
