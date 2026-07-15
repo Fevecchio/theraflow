@@ -29,9 +29,11 @@ function marcarPresenca(apptId, tipo) {
   if (overlay) overlay.remove();
   var msg = tipo==='compareceu' ? '✓ Presença registrada.' : tipo==='faltou' ? '✗ Falta registrada.' : '~ Atraso registrado.';
   showToast(msg);
-  // Ao marcar compareceu: oferecer adicionar nota clínica rápida + criar cobrança
+  // Ao marcar compareceu: oferecer criar cobrança. A "nota rápida" automática
+  // SAIU por decisão do fundador (15/07): a nota da sessão nasce no fluxo de
+  // encerramento — o modal aqui duplicava. Quem faz sessão fora da plataforma
+  // ainda tem o caminho da nota pelo painel do paciente e pelo botão flutuante.
   if (tipo === 'compareceu') {
-    _promptNotaRapida(a);
     _ofereceCobrancaPresenca(a);
   }
   if (agendaCurrentView === 'dia') renderDayView();
@@ -53,10 +55,13 @@ function _ofereceCobrancaPresenca(appt) {
   var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
   var valor = parseFloat(p.valorSessao || acc.valor_sessao) || 0;
   if (!valor) return; // sem valor configurado, silencioso
-  // Toast com ação inline (aparece 1.5s após a nota rápida)
+  // Toast com ação inline (breve respiro após o toast da presença). Vale na
+  // Agenda E no Dashboard — o "✓ confirmar" do dash também chega aqui (15/07).
   setTimeout(function() {
-    var pg = document.getElementById('page-agenda');
-    if (!pg || !pg.classList.contains('active')) return;
+    var pgA = document.getElementById('page-agenda');
+    var pgD = document.getElementById('page-dashboard');
+    var visivel = (pgA && pgA.classList.contains('active')) || (pgD && pgD.classList.contains('active'));
+    if (!visivel) return;
     var diaFmt = fmtDataBR(hoje);
     var toast = document.createElement('div');
     toast.className = 'cobranca-presenca-toast';

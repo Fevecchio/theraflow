@@ -289,9 +289,13 @@ function _renderDashSessoesHoje(sessoes) {
   }
   const agora = new Date();
   cont.innerHTML = sessoes.map(function(a){
-    const sessaoDate = new Date(a.date+'T'+a.time);
-    const passada = sessaoDate < agora;
-    const diffMs = sessaoDate - agora;
+    // Sessão real SEM agendamento formal gera registro mínimo (js/09: time null,
+    // status 'realizada') — antes o dash mostrava "undefinedmin"+"Agendada"+Entrar
+    // morto para uma sessão JÁ FEITA (bug do teste real de 15/07).
+    const realizada = a.status === 'realizada' || !!a.presenca;
+    const sessaoDate = a.time ? new Date(a.date+'T'+a.time) : null;
+    const passada = realizada || (sessaoDate !== null && sessaoDate < agora);
+    const diffMs = sessaoDate !== null ? sessaoDate - agora : NaN;
     const diffMin = Math.round(diffMs / 60000);
     const emBreve = !passada && diffMs < 30*60*1000;
     const muitoProximo = !passada && diffMs < 5*60*1000;
@@ -303,18 +307,20 @@ function _renderDashSessoesHoje(sessoes) {
     else contagem = '<span class="tag tag-green tag-dot">Agendada</span>';
     var presencaHtml = '';
     if (passada) {
+      // id SEMPRE entre aspas no onclick: registros de sessão real têm id string
+      // ('sess-...') — sem aspas o clique era um erro de sintaxe silencioso.
       if (a.presenca === 'compareceu') presencaHtml = '<span style="font-size:10px;color:var(--sage-dark);background:var(--sage-light);padding:1px 6px;border-radius:8px">✓</span>';
       else if (a.presenca === 'faltou') presencaHtml = '<span style="font-size:10px;color:var(--red);background:var(--red-light);padding:1px 6px;border-radius:8px">✗</span>';
-      else presencaHtml = '<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;background:var(--line-2);border:none;border-radius:6px;cursor:pointer;color:var(--muted)" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" title="Confirmar comparecimento">✓ confirmar</button>';
+      else presencaHtml = '<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;background:var(--line-2);border:none;border-radius:6px;cursor:pointer;color:var(--muted)" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'compareceu\')" title="Confirmar comparecimento">✓ confirmar</button>';
     }
     return '<div class="list-item" style="display:flex;align-items:center;gap:14px;opacity:'+(passada?.65:1)+'">'
-      + '<div style="text-align:center;min-width:48px"><div style="font-size:15px;font-weight:600;color:'+(muitoProximo?'var(--red)':emBreve?'var(--amber)':'var(--ink)')+'">'+escHTML(a.time)+'</div><div style="font-size:11px;color:var(--muted)">'+a.duration+'min</div></div>'
+      + '<div style="text-align:center;min-width:48px"><div style="font-size:15px;font-weight:600;color:'+(muitoProximo?'var(--red)':emBreve?'var(--amber)':'var(--ink)')+'">'+escHTML(a.time || '—')+'</div><div style="font-size:11px;color:var(--muted)">'+(a.duration ? a.duration+'min' : (realizada ? 'sessão feita' : ''))+'</div></div>'
       + '<div style="flex:1"><div class="patient-name">'+escHTML(a.patientName)+'</div><div class="patient-meta">'+escHTML(a.abordagem||'—')+'</div></div>'
       + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
         + presencaHtml
         + contagem
         + '<button class="btn btn-purple btn-sm" onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\')" title="Briefing IA pré-sessão">✦</button>'
-        + (!passada ? '<button class="btn btn-primary btn-sm" onclick="_tfSetSessionPatientAppt('+a.id+');navigate(\'sessao\')">▶ Entrar</button>' : '')
+        + (!passada ? '<button class="btn btn-primary btn-sm" onclick="_tfSetSessionPatientAppt(\''+a.id+'\');navigate(\'sessao\')">▶ Entrar</button>' : '')
       + '</div>'
       + '</div>';
   }).join('');

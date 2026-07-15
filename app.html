@@ -626,8 +626,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="section-header">
         <div class="section-title">Sessões</div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn btn-sm" id="btn-wpp-lembrete-dia" onclick="enviarLembretesSessoesDia()" title="Enviar lembrete WhatsApp para sessões de hoje" style="background:rgba(37,211,102,.1);color:#1a8a46;border:1px solid rgba(37,211,102,.25);border-radius:20px;font-size:12px;padding:4px 12px">💬 Hoje</button>
-          <button class="btn btn-sm" onclick="enviarLembretesAmanha()" title="Enviar lembrete D-1 para sessões de amanhã" style="background:rgba(37,211,102,.1);color:#1a8a46;border:1px solid rgba(37,211,102,.25);border-radius:20px;font-size:12px;padding:4px 12px">💬 Amanhã</button>
+          <!-- Rótulo diz a AÇÃO (15/07: "💬 Hoje" parecia filtro de sessões e mandava pro WhatsApp sem aviso) -->
+          <button class="btn btn-sm" id="btn-wpp-lembrete-dia" onclick="enviarLembretesSessoesDia()" title="Abre o WhatsApp com o lembrete pronto para cada paciente de hoje" style="background:rgba(37,211,102,.1);color:#1a8a46;border:1px solid rgba(37,211,102,.25);border-radius:20px;font-size:12px;padding:4px 12px">💬 Lembrar os de hoje</button>
+          <button class="btn btn-sm" onclick="enviarLembretesAmanha()" title="Abre o WhatsApp com o lembrete pronto para cada paciente de amanhã" style="background:rgba(37,211,102,.1);color:#1a8a46;border:1px solid rgba(37,211,102,.25);border-radius:20px;font-size:12px;padding:4px 12px">💬 Lembrar os de amanhã</button>
           <button class="btn btn-ghost btn-sm" onclick="navigate('agenda')" style="font-size:12px">Ver agenda →</button>
         </div>
       </div>

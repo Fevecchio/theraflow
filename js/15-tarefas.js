@@ -325,10 +325,15 @@ function renderDashTarefas() {
     var dtText = typeof dtObj==='object'?dtObj.text:dtObj;
     var dtCls  = typeof dtObj==='object'?dtObj.cls:'';
     var meta = t.patientName ? t.patientName+(t.dueDate?' · '+dtText:'') : (t.dueDate?dtText:'Sem data');
+    // Título e meta EMPILHADOS: lado a lado, o meta longo da régua de cobrança
+    // (nome · data · atrasada, nowrap) esmagava o título numa coluna de 1 palavra
+    // por linha (print do fundador 15/07).
     return '<div class="dash-task-row">'
       +'<button class="dash-concluir-btn" onclick="toggleTarefa(\''+t.id+'\')">✓ Concluir</button>'
-      +'<span class="dash-task-title">'+escHTML(t.title)+'</span>'
-      +'<span class="dash-task-meta '+dtCls+'">'+escHTML(meta)+'</span>'
+      +'<div class="dash-task-body">'
+        +'<span class="dash-task-title">'+escHTML(t.title)+'</span>'
+        +'<span class="dash-task-meta '+dtCls+'">'+escHTML(meta)+'</span>'
+      +'</div>'
       +'</div>';
   }).join('');
   if (abertas.length > 5) {

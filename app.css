@@ -1878,9 +1878,11 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 /* Dashboard task widget */
 .dash-task-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .dash-task-row:last-child { border-bottom: none; }
-.dash-task-title { flex: 1; font-size: 13.5px; font-weight: 500; }
+/* Título em cima, meta embaixo — lado a lado o meta nowrap esmagava o título (15/07) */
+.dash-task-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dash-task-title { font-size: 13.5px; font-weight: 500; line-height: 1.4; }
 .dash-task-title.done { text-decoration: line-through; color: var(--muted); font-weight: 400; }
-.dash-task-meta { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.dash-task-meta { font-size: 11.5px; color: var(--muted); }
 .dash-task-meta.overdue { color: var(--red); font-weight: 600; }
 .dash-task-meta.today { color: var(--amber); font-weight: 600; }
 /* Botões de ação de tarefa */
