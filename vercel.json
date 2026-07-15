@@ -10,6 +10,7 @@
     { "source": "/paciente", "destination": "/paciente.html" },
     { "source": "/sala", "destination": "/sala.html" },
     { "source": "/seguranca", "destination": "/seguranca.html" },
+    { "source": "/blog/lgpd-psicologo-consultorio", "destination": "/blog-lgpd-psicologo-consultorio.html" },
     { "source": "/termos", "destination": "/termos.html" },
     { "source": "/privacidade", "destination": "/privacidade.html" },
     { "source": "/", "destination": "/landing.html" }

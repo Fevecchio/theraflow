@@ -67,7 +67,7 @@ Gravar sessão para apoiar a documentação é legítimo — **desde que o desen
 2. **O áudio não vira arquivo.** O desenho mais seguro é o som ser processado para gerar a transcrição e **não ficar armazenado** — o que se guarda é o registro clínico que você revisou, não a voz do paciente.
 3. **A transcrição é registro clínico**: entra no prontuário, sob o mesmo sigilo, mesmo controle de acesso e mesmo prazo de guarda de qualquer evolução.
 
-Transparência: é assim que o Teravia funciona — o consentimento fica registrado com data e hora, o áudio é processado e descartado (não existe botão "ouvir de novo": o áudio não está lá), e a nota gerada só vira prontuário depois que **você** revisa e assina. Os detalhes técnicos e as promessas verificáveis estão na nossa página de Segurança & Ética [LINK: /seguranca].
+Transparência total: somos os criadores da **Teravia**, uma plataforma desenhada exatamente sobre essas três condições — o consentimento fica registrado com data e hora, o áudio é processado e descartado (não existe botão "ouvir de novo": o áudio não está lá), e a nota gerada só vira prontuário depois que **você** revisa e assina. Os detalhes técnicos e as promessas verificáveis estão na nossa página de Segurança & Ética [LINK: /seguranca].
 
 **Decisão 4:** se gravar, que seja com consentimento específico, áudio não armazenado e transcrição tratada como prontuário.
 
@@ -92,7 +92,7 @@ Um profissional que mostra esse checklist cumprido e um registro organizado do i
 
 ## Comece pelo papel que falta
 
-Das cinco decisões, três viram papel: o **contrato terapêutico** (enquadre e meios de comunicação), o **termo de consentimento LGPD** (os acessórios: WhatsApp, on-line, gravação) e um **guia rápido dos registros conforme o CFP**. Preparei os três num kit gratuito — o **Kit Consultório em Dia** — que você adapta à sua prática em uma tarde. → [CTA: baixar o kit em troca de e-mail — nutre a lista do plano fundador]
+Das cinco decisões, três viram papel: o **contrato terapêutico** (enquadre e meios de comunicação), o **termo de consentimento LGPD** (os acessórios: WhatsApp, on-line, gravação) e um **guia rápido dos registros conforme o CFP**. Preparei os três num kit gratuito — o **Kit Consultório em Dia** — que você adapta à sua prática em uma tarde. Para receber, escreva para **contato@teravia.com.br** com o assunto "Quero o kit" que enviamos os três modelos. → [na versão publicada: link mailto]
 
 ---
 *Este conteúdo é educativo e não substitui orientação jurídica nem a leitura das resoluções vigentes do CFP e do seu CRP regional.*

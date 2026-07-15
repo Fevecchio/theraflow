@@ -1,4 +1,6 @@
-# Copy de recrutamento — 10 Fundadores (RASCUNHO para revisão)
+# Copy de recrutamento — 10 Fundadores
+
+> **✅ DECISÃO 15/07 (delegada ao Claude): usar a versão A (Direta) nos grupos de WhatsApp e a versão B (História) como primeiro post do @teravia no Instagram.** A versão C (Pergunta) fica como segunda onda, ~4 dias depois, nos grupos onde a A não gerou conversa (soa menos "venda" na repetição).
 
 > Objetivo desta fase: **10 fundadores** (feedback quinzenal + depoimento com nome/CRP em troca de preço travado e onboarding ao vivo). Meta real = 5 depoimentos + achar travas de onboarding, não receita. Canais: grupos de WhatsApp e Instagram de psicólogas(os) — a categoria vive lá. Ajuste voz ao seu jeito; textos curtos convertem mais.
 
@@ -18,7 +20,7 @@
 
 > 21h. Última sessão encerrada há uma hora e eu ainda com 5 evoluções pra escrever. De novo.
 >
-> Cansei — e resolvi construir a solução. No [NOME DO APP], a sessão vira nota clínica sozinha: grava com consentimento, transcreve, e entrega um rascunho SOAP estruturado. Eu só reviso e assino. **Dois minutos.**
+> Cansei — e resolvi construir a solução. Na Teravia, a sessão vira nota clínica sozinha: grava com consentimento, transcreve, e entrega um rascunho SOAP estruturado. Eu só reviso e assino. **Dois minutos.**
 >
 > Não é pra substituir seu raciocínio clínico — é pra devolver sua noite.
 >

@@ -41,7 +41,7 @@ reembolso de plano de saúde e dedução no IRPF.
 no máximo uma vez a cada 12 meses, facultada ao(à) paciente a rescisão sem ônus caso
 não concorde.
 2.5. **Inadimplência:** valores em atraso sofrem correção monetária e juros de 1% ao
-mês. Persistindo o atraso por mais de [30] dias, o(a) psicólogo(a) poderá, após
+mês. Persistindo o atraso por mais de **30 dias**, o(a) psicólogo(a) poderá, após
 conversa e comunicação por escrito, **suspender o agendamento de novas sessões** até a
 regularização — assegurando, em qualquer hipótese, encerramento tecnicamente
 responsável e orientação de encaminhamento (o cuidado nunca é interrompido de forma
@@ -108,7 +108,7 @@ nº 13/2022, art. sobre gravações), revogável a qualquer tempo, nos termos do
 remarcações, pagamentos e envio de materiais combinados. Conteúdo clínico é tratado
 em sessão.
 7.2. O(a) psicólogo(a) responde mensagens em horário comercial, no prazo usual de até
-[24/48] horas úteis. **Nenhum canal de mensagem deste contrato é canal de
+**48 horas úteis**. **Nenhum canal de mensagem deste contrato é canal de
 emergência.**
 
 ### 8. Interrupção, férias e encerramento
@@ -116,7 +116,7 @@ emergência.**
 Recomenda-se ao menos **uma sessão de encerramento**, importante para a elaboração
 técnica do fechamento.
 8.2. Férias ou pausas programadas de qualquer das partes serão comunicadas com
-antecedência mínima de [15] dias.
+antecedência mínima de **15 dias** — buscando-se, sempre que possível, 30 dias.
 8.3. Em caso de indisponibilidade prolongada ou definitiva do(a) psicólogo(a), este(a)
 se compromete a comunicar o(a) paciente e orientar **encaminhamento adequado**,
 permanecendo responsável pela guarda do prontuário nos prazos legais.
