@@ -49,6 +49,54 @@ body { background: #f7f8f6; color: #1a1f1c; font-family: 'DM Sans', sans-serif; 
   #tf-onboarding-layer .ob-footer { padding: 16px 24px 24px; }
 }
 
+/* ═══════════════════════════════════
+   PAINEL DE MARCA — telas de acesso
+   (login/cadastro do app + login do portal do paciente, 15/07)
+   Celular: faixa escura no topo · Desktop: painel lateral fixo
+═══════════════════════════════════ */
+.tf-authbrand {
+  background: linear-gradient(160deg, #0d1f14 0%, #172a1e 40%, #1e3628 70%, #14231a 100%);
+  color: #F3EFE6; position: relative; overflow: hidden;
+}
+.tf-authbrand::before {
+  content: ''; position: absolute; right: -30%; top: -25%;
+  width: 560px; height: 560px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,124,89,.35) 0%, transparent 65%);
+  pointer-events: none;
+}
+.tf-authbrand::after {
+  content: ''; position: absolute; left: -15%; bottom: -30%;
+  width: 380px; height: 380px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(143,184,156,.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+.tf-authbrand-top { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+.tf-authbrand-mark { width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; display: block; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.tf-authbrand-name { font-family: 'Instrument Serif', serif; font-size: 21px; letter-spacing: -.3px; color: #fff; line-height: 1.1; }
+.tf-authbrand-sub { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: rgba(243,239,230,.55); margin-top: 3px; }
+.tf-authbrand-quote { display: none; font-family: 'Instrument Serif', serif; font-size: clamp(25px, 2.4vw, 32px); line-height: 1.4; color: #fff; max-width: 380px; position: relative; z-index: 1; }
+.tf-authbrand-quote em { color: #8FBCA4; }
+.tf-authbrand-foot { display: none; font-size: 12.5px; color: rgba(243,239,230,.45); position: relative; z-index: 1; }
+
+/* App (onboarding/login/recuperação) — celular: faixa colada no topo */
+#tf-onboarding-layer .tf-authbrand { align-self: stretch; margin: -24px -24px 28px; padding: 14px 20px; }
+@media (max-width: 480px) { #tf-onboarding-layer .tf-authbrand { margin: -16px -16px 24px; } }
+#tf-onboarding-layer .ob-logo { display: none; } /* a marca agora vive no painel */
+
+/* App — desktop: painel lateral + formulário centrado à direita */
+@media (min-width: 961px) {
+  #tf-onboarding-layer { flex-direction: row; align-items: stretch; justify-content: flex-start; padding: 0; }
+  #tf-onboarding-layer .tf-authbrand {
+    margin: 0; position: sticky; top: 0; height: 100dvh; flex-shrink: 0;
+    width: clamp(340px, 38vw, 500px);
+    display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
+    padding: 44px 48px;
+  }
+  #tf-onboarding-layer .tf-authbrand-quote,
+  #tf-onboarding-layer .tf-authbrand-foot { display: block; }
+  #tf-onboarding-layer .onboarding-wrap { margin: auto; padding: 48px 32px; }
+}
+
 #tf-app-layer {
   display: none;
   width: 100%;

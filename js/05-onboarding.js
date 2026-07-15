@@ -156,7 +156,8 @@ function toggleSenhaOb() {
   const btn = document.getElementById('btn-toggle-ob-pw');
   if (!inp) return;
   inp.type = inp.type === 'password' ? 'text' : 'password';
-  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+  // _EYE_SVG/_EYE_OFF_SVG definidos em js/04 (carrega antes)
+  btn.innerHTML = inp.type === 'password' ? _EYE_SVG : _EYE_OFF_SVG;
 }
 
 function validateScreen1() {

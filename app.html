@@ -20,7 +20,7 @@
 <title>Teravia</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' rx='26' fill='%233D6653'/><path d='M32 34 H88' fill='none' stroke='%23F3EFE6' stroke-width='12' stroke-linecap='round'/><path d='M60 47 C46 61, 74 71, 60 92' fill='none' stroke='%23F3EFE6' stroke-width='12' stroke-linecap='round'/><circle cx='60' cy='92' r='8' fill='%23E8B79E'/></svg>"/>
 <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' rx='26' fill='%233D6653'/><path d='M32 34 H88' fill='none' stroke='%23F3EFE6' stroke-width='12' stroke-linecap='round'/><path d='M60 47 C46 61, 74 71, 60 92' fill='none' stroke='%23F3EFE6' stroke-width='12' stroke-linecap='round'/><circle cx='60' cy='92' r='8' fill='%23E8B79E'/></svg>"/>
-<meta name="theme-color" content="#5a8a6a"/>
+<meta name="theme-color" content="#3D6653"/>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -45,6 +45,20 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
 <!-- ═══════════ ONBOARDING ═══════════ -->
 <div id="tf-onboarding-layer">
+
+<!-- PAINEL DE MARCA (faixa no celular, painel lateral no desktop) -->
+<aside class="tf-authbrand" aria-hidden="true">
+  <div class="tf-authbrand-top">
+    <svg class="tf-authbrand-mark" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="120" rx="26" fill="#3D6653"/><path d="M32 34 H88" fill="none" stroke="#F3EFE6" stroke-width="12" stroke-linecap="round"/><path d="M60 47 C46 61, 74 71, 60 92" fill="none" stroke="#F3EFE6" stroke-width="12" stroke-linecap="round"/><circle cx="60" cy="92" r="8" fill="#E8B79E"/></svg>
+    <div>
+      <div class="tf-authbrand-name">Teravia</div>
+      <div class="tf-authbrand-sub">Plataforma para psicólogos</div>
+    </div>
+  </div>
+  <div class="tf-authbrand-quote">A sessão vira nota pronta — <em>e o cuidado continua entre as sessões.</em></div>
+  <div class="tf-authbrand-foot">teravia.com.br</div>
+</aside>
+
 <div class="onboarding-wrap" id="tf-main-onboarding">
 
   <!-- LOGO -->
@@ -100,7 +114,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <label for="senha">Crie uma senha <span style="font-size:11px;color:var(--muted);font-weight:400">· mínimo 8 caracteres</span></label>
           <div style="position:relative">
             <input type="password" id="senha" class="form-input" placeholder="••••••••" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding-right:44px" oninput="this.classList.remove('error');document.getElementById('err-senha').style.display='none'" onkeydown="if(event.key==='Enter')goNext()"/>
-            <button type="button" onclick="toggleSenhaOb()" tabindex="-1" id="btn-toggle-ob-pw" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;line-height:1">👁</button>
+            <button type="button" onclick="toggleSenhaOb()" tabindex="-1" id="btn-toggle-ob-pw" aria-label="Mostrar senha" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:0;line-height:1;display:flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
           </div>
           <span class="field-error" id="err-senha">A senha precisa ter pelo menos 8 caracteres.</span>
         </div>
@@ -180,7 +194,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <!-- ──────────── TELA 3 — PRONTO ──────────── -->
       <div class="ob-screen" id="screen-3">
 
-        <div class="ob-success-icon">🎉</div>
+        <div class="ob-success-icon" style="display:flex;justify-content:center;color:var(--sage)"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
         <div class="ob-success-title">Tudo pronto, <span id="nome-display">Ana</span>.</div>
         <div class="ob-success-sub">Seu espaço está configurado. Aqui está o que você tem disponível — gratuitamente nas primeiras 20 sessões.</div>
 
@@ -197,7 +211,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <!-- Features -->
         <div class="features-list">
           <div class="feature-row">
-            <div class="feature-icon" style="background:#eaf1f8">📋</div>
+            <div class="feature-icon" style="background:var(--purple-light);color:var(--purple)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8z"/></svg></div>
             <div>
               <div class="feature-name">Briefing IA antes de cada sessão</div>
               <div class="feature-desc">Resumo do paciente, padrões e perguntas para a sessão</div>
@@ -205,7 +219,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <div class="feature-check">✓</div>
           </div>
           <div class="feature-row">
-            <div class="feature-icon" style="background:#f0ecfa">🪞</div>
+            <div class="feature-icon" style="background:var(--sage-light);color:var(--sage)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
             <div>
               <div class="feature-name">Supervisão</div>
               <div class="feature-desc">Alertas clínicos automáticos e reflexões pós-sessão</div>
@@ -213,7 +227,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <div class="feature-check">✓</div>
           </div>
           <div class="feature-row">
-            <div class="feature-icon" style="background:#e8f0eb">📅</div>
+            <div class="feature-icon" style="background:var(--sage-light);color:var(--sage)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
             <div>
               <div class="feature-name">Agenda e prontuários</div>
               <div class="feature-desc">Controle completo de sessões e histórico clínico</div>
@@ -221,7 +235,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <div class="feature-check">✓</div>
           </div>
           <div class="feature-row">
-            <div class="feature-icon" style="background:#fdf3e7">💰</div>
+            <div class="feature-icon" style="background:var(--sage-light);color:var(--sage)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.5-.8-1.4-1.3-2.5-1.3-1.5 0-2.7.9-2.7 2s1 1.6 2.7 2c1.7.4 2.7.9 2.7 2s-1.2 2-2.7 2c-1.1 0-2-.5-2.5-1.3"/><line x1="12" y1="6.5" x2="12" y2="8.2"/><line x1="12" y1="15.8" x2="12" y2="17.5"/></svg></div>
             <div>
               <div class="feature-name">Gestão financeira</div>
               <div class="feature-desc">Cobranças, recibos e controle de inadimplência</div>
@@ -229,7 +243,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <div class="feature-check">✓</div>
           </div>
           <div class="feature-row">
-            <div class="feature-icon" style="background:#dce8df">🎥</div>
+            <div class="feature-icon" style="background:var(--sage-light);color:var(--sage)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M22 8.5l-6 3.5 6 3.5v-7z"/></svg></div>
             <div>
               <div class="feature-name">Sessão ao vivo por vídeo</div>
               <div class="feature-desc">Consulta online integrada, sem sair da plataforma</div>
@@ -237,7 +251,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <div class="feature-check">✓</div>
           </div>
           <div class="feature-row">
-            <div class="feature-icon" style="background:#eaf1f8">📱</div>
+            <div class="feature-icon" style="background:var(--sage-light);color:var(--sage)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
             <div>
               <div class="feature-name">Portal do paciente</div>
               <div class="feature-desc">Diário semanal e exercícios TCC direto no celular</div>
@@ -248,7 +262,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
         <!-- Alerta paciente -->
         <div class="ob-alert">
-          <div class="ob-alert-icon">💡</div>
+          <div class="ob-alert-icon" style="color:var(--amber);display:flex;align-items:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1.33.47 2.48 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/></svg></div>
           <div>
             <div class="ob-alert-title">Cadastre seu primeiro paciente</div>
             <div class="ob-alert-text">O Teravia só faz sentido de verdade quando tem um paciente aqui. Leva 2 minutos — quer fazer agora?</div>
@@ -316,12 +330,12 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </label>
         <div style="position:relative">
           <input id="login-senha" class="form-input" type="password" placeholder="••••••••" autocomplete="current-password" oninput="loginClearError()" onkeydown="if(event.key==='Enter')loginSubmit()" style="width:100%;box-sizing:border-box;padding-right:44px"/>
-          <button onclick="toggleLoginPassword()" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;line-height:1" id="btn-toggle-pw">👁</button>
+          <button onclick="toggleLoginPassword()" tabindex="-1" aria-label="Mostrar senha" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:0;line-height:1;display:flex;align-items:center" id="btn-toggle-pw"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
         </div>
       </div>
 
       <!-- ERRO -->
-      <div id="login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:16px">
+      <div id="login-error" style="display:none;background:var(--red-light);border:1px solid rgba(179,86,74,.35);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:16px">
         ⚠ Email ou senha incorretos. Tente novamente.
       </div>
 
@@ -345,11 +359,11 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
       <!-- DESAFIO 2FA -->
       <div id="tfa-challenge" style="display:none">
-        <div style="text-align:center;font-size:34px;margin-bottom:8px">🔐</div>
+        <div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:52px;height:52px;border-radius:50%;background:var(--sage-light);display:flex;align-items:center;justify-content:center;color:var(--sage)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div></div>
         <div class="ob-title" style="text-align:center">Verificação em duas etapas</div>
         <div class="ob-subtitle" style="text-align:center;margin-bottom:20px">Digite o código de 6 dígitos do seu app autenticador.</div>
         <input id="tfa-login-code" class="form-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000" style="text-align:center;letter-spacing:8px;font-size:22px;font-weight:600" onkeydown="if(event.key==='Enter')_verifyMfaLogin()"/>
-        <div id="tfa-login-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-top:12px"></div>
+        <div id="tfa-login-error" style="display:none;background:var(--red-light);border:1px solid rgba(179,86,74,.35);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px"></div>
         <button class="btn btn-primary btn-full btn-lg" onclick="_verifyMfaLogin()" id="btn-tfa-verify" style="width:100%;justify-content:center;margin-top:16px">Verificar e entrar →</button>
         <button class="btn btn-secondary btn-full" onclick="_cancelMfaChallenge()" style="width:100%;justify-content:center;font-size:13px;margin-top:10px">Cancelar</button>
         <button onclick="_toggleBackupLogin()" style="width:100%;background:none;border:none;color:var(--sage);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:14px;text-decoration:underline">Perdi o acesso ao app autenticador</button>
@@ -366,7 +380,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div class="ob-footer" style="justify-content:center;flex-direction:column;gap:12px;align-items:center">
       <div style="width:100%;border-top:1px solid var(--border);padding-top:16px">
         <button onclick="irParaLoginPaciente()" style="width:100%;padding:11px 16px;background:var(--white);border:1.5px solid var(--sage);border-radius:10px;color:var(--sage);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s" onmouseover="this.style.background='var(--sage-light)'" onmouseout="this.style.background='#fff'">
-          🌿 Sou paciente — Acessar meu portal
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg> Sou paciente — Acessar meu portal
         </button>
       </div>
       <span class="ob-footer-left" style="font-size:12px">Dúvidas? <a href="mailto:contato@teravia.com.br" style="color:var(--sage);text-decoration:none;font-weight:500">contato@teravia.com.br</a></span>
@@ -401,7 +415,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       </div>
 
       <div id="forgot-success" style="display:none;text-align:center;padding:12px 0">
-        <div style="font-size:40px;margin-bottom:12px">📬</div>
+        <div style="display:flex;justify-content:center;margin-bottom:12px;color:var(--sage)"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
         <div style="font-size:16px;font-weight:600;color:var(--ink);margin-bottom:8px">Email enviado!</div>
         <div style="font-size:13px;color:var(--muted);line-height:1.6">Verifique sua caixa de entrada (e o spam).<br>O link expira em 30 minutos.</div>
         <div style="margin-top:16px;font-size:12px;color:var(--muted)">Voltando ao login em <span id="forgot-redirect-counter" style="font-weight:600;color:var(--sage)">4</span>s…</div>
