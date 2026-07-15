@@ -28,21 +28,22 @@
   #tf-patient-login-layer.open { display: flex; }
 
   /* Painel de marca do login (visual .tf-authbrand vem do app.css) —
-     faixa no topo no celular, painel lateral fixo no desktop (15/07) */
-  #tf-patient-login-layer { padding: 96px 20px 32px; }
-  #tf-patient-login-layer .tf-authbrand { position: absolute; top: 0; left: 0; right: 0; padding: 14px 20px; }
+     faixa FIXA no topo no celular (sticky — absolute rolava junto e ficava
+     cortada, print do fundador 15/07), painel lateral fixo no desktop */
+  #tf-patient-login-layer { justify-content: flex-start; padding: 0 20px 32px; }
+  #tf-patient-login-layer .tf-authbrand { position: sticky; top: 0; z-index: 20; align-self: stretch; flex-shrink: 0; margin: 0 -20px 24px; padding: 14px 20px; }
+  #tf-patient-login-layer .pac-login-card { margin: auto; }
   #tf-patient-login-layer .pac-login-brand { display: none; } /* marca agora vive no painel */
   @media (min-width: 961px) {
-    #tf-patient-login-layer { flex-direction: row; align-items: stretch; justify-content: flex-start; padding: 0; }
+    #tf-patient-login-layer { flex-direction: row; align-items: stretch; padding: 0; }
     #tf-patient-login-layer .tf-authbrand {
-      position: sticky; top: 0; left: auto; right: auto; height: 100dvh; flex-shrink: 0;
+      height: 100dvh; margin: 0;
       width: clamp(340px, 38vw, 500px);
       display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
       padding: 44px 48px;
     }
     #tf-patient-login-layer .tf-authbrand-quote,
     #tf-patient-login-layer .tf-authbrand-foot { display: block; }
-    #tf-patient-login-layer .pac-login-card { margin: auto; }
   }
 
   /* Patient app — o LAYER é o contêiner de rolagem: header (sticky top) e
