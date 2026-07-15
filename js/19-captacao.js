@@ -24,6 +24,13 @@ var CAPTACAO_ORIGENS = {
   outro:      'Outro',
 };
 
+// Motivos de perda (pedido do usuário 15/07): em vez de coluna "Qualificado",
+// o lead fora do perfil vai pro Perdido COM motivo — alimenta as métricas.
+var CAPTACAO_MOTIVOS = ['Não era o perfil', 'Preço', 'Horário incompatível', 'Parou de responder', 'Encaminhado a colega', 'Outro'];
+
+// Lead parado há N dias nas etapas quentes (Novo/Conversa/Proposta) ganha alerta âmbar.
+var CAPTACAO_DIAS_FRIO = 5;
+
 var _CAP_CORES = ['#4a7c59','#2c5f8a','#c97d2e','#7b5ea7','#2a7c7c','#8a4a4a'];
 
 function carregarCaptacao() {
@@ -53,7 +60,7 @@ function atualizarBadgeCaptacao() {
   if (captacaoLeads.length === 0) {
     try { captacaoLeads = JSON.parse(localStorage.getItem('tf_captacao') || '[]'); } catch(e) {}
   }
-  var ativos = captacaoLeads.filter(function(l){ return l.coluna < CAPTACAO_PERDIDO; }).length;
+  var ativos = captacaoLeads.filter(function(l){ return !l.ganho && l.coluna < CAPTACAO_PERDIDO; }).length;
   var badge = document.getElementById('nav-captacao-badge');
   if (!badge) return;
   if (ativos > 0) { badge.textContent = ativos; badge.style.display = ''; }
@@ -67,11 +74,13 @@ function initCaptacao() {
 }
 
 function _captacaoSubtitle() {
-  var ativos = captacaoLeads.filter(function(l){ return l.coluna < CAPTACAO_PERDIDO; }).length;
-  var perdidos = captacaoLeads.filter(function(l){ return l.coluna === CAPTACAO_PERDIDO; }).length;
+  var ativos = captacaoLeads.filter(function(l){ return !l.ganho && l.coluna < CAPTACAO_PERDIDO; }).length;
+  var perdidos = captacaoLeads.filter(function(l){ return !l.ganho && l.coluna === CAPTACAO_PERDIDO; }).length;
+  var ganhos = captacaoLeads.filter(function(l){ return l.ganho; }).length;
   var txt = ativos === 0 ? 'Nenhum lead em aberto'
           : ativos === 1 ? '1 lead em aberto'
           : ativos + ' leads em aberto';
+  if (ganhos > 0)   txt += ' · ' + ganhos + (ganhos !== 1 ? ' viraram pacientes' : ' virou paciente');
   if (perdidos > 0) txt += ' · ' + perdidos + ' perdido' + (perdidos !== 1 ? 's' : '');
   var el = document.getElementById('captacao-subtitle');
   if (el) el.textContent = txt;
@@ -80,9 +89,12 @@ function _captacaoSubtitle() {
 function renderKanban() {
   var board = document.getElementById('kanban-board');
   if (!board) return;
+  _renderCaptacaoMetricas();
+  // Convertidos ficam no histórico (métricas) mas saem do quadro.
+  var visiveis = captacaoLeads.filter(function(l){ return !l.ganho; });
   // Empty state GLOBAL: sem nenhum lead, 6 colunas com "Sem leads aqui" era um
   // deserto sem próxima ação (V4).
-  if (captacaoLeads.length === 0) {
+  if (visiveis.length === 0) {
     board.innerHTML = '<div style="flex:1;padding:56px 24px;text-align:center;color:var(--muted)">'
       + '<div style="font-size:40px;margin-bottom:12px">📥</div>'
       + '<div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Seu pipeline está vazio</div>'
@@ -94,7 +106,7 @@ function renderKanban() {
   }
   var html = '';
   CAPTACAO_COLS.forEach(function(col, colIdx) {
-    var leads = captacaoLeads.filter(function(l){ return l.coluna === colIdx; });
+    var leads = visiveis.filter(function(l){ return l.coluna === colIdx; });
     html += '<div class="kanban-col">';
     html += '<div class="kanban-col-header" style="border-top:3px solid ' + col.color + '">';
     html += '<span>' + col.icon + '</span><span>' + escHTML(col.label) + '</span>';
@@ -127,10 +139,20 @@ function _capDrop(ev, colIdx) {
   var id = ev.dataTransfer.getData('text/plain');
   var lead = captacaoLeads.find(function(l){ return l.id === id; });
   if (!lead || lead.coluna === colIdx) return;
+  _capMudarColuna(lead, colIdx);
+}
+
+// Toda mudança de coluna passa por aqui: carimba a data de entrada na etapa
+// (base do "há Xd nesta etapa") e, ao cair em Perdido, pergunta o motivo.
+function _capMudarColuna(lead, colIdx) {
+  var saiuDePerdido = (lead.coluna === CAPTACAO_PERDIDO && colIdx !== CAPTACAO_PERDIDO);
   lead.coluna = colIdx;
+  lead.movidoEm = new Date().toISOString();
+  if (saiuDePerdido) delete lead.motivoPerda; // lead reativado zera o motivo
   salvarCaptacao();
   renderKanban();
   showToast('Lead movido para "' + CAPTACAO_COLS[colIdx].label + '".');
+  if (colIdx === CAPTACAO_PERDIDO) _capPedirMotivo(lead.id);
 }
 
 function _capIniciais(nome) {
@@ -154,12 +176,16 @@ function _renderCard(lead, colIdx) {
   // _wppNumero normaliza o prefixo 55 (não duplica quando o número já vem com +55) e
   // rejeita 0800/0300. Antes: 'wa.me/55'+num gerava '5555...' p/ leads com +55. F4.5.
   var _wn = (typeof _wppNumero === 'function') ? _wppNumero(lead.whatsapp) : (lead.whatsapp || '').replace(/\D/g, '');
-  var wppHref = _wn ? 'https://wa.me/' + _wn : '';
+  var wppHref = _wn ? 'https://wa.me/' + _wn + '?text=' + encodeURIComponent(_capMsgWpp(lead, colIdx)) : '';
 
-  var diasLabel = '';
-  if (lead.criado) {
-    var dias = Math.floor((Date.now() - new Date(lead.criado).getTime()) / 86400000);
+  // Dias NESTA etapa (movidoEm; leads antigos caem no criado). Nas etapas quentes,
+  // parado demais vira alerta âmbar — o valor do funil é o empurrão do follow-up.
+  var baseEtapa = lead.movidoEm || lead.criado;
+  var diasLabel = '', diasFrio = false, dias = 0;
+  if (baseEtapa) {
+    dias = Math.floor((Date.now() - new Date(baseEtapa).getTime()) / 86400000);
     diasLabel = dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : 'há ' + dias + 'd';
+    diasFrio = !isPerdido && colIdx <= 2 && dias >= CAPTACAO_DIAS_FRIO;
   }
 
   var html = '<div class="kanban-card" draggable="true" ondragstart="_capDragStart(event,\'' + lead.id + '\')">';
@@ -171,7 +197,13 @@ function _renderCard(lead, colIdx) {
   html += '<div class="kanban-card-name">' + escHTML(lead.nome) + '</div>';
   if (origemLabel) html += '<div style="font-size:10.5px;color:var(--muted)">' + escHTML(origemLabel) + '</div>';
   html += '</div>';
-  if (diasLabel) html += '<div style="font-size:10px;color:var(--muted);flex-shrink:0">' + diasLabel + '</div>';
+  if (diasLabel) {
+    if (diasFrio) {
+      html += '<div title="Parado há ' + dias + ' dias nesta etapa — que tal um oi no WhatsApp?" style="font-size:10px;color:var(--amber);font-weight:600;flex-shrink:0;cursor:default">⏳ ' + diasLabel + '</div>';
+    } else {
+      html += '<div title="Nesta etapa ' + (dias === 0 ? 'desde hoje' : 'há ' + dias + ' dia' + (dias !== 1 ? 's' : '')) + '" style="font-size:10px;color:var(--muted);flex-shrink:0;cursor:default">' + diasLabel + '</div>';
+    }
+  }
   html += '</div>';
 
   // Queixa
@@ -179,6 +211,11 @@ function _renderCard(lead, colIdx) {
     html += '<div class="kanban-card-queixa">' + escHTML(lead.queixa) + '</div>';
   } else if (lead.obs) {
     html += '<div class="kanban-card-queixa" style="font-style:italic">' + escHTML(lead.obs) + '</div>';
+  }
+
+  // Motivo da perda (só na coluna Perdido)
+  if (isPerdido && lead.motivoPerda) {
+    html += '<div style="font-size:10.5px;color:var(--red);margin-top:4px">✗ ' + escHTML(lead.motivoPerda) + '</div>';
   }
 
   // Ações
@@ -189,7 +226,7 @@ function _renderCard(lead, colIdx) {
   if (colIdx < CAPTACAO_COLS.length - 1)
     html += '<button class="kanban-btn" title="Avançar etapa" onclick="event.stopPropagation();moverLead(\'' + lead.id + '\',1)">→</button>';
   if (wppHref)
-    html += '<a href="' + wppHref + '" target="_blank" class="kanban-btn" title="WhatsApp" onclick="event.stopPropagation()" style="text-decoration:none">💬</a>';
+    html += '<a href="' + wppHref + '" target="_blank" class="kanban-btn" title="WhatsApp — abre com mensagem pronta para esta etapa (você revisa antes de enviar)" onclick="event.stopPropagation()" style="text-decoration:none">💬</a>';
   html += '<button class="kanban-btn" title="Editar" onclick="event.stopPropagation();editarLead(\'' + lead.id + '\')">✎</button>';
   if (!isPerdido)
     html += '<button class="kanban-btn kanban-btn-convert" title="Converter para paciente" onclick="event.stopPropagation();converterParaPaciente(\'' + lead.id + '\')">✓ Paciente</button>';
@@ -197,6 +234,96 @@ function _renderCard(lead, colIdx) {
 
   html += '</div></div>';
   return html;
+}
+
+/* Mensagem pronta do botão WhatsApp do card, por etapa (pedido do usuário 15/07).
+ * O texto chega EDITÁVEL no WhatsApp — a terapeuta revisa antes de enviar. */
+function _capMsgWpp(lead, colIdx) {
+  var nome = (lead.nome || '').trim().split(/\s+/)[0] || '';
+  var tera = (typeof _wppNomeTerapeuta === 'function') ? _wppNomeTerapeuta() : '';
+  if (colIdx === 2) // Proposta enviada
+    return 'Olá, ' + nome + '! Aqui é ' + tera + ' 😊 Passando para saber se ficou alguma dúvida sobre a proposta que te enviei. Estou à disposição!';
+  if (colIdx === 3) // Em espera de vaga
+    return 'Olá, ' + nome + '! Aqui é ' + tera + '. Passando para dizer que continuo com você em mente — assim que abrir um horário, aviso você por aqui. 💚';
+  if (colIdx === CAPTACAO_PERDIDO)
+    return 'Olá, ' + nome + '! Aqui é ' + tera + '. Faz um tempo que conversamos — se ainda fizer sentido para você, sigo à disposição 😊';
+  // Novo contato / Conversa inicial
+  return 'Olá, ' + nome + '! Aqui é ' + tera + ' 😊 Vi seu contato por aqui — podemos conversar sobre o que você está buscando? Fico à disposição!';
+}
+
+/* Motivo da perda: mini-modal ao mover para Perdido. Registrar é opcional —
+ * fricção mínima —, mas é o que alimenta a métrica "por que estou perdendo". */
+function _capPedirMotivo(id) {
+  var lead = captacaoLeads.find(function(l){ return l.id === id; });
+  if (!lead) return;
+  var existente = document.getElementById('modal-cap-motivo');
+  if (existente) existente.remove();
+  var modal = document.createElement('div');
+  modal.id = 'modal-cap-motivo';
+  modal.className = 'modal-overlay';
+  var botoes = CAPTACAO_MOTIVOS.map(function(m, i) {
+    return '<button class="btn btn-secondary btn-sm" style="justify-content:flex-start" onclick="_capSetMotivo(\'' + id + '\',' + i + ')">' + escHTML(m) + '</button>';
+  }).join('');
+  modal.innerHTML = '<div class="modal" style="max-width:380px">'
+    + '<div class="modal-header"><div class="modal-title">Por que perdeu esse lead?</div>'
+    + '<button class="modal-close" onclick="closeModal(\'modal-cap-motivo\')">✕</button></div>'
+    + '<div class="modal-body">'
+    + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Opcional — mas é o que mostra, lá na frente, o que mais faz você perder contatos.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">' + botoes + '</div>'
+    + '<button style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:12px;padding:0;font-family:inherit" onclick="closeModal(\'modal-cap-motivo\')">Deixar sem motivo</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if (e.target === modal) modal.classList.remove('open'); });
+  modal.classList.add('open');
+}
+
+function _capSetMotivo(id, idx) {
+  var lead = captacaoLeads.find(function(l){ return l.id === id; });
+  if (lead && CAPTACAO_MOTIVOS[idx]) {
+    lead.motivoPerda = CAPTACAO_MOTIVOS[idx];
+    salvarCaptacao();
+    renderKanban();
+  }
+  closeModal('modal-cap-motivo');
+}
+
+/* Faixa de métricas do funil (pedido do usuário 15/07): ganhos, perdidos (+ motivo
+ * mais comum), conversão e origem que mais converte. HONESTA: só aparece quando
+ * existe lead fechado (ganho ou perdido) — nada de 0% fabricado. */
+function _renderCaptacaoMetricas() {
+  var el = document.getElementById('captacao-metricas');
+  if (!el) return;
+  var ganhos   = captacaoLeads.filter(function(l){ return l.ganho; });
+  var perdidos = captacaoLeads.filter(function(l){ return !l.ganho && l.coluna === CAPTACAO_PERDIDO; });
+  var fechados = ganhos.length + perdidos.length;
+  if (fechados === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+  function chip(rotulo, valor, cor) {
+    return '<div style="display:flex;align-items:baseline;gap:6px;padding:7px 14px;background:var(--white);border:1px solid var(--border);border-radius:10px">'
+      + '<span style="font-size:15px;font-weight:700;color:' + cor + '">' + valor + '</span>'
+      + '<span style="font-size:11px;color:var(--muted)">' + rotulo + '</span></div>';
+  }
+
+  var html = chip(ganhos.length === 1 ? 'virou paciente' : 'viraram pacientes', ganhos.length, 'var(--sage)');
+
+  var rotuloPerd = 'perdidos';
+  var motivos = {};
+  perdidos.forEach(function(l){ if (l.motivoPerda) motivos[l.motivoPerda] = (motivos[l.motivoPerda] || 0) + 1; });
+  var topMotivo = Object.keys(motivos).sort(function(a,b){ return motivos[b] - motivos[a]; })[0];
+  if (topMotivo) rotuloPerd += ' · mais comum: ' + escHTML(topMotivo.toLowerCase());
+  html += chip(perdidos.length === 1 ? 'perdido' + (topMotivo ? ' (' + escHTML(topMotivo.toLowerCase()) + ')' : '') : rotuloPerd, perdidos.length, 'var(--red)');
+
+  html += chip('de conversão', Math.round(ganhos.length / fechados * 100) + '%', 'var(--ink-soft)');
+
+  if (ganhos.length > 0) {
+    var origens = {};
+    ganhos.forEach(function(l){ var o = CAPTACAO_ORIGENS[l.origem]; if (o) origens[o] = (origens[o] || 0) + 1; });
+    var topOrigem = Object.keys(origens).sort(function(a,b){ return origens[b] - origens[a]; })[0];
+    if (topOrigem) html += chip('origem que mais converte', escHTML(topOrigem), 'var(--ink-soft)');
+  }
+
+  el.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px';
+  el.innerHTML = html;
 }
 
 /* 🔗 Link para bio/campanhas (pedido do usuário 14/07): wa.me da terapeuta com
@@ -279,9 +406,7 @@ function moverLead(id, dir) {
   if (!lead) return;
   var nova = lead.coluna + dir;
   if (nova < 0 || nova >= CAPTACAO_COLS.length) return;
-  lead.coluna = nova;
-  salvarCaptacao();
-  renderKanban();
+  _capMudarColuna(lead, nova);
 }
 
 function excluirLead(id) {
@@ -334,8 +459,10 @@ function _finalizarConversaoLead(leadId) {
   if (typeof criarPaciente === 'function') criarPaciente();
   var after = (typeof patients !== 'undefined' && patients) ? patients.length : 0;
   if (after > before) {
-    // Paciente criado com sucesso → agora sim remove o lead do pipeline.
-    captacaoLeads = captacaoLeads.filter(function(l){ return l.id !== leadId; });
+    // Paciente criado com sucesso → o lead sai do quadro mas FICA no histórico
+    // como ganho (alimenta as métricas: conversão, origem que mais converte).
+    var lead = captacaoLeads.find(function(l){ return l.id === leadId; });
+    if (lead) { lead.ganho = true; lead.ganhoEm = new Date().toISOString(); }
     salvarCaptacao();
     if (typeof atualizarBadgeCaptacao === 'function') atualizarBadgeCaptacao();
   }
