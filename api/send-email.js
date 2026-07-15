@@ -190,7 +190,7 @@ function tmplReminder({ terapeutaNome, pacienteNome, data, hora, sessionLink }) 
     </div>
     <div style="padding:32px">
       <p style="font-size:16px;color:#1a1a1a;margin:0 0 8px">Olá, <strong>${pacienteNome}</strong> 🕐</p>
-      <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px">Sua sessão com <strong>${terapeutaNome}</strong> é <strong>amanhã</strong>. Só passando para lembrar!</p>
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px">Sua sessão com <strong>${terapeutaNome}</strong> é <strong>amanhã</strong>. Só passando para lembrar! No horário da sessão, a sala de vídeo estará disponível no seu portal.</p>
 
       <div style="background:#f0f8ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px 24px;margin-bottom:24px">
         <div style="font-size:13px;color:#3b82f6;margin-bottom:4px">📅 Amanhã</div>
@@ -226,7 +226,7 @@ function tmplReminder15({ terapeutaNome, pacienteNome, hora, sessionLink }) {
     </div>
     <div style="padding:32px">
       <p style="font-size:16px;color:#1a1a1a;margin:0 0 8px">Olá, <strong>${pacienteNome}</strong></p>
-      <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px">Sua sessão com <strong>${terapeutaNome}</strong> começa <strong>em 15 minutos</strong>, às <strong>${hora}</strong>. Encontre um lugar tranquilo e prepare fones de ouvido, se puder.</p>
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px">Sua sessão com <strong>${terapeutaNome}</strong> começa <strong>em 15 minutos</strong>, às <strong>${hora}</strong>. Encontre um lugar tranquilo e prepare fones de ouvido, se puder. A sala de vídeo já vai estar disponível no seu portal.</p>
 
       ${linkHtml ? `<div style="text-align:center">${linkHtml}</div>` : ''}
 

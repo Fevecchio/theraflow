@@ -123,9 +123,12 @@ function _wppNomeTerapeuta() {
 /* Template do Perfil ([Nome] [dia] [hora] [Terapeuta]) com fallback padrão.
  * (Morava em js/07 e só o disparo em lote usava — agora é o caminho único.) */
 function _wppInterpolate(tpl, nome, dia, hora, terapeuta) {
+  // Default SEM emoji + com a informação do portal (pedido 15/07: a paciente
+  // precisa saber que a sala fica disponível no portal dela; e os emojis do
+  // template antigo chegavam como "�" no wa.me — print do fundador).
   var base = tpl && tpl.trim()
     ? tpl
-    : 'Olá [Nome]! 🌿\n\nLembrete da sua sessão de psicoterapia [dia] às [hora].\n\nQualquer imprevisto, é só me avisar por aqui. Até logo! 💚\n— [Terapeuta]';
+    : 'Olá [Nome]!\n\nLembrete da sua sessão de psicoterapia [dia] às [hora].\n\nNo horário da sessão, a sala de vídeo estará disponível no seu portal.\n\nQualquer imprevisto, é só me avisar por aqui. Até logo!\n— [Terapeuta]';
   // Se o template já usa [hora] explicitamente, [dia] vira só a data (evita duplicar a hora).
   // Caso contrário (templates antigos só com [dia]), embute "às [hora]" no [dia] como antes.
   var temHora = /\[hora\]/.test(base);
@@ -133,7 +136,8 @@ function _wppInterpolate(tpl, nome, dia, hora, terapeuta) {
     .replace(/\[Nome\]/g, nome)
     .replace(/\[dia\]/g, (hora && !temHora) ? dia + ' às ' + hora : dia)
     .replace(/\[hora\]/g, hora || '')
-    .replace(/\[Terapeuta\]/g, terapeuta);
+    .replace(/\[Terapeuta\]/g, terapeuta)
+    .replace(/�/g, ''); // template salvo com bytes corrompidos não vaza "�" pro paciente
 }
 
 /* Próxima sessão do paciente por IDENTIDADE (patientId) — patientIdx é derivado
@@ -163,7 +167,7 @@ function _wppMsgLembreteSessao(p, appt) {
     }
     return _wppInterpolate(acc.wpp_template || '', _firstName(p.name), dia, appt.time || '', nomeT);
   }
-  return 'Olá ' + _firstName(p.name) + '! 🌿\n\nLembrete da sua sessão de psicoterapia.\n\nQualquer imprevisto, é só me avisar por aqui. Até breve! 💚\n— ' + nomeT;
+  return 'Olá ' + _firstName(p.name) + '!\n\nLembrete da sua sessão de psicoterapia.\n\nNo horário da sessão, a sala de vídeo estará disponível no seu portal.\n\nQualquer imprevisto, é só me avisar por aqui. Até breve!\n— ' + nomeT;
 }
 
 /* Contexto de abordagem do TERAPEUTA para os prompts de IA (decisão do usuário:

@@ -835,7 +835,7 @@ function renderPatients(filter) {
       + (_msgUnread > 0 ? '' : 'display:none;')
       + 'background:var(--sage);color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;min-width:14px;text-align:center;line-height:14px">'
       + (_msgUnread || 0) + '</span>' : '';
-    return `<div class="list-item ${fi===0?'active':''}" onclick="selectPatientFiltered(${p._i},this)" style="animation:itemStagger .3s ease both;animation-delay:${fi*45}ms">
+    return `<div class="list-item ${fi===0?'active':''}" data-idx="${p._i}" onclick="selectPatientFiltered(${p._i},this)" style="animation:itemStagger .3s ease both;animation-delay:${fi*45}ms">
       <div style="display:flex;align-items:center;gap:14px">
         <div class="patient-avatar" style="background:${p.colorGrad||p.color||'#4a7c59'};color:#fff;width:52px;height:52px;font-size:17px;flex-shrink:0;border-radius:50%">${_inits}</div>
         <div style="flex:1;min-width:0">
@@ -1554,6 +1554,18 @@ function selectPatient(i, el) {
   if (i < 0 || i >= patients.length) return;
   currentPatientIdx = i;
   const p = patients[i];
+
+  // Sincroniza o DESTAQUE da lista com o painel aberto: vindo de fora (agenda →
+  // "Ver paciente"), o painel abria a pessoa certa mas a lista continuava
+  // destacando a primeira (print do fundador 15/07).
+  try {
+    var _alvo = document.querySelector('#patient-list .list-item[data-idx="' + i + '"]');
+    if (_alvo && !_alvo.classList.contains('active')) {
+      document.querySelectorAll('#patient-list .list-item').forEach(function(x){ x.classList.remove('active'); });
+      _alvo.classList.add('active');
+      _alvo.scrollIntoView({ block: 'nearest' });
+    }
+  } catch (_) {}
 
   // ── Recalcula fin/finStatus + mood a partir de dados reais ──
   (function() {

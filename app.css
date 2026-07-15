@@ -589,7 +589,8 @@ tr:last-child td { border-bottom: none; }
 .patient-meta { font-size: 12px; color: var(--muted); }
 
 /* ── SPLIT PANELS ── */
-.split { display: grid; grid-template-columns: 340px 1fr; gap: 20px; height: calc(100vh - 160px); }
+/* 340→300px: mais respiro pro painel do paciente (pedido do fundador 15/07) */
+.split { display: grid; grid-template-columns: 300px 1fr; gap: 20px; height: calc(100vh - 160px); }
 .panel-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .panel-detail { overflow-y: auto; display: flex; flex-direction: column; }
 

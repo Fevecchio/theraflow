@@ -272,7 +272,9 @@ function _mostrarOpcoesAppt(pi, apptId) {
       // "Ver paciente": conferir a ficha sem sair caçando em Pacientes (pedido do
       // usuário 14/07 — o fluxo agenda→ficha exigia navegar e buscar de novo).
       + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();navigate(\'pacientes\');setTimeout(function(){if(typeof selectPatient===\'function\')selectPatient('+pi+')},150)" style="width:100%;padding:10px;background:var(--sage-light,#eaf1ec);color:var(--sage-dark,#3d6653);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">⊙ Ver paciente</button>'
-      + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();reagendarAppointment('+apptId+')" style="width:100%;padding:10px;background:var(--line-2,#f5f5f5);color:var(--ink-soft,#555);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left">↻ Reagendar</button>' : '')
+      + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();reagendarAppointment(\''+apptId+'\')" style="width:100%;padding:10px;background:var(--line-2,#f5f5f5);color:var(--ink-soft,#555);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left">↻ Reagendar</button>' : '')
+      // Cancelar direto do popup (pedido 15/07 — antes só existia na visão Dia)
+      + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();cancelarAppointment(\''+apptId+'\')" style="width:100%;padding:10px;background:var(--red-light,#f9eeec);color:var(--red,#b3564a);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left">✕ Cancelar sessão</button>' : '')
     + '</div>'
   + '</div>';
   document.body.appendChild(popup);
@@ -460,7 +462,8 @@ function confirmarAgendamento() {
 }
 
 function cancelarAppointment(id) {
-  var appt = appointments.find(function(a){ return a.id === id; });
+  // Comparação por String: ids pós-sync/registro de sessão são texto (praga conhecida)
+  var appt = appointments.find(function(a){ return String(a.id) === String(id); });
   if (!appt) return;
 
   var existing = document.getElementById('modal-cancelar-appt');
@@ -527,7 +530,7 @@ function confirmarCancelamento(id) {
 }
 
 function reagendarAppointment(id) {
-  var appt = appointments.find(function(a){ return a.id === id; });
+  var appt = appointments.find(function(a){ return String(a.id) === String(id); });
   if (!appt) return;
 
   var existing = document.getElementById('modal-reagendar');
@@ -558,7 +561,7 @@ function reagendarAppointment(id) {
       </div>
       <div style="display:flex;gap:10px;margin-top:20px">
         <button onclick="document.getElementById('modal-reagendar').remove()" style="flex:1;padding:11px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
-        <button onclick="confirmarReagendamento(${id})" style="flex:1;padding:11px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Confirmar</button>
+        <button onclick="confirmarReagendamento('${id}')" style="flex:1;padding:11px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Confirmar</button>
       </div>
     </div>`;
   overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
@@ -566,7 +569,7 @@ function reagendarAppointment(id) {
 }
 
 function confirmarReagendamento(id) {
-  var appt = appointments.find(function(a){ return a.id === id; });
+  var appt = appointments.find(function(a){ return String(a.id) === String(id); });
   if (!appt) return;
   var novaData = document.getElementById('reagendar-data')?.value;
   var novaHora = document.getElementById('reagendar-hora')?.value;
@@ -671,8 +674,8 @@ function renderDayView() {
               + '<div onclick="event.stopPropagation();_mostrarOpcoesAppt('+pi+','+a.id+')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong>'+confTag+'<br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
               + '<div style="display:flex;gap:4px;flex-shrink:0">'
                 + '<button class="btn btn-purple btn-sm" onclick="event.stopPropagation();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="font-size:10px;padding:3px 7px" title="Briefing IA">✦</button>'
-                + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();reagendarAppointment('+a.id+')" style="font-size:10px;padding:3px 7px" title="Reagendar">↻</button>'
-                + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();cancelarAppointment('+a.id+')" style="font-size:10px;padding:3px 7px;color:var(--red)" title="Cancelar">✕</button>'
+                + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();reagendarAppointment(\''+a.id+'\')" style="font-size:10px;padding:3px 7px" title="Reagendar">↻</button>'
+                + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();cancelarAppointment(\''+a.id+'\')" style="font-size:10px;padding:3px 7px;color:var(--red)" title="Cancelar">✕</button>'
               + '</div>'
             + '</div>'
             + (presencaBadge ? '<div>'+presencaBadge+'</div>' : '')
