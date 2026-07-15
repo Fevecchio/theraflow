@@ -15,6 +15,7 @@ plano-estrategico-*.pdf
 *.png
 *.jpeg
 *.jpg
+!icons/*.png
 design-*
 *.jsx
 
