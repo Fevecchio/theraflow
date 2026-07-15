@@ -1,0 +1,14 @@
+# Teravia — teravia.com.br
+# Páginas públicas indexáveis; app clínico e API fora do índice.
+
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /app.html
+Disallow: /paciente
+Disallow: /paciente.html
+Disallow: /sala
+Disallow: /sala.html
+Disallow: /api/
+
+Sitemap: https://teravia.com.br/sitemap.xml
