@@ -428,19 +428,33 @@
   }
 
   // ── VÍDEO FLUTUANTE (PiP): a terapeuta continua visível ao trocar de app/aba. ──
+  // Bug 15/07: no iPhone a chamada webkit podia falhar EM SILÊNCIO (parecia que o
+  // botão não fazia nada). Agora: tenta os dois caminhos, CONFERE se abriu de
+  // verdade e avisa com honestidade quando o aparelho não suporta.
   async function togglePip() {
     var v = document.querySelector('#remote-video video');
     if (!v) { _salaToast('O vídeo da sua terapeuta ainda não apareceu.'); return; }
     try {
+      // Já está flutuando? Fecha (os dois sabores).
       if (document.pictureInPictureElement) { await document.exitPictureInPicture(); return; }
+      if (v.webkitPresentationMode === 'picture-in-picture') { v.webkitSetPresentationMode('inline'); return; }
+
+      try { await v.play(); } catch (_) {} // PiP exige o vídeo tocando
+
+      var abriu = false;
       if (v.requestPictureInPicture) {
-        await v.requestPictureInPicture();
-        _salaToast('Vídeo flutuante aberto ✓ — ele te acompanha em outros apps.');
-      } else if (v.webkitSetPresentationMode) {
-        v.webkitSetPresentationMode('picture-in-picture'); // iPhone/iPad (Safari)
-      } else {
-        _salaToast('Este navegador não suporta o vídeo flutuante.');
+        try { await v.requestPictureInPicture(); abriu = true; } catch (e1) { console.warn('[sala] pip std', e1); }
       }
+      if (!abriu && typeof v.webkitSetPresentationMode === 'function') {
+        var suporta = typeof v.webkitSupportsPresentationMode !== 'function' || v.webkitSupportsPresentationMode('picture-in-picture');
+        if (suporta) {
+          v.webkitSetPresentationMode('picture-in-picture'); // iPhone/iPad (Safari)
+          await new Promise(function (r) { setTimeout(r, 400); });
+          abriu = (v.webkitPresentationMode === 'picture-in-picture');
+        }
+      }
+      if (abriu) _salaToast('Vídeo flutuante aberto ✓ — ele te acompanha em outros apps.');
+      else _salaToast('Seu aparelho não permitiu a janela flutuante para vídeo de chamada — em iPhones, isso pede iOS mais recente.');
     } catch (e) {
       console.warn('[sala] pip', e);
       _salaToast('Não consegui abrir o vídeo flutuante.');

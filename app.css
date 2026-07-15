@@ -637,9 +637,11 @@ tr:last-child td { border-bottom: none; }
 #page-agenda.agenda-compacto .appt-block { padding: 4px 8px !important; font-size: 11px !important; gap: 3px !important; margin-bottom: 2px !important; }
 #page-agenda.agenda-compacto .time-slot { padding: 4px 8px !important; font-size: 10px !important; padding-top: 5px !important; }
 #page-agenda.agenda-compacto .slot-add { min-height: 28px !important; font-size: 11px !important; }
-.session-live-badge { position: absolute; top: 16px; left: 16px; background: #c0392b; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: .5px; display: flex; align-items: center; gap: 6px; }
+/* z-index 4: o vídeo remoto é montado com z-index:1 e o local com 3 — sem isto,
+   a tarja AO VIVO e o relógio ficavam ESCONDIDOS atrás do vídeo (bug 15/07). */
+.session-live-badge { position: absolute; top: 16px; left: 16px; z-index: 4; background: #c0392b; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: .5px; display: flex; align-items: center; gap: 6px; }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: blink 1.2s infinite; }
-.session-timer { position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,.5); color: #fff; font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
+.session-timer { position: absolute; top: 16px; right: 16px; z-index: 4; background: rgba(0,0,0,.5); color: #fff; font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
 .sess-patient-picker { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 8px; border-radius: 6px; background: rgba(74,124,89,.09); border: 1px solid rgba(74,124,89,.22); cursor: pointer; transition: background .15s; }
 .sess-patient-picker:hover { background: rgba(74,124,89,.17); }
 .sess-picker-arrow { font-size: 10px; color: var(--sage); opacity: .8; pointer-events: none; line-height: 1; margin-top: 1px; }

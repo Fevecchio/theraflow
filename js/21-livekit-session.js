@@ -601,6 +601,11 @@ function _lkStartPacRecorder() {
 function _lkShowWaitingRemote() {
   const main = document.querySelector('#page-sessao .video-main') || document.querySelector('.video-main');
   if (!main || document.getElementById('lk-wait-remote')) return;
+  // Reconexão/retomada: se a paciente JÁ está na sala (ou o vídeo dela já montou),
+  // o aviso não deve aparecer — antes ele ficava desenhado POR CIMA do vídeo dela,
+  // porque o TrackSubscribed dispara durante o connect(), antes desta chamada (bug 15/07).
+  if (document.querySelector('[data-lk-remote-video]')) return;
+  try { if (_lkRoom && _lkRoom.remoteParticipants && _lkRoom.remoteParticipants.size > 0) return; } catch (_) {}
   const ph = document.getElementById('whereby-prestate'); if (ph) ph.style.display = 'none';
   const d = document.createElement('div');
   d.id = 'lk-wait-remote';
