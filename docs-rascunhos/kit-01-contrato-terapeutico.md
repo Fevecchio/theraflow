@@ -107,9 +107,10 @@ nº 13/2022, art. sobre gravações), revogável a qualquer tempo, nos termos do
 7.1. Mensagens (WhatsApp/e-mail) destinam-se a **questões práticas**: agenda,
 remarcações, pagamentos e envio de materiais combinados. Conteúdo clínico é tratado
 em sessão.
-7.2. O(a) psicólogo(a) responde mensagens em horário comercial, no prazo usual de até
-**48 horas úteis**. **Nenhum canal de mensagem deste contrato é canal de
-emergência.**
+7.2. O(a) psicólogo(a) responde mensagens em horário comercial, em regra em até
+**72 horas úteis** — prazo indicativo, que não constitui compromisso de
+disponibilidade contínua. **Nenhum canal de mensagem deste contrato é canal de
+emergência** (ver item 9).
 
 ### 8. Interrupção, férias e encerramento
 8.1. Qualquer das partes pode propor o encerramento do processo a qualquer momento.
