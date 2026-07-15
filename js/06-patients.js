@@ -392,7 +392,7 @@ function _enviarWhatsAppAcesso(p, nome, senha) {
   var terapeuta = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome.split(' ')[0] : 'sua terapeuta');
   var portalLink = window.location.origin + '/paciente' + (p.email ? '?e=' + encodeURIComponent(p.email) : '');
   var msg = 'Olá, ' + nome + '! 🌿\n\n'
-    + 'Criei seu acesso ao portal TheraFlow — um espaço só seu para registrar seu humor, fazer exercícios e acompanhar sua jornada terapêutica entre nossas sessões.\n\n'
+    + 'Criei seu acesso ao portal Teravia — um espaço só seu para registrar seu humor, fazer exercícios e acompanhar sua jornada terapêutica entre nossas sessões.\n\n'
     + '📱 *Acesse aqui:*\n'
     + portalLink + '\n\n'
     + '🔑 *Suas credenciais:*\n'
@@ -795,7 +795,7 @@ function renderPatients(filter) {
       ? `<div style="padding:48px 24px;text-align:center;color:var(--muted)">
            <div style="font-size:40px;margin-bottom:12px">🌱</div>
            <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Nenhum paciente cadastrado</div>
-           <div style="font-size:13px;margin-bottom:20px">Adicione seu primeiro paciente para começar a usar o TheraFlow.</div>
+           <div style="font-size:13px;margin-bottom:20px">Adicione seu primeiro paciente para começar a usar o Teravia.</div>
            <button class="btn-primary" onclick="abrirModalNovoPaciente()">+ Novo paciente</button>
          </div>`
       : `<div style="padding:32px;text-align:center;color:var(--muted)">
@@ -1220,7 +1220,7 @@ function renderPatientConfig(i) {
       </div>
       <details style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2)"${p.sessionLink ? ' open' : ''}>
         <summary style="font-size:12px;color:var(--muted);cursor:pointer;user-select:none;list-style-position:inside">Usa Zoom ou Meet? Adicionar link externo de sala</summary>
-        <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 8px"><strong style="color:var(--sage-dark)">A sala do TheraFlow se cria sozinha ao clicar em "Iniciar sessão"</strong> — com captura dos dois lados, transcrição e nota por IA. Um link externo (Zoom/Meet) serve apenas de atalho para o paciente: vira o botão "Entrar na sessão" no portal e entra nos convites — mas a sessão acontece lá fora, <strong>sem transcrição nem nota automática</strong>.</div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 8px"><strong style="color:var(--sage-dark)">A sala do Teravia se cria sozinha ao clicar em "Iniciar sessão"</strong> — com captura dos dois lados, transcrição e nota por IA. Um link externo (Zoom/Meet) serve apenas de atalho para o paciente: vira o botão "Entrar na sessão" no portal e entra nos convites — mas a sessão acontece lá fora, <strong>sem transcrição nem nota automática</strong>.</div>
         <div style="display:flex;gap:6px;align-items:center">
           <input id="pac-session-link-${i}" type="url" placeholder="https://meet.google.com/…"
             value="${escHTML(p.sessionLink||'')}"

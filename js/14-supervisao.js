@@ -259,7 +259,7 @@ function showCalendarSync() {
     <div style="background:var(--white);border-radius:16px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25)">
       <div style="padding:28px 28px 0">
         <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:6px">🔗 Sincronizar agenda</div>
-        <div style="font-size:13px;color:#888;margin-bottom:24px">Conecte sua agenda profissional. Sessões criadas no TheraFlow aparecerão automaticamente — e bloqueios da sua agenda pessoal serão respeitados.</div>
+        <div style="font-size:13px;color:#888;margin-bottom:24px">Conecte sua agenda profissional. Sessões criadas no Teravia aparecerão automaticamente — e bloqueios da sua agenda pessoal serão respeitados.</div>
 
         <!-- Google Calendar -->
         <div id="gcal-card" style="border:1px solid #e0e0e0;border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all .2s" onclick="connectCalendar('google')">
@@ -289,8 +289,8 @@ function showCalendarSync() {
         <div style="background:#f8faf8;border-radius:10px;padding:14px 16px;margin-bottom:24px">
           <div style="font-size:12px;font-weight:700;color:#4a7c59;margin-bottom:10px">O que será sincronizado <span style="font-size:10px;background:#eee;color:#888;padding:1px 6px;border-radius:6px;font-weight:600">em breve</span></div>
           <div style="display:flex;flex-direction:column;gap:7px">
-            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Sessões criadas no TheraFlow → aparecerão na sua agenda</span></div>
-            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Bloqueios pessoais → respeitados no TheraFlow</span></div>
+            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Sessões criadas no Teravia → aparecerão na sua agenda</span></div>
+            <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Bloqueios pessoais → respeitados no Teravia</span></div>
             <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Convite automático ao paciente com link da sala</span></div>
             <div style="font-size:12px;color:#555;display:flex;gap:8px"><span>◦</span><span>Lembretes 24h e 1h antes por email</span></div>
             <div style="font-size:12px;color:#aaa;display:flex;gap:8px"><span>❌</span><span>Conteúdo clínico nunca é enviado à agenda</span></div>
@@ -560,7 +560,7 @@ function exportarListaPacientesCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const hoje = hojeISO();
-  a.href = url; a.download = 'theraflow-pacientes-' + hoje + '.csv';
+  a.href = url; a.download = 'teravia-pacientes-' + hoje + '.csv';
   a.click(); URL.revokeObjectURL(url);
   showToast('📊 Lista exportada com sucesso!');
 }
@@ -636,7 +636,7 @@ function exportarExtratoPaciente(idx) {
       +'<div class="resumo-item"><div class="resumo-val">'+fmtMoeda(totalGeral)+'</div><div class="resumo-label">Total geral</div></div>'
     +'</div>'
     +tabelasHtml
-    +'<div class="footer">Extrato gerado em '+hoje+' via TheraFlow · Uso exclusivo do profissional · LGPD</div>'
+    +'<div class="footer">Extrato gerado em '+hoje+' via Teravia · Uso exclusivo do profissional · LGPD</div>'
     +'</body></html>';
 
   var win = window.open('', '_blank');
@@ -696,7 +696,7 @@ function exportarRelatorioEvolucao() {
         return '<tr><td>'+dataBR+'</td><td>'+(a.time||'—')+'</td><td style="color:'+cor+';font-weight:600">'+status+'</td></tr>';
       }).join('')
     + '</table>'
-    + '<div class="footer">Documento gerado em ' + hoje + ' via TheraFlow · Uso exclusivo do profissional · LGPD</div>'
+    + '<div class="footer">Documento gerado em ' + hoje + ' via Teravia · Uso exclusivo do profissional · LGPD</div>'
     + '</body></html>';
 
   var win = window.open('', '_blank');
@@ -791,7 +791,7 @@ function exportarProntuario() {
       '</div>' +
       '<div class="lh-right">' +
         'Documento gerado em<br/><strong>' + hojeLong + '</strong><br/>' +
-        'TheraFlow · Uso exclusivamente clínico' +
+        'Teravia · Uso exclusivamente clínico' +
       '</div>' +
     '</div>' +
 
@@ -881,7 +881,7 @@ function exportarProntuario() {
     // Número do prontuário
     '<div style="background:#f0f5f1;border-radius:8px;padding:10px 14px;margin-bottom:24px;font-size:11px;color:#4a7c59;font-weight:600;letter-spacing:.5px">' +
       'Nº PRN-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*90000)+10000) +
-      '<span style="font-weight:400;color:#8a9490;margin-left:12px">Gerado em ' + hoje + ' via TheraFlow</span>' +
+      '<span style="font-weight:400;color:#8a9490;margin-left:12px">Gerado em ' + hoje + ' via Teravia</span>' +
     '</div>' +
 
     // Área de assinatura
@@ -890,7 +890,7 @@ function exportarProntuario() {
       '<div class="sign-box"><div class="sign-line"></div><div class="sign-label">Data e local</div></div>' +
     '</div>' +
 
-    '<div class="footer"><span>TheraFlow — Plataforma clínica para psicólogos</span><span>Documento confidencial · Sigilo profissional CFP · LGPD Art. 11</span></div>' +
+    '<div class="footer"><span>Teravia — Plataforma clínica para psicólogos</span><span>Documento confidencial · Sigilo profissional CFP · LGPD Art. 11</span></div>' +
     '</div></body></html>';
 
   const win = window.open('', '_blank');
@@ -1546,7 +1546,7 @@ function exportarReflexoes() {
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   var mes = String(new Date().getMonth()+1).padStart(2,'0');
-  a.href = url; a.download = 'reflexoes-theraflow-' + new Date().getFullYear() + '-' + mes + '.txt';
+  a.href = url; a.download = 'reflexoes-teravia-' + new Date().getFullYear() + '-' + mes + '.txt';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
   showToast('Reflexões exportadas com sucesso.');

@@ -1,5 +1,5 @@
 -- ============================================================
--- THERAFLOW — SCHEMA SUPABASE
+-- TERAVIA — SCHEMA SUPABASE
 -- Versão 1.0 | Abril 2026
 -- Rodar no SQL Editor do Supabase (dashboard → SQL Editor)
 -- ============================================================
@@ -492,7 +492,7 @@ create table public.consent_logs (
   user_id       uuid references public.users(id) on delete cascade,
   patient_id    uuid references public.patients(id) on delete cascade, -- null = terapeuta aceitando termos da plataforma
   tipo          text not null,
-  -- 'termos_plataforma'  → terapeuta aceitando termos de uso da TheraFlow
+  -- 'termos_plataforma'  → terapeuta aceitando termos de uso da Teravia
   -- 'gravacao_sessao'    → consentimento do paciente para gravação (CFP 04/2020)
   -- 'uso_ia'            → consentimento do paciente para uso de IA nos dados
   -- 'portal_paciente'   → paciente aceitando termos do portal

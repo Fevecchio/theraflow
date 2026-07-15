@@ -1,5 +1,5 @@
 /**
- * TheraFlow — Serverless Function: Proxy da Anthropic Claude API
+ * Teravia — Serverless Function: Proxy da Anthropic Claude API
  * Deploy: Vercel → /api/briefing  (Node.js runtime)
  *
  * A chave ANTHROPIC_API_KEY fica apenas no servidor (variável de ambiente).
@@ -8,9 +8,9 @@
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];

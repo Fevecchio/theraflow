@@ -18,9 +18,9 @@ async function verifySupabaseJWT(req) {
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];

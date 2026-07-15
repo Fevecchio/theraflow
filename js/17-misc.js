@@ -1,17 +1,17 @@
 // 17-misc.js — Marcos, tour, SHA-256, trial, termos legais, nota rápida, perfil, referral
 
 var _MARCOS = [
-  { key: 'first_patient',   check: function(){ return patients.length >= 1; },          msg: '🎉 Primeiro paciente cadastrado! O TheraFlow começa a tomar forma.', cor: '#4a7c59' },
+  { key: 'first_patient',   check: function(){ return patients.length >= 1; },          msg: '🎉 Primeiro paciente cadastrado! O Teravia começa a tomar forma.', cor: '#4a7c59' },
   { key: 'five_patients',   check: function(){ return patients.length >= 5; },          msg: '🌱 5 pacientes! Sua carteira está crescendo.', cor: '#4a7c59' },
   { key: 'ten_sessions',    check: function(){ return getTrialCount() >= 10; },         msg: '🔥 10 sessões realizadas! Você está construindo algo real.', cor: '#3b6ea5' },
-  { key: 'first_briefing',  check: function(){ return !!localStorage.getItem('tf_last_briefing'); }, msg: '✦ Primeiro Briefing IA gerado! A calibração por abordagem é o coração do TheraFlow.', cor: '#6d28d9' },
+  { key: 'first_briefing',  check: function(){ return !!localStorage.getItem('tf_last_briefing'); }, msg: '✦ Primeiro Briefing IA gerado! A calibração por abordagem é o coração do Teravia.', cor: '#6d28d9' },
   { key: 'first_export',    check: function(){ return !!localStorage.getItem('tf_first_export'); },  msg: '📄 Primeiro prontuário exportado! Documentação clínica profissional.', cor: '#b45309' },
 ];
 
 /* ── TOUR DE ONBOARDING ── */
 var _tourStep = 0;
 var _TOUR_STEPS = [
-  { icon: '🌿', titulo: 'Bem-vindo ao TheraFlow!', desc: 'A plataforma de gestão clínica calibrada pela sua abordagem terapêutica. Vamos mostrar os principais recursos em 5 passos.' },
+  { icon: '🌿', titulo: 'Bem-vindo ao Teravia!', desc: 'A plataforma de gestão clínica calibrada pela sua abordagem terapêutica. Vamos mostrar os principais recursos em 5 passos.' },
   { icon: '🧑‍⚕️', titulo: 'Cadastre seus pacientes', desc: 'Em <strong>Pacientes</strong> você cadastra fichas completas — queixa principal, histórico, CID, abordagem individual e muito mais.' },
   { icon: '🗓', titulo: 'Organize sua agenda', desc: 'Em <strong>Agenda</strong> você agenda sessões, visualiza a semana e o mês, e bloqueia períodos de folga ou férias.' },
   { icon: '✦', titulo: 'Briefing IA antes de cada sessão', desc: 'O <strong>Briefing IA</strong> analisa o histórico do paciente e gera perguntas e hipóteses calibradas pela sua abordagem — em segundos.' },
@@ -229,7 +229,7 @@ function showSessionLink() {
 
   const _slSlug = _slNome.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   const hoje = new Date();
-  const legacy = `theraflow.app/s/${_slSlug}-${hoje.getDate()}${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][hoje.getMonth()]}`;
+  const legacy = `teravia.com.br/s/${_slSlug}-${hoje.getDate()}${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][hoje.getMonth()]}`;
   _renderSessionLinkModal(legacy, _slNome, false);
 }
 
@@ -287,7 +287,7 @@ function copySessionLink(link, btn) {
 function sendLinkWhatsApp(link) {
   const _wsp = _tfSessionPatient();
   const _wsNome = _wsp ? _firstName(_wsp.name) : 'paciente';
-  const fullLink = link ? (link.startsWith('http') ? link : 'https://' + link) : 'https://theraflow.app/s/sessao';
+  const fullLink = link ? (link.startsWith('http') ? link : 'https://' + link) : 'https://teravia.com.br/s/sessao';
   _salvarLinkNoPortal(fullLink);
   const msg = `Olá ${_wsNome}! Nossa sessão de hoje já está com a sala aberta:\n${fullLink}\n\nVocê também encontra esse acesso no seu portal. Até já! 💚\n— ${_wppNomeTerapeuta()}`;
   window.open(_wppLink(_wsp?.whatsapp, msg), '_blank');
@@ -603,7 +603,7 @@ function selectPerfilAbordagem(el, key) {
 
 function exportarBackupLGPD() {
   try {
-    var dados = { _meta: { gerado_em: new Date().toISOString(), versao: '1.0', app: 'TheraFlow' } };
+    var dados = { _meta: { gerado_em: new Date().toISOString(), versao: '1.0', app: 'Teravia' } };
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
       if (!k || !k.startsWith('tf_')) continue;
@@ -615,7 +615,7 @@ function exportarBackupLGPD() {
     var url  = URL.createObjectURL(blob);
     var a    = document.createElement('a');
     var dt   = new Date().toISOString().slice(0,10);
-    a.href = url; a.download = 'theraflow-backup-' + dt + '.json';
+    a.href = url; a.download = 'teravia-backup-' + dt + '.json';
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
     showToast('⬇ Backup exportado com sucesso.');

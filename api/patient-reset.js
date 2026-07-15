@@ -1,5 +1,5 @@
 /**
- * TheraFlow — Serverless Function: Redefinição de senha do paciente
+ * Teravia — Serverless Function: Redefinição de senha do paciente
  * Deploy: Vercel → /api/patient-reset  (Node.js runtime)
  *
  * Consolida os antigos /api/request-patient-reset e /api/confirm-patient-reset
@@ -29,9 +29,9 @@ const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supab
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];
@@ -100,7 +100,7 @@ function tmplReset({ pacienteNome, resetUrl }) {
 <body style="margin:0;padding:0;background:#f5f3ee;font-family:'DM Sans',Arial,sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <div style="background:#4a7c59;padding:28px 32px">
-      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">🌿 TheraFlow</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">🌿 Teravia</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px">Redefinição de senha</div>
     </div>
     <div style="padding:32px">
@@ -116,7 +116,7 @@ function tmplReset({ pacienteNome, resetUrl }) {
 
       <p style="font-size:12px;color:#aaa;margin-top:24px;border-top:1px solid #f0f0f0;padding-top:16px">
         Se você não pediu isso, pode ignorar este email — sua senha continua a mesma.<br>
-        <em>Este email foi gerado automaticamente pelo TheraFlow.</em>
+        <em>Este email foi gerado automaticamente pelo Teravia.</em>
       </p>
     </div>
   </div>
@@ -202,11 +202,11 @@ async function handleRequest(req, res, origin) {
     const pacienteNome = (pacientes[0].name || '').split(' ')[0] || '';
 
     const resend = new Resend(RESEND_KEY);
-    const fromAddr = process.env.RESEND_FROM || 'TheraFlow <onboarding@resend.dev>';
+    const fromAddr = process.env.RESEND_FROM || 'Teravia <onboarding@resend.dev>';
     const result = await resend.emails.send({
       from: fromAddr,
       to: email,
-      subject: 'Redefinir a senha do seu portal TheraFlow',
+      subject: 'Redefinir a senha do seu portal Teravia',
       html: tmplReset({ pacienteNome, resetUrl }),
     });
     if (result.error) {

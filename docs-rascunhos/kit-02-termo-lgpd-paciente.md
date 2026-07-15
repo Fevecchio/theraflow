@@ -1,4 +1,4 @@
-# Termo LGPD do Paciente — Modelo Completo (Kit Consultório em Dia · TheraFlow)
+# Termo LGPD do Paciente — Modelo Completo (Kit Consultório em Dia · Teravia)
 
 > **Versão 2 — 12/07/2026.** Estruturado como TERMO DE INFORMAÇÃO (dever de
 > transparência, art. 9º da LGPD) + CONSENTIMENTOS ESPECÍFICOS destacáveis — o
@@ -120,7 +120,7 @@ Assinatura do(a) psicólogo(a) — controlador: ____________________
 de atualização do termo, colha novo aceite e arquive ambos.*
 
 ---
-*Modelo educativo do Kit Consultório em Dia · TheraFlow, elaborado com base na LGPD
+*Modelo educativo do Kit Consultório em Dia · Teravia, elaborado com base na LGPD
 (arts. 7º, 9º, 11, 14, 16, 18 e 48), Res. CFP nº 1/2009, nº 13/2022 e nº 9/2024, e no
 regime facilitado da Res. CD/ANPD nº 2/2022 para agentes de pequeno porte (consultório
 individual: dispensado de nomear encarregado/DPO e autorizado ao registro simplificado

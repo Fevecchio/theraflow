@@ -1,4 +1,4 @@
-# Política de Privacidade — TheraFlow
+# Política de Privacidade — Teravia
 
 **Versão 1.0 | Abril de 2026**
 
@@ -8,10 +8,10 @@
 
 ## 1. Quem somos
 
-A **[RAZÃO SOCIAL]**, inscrita no CNPJ **[CNPJ]** ("TheraFlow", "nós"), é a controladora e operadora dos dados pessoais tratados nesta Política, conforme os papéis definidos pela Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018).
+A **[RAZÃO SOCIAL]**, inscrita no CNPJ **[CNPJ]** ("Teravia", "nós"), é a controladora e operadora dos dados pessoais tratados nesta Política, conforme os papéis definidos pela Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018).
 
 **Encarregado de Dados (DPO):** [NOME DO DPO]
-**Contato do DPO:** privacidade@theraflow.app
+**Contato do DPO:** privacidade@teravia.com.br
 
 ---
 
@@ -50,7 +50,7 @@ Os dados clínicos dos pacientes são **dados sensíveis** nos termos do Art. 11
 | Diário e check-ins de humor | Acompanhamento entre sessões | Consentimento explícito — Art. 11, I |
 | Gravações de sessão (futuro) | Transcrição e supervisão clínica | Consentimento explícito — Art. 11, I |
 
-> **Importante:** O Terapeuta é responsável por obter o consentimento informado do paciente antes de inserir seus dados na Plataforma. A TheraFlow disponibiliza modelo de Termo de Consentimento no item 10 desta Política.
+> **Importante:** O Terapeuta é responsável por obter o consentimento informado do paciente antes de inserir seus dados na Plataforma. A Teravia disponibiliza modelo de Termo de Consentimento no item 10 desta Política.
 
 ### 3.3 Dados coletados automaticamente
 
@@ -71,7 +71,7 @@ d) Cumprir obrigações legais e regulatórias;
 e) Proteger a segurança da Plataforma e de seus usuários;
 f) Melhorar a Plataforma — sempre com dados anonimizados ou agregados, **nunca** com dados clínicos identificados.
 
-**A TheraFlow não vende, aluga ou compartilha dados pessoais com terceiros para fins comerciais.**
+**A Teravia não vende, aluga ou compartilha dados pessoais com terceiros para fins comerciais.**
 
 ---
 
@@ -81,7 +81,7 @@ f) Melhorar a Plataforma — sempre com dados anonimizados ou agregados, **nunca
 
 5.2. Esses dados são enviados à API da Anthropic (Claude) exclusivamente para processamento da requisição. A Anthropic não utiliza dados enviados via API para treinar seus modelos, conforme sua política de privacidade.
 
-5.3. A TheraFlow não armazena os prompts ou respostas da IA de forma associada a pacientes identificados além do necessário para o funcionamento do serviço.
+5.3. A Teravia não armazena os prompts ou respostas da IA de forma associada a pacientes identificados além do necessário para o funcionamento do serviço.
 
 5.4. O Terapeuta é responsável por avaliar criticamente qualquer análise gerada pela IA antes de utilizá-la clinicamente.
 
@@ -141,17 +141,17 @@ Conforme o Art. 18 da LGPD, você tem direito a:
 
 | Direito | Como exercer |
 |---|---|
-| **Acesso** — saber quais dados temos sobre você | E-mail para privacidade@theraflow.app |
+| **Acesso** — saber quais dados temos sobre você | E-mail para privacidade@teravia.com.br |
 | **Correção** — corrigir dados incompletos ou incorretos | Diretamente na Plataforma ou por e-mail |
-| **Exclusão** — solicitar a exclusão dos seus dados | E-mail para privacidade@theraflow.app |
-| **Portabilidade** — receber seus dados em formato estruturado | E-mail para privacidade@theraflow.app |
-| **Revogação do consentimento** — quando a base for consentimento | E-mail para privacidade@theraflow.app |
-| **Oposição** — opor-se ao tratamento em determinadas situações | E-mail para privacidade@theraflow.app |
+| **Exclusão** — solicitar a exclusão dos seus dados | E-mail para privacidade@teravia.com.br |
+| **Portabilidade** — receber seus dados em formato estruturado | E-mail para privacidade@teravia.com.br |
+| **Revogação do consentimento** — quando a base for consentimento | E-mail para privacidade@teravia.com.br |
+| **Oposição** — opor-se ao tratamento em determinadas situações | E-mail para privacidade@teravia.com.br |
 | **Informação** — saber com quem compartilhamos seus dados | Esta Política de Privacidade |
 
 Atendemos solicitações em até **15 dias úteis**.
 
-**Pacientes:** os direitos do paciente sobre seus dados clínicos devem ser exercidos junto ao Terapeuta responsável, que atua como controlador dos dados clínicos. A TheraFlow auxilia o Terapeuta no atendimento dessas solicitações.
+**Pacientes:** os direitos do paciente sobre seus dados clínicos devem ser exercidos junto ao Terapeuta responsável, que atua como controlador dos dados clínicos. A Teravia auxilia o Terapeuta no atendimento dessas solicitações.
 
 ---
 
@@ -161,7 +161,7 @@ O Terapeuta deve obter consentimento explícito do paciente antes de inserir seu
 
 ---
 
-*"Eu, [NOME DO PACIENTE], autorizo que meu(minha) terapeuta [NOME DO TERAPEUTA] registre e armazene dados relacionados ao meu acompanhamento terapêutico na plataforma TheraFlow, incluindo dados pessoais, histórico de sessões, notas clínicas e registros do portal do paciente.*
+*"Eu, [NOME DO PACIENTE], autorizo que meu(minha) terapeuta [NOME DO TERAPEUTA] registre e armazene dados relacionados ao meu acompanhamento terapêutico na plataforma Teravia, incluindo dados pessoais, histórico de sessões, notas clínicas e registros do portal do paciente.*
 
 *Compreendo que:*
 - *Meus dados são tratados de acordo com a Lei Geral de Proteção de Dados (LGPD);*
@@ -201,7 +201,7 @@ Alterações substanciais serão comunicadas por e-mail com **15 dias de anteced
 
 Para exercer seus direitos ou tirar dúvidas sobre privacidade:
 
-**E-mail:** privacidade@theraflow.app
+**E-mail:** privacidade@teravia.com.br
 **DPO:** [NOME DO DPO]
 **Endereço:** [ENDEREÇO COMPLETO]
 

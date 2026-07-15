@@ -85,7 +85,7 @@ function abrirReferral() {
   var refLink = refId ? ('https://theraflow-one.vercel.app/app?ref=' + refId) : 'https://theraflow-one.vercel.app/app';
   var refCount = acc.referral_count || 0;
   var refRewarded = acc.referral_rewarded || false;
-  var msg = 'Olá! Estou usando o TheraFlow para gestão do meu consultório — agenda, prontuários e IA calibrada pela minha abordagem. É muito bom! Você pode testar com 20 sessões gratuitas: ' + refLink;
+  var msg = 'Olá! Estou usando o Teravia para gestão do meu consultório — agenda, prontuários e IA calibrada pela minha abordagem. É muito bom! Você pode testar com 20 sessões gratuitas: ' + refLink;
   var overlay = document.createElement('div');
   overlay.id = 'modal-referral';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
@@ -150,7 +150,7 @@ function compartilharWhatsApp() {
 
 function compartilharEmail() {
   var msg = document.getElementById('referral-msg-text')?.textContent || '';
-  window.location.href = 'mailto:?subject=TheraFlow — Gestão clínica para psicólogos&body=' + encodeURIComponent(msg);
+  window.location.href = 'mailto:?subject=Teravia — Gestão clínica para psicólogos&body=' + encodeURIComponent(msg);
   tfTrack('referral_shared', { channel: 'email' });
 }
 

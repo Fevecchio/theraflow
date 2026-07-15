@@ -1,5 +1,5 @@
 /**
- * TheraFlow — Serverless: gera a nota clínica SOAP a partir da transcrição (Claude).
+ * Teravia — Serverless: gera a nota clínica SOAP a partir da transcrição (Claude).
  * Deploy: Vercel → /api/session-note (Node.js runtime)
  *
  * Reaproveita o PADRÃO do api/briefing.js (não o endpoint — este tem cap de tamanho maior,
@@ -30,9 +30,9 @@ function rateLimit(key, max, windowMs) {
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];

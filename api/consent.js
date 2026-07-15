@@ -1,5 +1,5 @@
 /**
- * TheraFlow — Serverless Function: Registro de consentimento (LGPD)
+ * Teravia — Serverless Function: Registro de consentimento (LGPD)
  * Deploy: Vercel → /api/consent  (Node.js runtime)
  *
  * Grava em public.consent_logs o aceite de termos do terapeuta e do paciente.
@@ -8,7 +8,7 @@
  * logado via RPC, sem sessão Supabase Auth).
  *
  * Tipos aceitos (coluna consent_logs.tipo):
- *   'termos_plataforma' → terapeuta aceita os termos da TheraFlow (exige JWT)
+ *   'termos_plataforma' → terapeuta aceita os termos da Teravia (exige JWT)
  *   'portal_paciente'   → paciente aceita os termos do portal (exige patientId)
  *   'gravacao_sessao'   → consentimento de gravação (CFP 04/2020)
  *   'uso_ia'            → consentimento para uso de IA nos dados
@@ -25,9 +25,9 @@ const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supab
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];

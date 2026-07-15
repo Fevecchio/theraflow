@@ -81,7 +81,7 @@ pedido vira prioridade do roadmap, é isso que fundador significa aqui. Fechado?
 
 ### 24–28 · O plano das 2 semanas (a cunha)
 - Combinar POR ESCRITO no chat da chamada: **"toda sessão on-line das próximas 2
-  semanas passa pelo TheraFlow"**. Reforçar a cunha: *"não precisa migrar agenda nem
+  semanas passa pelo Teravia"**. Reforçar a cunha: *"não precisa migrar agenda nem
   histórico — só a nota de IA já paga o teste; o resto vem no seu ritmo."*
 - Tour de 60 segundos SEM demonstrar (só apontar): Briefing pré-sessão, recibos em
   lote, declaração de convênio/IR, portal do paciente. *"Isso a gente destrava quando
@@ -112,7 +112,7 @@ pedido vira prioridade do roadmap, é isso que fundador significa aqui. Fechado?
 
 Mensagem pronta:
 > [Nome], foi ótimo! Recapitulando o combinado: sessões on-line das próximas 2 semanas
-> pelo TheraFlow, e nosso retorno dia [D+14, hora]. Seguem: (1) passo a passo da
+> pelo Teravia, e nosso retorno dia [D+14, hora]. Seguem: (1) passo a passo da
 > verificação em duas etapas [link/print], (2) página de Segurança & Ética para
 > mostrar a pacientes que perguntarem: [/seguranca], (3) o Kit Consultório em Dia
 > (contrato + termo LGPD + guia CFP) de presente. Qualquer coisa estranha, manda áudio

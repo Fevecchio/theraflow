@@ -254,8 +254,8 @@ function _verificarTermosPortal(patientId, callback) {
   modal.innerHTML = '<div style="background:var(--white);border-radius:16px;max-width:480px;width:100%;padding:28px 24px;box-shadow:0 8px 40px rgba(0,0,0,.2)">'
     + '<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Termos de uso e privacidade</div>'
     + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.7;margin-bottom:18px;max-height:200px;overflow-y:auto;padding-right:4px">'
-    + '<b>TheraFlow — Portal do Paciente</b><br><br>'
-    + 'Ao acessar este portal, você concorda com o uso dos seus dados clínicos (registros de humor, diário, tarefas e exercícios) pelo sistema TheraFlow para fins terapêuticos, em conformidade com a <b>LGPD (Lei 13.709/2018)</b>.<br><br>'
+    + '<b>Teravia — Portal do Paciente</b><br><br>'
+    + 'Ao acessar este portal, você concorda com o uso dos seus dados clínicos (registros de humor, diário, tarefas e exercícios) pelo sistema Teravia para fins terapêuticos, em conformidade com a <b>LGPD (Lei 13.709/2018)</b>.<br><br>'
     + 'Seus dados são armazenados com segurança e acessados apenas por você e seu terapeuta. Você pode solicitar a exclusão dos seus dados a qualquer momento diretamente com seu terapeuta.<br><br>'
     + 'O uso do portal implica concordância com estes termos.'
     + '</div>'
@@ -611,7 +611,7 @@ function pacEnviarSolicitacaoSessao(nomePaciente) {
     showToast('Ainda não é possível enviar — seu terapeuta precisa cadastrar o WhatsApp dele.');
     return;
   }
-  var texto = 'Olá! Sou ' + nomePaciente + ', sua paciente pelo TheraFlow. 🌿\n\n'
+  var texto = 'Olá! Sou ' + nomePaciente + ', sua paciente pelo Teravia. 🌿\n\n'
     + 'Gostaria de solicitar o agendamento de uma nova sessão.'
     + (msg ? '\n\n' + msg : '') + '\n\nObrigado(a)!';
   window.open(_wppLink(wppTerapeuta, texto), '_blank');
@@ -900,7 +900,7 @@ function _agendarNotificacaoPac(hora) {
   _notifTimeoutId = setTimeout(function(){
     _notifTimeoutId = null;
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      new Notification('TheraFlow 🌿', { body:'Como você está se sentindo hoje? Registre seu humor!', tag:'tf-mood-reminder' });
+      new Notification('Teravia 🌿', { body:'Como você está se sentindo hoje? Registre seu humor!', tag:'tf-mood-reminder' });
     }
     _agendarNotificacaoPac(hora);
   }, alvo - agora);

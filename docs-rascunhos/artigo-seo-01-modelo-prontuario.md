@@ -54,7 +54,7 @@ Repare: qualquer colega que lesse essa nota entenderia o caso e a direção do t
 
 ## Como sair de 15 para 2 minutos por evolução
 
-Aqui está a parte que mudou minha rotina. No TheraFlow, com o consentimento do paciente, a sessão é transcrita e a plataforma **gera um rascunho de evolução já estruturado** — você lê, ajusta o que quiser e assina. [PRINT: tela da nota gerada]
+Aqui está a parte que mudou minha rotina. No Teravia, com o consentimento do paciente, a sessão é transcrita e a plataforma **gera um rascunho de evolução já estruturado** — você lê, ajusta o que quiser e assina. [PRINT: tela da nota gerada]
 
 Importante ser honesto sobre o que isso é e o que não é: **o registro continua sendo seu ato profissional.** A ferramenta elimina a digitação e a página em branco, não o seu raciocínio clínico — você revisa cada nota antes de ela virar prontuário. O tempo economizado não sai da qualidade; sai do trabalho mecânico.
 

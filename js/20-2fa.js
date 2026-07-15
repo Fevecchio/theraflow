@@ -161,7 +161,7 @@ async function ativar2FA() {
     for (const f of stale) { await supa.auth.mfa.unenroll({ factorId: f.id }).catch(function () {}); }
   } catch (e) {}
   try {
-    const { data, error } = await supa.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'TheraFlow' });
+    const { data, error } = await supa.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Teravia' });
     if (error) { showToast('⚠ ' + (error.message || 'Não foi possível iniciar o 2FA.')); return; }
     _tfaEnrollFactorId = data.id;
     // qr_code é um data URI (data:image/svg+xml;utf-8,<svg…>) — como innerHTML
@@ -315,7 +315,7 @@ function _tfaCopyBackupCodes(btn) {
   const area = document.getElementById('tfa-backup-area');
   const txt = (area && area.dataset.codes) || '';
   if (!txt) return;
-  navigator.clipboard.writeText('Códigos de backup TheraFlow (uso único):\n' + txt).then(function () {
+  navigator.clipboard.writeText('Códigos de backup Teravia (uso único):\n' + txt).then(function () {
     if (btn) { btn.textContent = '✓ Copiado'; setTimeout(function () { btn.textContent = '📋 Copiar códigos'; }, 2000); }
   }).catch(function () { showToast('⚠ Não foi possível copiar. Anote manualmente.'); });
 }

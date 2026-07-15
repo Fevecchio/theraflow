@@ -1,8 +1,23 @@
-# TheraFlow — Manual do Projeto (para Claude e futuros desenvolvedores)
+# Teravia — Manual do Projeto (para Claude e futuros desenvolvedores)
 
 > Escrito em 11-12/07/2026 pelo Claude Fable 5 como seguro de continuidade.
 > **Leia inteiro antes de editar qualquer coisa.** As regras daqui existem porque
 > algo quebrou de verdade quando elas não existiam.
+
+## ⚠️ RENAME TheraFlow → Teravia (14/07/2026)
+
+O produto chamava **TheraFlow** até 14/07/2026 (nome novo: **Teravia**, domínio
+teravia.com.br registrado no CPF do fundador). O rename cobriu marca, e-mails,
+manifests, docs e o arquivo principal (`theraflow-unified-v3.html` → **`app.html`**,
+com redirect permanente no vercel.json). **Ficaram COM o nome antigo DE PROPÓSITO
+— NÃO "corrigir":**
+- `theraflow-one.vercel.app` — é a URL REAL do projeto na Vercel (CORS, APP_URL
+  fallback, links de e-mail). Só muda quando o domínio teravia.com.br for
+  apontado e o APP_URL env atualizado.
+- `tfHashSenha('trial:' + n + ':theraflow')` em js/17 — SALT do contador de
+  trial; trocar invalida/reseta o trial de todo mundo.
+- Nome da pasta local `TheraFlow/`, repo GitHub e projeto Vercel — renomear
+  quebra integração/URLs; decisão do fundador, sem pressa.
 
 ## O que é
 
@@ -14,7 +29,7 @@ fundadores (plano fundador, preço travado).
 
 ## Arquitetura em 60 segundos
 
-- **Frontend**: HTML estático + JS vanilla, SEM build. `theraflow-unified-v3.html`
+- **Frontend**: HTML estático + JS vanilla, SEM build. `app.html`
   (app do terapeuta) carrega `js/00-*.js` … `js/21-*.js` via `<script defer>` (ordem
   importa). `paciente.html` = portal standalone da paciente (carrega SUBCONJUNTO:
   00,01,02,03,04,06,13 — função nova usada no portal precisa estar num desses).
@@ -110,7 +125,7 @@ O sync é merge-aware e cheio de proteções conquistadas a ferro:
 2. Editar → `node --check js/arquivo.js` em TODO js tocado.
 3. Smoke local: `npx http-server -p 81XX -s -c-1` (porta NOVA a cada rodada — o
    browser cacheia js 1h e você testa código velho sem perceber!) → Playwright em
-   `http://localhost:81XX/theraflow-unified-v3.html?demo=1` (demo entra sem login;
+   `http://localhost:81XX/app.html?demo=1` (demo entra sem login;
    em demo nada sobe ao servidor).
 4. Commit descritivo em pt (sem acento nos títulos por segurança de encoding) →
    push → aguardar ~45s → `vercel ls` deve mostrar Ready → smoke em produção
@@ -164,6 +179,6 @@ O sync é merge-aware e cheio de proteções conquistadas a ferro:
 ## Onde está a verdade sobre o estado do projeto
 
 Na **memória persistente do Claude** (`~/.claude/.../memory/`): bloco RETOMAR em
-`project_theraflow_pendencias.md` (começar SEMPRE por ele), auditoria de
+`project_teravia_pendencias.md` (começar SEMPRE por ele), auditoria de
 confiança, funcionalidades desligadas, GTM. Este arquivo documenta o que NÃO
 muda; a memória documenta o que muda toda sessão.

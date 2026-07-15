@@ -67,7 +67,7 @@ Gravar sessão para apoiar a documentação é legítimo — **desde que o desen
 2. **O áudio não vira arquivo.** O desenho mais seguro é o som ser processado para gerar a transcrição e **não ficar armazenado** — o que se guarda é o registro clínico que você revisou, não a voz do paciente.
 3. **A transcrição é registro clínico**: entra no prontuário, sob o mesmo sigilo, mesmo controle de acesso e mesmo prazo de guarda de qualquer evolução.
 
-Transparência: é assim que o TheraFlow funciona — o consentimento fica registrado com data e hora, o áudio é processado e descartado (não existe botão "ouvir de novo": o áudio não está lá), e a nota gerada só vira prontuário depois que **você** revisa e assina. Os detalhes técnicos e as promessas verificáveis estão na nossa página de Segurança & Ética [LINK: /seguranca].
+Transparência: é assim que o Teravia funciona — o consentimento fica registrado com data e hora, o áudio é processado e descartado (não existe botão "ouvir de novo": o áudio não está lá), e a nota gerada só vira prontuário depois que **você** revisa e assina. Os detalhes técnicos e as promessas verificáveis estão na nossa página de Segurança & Ética [LINK: /seguranca].
 
 **Decisão 4:** se gravar, que seja com consentimento específico, áudio não armazenado e transcrição tratada como prontuário.
 

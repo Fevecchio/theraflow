@@ -1,5 +1,5 @@
 /**
- * TheraFlow — Serverless Function: Códigos de backup do 2FA (T-A8)
+ * Teravia — Serverless Function: Códigos de backup do 2FA (T-A8)
  * Deploy: Vercel → /api/2fa-recovery  (Node.js runtime)
  *
  * Recuperação de conta quando o terapeuta perde o app autenticador. Ações:
@@ -29,9 +29,9 @@ const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supab
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];

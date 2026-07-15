@@ -1,4 +1,4 @@
-# Guia CFP: Registros, Documentos e Atendimento On-line — ATUALIZADO (Kit Consultório em Dia · TheraFlow)
+# Guia CFP: Registros, Documentos e Atendimento On-line — ATUALIZADO (Kit Consultório em Dia · Teravia)
 
 > **Versão 2 — 12/07/2026, com as normas vigentes conferidas** (inclusive a mudança
 > de 2024 no atendimento on-line, que muita gente ainda não sabe). Conteúdo educativo;
@@ -98,7 +98,7 @@ registre na evolução que ele foi emitido e entregue.
 - [ ] Alguma revogação de consentimento recebida? (registrar e ajustar a prática)
 
 ---
-*Guia educativo do Kit Consultório em Dia · TheraFlow — normas conferidas em
+*Guia educativo do Kit Consultório em Dia · Teravia — normas conferidas em
 julho/2026. A plataforma gera a evolução estruturada de cada sessão para você revisar
 e assinar, registra o consentimento de gravação com data e hora, e mantém a trilha dos
 seus registros. Consulte as resoluções na íntegra (site.cfp.org.br) e seu CRP

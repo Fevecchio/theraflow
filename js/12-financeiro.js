@@ -241,7 +241,7 @@ function renderFinRecibos() {
   if (prev && pagos.length) {
     var c0 = pagos[0];
     var t = _reciboTerapeuta();
-    prev.innerHTML = '<div class="fin-receipt-header">TheraFlow — Recibo de Pagamento</div>'
+    prev.innerHTML = '<div class="fin-receipt-header">Teravia — Recibo de Pagamento</div>'
       + '<div class="fin-receipt-row"><span class="fin-receipt-row-label">Profissional</span><span class="fin-receipt-row-value">' + escHTML((t && t.nome) || '—') + (t && t.crp ? ' · CRP ' + escHTML(t.crp) : '') + '</span></div>'
       + '<div class="fin-receipt-divider"></div>'
       + '<div class="fin-receipt-row"><span class="fin-receipt-row-label">Paciente</span><span class="fin-receipt-row-value">' + escHTML(c0.patient || '—') + '</span></div>'
@@ -708,8 +708,8 @@ function exportarRelatorioAnual() {
   + '<table><thead><tr><th>Mês</th><th style="text-align:right">Sessões</th><th style="text-align:right">Receita</th></tr></thead>'
   + '<tbody>'+resumoHtml+'<tr class="total-row"><td>Total '+anoAtual+'</td><td style="text-align:right">'+rows.length+' sessões</td><td style="text-align:right">'+fmt(total)+'</td></tr></tbody>'
   + '</table>'
-  + '<div class="disclaimer">⚠ <strong>Aviso:</strong> Este relatório é gerado automaticamente a partir dos registros do TheraFlow. Para fins de declaração de Imposto de Renda, consulte seu contador. Mantenha todos os recibos e comprovantes originais.</div>'
-  + '<div class="footer">TheraFlow · Relatório gerado em '+new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})+' · Documento auxiliar — não tem valor fiscal</div>'
+  + '<div class="disclaimer">⚠ <strong>Aviso:</strong> Este relatório é gerado automaticamente a partir dos registros do Teravia. Para fins de declaração de Imposto de Renda, consulte seu contador. Mantenha todos os recibos e comprovantes originais.</div>'
+  + '<div class="footer">Teravia · Relatório gerado em '+new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})+' · Documento auxiliar — não tem valor fiscal</div>'
   + '</body></html>';
 
   var win = window.open('', '_blank');
@@ -1157,7 +1157,7 @@ function exportarFinanceiro() {
   const a = document.createElement('a');
   a.href = url;
   const hoje = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
-  a.download = `theraflow-financeiro-${hoje}.csv`;
+  a.download = `teravia-financeiro-${hoje}.csv`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
@@ -1230,7 +1230,7 @@ td{padding:8px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
 @media print{body{padding:20px 28px}.stats{break-inside:avoid}h2{break-before:auto}}
 </style></head><body>
 <div class="header">
-  <div><div class="logo">TheraFlow</div><div style="font-size:13px;color:#666;margin-top:4px">Relatório Financeiro Mensal</div></div>
+  <div><div class="logo">Teravia</div><div style="font-size:13px;color:#666;margin-top:4px">Relatório Financeiro Mensal</div></div>
   <div class="header-right">
     <strong>${escHTML(terapeuta.nome||'Terapeuta')}</strong><br>
     CRP: ${escHTML(terapeuta.crp||'—')}<br>
@@ -1257,7 +1257,7 @@ td{padding:8px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
 <tbody>${pacienteRows}</tbody>
 </table>
 
-<div class="footer">TheraFlow · Relatório gerado automaticamente em ${hoje.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'})} · Documento não tem valor fiscal</div>
+<div class="footer">Teravia · Relatório gerado automaticamente em ${hoje.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'})} · Documento não tem valor fiscal</div>
 </body></html>`;
 
   var win = window.open('', '_blank');
@@ -1289,7 +1289,7 @@ function _reciboCorpo(c, terapeuta, hoje) {
   var num = _reciboNum(c);
   return `<div class="recibo-page">
   <div class="header">
-    <div><div class="logo">TheraFlow</div><div class="logo-sub">Plataforma clínica para psicólogos</div></div>
+    <div><div class="logo">Teravia</div><div class="logo-sub">Plataforma clínica para psicólogos</div></div>
     <div class="recibo-num"><strong>Recibo nº ${num}</strong>Emitido em ${hoje}</div>
   </div>
   <div class="section grid">
@@ -1306,7 +1306,7 @@ function _reciboCorpo(c, terapeuta, hoje) {
   </div>
   <div class="total-box"><div class="total-label">Valor recebido</div><div class="total-value">${c ? fmtMoeda(c.value) : '—'}</div></div>
   <div class="assinatura"><div style="margin-bottom:32px">&nbsp;</div>${escHTML(terapeuta.nome||'Terapeuta')}<div style="font-size:11px;color:#888">CRP ${escHTML(terapeuta.crp||'—')} · Psicólogo(a)</div></div>
-  <div class="footer">Recibo emitido pela plataforma TheraFlow · Uso exclusivamente profissional<br/>Este documento é gerado eletronicamente e tem validade como comprovante de pagamento</div>
+  <div class="footer">Recibo emitido pela plataforma Teravia · Uso exclusivamente profissional<br/>Este documento é gerado eletronicamente e tem validade como comprovante de pagamento</div>
 </div>`;
 }
 
@@ -1314,7 +1314,7 @@ function _reciboCorpo(c, terapeuta, hoje) {
 function _reciboDoc(corpos) {
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"/>
-<title>Recibo${corpos.length>1?'s ('+corpos.length+')':''} — TheraFlow</title>
+<title>Recibo${corpos.length>1?'s ('+corpos.length+')':''} — Teravia</title>
 <style>
   body{font-family:'Arial',sans-serif;color:#1a1a1a;font-size:13px;margin:0}
   .recibo-page{max-width:580px;margin:40px auto;padding:0 24px;page-break-after:always}
@@ -1477,7 +1477,7 @@ function _valorPorExtenso(v) {
 function _declDoc(titulo, corpo) {
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"/>
-<title>${titulo} — TheraFlow</title>
+<title>${titulo} — Teravia</title>
 <style>
   body{font-family:'Arial',sans-serif;color:#1a1a1a;font-size:13px;margin:0}
   .decl-page{max-width:640px;margin:40px auto;padding:0 24px}
@@ -1542,7 +1542,7 @@ function gerarDeclaracaoPDF() {
     return '<tr><td>' + escHTML(fmtDataBR(c.date)) + '</td><td>' + desc + '</td><td class="num">' + fmtMoeda(c.value) + '</td><td class="num">' + _reciboNum(c) + '</td></tr>';
   }).join('');
   var tabela = '<table><thead><tr><th>Data</th><th>Descrição</th><th class="num">Valor</th><th class="num">Recibo nº</th></tr></thead><tbody>' + linhas + '</tbody></table>';
-  var cabecalho = '<div class="header"><div><div class="logo">TheraFlow</div><div class="logo-sub">Plataforma clínica para psicólogos</div></div><div class="emissao">Emitido em ' + hoje + '</div></div>';
+  var cabecalho = '<div class="header"><div><div class="logo">Teravia</div><div class="logo-sub">Plataforma clínica para psicólogos</div></div><div class="emissao">Emitido em ' + hoje + '</div></div>';
   var assinatura = '<div class="assinatura">' + escHTML(t.nome || '—')
     + '<div style="font-size:11px;color:#888">CRP ' + escHTML(t.crp || '—') + ' · Psicólogo(a) · CPF/CNPJ ' + escHTML(doc) + '</div></div>';
   var local = '<p class="local">' + (cidade ? escHTML(cidade) + ', ' : '') + hojeLonga + '.</p>';
@@ -1566,7 +1566,7 @@ function gerarDeclaracaoPDF() {
       + '<div class="total-box"><div class="total-label">Valor total do período</div><div class="total-value">' + fmtMoeda(total) + '</div><div class="extenso">(' + _valorPorExtenso(total) + ')</div></div>'
       + '<p>' + linhaCid + '</p>'
       + local + assinatura
-      + '<div class="footer">Documento gerado pela plataforma TheraFlow a partir das cobranças registradas — confira os dados antes de assinar e enviar.</div>';
+      + '<div class="footer">Documento gerado pela plataforma Teravia a partir das cobranças registradas — confira os dados antes de assinar e enviar.</div>';
   } else {
     var ano = document.getElementById('decl-ano').value;
     var pagClause = pagNome
@@ -1582,7 +1582,7 @@ function gerarDeclaracaoPDF() {
       + 'Nome: <strong>' + escHTML(t.nome || '—') + '</strong> · CPF/CNPJ: <strong>' + escHTML(doc) + '</strong> · Registro: CRP <strong>' + escHTML(t.crp || '—') + '</strong>'
       + (endereco ? '<br/>Endereço profissional: ' + escHTML(endereco) : '') + '</p>'
       + local + assinatura
-      + '<div class="footer">Documento gerado pela plataforma TheraFlow a partir das cobranças registradas — confira com seu contador.<br/>O paciente deve guardar os recibos originais de cada pagamento.</div>';
+      + '<div class="footer">Documento gerado pela plataforma Teravia a partir das cobranças registradas — confira com seu contador.<br/>O paciente deve guardar os recibos originais de cada pagamento.</div>';
   }
 
   if (_abrirImpressao(_declDoc(tituloDoc, corpo))) {

@@ -1,5 +1,5 @@
 /**
- * TheraFlow — Serverless Function: Diagnóstico de email/infra
+ * Teravia — Serverless Function: Diagnóstico de email/infra
  * Deploy: Vercel → /api/email-health  (Node.js runtime)
  *
  * Objetivo: nunca mais debugar envio de email no escuro. Reporta (sem vazar
@@ -24,9 +24,9 @@ const SUPA_URL = process.env.SUPABASE_URL || 'https://hkryvbyoviejdjlzfehm.supab
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];
@@ -60,14 +60,14 @@ export default async function handler(req, res) {
   const RESEND_KEY = process.env.RESEND_API_KEY || '';
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const DIAG_SECRET = process.env.DIAG_SECRET || '';
-  const fromAddr = process.env.RESEND_FROM || 'TheraFlow <onboarding@resend.dev>';
+  const fromAddr = process.env.RESEND_FROM || 'Teravia <onboarding@resend.dev>';
 
   const out = {
     env: {
       RESEND_API_KEY: RESEND_KEY ? `presente (len ${RESEND_KEY.length}, prefixo ${RESEND_KEY.slice(0, 4)})` : 'AUSENTE',
       RESEND_FROM: process.env.RESEND_FROM ? process.env.RESEND_FROM : '(default) onboarding@resend.dev',
       from_efetivo: fromAddr,
-      dominio_proprio: /@theraflow\.com\.br/i.test(fromAddr) ? 'sim' : 'NÃO (usando resend.dev — entrega ruim em Hotmail/Outlook/Gmail)',
+      dominio_proprio: /@teravia\.com\.br/i.test(fromAddr) ? 'sim' : 'NÃO (usando resend.dev — entrega ruim em Hotmail/Outlook/Gmail)',
       SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY ? `presente (len ${SERVICE_KEY.length})` : 'AUSENTE',
       DIAG_SECRET: DIAG_SECRET ? 'configurado' : 'não configurado (envio de teste bloqueado)',
     },
@@ -116,8 +116,8 @@ export default async function handler(req, res) {
           const result = await resend.emails.send({
             from: fromAddr,
             to: body.test_to,
-            subject: 'TheraFlow — teste de entrega de email',
-            html: '<p>Este é um teste de entrega do TheraFlow. Se você recebeu, o envio está funcionando. 🌿</p>',
+            subject: 'Teravia — teste de entrega de email',
+            html: '<p>Este é um teste de entrega do Teravia. Se você recebeu, o envio está funcionando. 🌿</p>',
           });
           out.test_send = result.error
             ? { ok: false, from: fromAddr, to: body.test_to, error: result.error }

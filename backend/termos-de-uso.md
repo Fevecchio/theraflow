@@ -1,4 +1,4 @@
-# Termos de Uso — TheraFlow
+# Termos de Uso — Teravia
 
 **Versão 1.0 | Abril de 2026**
 
@@ -8,15 +8,15 @@
 
 ## 1. Aceitação dos Termos
 
-Ao criar uma conta ou utilizar a plataforma TheraFlow ("Plataforma"), você ("Terapeuta" ou "Usuário") concorda integralmente com estes Termos de Uso e com nossa Política de Privacidade. Se não concordar, não utilize a Plataforma.
+Ao criar uma conta ou utilizar a plataforma Teravia ("Plataforma"), você ("Terapeuta" ou "Usuário") concorda integralmente com estes Termos de Uso e com nossa Política de Privacidade. Se não concordar, não utilize a Plataforma.
 
-A TheraFlow é operada por **[RAZÃO SOCIAL DA EMPRESA]**, inscrita no CNPJ **[CNPJ]**, com sede em **[ENDEREÇO]** ("TheraFlow", "nós" ou "nosso").
+A Teravia é operada por **[RAZÃO SOCIAL DA EMPRESA]**, inscrita no CNPJ **[CNPJ]**, com sede em **[ENDEREÇO]** ("Teravia", "nós" ou "nosso").
 
 ---
 
 ## 2. O Serviço
 
-A TheraFlow é uma plataforma de gestão clínica para psicólogos e outros profissionais de saúde mental, que oferece:
+A Teravia é uma plataforma de gestão clínica para psicólogos e outros profissionais de saúde mental, que oferece:
 
 - Gestão de pacientes e prontuários eletrônicos
 - Agenda e controle de sessões
@@ -24,7 +24,7 @@ A TheraFlow é uma plataforma de gestão clínica para psicólogos e outros prof
 - Ferramentas de apoio com inteligência artificial (briefing pré-sessão, supervisão)
 - Portal de acompanhamento para pacientes
 
-A TheraFlow é uma ferramenta de gestão e apoio. Ela **não substitui o julgamento clínico do profissional** e não realiza diagnósticos. Toda análise gerada por inteligência artificial é sugestiva e deve ser avaliada criticamente pelo terapeuta.
+A Teravia é uma ferramenta de gestão e apoio. Ela **não substitui o julgamento clínico do profissional** e não realiza diagnósticos. Toda análise gerada por inteligência artificial é sugestiva e deve ser avaliada criticamente pelo terapeuta.
 
 ---
 
@@ -45,9 +45,9 @@ d) Manter suas informações cadastrais atualizadas e verdadeiras.
 
 4.2. Você é responsável por todas as atividades realizadas com sua conta.
 
-4.3. Você deve nos notificar imediatamente em caso de uso não autorizado da sua conta pelo e-mail: **contato@theraflow.app**
+4.3. Você deve nos notificar imediatamente em caso de uso não autorizado da sua conta pelo e-mail: **contato@teravia.com.br**
 
-4.4. A TheraFlow não se responsabiliza por perdas decorrentes do uso não autorizado da sua conta por falha sua em proteger suas credenciais.
+4.4. A Teravia não se responsabiliza por perdas decorrentes do uso não autorizado da sua conta por falha sua em proteger suas credenciais.
 
 ---
 
@@ -60,7 +60,7 @@ b) Compartilhar sua conta com outros profissionais sem plano multi-usuário cont
 c) Realizar engenharia reversa, descompilar ou tentar extrair o código-fonte da Plataforma;
 d) Utilizar a Plataforma para armazenar dados de pacientes sem o devido consentimento informado destes;
 e) Inserir dados falsos, fictícios ou de terceiros sem autorização;
-f) Realizar ataques, varreduras ou testes de vulnerabilidade sem autorização escrita prévia da TheraFlow;
+f) Realizar ataques, varreduras ou testes de vulnerabilidade sem autorização escrita prévia da Teravia;
 g) Revender, sublicenciar ou explorar comercialmente o acesso à Plataforma.
 
 ---
@@ -89,7 +89,7 @@ g) Revender, sublicenciar ou explorar comercialmente o acesso à Plataforma.
 
 7.4. **Cancelamento.** Você pode cancelar sua assinatura a qualquer momento. O acesso permanece ativo até o fim do período já pago. Não há reembolso proporcional de período não utilizado, salvo disposição legal em contrário.
 
-7.5. **Inadimplência.** Em caso de falha no pagamento, a TheraFlow poderá suspender o acesso após notificação com 7 dias de antecedência.
+7.5. **Inadimplência.** Em caso de falha no pagamento, a Teravia poderá suspender o acesso após notificação com 7 dias de antecedência.
 
 ---
 
@@ -97,56 +97,56 @@ g) Revender, sublicenciar ou explorar comercialmente o acesso à Plataforma.
 
 8.1. O tratamento dos dados pessoais é regido pela nossa **Política de Privacidade**, que integra estes Termos por referência.
 
-8.2. Os dados clínicos dos pacientes inseridos pelo Terapeuta são de titularidade do Terapeuta e dos pacientes. A TheraFlow atua como **operadora** dos dados, conforme definido pela LGPD.
+8.2. Os dados clínicos dos pacientes inseridos pelo Terapeuta são de titularidade do Terapeuta e dos pacientes. A Teravia atua como **operadora** dos dados, conforme definido pela LGPD.
 
 8.3. Em caso de cancelamento da conta, os dados serão mantidos por **90 dias** para eventual recuperação, após o qual serão permanentemente excluídos, salvo obrigação legal de retenção.
 
-8.4. O Terapeuta pode solicitar a exportação de seus dados (prontuários, histórico de sessões, dados financeiros) a qualquer momento pelo e-mail **contato@theraflow.app**.
+8.4. O Terapeuta pode solicitar a exportação de seus dados (prontuários, histórico de sessões, dados financeiros) a qualquer momento pelo e-mail **contato@teravia.com.br**.
 
 ---
 
 ## 9. Propriedade Intelectual
 
-9.1. A Plataforma, seu código, design, marcas e conteúdo são propriedade exclusiva da TheraFlow e protegidos por lei.
+9.1. A Plataforma, seu código, design, marcas e conteúdo são propriedade exclusiva da Teravia e protegidos por lei.
 
 9.2. O Terapeuta mantém a titularidade sobre os dados e conteúdos clínicos que inserir na Plataforma.
 
-9.3. Ao utilizar os recursos de inteligência artificial, o Terapeuta concede à TheraFlow licença limitada para processar os dados inseridos com a finalidade exclusiva de gerar as respostas solicitadas. A TheraFlow não utiliza dados clínicos para treinar modelos de IA.
+9.3. Ao utilizar os recursos de inteligência artificial, o Terapeuta concede à Teravia licença limitada para processar os dados inseridos com a finalidade exclusiva de gerar as respostas solicitadas. A Teravia não utiliza dados clínicos para treinar modelos de IA.
 
 ---
 
 ## 10. Disponibilidade e Suporte
 
-10.1. A TheraFlow envida seus melhores esforços para manter a Plataforma disponível 24/7, mas não garante disponibilidade ininterrupta.
+10.1. A Teravia envida seus melhores esforços para manter a Plataforma disponível 24/7, mas não garante disponibilidade ininterrupta.
 
 10.2. Manutenções programadas serão comunicadas com antecedência.
 
-10.3. O suporte é prestado pelo canal **contato@theraflow.app**, com tempo de resposta de até **48 horas úteis**.
+10.3. O suporte é prestado pelo canal **contato@teravia.com.br**, com tempo de resposta de até **48 horas úteis**.
 
 ---
 
 ## 11. Limitação de Responsabilidade
 
-11.1. A TheraFlow não se responsabiliza por:
+11.1. A Teravia não se responsabiliza por:
 
 a) Decisões clínicas tomadas com base nas sugestões geradas pela inteligência artificial;
 b) Perda de dados decorrente de falha do Terapeuta em manter suas credenciais seguras;
 c) Danos indiretos, lucros cessantes ou danos consequentes decorrentes do uso ou impossibilidade de uso da Plataforma;
 d) Interrupções causadas por força maior, falhas de infraestrutura de terceiros ou ataques cibernéticos.
 
-11.2. Em qualquer hipótese, a responsabilidade máxima da TheraFlow limita-se ao valor pago pelo Terapeuta nos últimos 3 meses de assinatura.
+11.2. Em qualquer hipótese, a responsabilidade máxima da Teravia limita-se ao valor pago pelo Terapeuta nos últimos 3 meses de assinatura.
 
 ---
 
 ## 12. Alterações nos Termos
 
-A TheraFlow pode alterar estes Termos a qualquer momento. Alterações substanciais serão comunicadas por e-mail com **15 dias de antecedência**. O uso continuado da Plataforma após esse prazo implica aceitação dos novos termos.
+A Teravia pode alterar estes Termos a qualquer momento. Alterações substanciais serão comunicadas por e-mail com **15 dias de antecedência**. O uso continuado da Plataforma após esse prazo implica aceitação dos novos termos.
 
 ---
 
 ## 13. Rescisão
 
-A TheraFlow pode suspender ou encerrar sua conta imediatamente, sem aviso prévio, em caso de violação destes Termos, especialmente nas hipóteses do item 5.
+A Teravia pode suspender ou encerrar sua conta imediatamente, sem aviso prévio, em caso de violação destes Termos, especialmente nas hipóteses do item 5.
 
 ---
 
@@ -158,8 +158,8 @@ Estes Termos são regidos pelas leis da República Federativa do Brasil. Fica el
 
 ## 15. Contato
 
-**TheraFlow — [RAZÃO SOCIAL]**
-E-mail: contato@theraflow.app
+**Teravia — [RAZÃO SOCIAL]**
+E-mail: contato@teravia.com.br
 **[ENDEREÇO COMPLETO]**
 
 ---

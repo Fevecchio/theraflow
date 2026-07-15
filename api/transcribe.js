@@ -1,5 +1,5 @@
 /**
- * TheraFlow — Serverless: transcreve o áudio da sessão via Groq Whisper (fallback de nuvem, v1).
+ * Teravia — Serverless: transcreve o áudio da sessão via Groq Whisper (fallback de nuvem, v1).
  * Deploy: Vercel → /api/transcribe (Node.js runtime)
  *
  * Recebe o áudio (binário) no CORPO da requisição (Content-Type = audio/webm etc.),
@@ -26,9 +26,9 @@ function rateLimit(key, max, windowMs) {
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];

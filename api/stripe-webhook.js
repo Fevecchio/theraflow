@@ -90,7 +90,7 @@ async function applyReferralCreditIfEligible(stripe, referrerId) {
     await stripe.customers.createBalanceTransaction(r.stripe_customer_id, {
       amount: -8900,
       currency: 'brl',
-      description: 'Bônus de indicação — 1 mês grátis TheraFlow Pro',
+      description: 'Bônus de indicação — 1 mês grátis Teravia Pro',
     });
     await _patchUser(referrerId, { referral_rewarded: true });
     console.log(`[webhook] referral reward APLICADO: referrerId=${referrerId}`);

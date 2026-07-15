@@ -1,5 +1,5 @@
 /**
- * TheraFlow — Serverless Function: Envio de emails via Resend
+ * Teravia — Serverless Function: Envio de emails via Resend
  * Deploy: Vercel → /api/send-email  (Node.js runtime)
  *
  * Templates disponíveis:
@@ -15,9 +15,9 @@ import { Resend } from 'resend';
 
 const ALLOWED_ORIGINS = [
   'https://theraflow-one.vercel.app',
-  'https://theraflow.com.br',
-  'https://www.theraflow.com.br',
-  'https://app.theraflow.com.br',
+  'https://teravia.com.br',
+  'https://www.teravia.com.br',
+  'https://app.teravia.com.br',
   'http://localhost:3000',
   'http://127.0.0.1:5500',
 ];
@@ -86,7 +86,7 @@ function normalizeAll(to) {
 function normalizeTo(to) { return normalizeAll(to)[0] || ''; }
 
 // Anti-abuso: o terapeuta só pode enviar para o email de um PACIENTE SEU.
-// Sem isso, qualquer terapeuta logado poderia disparar emails do TheraFlow (com
+// Sem isso, qualquer terapeuta logado poderia disparar emails do Teravia (com
 // dados controlados) para endereços arbitrários — vetor de spam/phishing.
 //
 // Retorna { ok: true } se autorizado; { ok: false } se o destinatário
@@ -97,7 +97,7 @@ function normalizeTo(to) { return normalizeAll(to)[0] || ''; }
 // Retorna { ok, allowed } — `allowed` é a lista de emails APROVADOS (só pacientes
 // do caller). FAIL-CLOSED (auditoria adversarial 12/07): sem service key, erro de
 // rede ou conta sem pacientes → NEGA. O fail-open anterior transformava conta
-// nova (0 pacientes) num relay de phishing com a marca TheraFlow.
+// nova (0 pacientes) num relay de phishing com a marca Teravia.
 async function callerOwnsRecipient(callerId, to) {
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!SERVICE_KEY) {
@@ -145,7 +145,7 @@ function tmplInvite({ terapeutaNome, terapeutaCrp, pacienteNome, data, hora, dur
 <body style="margin:0;padding:0;background:#f5f3ee;font-family:'DM Sans',Arial,sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <div style="background:#4a7c59;padding:28px 32px">
-      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">TheraFlow</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">Teravia</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px">Confirmação de sessão</div>
     </div>
     <div style="padding:32px">
@@ -164,7 +164,7 @@ function tmplInvite({ terapeutaNome, terapeutaCrp, pacienteNome, data, hora, dur
 
       <p style="font-size:12px;color:#aaa;margin-top:32px;border-top:1px solid #f0f0f0;padding-top:16px">
         Em caso de dúvidas, responda este email ou contate seu terapeuta diretamente.<br>
-        <em>Este email foi gerado automaticamente pelo TheraFlow.</em>
+        <em>Este email foi gerado automaticamente pelo Teravia.</em>
       </p>
     </div>
   </div>
@@ -185,7 +185,7 @@ function tmplReminder({ terapeutaNome, pacienteNome, data, hora, sessionLink }) 
 <body style="margin:0;padding:0;background:#f5f3ee;font-family:'DM Sans',Arial,sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <div style="background:#2c5f8a;padding:28px 32px">
-      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">TheraFlow</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">Teravia</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px">Lembrete de sessão — amanhã</div>
     </div>
     <div style="padding:32px">
@@ -200,7 +200,7 @@ function tmplReminder({ terapeutaNome, pacienteNome, data, hora, sessionLink }) 
       ${linkHtml ? `<div style="text-align:center">${linkHtml}</div>` : ''}
 
       <p style="font-size:12px;color:#aaa;margin-top:32px;border-top:1px solid #f0f0f0;padding-top:16px">
-        <em>Lembrete automático gerado pelo TheraFlow.</em>
+        <em>Lembrete automático gerado pelo Teravia.</em>
       </p>
     </div>
   </div>
@@ -221,7 +221,7 @@ function tmplReminder15({ terapeutaNome, pacienteNome, hora, sessionLink }) {
 <body style="margin:0;padding:0;background:#f5f3ee;font-family:'DM Sans',Arial,sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <div style="background:#4a7c59;padding:28px 32px">
-      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">TheraFlow</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">Teravia</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px">Sua sessão começa em instantes</div>
     </div>
     <div style="padding:32px">
@@ -231,7 +231,7 @@ function tmplReminder15({ terapeutaNome, pacienteNome, hora, sessionLink }) {
       ${linkHtml ? `<div style="text-align:center">${linkHtml}</div>` : ''}
 
       <p style="font-size:12px;color:#aaa;margin-top:32px;border-top:1px solid #f0f0f0;padding-top:16px">
-        <em>Lembrete automático gerado pelo TheraFlow.</em>
+        <em>Lembrete automático gerado pelo Teravia.</em>
       </p>
     </div>
   </div>
@@ -249,12 +249,12 @@ function tmplPortal({ terapeutaNome, pacienteNome, email, senha, portalUrl }) {
 <body style="margin:0;padding:0;background:#f5f3ee;font-family:'DM Sans',Arial,sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <div style="background:#4a7c59;padding:28px 32px">
-      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">🌿 TheraFlow</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px">🌿 Teravia</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px">Seu portal está pronto</div>
     </div>
     <div style="padding:32px">
       <p style="font-size:16px;color:#1a1a1a;margin:0 0 8px">Olá, <strong>${pacienteNome}</strong> 🌱</p>
-      <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px"><strong>${terapeutaNome}</strong> ativou o seu portal de acompanhamento no TheraFlow. Por lá você pode registrar seu humor, acompanhar exercícios e seu progresso entre as sessões.</p>
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px"><strong>${terapeutaNome}</strong> ativou o seu portal de acompanhamento no Teravia. Por lá você pode registrar seu humor, acompanhar exercícios e seu progresso entre as sessões.</p>
 
       <div style="background:#f5f3ee;border-radius:12px;padding:20px 24px;margin-bottom:24px">
         <div style="font-size:12px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Seus dados de acesso</div>
@@ -268,7 +268,7 @@ function tmplPortal({ terapeutaNome, pacienteNome, email, senha, portalUrl }) {
 
       <p style="font-size:12px;color:#aaa;margin-top:32px;border-top:1px solid #f0f0f0;padding-top:16px">
         Recomendamos trocar sua senha após o primeiro acesso.<br>
-        <em>Este email foi gerado automaticamente pelo TheraFlow.</em>
+        <em>Este email foi gerado automaticamente pelo Teravia.</em>
       </p>
     </div>
   </div>
@@ -320,7 +320,7 @@ export default async function handler(req, res) {
 
   const resend = new Resend(RESEND_KEY);
   // RESEND_FROM: use noreply@<dominio> após verificar o domínio na Resend
-  const fromAddr = process.env.RESEND_FROM || 'TheraFlow <onboarding@resend.dev>';
+  const fromAddr = process.env.RESEND_FROM || 'Teravia <onboarding@resend.dev>';
 
   // 'reminder' agenda DOIS emails via scheduledAt (Resend dispara sozinho, sem
   // cron): 24h antes ("é amanhã") e 15min antes ("começa em instantes", com o
@@ -367,7 +367,7 @@ export default async function handler(req, res) {
     subject = `Sessão confirmada — ${data?.data || ''} às ${data?.hora || ''}`;
     html = tmplInvite(data || {});
   } else if (template === 'portal') {
-    subject = `${data?.terapeutaNome || 'Seu terapeuta'} ativou seu portal TheraFlow`;
+    subject = `${data?.terapeutaNome || 'Seu terapeuta'} ativou seu portal Teravia`;
     html = tmplPortal(data || {});
   } else {
     return res.status(400).json({ error: `Template desconhecido: ${template}` });

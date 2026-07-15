@@ -322,7 +322,7 @@ function goToPlatform(cadastrarPaciente) {
         Cadastro concluído, ${escHTML(nome)}!
       </div>
       <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:32px;max-width:380px;margin-left:auto;margin-right:auto">
-        Seu perfil foi configurado. Agora abra o TheraFlow para começar.
+        Seu perfil foi configurado. Agora abra o Teravia para começar.
       </div>
 
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px 24px;text-align:left;margin-bottom:20px">
@@ -362,12 +362,12 @@ function goToPlatform(cadastrarPaciente) {
         padding:14px 18px;text-align:left;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start">
         <span style="font-size:18px">💡</span>
         <div style="font-size:13px;color:var(--ink-soft);line-height:1.6">
-          <strong>Lembre-se:</strong> ao abrir o TheraFlow, clique em <strong>"+ Novo Paciente"</strong> na tela de Pacientes para cadastrar seu primeiro paciente.
+          <strong>Lembre-se:</strong> ao abrir o Teravia, clique em <strong>"+ Novo Paciente"</strong> na tela de Pacientes para cadastrar seu primeiro paciente.
         </div>
       </div>` : ''}
 
       <button class="btn btn-primary btn-full btn-lg" onclick="abrirApp()">
-        Abrir o TheraFlow →
+        Abrir o Teravia →
       </button>
     </div>`;
 
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
     history.replaceState({}, '', window.location.pathname);
     window._tfDemo = true;
     _tfPlanPro = true;
-    _proceedToApp({ nome:'Dra. Ana Meireles', crp:'06/123456', email:'demo@theraflow.com.br', abordagem:'TCC', abordagemKey:'tcc', secundarias:['ACT','Humanista'], plano:'demo', sessoes_usadas:5 });
+    _proceedToApp({ nome:'Dra. Ana Meireles', crp:'06/123456', email:'demo@teravia.com.br', abordagem:'TCC', abordagemKey:'tcc', secundarias:['ACT','Humanista'], plano:'demo', sessoes_usadas:5 });
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
         var b = document.getElementById('tf-demo-banner');
@@ -506,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!user) return; // sem sessão autenticada — ignora param
       _tfPlanPro = true;
       tfTrack('checkout_completed', { plano: 'pro' });
-      setTimeout(function() { showToast('Assinatura ativa! Bem-vindo ao TheraFlow Pro 🎉', 6000); }, 1500);
+      setTimeout(function() { showToast('Assinatura ativa! Bem-vindo ao Teravia Pro 🎉', 6000); }, 1500);
     }).catch(function() {});
   }
 });
@@ -520,7 +520,7 @@ function _showTherapistPasswordReset() {
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,30,24,.82);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px';
   ov.innerHTML = '<div style="background:var(--white);border-radius:16px;max-width:400px;width:100%;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit">'
     + '<div style="font-size:20px;font-weight:700;color:#1a2a1e;margin-bottom:6px">Defina uma nova senha 🔐</div>'
-    + '<div style="font-size:13px;color:#5a6b60;line-height:1.5;margin-bottom:18px">Escolha a nova senha da sua conta TheraFlow.</div>'
+    + '<div style="font-size:13px;color:#5a6b60;line-height:1.5;margin-bottom:18px">Escolha a nova senha da sua conta Teravia.</div>'
     + '<input id="tf-pwd-rec-1" type="password" placeholder="Nova senha (mín. 8 caracteres)" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
     + '<input id="tf-pwd-rec-2" type="password" placeholder="Confirme a nova senha" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
     + '<div id="tf-pwd-rec-err" style="display:none;color:#c0392b;font-size:12.5px;margin-bottom:10px"></div>'

@@ -1,4 +1,4 @@
-# Contrato Terapêutico — Modelo Completo (Kit Consultório em Dia · TheraFlow)
+# Contrato Terapêutico — Modelo Completo (Kit Consultório em Dia · Teravia)
 
 > **Versão 2 — 12/07/2026, fundamentada nas normas vigentes** (LGPD, Código de Ética CFP,
 > Res. CFP 13/2022 — psicoterapia, Res. CFP 9/2024 — atendimento on-line, CDC).
@@ -162,7 +162,7 @@ Assinatura do(a) psicólogo(a): ____________________
 **Anexo I:** Termo de Informação e Consentimento — Dados Pessoais (LGPD).
 
 ---
-*Modelo educativo do Kit Consultório em Dia · TheraFlow, elaborado com base nas normas
+*Modelo educativo do Kit Consultório em Dia · Teravia, elaborado com base nas normas
 públicas vigentes em julho/2026 (LGPD; Código de Ética Profissional do Psicólogo;
 Res. CFP nº 1/2009, nº 13/2022 e nº 9/2024; CDC). Adapte à sua prática. Não substitui
 aconselhamento jurídico individualizado.*

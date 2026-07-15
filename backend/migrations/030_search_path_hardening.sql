@@ -51,7 +51,7 @@ $fn$;
 --    where proname in ('handle_new_user','increment_sessoes_usadas','set_updated_at');
 
 -- ── AINDA PENDENTES (exigem recriar funções grandes — sessão dedicada, com o
---    corpo COMPLETO em mãos e testes; ver [[theraflow-auditoria-seguranca]]):
+--    corpo COMPLETO em mãos e testes; ver [[teravia-auditoria-seguranca]]):
 --  #3 portal_patient_sync: fallback `auth.uid()→patient_users` precisa de
 --     `and pu.portal_active = true` + checar portalRevogado (revogado com sessão
 --     Auth ainda sincroniza). Recriar a função inteira da 028 com essa condição.

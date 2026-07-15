@@ -879,7 +879,7 @@ function baixarTranscricao() {
     const msg = linhas[i]?.textContent?.trim() || '';
     if (msg) txt += `[${l.textContent.trim()}]\n${msg}\n\n`;
   });
-  txt += `${'─'.repeat(50)}\nGerado pelo TheraFlow · transcrição automática (pt-BR)\n`;
+  txt += `${'─'.repeat(50)}\nGerado pelo Teravia · transcrição automática (pt-BR)\n`;
   const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

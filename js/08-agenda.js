@@ -861,11 +861,11 @@ function exportarAgendaICS() {
     var m = String(mins%60).padStart(2,'0');
     return dateIso.replace(/-/g,'') + 'T' + h + m + '00';
   }
-  var lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//TheraFlow//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  var lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Teravia//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
   appointments.filter(function(a){ return a.status !== 'cancelada'; }).forEach(function(a, i) {
     var p = patients[a.patientIdx];
     var nome = p ? p.name : a.patientName || 'Paciente';
-    var uid = 'tf-' + (a.id || i) + '@theraflow';
+    var uid = 'tf-' + (a.id || i) + '@teravia';
     var dtStart = fmtICS(a.date, a.time);
     var dtEnd   = fmtICSEnd(a.date, a.time, a.duration || 50);
     var allDay  = !a.time;
@@ -883,7 +883,7 @@ function exportarAgendaICS() {
   var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
-  a.href = url; a.download = 'theraflow-agenda.ics';
+  a.href = url; a.download = 'teravia-agenda.ics';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
   showToast('📅 Agenda exportada — importe no Google Calendar ou Apple Calendar.');

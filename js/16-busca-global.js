@@ -277,12 +277,12 @@ const LEGAL_DOCS = {
     versao: 'Versão 1.0 · Abril de 2026',
     conteudo: `
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:0 0 8px">1. Aceitação dos Termos</h3>
-      <p>Ao criar uma conta ou utilizar a plataforma TheraFlow ("Plataforma"), você ("Terapeuta") concorda integralmente com estes Termos de Uso e com a Política de Privacidade.</p>
+      <p>Ao criar uma conta ou utilizar a plataforma Teravia ("Plataforma"), você ("Terapeuta") concorda integralmente com estes Termos de Uso e com a Política de Privacidade.</p>
 
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">2. O Serviço</h3>
-      <p>A TheraFlow é uma plataforma de gestão clínica para psicólogos e profissionais de saúde mental, oferecendo gestão de pacientes, agenda, financeiro, prontuários eletrônicos e ferramentas de apoio com inteligência artificial.</p>
+      <p>A Teravia é uma plataforma de gestão clínica para psicólogos e profissionais de saúde mental, oferecendo gestão de pacientes, agenda, financeiro, prontuários eletrônicos e ferramentas de apoio com inteligência artificial.</p>
       <p style="background:var(--sage-light);border-left:3px solid var(--sage);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0">
-        <strong>Importante:</strong> A TheraFlow é uma ferramenta de gestão e apoio. Ela não substitui o julgamento clínico do profissional e não realiza diagnósticos. Toda análise gerada por inteligência artificial é sugestiva.
+        <strong>Importante:</strong> A Teravia é uma ferramenta de gestão e apoio. Ela não substitui o julgamento clínico do profissional e não realiza diagnósticos. Toda análise gerada por inteligência artificial é sugestiva.
       </p>
 
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">3. Elegibilidade</h3>
@@ -303,10 +303,10 @@ const LEGAL_DOCS = {
       <p>É proibido utilizar a Plataforma para fins ilegais, compartilhar conta sem plano multi-usuário, realizar engenharia reversa, inserir dados de pacientes sem consentimento, ou utilizar a Plataforma para fins não profissionais.</p>
 
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">7. Limitação de Responsabilidade</h3>
-      <p>A TheraFlow não se responsabiliza por decisões clínicas tomadas com base nas sugestões geradas pela inteligência artificial, nem por perdas de dados decorrentes de falha do Terapeuta em proteger suas credenciais.</p>
+      <p>A Teravia não se responsabiliza por decisões clínicas tomadas com base nas sugestões geradas pela inteligência artificial, nem por perdas de dados decorrentes de falha do Terapeuta em proteger suas credenciais.</p>
 
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">8. Lei Aplicável</h3>
-      <p>Estes Termos são regidos pelas leis da República Federativa do Brasil. Contato: <a href="mailto:contato@theraflow.app" style="color:var(--sage)">contato@theraflow.app</a></p>
+      <p>Estes Termos são regidos pelas leis da República Federativa do Brasil. Contato: <a href="mailto:contato@teravia.com.br" style="color:var(--sage)">contato@teravia.com.br</a></p>
     `
   },
   privacidade: {
@@ -314,7 +314,7 @@ const LEGAL_DOCS = {
     versao: 'Versão 1.0 · Abril de 2026 · Conforme LGPD (Lei 13.709/2018)',
     conteudo: `
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:0 0 8px">1. Quem somos</h3>
-      <p>A TheraFlow é operadora dos dados pessoais tratados nesta Política. Contato do encarregado de dados (DPO): <a href="mailto:privacidade@theraflow.app" style="color:var(--sage)">privacidade@theraflow.app</a></p>
+      <p>A Teravia é operadora dos dados pessoais tratados nesta Política. Contato do encarregado de dados (DPO): <a href="mailto:privacidade@teravia.com.br" style="color:var(--sage)">privacidade@teravia.com.br</a></p>
 
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">2. Dados que coletamos</h3>
       <p><strong>Do Terapeuta:</strong> nome, e-mail, CRP, abordagem terapêutica, dados de pagamento (via Stripe), logs de acesso.</p>
@@ -326,11 +326,11 @@ const LEGAL_DOCS = {
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">3. Como usamos os dados</h3>
       <p>Exclusivamente para: prestar o serviço contratado, gerar análises com IA sob instrução do Terapeuta, enviar comunicações do serviço, cumprir obrigações legais e melhorar a Plataforma (sempre com dados anonimizados).</p>
       <p style="background:var(--sage-light);border-left:3px solid var(--sage);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0">
-        <strong>A TheraFlow não vende, aluga ou compartilha dados pessoais com terceiros para fins comerciais.</strong>
+        <strong>A Teravia não vende, aluga ou compartilha dados pessoais com terceiros para fins comerciais.</strong>
       </p>
 
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">4. Inteligência Artificial</h3>
-      <p>Os recursos de IA processam dados clínicos exclusivamente para gerar as análises solicitadas pelo Terapeuta. Os dados são enviados à API da Anthropic (Claude), que <strong>não utiliza dados de API para treinar seus modelos</strong>. A TheraFlow não armazena prompts ou respostas da IA associados a pacientes identificados além do necessário.</p>
+      <p>Os recursos de IA processam dados clínicos exclusivamente para gerar as análises solicitadas pelo Terapeuta. Os dados são enviados à API da Anthropic (Claude), que <strong>não utiliza dados de API para treinar seus modelos</strong>. A Teravia não armazena prompts ou respostas da IA associados a pacientes identificados além do necessário.</p>
 
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">5. Parceiros e transferências</h3>
       <p>Compartilhamos dados apenas com: Supabase (banco de dados), Anthropic (IA), Stripe (pagamentos), Vercel (hospedagem). Todos sob Data Processing Agreements.</p>
@@ -349,11 +349,11 @@ const LEGAL_DOCS = {
         <li><strong>Portabilidade</strong> — receber seus dados em formato estruturado</li>
         <li><strong>Revogação do consentimento</strong> — quando a base for consentimento</li>
       </ul>
-      <p style="margin-top:10px">Solicitações: <a href="mailto:privacidade@theraflow.app" style="color:var(--sage)">privacidade@theraflow.app</a> · Prazo de resposta: 15 dias úteis.</p>
+      <p style="margin-top:10px">Solicitações: <a href="mailto:privacidade@teravia.com.br" style="color:var(--sage)">privacidade@teravia.com.br</a> · Prazo de resposta: 15 dias úteis.</p>
       <p style="margin-top:8px">Você pode registrar reclamações junto à <strong>ANPD</strong>: gov.br/anpd</p>
 
       <h3 style="font-family:'Instrument Serif',serif;font-size:18px;margin:20px 0 8px">9. Consentimento do paciente</h3>
-      <p>O Terapeuta deve obter consentimento explícito do paciente antes de inserir seus dados. A TheraFlow disponibiliza modelo de Termo de Consentimento mediante solicitação.</p>
+      <p>O Terapeuta deve obter consentimento explícito do paciente antes de inserir seus dados. A Teravia disponibiliza modelo de Termo de Consentimento mediante solicitação.</p>
     `
   }
 };
