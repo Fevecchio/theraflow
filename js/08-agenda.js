@@ -621,8 +621,9 @@ function renderDayView() {
   if (iso === hoje) tituloData = 'Hoje — ' + diasNome[d.getDay()];
 
   var _hConfig = carregarHorarios();
-  var _hTrabalhoIni = _hConfig ? parseInt((_hConfig.inicio||'08:00').split(':')[0]) : 8;
-  var _hTrabalhoFim = _hConfig ? parseInt((_hConfig.fim||'18:00').split(':')[0]) : 18;
+  var _h24 = !!(_hConfig && _hConfig.h24);
+  var _hTrabalhoIni = _h24 ? 0  : (_hConfig ? parseInt((_hConfig.inicio||'08:00').split(':')[0]) : 8);
+  var _hTrabalhoFim = _h24 ? 23 : (_hConfig ? parseInt((_hConfig.fim||'18:00').split(':')[0]) : 18);
   var sessoesDia = appointments.filter(function(a){ return a.date===iso && a.status!=='cancelada'; });
   // Mostra só horas do expediente + horas com sessão fora do expediente
   var _sessoesHoras = new Set(sessoesDia.map(function(a){ return parseInt((a.time||'09:00').split(':')[0]); }));
@@ -658,9 +659,9 @@ function renderDayView() {
             presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--amber-light);color:var(--amber);font-weight:600">~ atrasou</span>';
           } else if (isPast) {
             presencaBadge = '<span style="display:flex;gap:3px">'
-              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:10px;padding:2px 6px;background:var(--sage-light);color:var(--sage-dark);border:none;border-radius:8px;cursor:pointer" title="Compareceu">✓</button>'
-              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:10px;padding:2px 6px;background:var(--red-light);color:var(--red);border:none;border-radius:8px;cursor:pointer" title="Faltou">✗</button>'
-              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca('+a.id+',\'atrasou\')" style="font-size:10px;padding:2px 6px;background:var(--amber-light);color:var(--amber);border:none;border-radius:8px;cursor:pointer" title="Atrasou">~</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'compareceu\')" style="font-size:10px;padding:2px 6px;background:var(--sage-light);color:var(--sage-dark);border:none;border-radius:8px;cursor:pointer" title="Compareceu">✓</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'faltou\')" style="font-size:10px;padding:2px 6px;background:var(--red-light);color:var(--red);border:none;border-radius:8px;cursor:pointer" title="Faltou">✗</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'atrasou\')" style="font-size:10px;padding:2px 6px;background:var(--amber-light);color:var(--amber);border:none;border-radius:8px;cursor:pointer" title="Atrasou">~</button>'
               + '</span>';
           }
           var confTag = (a.confirmada && !a.presenca && !isPast)
@@ -751,8 +752,9 @@ function renderWeekView() {
   });
 
   var _hConfigW = carregarHorarios();
-  var _hTrabalhoIniW = _hConfigW ? parseInt((_hConfigW.inicio||'08:00').split(':')[0]) : 8;
-  var _hTrabalhoFimW = _hConfigW ? parseInt((_hConfigW.fim||'18:00').split(':')[0]) : 18;
+  var _h24W = !!(_hConfigW && _hConfigW.h24);
+  var _hTrabalhoIniW = _h24W ? 0  : (_hConfigW ? parseInt((_hConfigW.inicio||'08:00').split(':')[0]) : 8);
+  var _hTrabalhoFimW = _h24W ? 23 : (_hConfigW ? parseInt((_hConfigW.fim||'18:00').split(':')[0]) : 18);
   // Coleta horas com sessão em qualquer dia da semana (para exibir sessões fora do expediente)
   var _semanaAppts = appointments.filter(function(a){
     return dias.some(function(di){ return a.date === di.iso && a.status !== 'cancelada'; });
@@ -808,8 +810,8 @@ function renderWeekView() {
         else if (a.presenca === 'faltou') pBadge = '<div style="font-size:9px;color:var(--red);background:var(--red-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✗</div>';
         else if (a.presenca === 'atrasou') pBadge = '<div style="font-size:9px;color:var(--amber);background:var(--amber-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">~</div>';
         else if (isPastW) pBadge = '<div style="display:flex;gap:2px;margin-top:2px">'
-          + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'compareceu\')" style="font-size:9px;cursor:pointer;color:var(--sage-dark);background:var(--sage-light);border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
-          + '<span onclick="event.stopPropagation();marcarPresenca('+a.id+',\'faltou\')" style="font-size:9px;cursor:pointer;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
+          + '<span onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'compareceu\')" style="font-size:9px;cursor:pointer;color:var(--sage-dark);background:var(--sage-light);border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
+          + '<span onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'faltou\')" style="font-size:9px;cursor:pointer;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
           + '</div>';
         else if (a.confirmada) pBadge = '<div style="font-size:9px;color:var(--sage-dark);background:var(--sage-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block" title="Presença confirmada pelo paciente">✓ conf.</div>';
         // Clique unificado com a view Dia: abre o popup de opções (antes entrava
@@ -919,7 +921,8 @@ function salvarHorarios() {
   });
   var inicio = document.getElementById('horario-inicio')?.value || '08:00';
   var fim    = document.getElementById('horario-fim')?.value    || '18:00';
-  var config = { dias: dias, inicio: inicio, fim: fim };
+  var h24    = !!document.getElementById('horario-24h')?.checked;
+  var config = { dias: dias, inicio: inicio, fim: fim, h24: h24 };
   try { localStorage.setItem('tf_horarios', JSON.stringify(config)); } catch(e) {}
   if (typeof _supaSync_settings === 'function') _supaSync_settings();
   return config;
@@ -938,6 +941,8 @@ function initHorariosGrid() {
   var inpF = document.getElementById('horario-fim');
   if (inpI) inpI.value = inicio;
   if (inpF) inpF.value = fim;
+  var inp24 = document.getElementById('horario-24h');
+  if (inp24) inp24.checked = !!(saved && saved.h24);
 
   grid.innerHTML = '';
   DIAS_SEMANA_PT.forEach(function(nome, i) {

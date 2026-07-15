@@ -82,7 +82,8 @@ function abrirReferral() {
   if (existing) existing.remove();
   var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
   var refId = acc.supa_id || '';
-  var refLink = refId ? ('https://theraflow-one.vercel.app/app?ref=' + refId) : 'https://theraflow-one.vercel.app/app';
+  // Domínio oficial (15/07: o link ainda saía theraflow-one.vercel.app na mensagem)
+  var refLink = refId ? ('https://teravia.com.br/app?ref=' + refId) : 'https://teravia.com.br/app';
   var refCount = acc.referral_count || 0;
   var refRewarded = acc.referral_rewarded || false;
   var msg = 'Olá! Estou usando o Teravia para gestão do meu consultório — agenda, prontuários e IA calibrada pela minha abordagem. É muito bom! Você pode testar com 20 sessões gratuitas: ' + refLink;
@@ -114,8 +115,8 @@ function abrirReferral() {
       <div style="display:flex;flex-direction:column;gap:10px">
         <button onclick="copiarReferral()" style="width:100%;padding:11px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">${_tfIcon('clip')} Copiar mensagem</button>
         <div style="display:flex;gap:8px">
-          <button onclick="compartilharWhatsApp()" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">${_tfIcon('wpp')} WhatsApp</button>
-          <button onclick="compartilharEmail()" style="flex:1;padding:10px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✉ Email</button>
+          <button onclick="compartilharWhatsApp()" style="flex:1;padding:10px;background:var(--white);color:var(--ink-soft);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">${_tfIcon('wpp')} WhatsApp</button>
+          <button onclick="compartilharEmail()" style="flex:1;padding:10px;background:var(--white);color:var(--ink-soft);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✉ Email</button>
         </div>
         <button onclick="document.getElementById('modal-referral').remove()" style="width:100%;padding:10px;border:1px solid var(--border);background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Fechar</button>
       </div>

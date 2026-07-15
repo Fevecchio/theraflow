@@ -1119,9 +1119,9 @@ function renderPatientApp(idx, pacs) {
   + '<div style="margin:0 16px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow)">'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700;flex-shrink:0">' + _therapistInitial + '</div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">' + escHTML(_therapistFirst) + '</div><div style="font-size:11.5px;color:var(--muted)">deixou uma mensagem</div></div></div>'
     + '<div style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;font-style:italic">&#8220;' + escHTML(msgTexto) + '&#8221;</div>'
-    // Mini bio (item 1 dos desligados, LIGADA 11/07): humaniza — a paciente vê
-    // quem é a terapeuta. Só aparece se a bio existir.
-    + (function(){ var _b = _pacTherapistBio(); return _b ? '<div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px;padding-top:8px;border-top:1px solid var(--line-2, var(--border))">Sobre ' + escHTML(_therapistFirst) + ': ' + escHTML(_b) + '</div>' : ''; })()
+    // Mini bio SAIU do portal por decisão do fundador (15/07): a paciente já
+    // conhece a terapeuta — a bio é material de apresentação p/ quem ainda não é
+    // paciente (futura página pública). _pacTherapistBio() fica p/ esse uso.
   + '</div>'
   + '<div style="margin:0 16px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 16px;box-shadow:var(--shadow)">'
     + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:2px">Check-in de humor</div>'

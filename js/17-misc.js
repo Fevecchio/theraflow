@@ -603,13 +603,26 @@ function selectPerfilAbordagem(el, key) {
 
 function exportarBackupLGPD() {
   try {
-    var dados = { _meta: { gerado_em: new Date().toISOString(), versao: '1.0', app: 'Teravia' } };
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (!k || !k.startsWith('tf_')) continue;
-      try { dados[k] = JSON.parse(localStorage.getItem(k)); }
-      catch(e) { dados[k] = localStorage.getItem(k); }
-    }
+    // Export ORGANIZADO por área (v2, 15/07): o despejo cru de todas as chaves
+    // tf_* misturava dados reais com caches internos (briefing tf_bc_*, sala de
+    // vídeo, tokens) — ilegível e com mais do que o titular precisa. Agora:
+    // seções nomeadas, só o que é dado de verdade.
+    var _ls = function (k, fb) {
+      try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v === null ? fb : v; }
+      catch (e) { return fb; }
+    };
+    var dados = {
+      _leia_me: 'Exportação dos seus dados no Teravia (portabilidade LGPD). Contém dados clínicos dos seus pacientes — guarde com a mesma segurança do prontuário.',
+      _meta: { gerado_em: new Date().toISOString(), versao: '2.0', app: 'Teravia' },
+      perfil: _ls('tf_account', {}),
+      pacientes: (typeof patients !== 'undefined' && patients && patients.length) ? patients : _ls('tf_patients', []),
+      agenda: (typeof appointments !== 'undefined' && appointments && appointments.length) ? appointments : _ls('tf_appointments', []),
+      financeiro: (typeof charges !== 'undefined' && charges && charges.length) ? charges : _ls('tf_charges', []),
+      tarefas: (typeof tasks !== 'undefined' && tasks && tasks.length) ? tasks : _ls('tf_tasks', []),
+      captacao_leads: _ls('tf_captacao', []),
+      horarios_atendimento: _ls('tf_horarios', null),
+      bloqueios_agenda: _ls('tf_bloqueios', []),
+    };
     var json = JSON.stringify(dados, null, 2);
     var blob = new Blob([json], { type: 'application/json' });
     var url  = URL.createObjectURL(blob);
@@ -767,8 +780,28 @@ async function atualizarSenha() {
       var { error: signInErr } = await supa.auth.signInWithPassword({ email, password: senhaAtual });
       if (signInErr) { showToast('⚠ Senha atual incorreta.'); return; }
     }
+    // Com 2FA ativo, o Supabase exige sessão "nível 2" (código do autenticador)
+    // para trocar a senha — e o re-login acima volta a sessão pro nível 1. Antes
+    // isso estourava "AAL2 session is required" cru na tela (print 15/07).
+    try {
+      var _fx = await supa.auth.mfa.listFactors();
+      var _totp = _fx && _fx.data && (_fx.data.totp || []).find(function(f){ return f.status === 'verified'; });
+      if (_totp) {
+        var _aal = await supa.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (!_aal || !_aal.data || _aal.data.currentLevel !== 'aal2') {
+          var _code = (window.prompt('Como você usa autenticação em dois fatores, confirme a troca com o código de 6 dígitos do seu app autenticador:') || '').trim();
+          if (!_code) { showToast('Troca de senha cancelada — o código 2FA é necessário.'); return; }
+          var { error: mfaErr } = await supa.auth.mfa.challengeAndVerify({ factorId: _totp.id, code: _code });
+          if (mfaErr) { showToast('⚠ Código 2FA incorreto ou expirado — tente de novo.'); return; }
+        }
+      }
+    } catch (e2) { console.warn('[TF] atualizarSenha 2FA:', e2 && e2.message); }
     var { error } = await supa.auth.updateUser({ password: senhaNova });
-    if (error) { showToast('⚠ Erro ao atualizar senha: ' + error.message); return; }
+    if (error) {
+      if (/AAL2/i.test(error.message || '')) showToast('⚠ Confirme o código 2FA para trocar a senha — tente novamente.');
+      else showToast('⚠ Erro ao atualizar senha: ' + error.message);
+      return;
+    }
     // Limpa campos
     document.getElementById('perfil-senha-atual').value = '';
     document.getElementById('perfil-senha-nova').value = '';

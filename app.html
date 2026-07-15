@@ -1830,7 +1830,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           </div>
         </div>
         <div>
-          <label for="perfil-bio" class="perfil-label">Mini bio (aparece no Portal do Paciente)</label>
+          <label for="perfil-bio" class="perfil-label">Mini bio (apresentação profissional — não aparece para seus pacientes)</label>
           <textarea id="perfil-bio" class="perfil-input" style="min-height:72px;resize:none;line-height:1.6" placeholder="Ex.: Psicóloga clínica com foco em TCC e ansiedade. Atendo adultos com uma abordagem acolhedora e baseada em evidências."></textarea>
         </div>
       </div>
@@ -2041,6 +2041,12 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <span style="color:var(--muted);font-size:13px">até</span>
           <input type="time" id="horario-fim" class="perfil-input" style="width:110px;padding:7px 10px" value="18:00"/>
         </div>
+        <!-- Pedido do fundador 15/07: a agenda não deve ficar presa ao expediente —
+             compromissos pessoais/exceções precisam de qualquer horário do dia. -->
+        <label style="margin-top:12px;display:flex;align-items:center;gap:9px;cursor:pointer">
+          <input type="checkbox" id="horario-24h" style="accent-color:var(--sage);width:16px;height:16px"/>
+          <span style="font-size:13px;color:var(--ink-soft)">Agenda 24h — mostrar todas as horas do dia no calendário (o horário padrão vira só uma referência)</span>
+        </label>
         <div style="margin-top:12px;padding:10px 14px;background:var(--sage-light);border-radius:8px;font-size:12px;color:var(--sage);display:flex;gap:6px">
           <span>Horários salvos automaticamente ao clicar em <strong>Salvar alterações</strong>.</span>
         </div>
@@ -2063,8 +2069,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <!-- Notificações -->
       <div class="perfil-section">
         <div class="perfil-section-title">Lembretes ao paciente</div>
+        <!-- Sem emoji no comeco do texto: virava caixinha (tofu) em alguns Windows — print do fundador 15/07 -->
         <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;padding:10px 14px;background:var(--bg);border-radius:8px;border-left:3px solid var(--sage)">
-          📲 O Teravia monta a mensagem automaticamente e abre o WhatsApp com o texto e contato preenchidos. Você envia com um toque — sem automação, sem custo extra.
+          O Teravia monta a mensagem automaticamente e abre o WhatsApp com o texto e contato preenchidos. Você envia com um toque — sem automação, sem custo extra.
         </div>
         <div style="display:flex;flex-direction:column;gap:14px">
           <div>
@@ -2077,9 +2084,9 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             </select>
           </div>
           <div>
-            <label for="perfil-wpp-template" class="perfil-label">Modelo da mensagem <span style="font-weight:400;color:var(--muted)">(variáveis: [Nome], [dia], [hora], [Terapeuta])</span></label>
+            <label for="perfil-wpp-template" class="perfil-label">Modelo da mensagem</label>
             <textarea id="perfil-wpp-template" class="perfil-input" style="min-height:80px;resize:vertical;line-height:1.6" placeholder="Olá [Nome]! 🌿&#10;&#10;Lembrete da sua sessão de psicoterapia [dia] às [hora].&#10;&#10;Até logo! 💚&#10;— [Terapeuta]"></textarea>
-            <div style="font-size:11px;color:var(--muted);margin-top:5px">Variáveis: [Nome] [dia] [hora] [Terapeuta]</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:5px">Variáveis que viram os dados reais: [Nome] · [dia] · [hora] · [Terapeuta]</div>
           </div>
         </div>
       </div>
