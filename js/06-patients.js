@@ -401,8 +401,30 @@ function _enviarWhatsAppAcesso(p, nome, senha) {
     + 'No primeiro acesso você criará uma senha pessoal. Depois é só abrir o link e entrar!\n\n'
     + 'Qualquer dúvida é só me chamar. Até a próxima sessão! 💚\n'
     + '— ' + terapeuta;
-  // _wppLink normaliza o número (não duplica o 55 quando já vem com +55)
-  window.open(_wppLink(p.whatsapp, msg), '_blank');
+  // _wppLink normaliza o número (não duplica o 55 quando já vem com +55).
+  // O window.open roda DEPOIS de confirms/fetches — o navegador pode bloquear o
+  // popup (perdeu o gesto do clique) e o fluxo morria em silêncio ("cliquei OK e
+  // nada aconteceu", print do fundador 15/07). Fallback: modal com o link.
+  var _url = _wppLink(p.whatsapp, msg);
+  var _win = null;
+  try { _win = window.open(_url, '_blank'); } catch (e) {}
+  if (!_win) {
+    var _old = document.getElementById('modal-acesso-wpp'); if (_old) _old.remove();
+    var _ov = document.createElement('div');
+    _ov.id = 'modal-acesso-wpp';
+    _ov.className = 'modal-overlay open';
+    _ov.innerHTML = '<div class="modal" style="max-width:420px">'
+      + '<div class="modal-header"><div class="modal-title">Acesso pronto — falta enviar</div>'
+      + '<button class="modal-close" onclick="document.getElementById(\'modal-acesso-wpp\').remove()">✕</button></div>'
+      + '<div class="modal-body">'
+      + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:14px">O acesso de <strong>' + escHTML(nome) + '</strong> foi criado. O navegador bloqueou a abertura automática do WhatsApp — clique abaixo para abrir com a mensagem e a senha prontas:</div>'
+      + '<a href="' + _url + '" target="_blank" rel="noopener" class="btn btn-primary" style="width:100%;justify-content:center;text-decoration:none" onclick="setTimeout(function(){var m=document.getElementById(\'modal-acesso-wpp\');if(m)m.remove()},400)">Abrir WhatsApp com as credenciais</a>'
+      + '</div></div>';
+    document.body.appendChild(_ov);
+    _ov.addEventListener('click', function(e){ if (e.target === _ov) _ov.remove(); });
+  } else {
+    showToast('💬 WhatsApp aberto com as credenciais de ' + nome + ' — revise e envie.');
+  }
 }
 
 async function revogarPortalPaciente(i) {
@@ -852,7 +874,12 @@ function renderPatients(filter) {
       </div>
     </div>`;
   }).join('');
-  selectPatientFiltered(filtered[0]._i, list.querySelector('.list-item'));
+  // Mantém o paciente ABERTO selecionado após re-render (editar/salvar voltava
+  // sempre pro primeiro da lista — print do fundador 15/07). Se ele saiu do
+  // filtro atual, aí sim cai no primeiro.
+  var _aindaNaLista = filtered.some(function(p){ return p._i === currentPatientIdx; });
+  var _selIdx = _aindaNaLista ? currentPatientIdx : filtered[0]._i;
+  selectPatientFiltered(_selIdx, list.querySelector('.list-item[data-idx="' + _selIdx + '"]') || list.querySelector('.list-item'));
 }
 
 function selectPatientFiltered(i, el) {
@@ -928,7 +955,7 @@ function renderPatientDetailShell(i) {
         <div class="detail-name">${escHTML(p.name)}</div>
         <div class="detail-meta">
           <span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span>
-          <span>📍 ${escHTML(p.cidade)}</span>
+          <span>📍 ${escHTML(p.cidade || '—')}</span>
           <span>📋 ${escHTML(p.abordagem)}</span>
           <span>🗓 Próxima: ${p.next || '—'}</span>
           <span style="display:flex;align-items:center;gap:4px">

@@ -2074,14 +2074,10 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           O Teravia monta a mensagem automaticamente e abre o WhatsApp com o texto e contato preenchidos. Você envia com um toque — sem automação, sem custo extra.
         </div>
         <div style="display:flex;flex-direction:column;gap:14px">
-          <div>
-            <label for="perfil-lembrete-quando" class="perfil-label">Quando preparar o lembrete</label>
-            <select id="perfil-lembrete-quando" class="perfil-input">
-              <option value="24h">24h antes da sessão</option>
-              <option value="48h">48h antes da sessão</option>
-              <option value="1h">1h antes da sessão</option>
-              <option value="nao">Não preparar</option>
-            </select>
+          <!-- O seletor antigo (24h/48h/1h) não controlava nada — o sistema real agenda
+               24h + 15min automáticos (pedido do fundador 15/07: dizer a verdade aqui). -->
+          <div style="font-size:13px;color:var(--ink-soft);line-height:1.6;padding:10px 14px;background:var(--sage-light);border-radius:8px">
+            <strong>Lembrete por e-mail:</strong> ao marcar "lembrete" no agendamento, o paciente recebe automaticamente <strong>24h antes</strong> e <strong>15 minutos antes</strong> da sessão (este último com o botão de entrar na sala).
           </div>
           <div>
             <label for="perfil-wpp-template" class="perfil-label">Modelo da mensagem</label>

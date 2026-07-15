@@ -61,6 +61,21 @@ function _lancarApp() {
   document.getElementById('tf-onboarding-layer').style.display = 'none';
   document.getElementById('tf-app-layer').style.display        = 'flex';
 
+  // Migração 15/07: quem salvou o template PADRÃO antigo de lembrete (sem a linha
+  // do portal, com emojis que viravam "�") volta pro padrão novo — só quando o
+  // texto é o default intocado; personalização de verdade nunca é sobrescrita.
+  try {
+    var _accMig = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    if (_accMig.wpp_template) {
+      var _norm = _accMig.wpp_template.replace(/[\u{1F300}-\u{1FAFF}�]/gu, '').replace(/\s+/g, ' ').trim();
+      var _oldDefault = 'Olá [Nome]! Lembrete da sua sessão de psicoterapia [dia] às [hora]. Qualquer imprevisto, é só me avisar por aqui. Até logo! — [Terapeuta]';
+      if (_norm === _oldDefault) {
+        delete _accMig.wpp_template; // campo vazio = usa o novo padrão (com a linha do portal)
+        localStorage.setItem('tf_account', JSON.stringify(_accMig));
+      }
+    }
+  } catch (e) {}
+
   carregarPacientes();
   carregarAppointments();
   charges = carregarCharges();
