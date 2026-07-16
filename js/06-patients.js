@@ -96,6 +96,9 @@ function criarPaciente() {
   // Funil de ativação: total permite ver "1º paciente criado" no PostHog (sem nome/dado clínico)
   tfTrack('paciente_criado', { total: patients.filter(function(x){ return !x._isDemo; }).length });
   showToast('✓ Paciente criado com sucesso!');
+  // Pipeline de captação: se existe lead aberto com este nome/WhatsApp, marcar
+  // como convertido — vale p/ QUALQUER caminho de criação, não só o botão ✓ Paciente.
+  if (typeof _capMarcarGanhoPorPaciente === 'function') _capMarcarGanhoPorPaciente(d.nome, d.whatsapp);
   checkFirstPatientBanner();
   renderPatients();
   // Oferecer envio de acesso ao portal imediatamente

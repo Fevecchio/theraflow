@@ -418,9 +418,63 @@ function excluirLead(id) {
   renderKanban();
 }
 
+/* Comparações tolerantes p/ casar lead ↔ paciente: nome normalizado (espaços,
+ * maiúsculas) e WhatsApp só-dígitos. Usadas na conversão e no gancho de
+ * criarPaciente — o pipeline precisa perceber a conversão por QUALQUER caminho,
+ * não só pelo botão ✓ Paciente (bug real 15/07: ficha criada por fora e o lead
+ * ficou preso no quadro sem ter como sair a não ser excluindo). */
+function _capNormNome(s) {
+  return (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+function _capWppDigits(s) {
+  return (s || '').replace(/\D/g, '');
+}
+function _capPacienteDoLead(lead) {
+  if (typeof patients === 'undefined' || !patients) return null;
+  var nome = _capNormNome(lead.nome);
+  var wpp  = _capWppDigits(lead.whatsapp);
+  return patients.find(function(p) {
+    if (!p || p._isDemo) return false;
+    if (wpp && wpp.length >= 8 && _capWppDigits(p.whatsapp) === wpp) return true;
+    return !!nome && _capNormNome(p.name) === nome;
+  }) || null;
+}
+
+/* Chamada por criarPaciente (js/06) após criar a ficha com sucesso: se existe
+ * lead aberto com o mesmo nome/WhatsApp, marca como convertido (histórico das
+ * métricas) e avisa. Cobre criação manual, conversão abandonada no meio, etc. */
+function _capMarcarGanhoPorPaciente(nome, whatsapp) {
+  // Lazy-load: a ficha pode ser criada antes de a página de Captação abrir na sessão.
+  if (captacaoLeads.length === 0) carregarCaptacao();
+  var n = _capNormNome(nome);
+  var w = _capWppDigits(whatsapp);
+  var marcou = false;
+  captacaoLeads.forEach(function(l) {
+    if (!l || l.ganho) return;
+    var casa = (w && w.length >= 8 && _capWppDigits(l.whatsapp) === w)
+            || (!!n && _capNormNome(l.nome) === n);
+    if (casa) { l.ganho = true; l.ganhoEm = new Date().toISOString(); marcou = true; }
+  });
+  if (marcou) {
+    salvarCaptacao();
+    if (typeof showToast === 'function') showToast('🎯 Lead marcado como convertido no pipeline de captação.');
+  }
+}
+
 function converterParaPaciente(id) {
   var lead = captacaoLeads.find(function(l){ return l.id === id; });
   if (!lead) return;
+  // Já tem ficha? Não abrir cadastro duplicado — só tirar o lead do quadro.
+  var jaPaciente = _capPacienteDoLead(lead);
+  if (jaPaciente) {
+    if (!confirm('"' + lead.nome + '" já tem ficha de paciente (' + jaPaciente.name + ').\nMarcar o lead como convertido e tirá-lo do quadro?')) return;
+    lead.ganho = true;
+    lead.ganhoEm = new Date().toISOString();
+    salvarCaptacao();
+    renderKanban();
+    showToast('✓ Lead marcado como convertido — ele conta nas métricas do funil.');
+    return;
+  }
   if (!confirm('Converter "' + lead.nome + '" para paciente?\nO lead sairá do pipeline ao confirmar a ficha.')) return;
 
   var nome   = lead.nome;
