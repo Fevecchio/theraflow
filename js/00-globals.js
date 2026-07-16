@@ -74,7 +74,19 @@ var tfUserData = {
 // Mapa nome display → chave interna de calibração da IA
 var ABORDAGEM_KEY_MAP = {
   'TCC': 'tcc', 'Psicanálise': 'psicanalise', 'Humanista': 'humanista',
-  'Sistêmica': 'sistemica', 'ACT': 'act', 'EMDR': 'emdr'
+  'Sistêmica': 'sistemica', 'ACT': 'act', 'EMDR': 'emdr',
+  'Junguiana': 'junguiana', 'Gestalt': 'gestalt', 'Gestalt-terapia': 'gestalt',
+  // Rótulos compostos usados em selects antigos — mapeiam p/ a mesma chave.
+  'ACT / DBT': 'act', 'Psicanálise / Psicodinâmica': 'psicanalise', 'Humanista / Gestalt': 'humanista',
+  // Chaves cruas: saveProfile antigo gravava a CHAVE no banco (users.abordagem) —
+  // sem estas entradas, quem relogasse cairia no fallback 'outra' indevidamente.
+  'tcc': 'tcc', 'psicanalise': 'psicanalise', 'humanista': 'humanista',
+  'sistemica': 'sistemica', 'act': 'act', 'emdr': 'emdr', 'junguiana': 'junguiana', 'gestalt': 'gestalt'
+};
+// Chave → rótulo de exibição (normaliza abordagem vinda do banco como chave crua).
+var ABORDAGEM_KEY_TO_LABEL = {
+  tcc: 'TCC', psicanalise: 'Psicanálise', humanista: 'Humanista', sistemica: 'Sistêmica',
+  act: 'ACT', emdr: 'EMDR', junguiana: 'Junguiana', gestalt: 'Gestalt'
 };
 
 /* Carrega dados do Supabase e popula localStorage */
@@ -172,7 +184,7 @@ async function _supaLoadUserData(userId) {
         nome: nomeFromDB || acc.nome || '',
         crp: profile.crp || acc.crp || '',
         email: profile.email,
-        abordagem: profile.abordagem || '',
+        abordagem: ABORDAGEM_KEY_TO_LABEL[profile.abordagem] || profile.abordagem || '',
         sessoes_usadas: profile.sessoes_usadas || 0,
         plano,
         supa_id: userId,

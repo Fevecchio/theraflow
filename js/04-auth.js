@@ -91,7 +91,7 @@ function _proceedToApp(account) {
     tfUserData.abordagem   = account.abordagem || '';
     tfUserData.secundarias = account.secundarias || [];
     tfUserData.bio         = account.bio || '';
-    tfUserData.abordagemKey = account.abordagemKey || ABORDAGEM_KEY_MAP?.[account.abordagem] || 'tcc';
+    tfUserData.abordagemKey = account.abordagemKey || ABORDAGEM_KEY_MAP?.[account.abordagem] || (account.abordagem ? 'outra' : 'tcc');
     try {
       if (window.posthog && account.supa_id) {
         posthog.identify(account.supa_id, {

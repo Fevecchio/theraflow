@@ -588,6 +588,11 @@ function selectPerfilAbordagem(el, key) {
   el.classList.add('selected');
   profileAbordagem = key;
 
+  if (key === 'outra') {
+    const input = document.getElementById('perfil-abordagem-outra-input');
+    if (input) setTimeout(() => input.focus(), 50);
+  }
+
   // Atualiza preview de calibração da IA em tempo real
   const cal = abordagemCalibration[key];
   if (!cal) return;
@@ -599,6 +604,14 @@ function selectPerfilAbordagem(el, key) {
   if (briefing) briefing.textContent = cal.briefing;
   if (supervisao) supervisao.textContent = cal.supervisao;
   if (plano) plano.textContent = cal.plano;
+}
+
+// Digitar no campo do card "Outra abordagem" já seleciona o card (mesmo padrão
+// do onboarding: escrever É escolher).
+function onPerfilOutraInput(input) {
+  const card = document.getElementById('perfil-abordagem-outra-card');
+  if (card && !card.classList.contains('selected')) selectPerfilAbordagem(card, 'outra');
+  else profileAbordagem = 'outra';
 }
 
 function exportarBackupLGPD() {
@@ -688,8 +701,15 @@ function saveProfile() {
   tfUserData.crp         = crp;
   tfUserData.abordagemKey = profileAbordagem;
   // Converte chave → nome display
-  var keyToLabel = {tcc:'TCC', psicanalise:'Psicanálise', sistemica:'Sistêmica', humanista:'Humanista', act:'ACT'};
-  tfUserData.abordagem = keyToLabel[profileAbordagem] || profileAbordagem;
+  var keyToLabel = {tcc:'TCC', psicanalise:'Psicanálise', sistemica:'Sistêmica', humanista:'Humanista', act:'ACT', junguiana:'Junguiana', gestalt:'Gestalt', emdr:'EMDR'};
+  if (profileAbordagem === 'outra') {
+    // Abordagem escrita à mão: usa o texto do campo; vazio mantém a atual
+    // (nunca sobrescrever a abordagem real com a palavra "outra").
+    var _outraTxt = document.getElementById('perfil-abordagem-outra-input')?.value.trim();
+    if (_outraTxt) tfUserData.abordagem = _outraTxt;
+  } else {
+    tfUserData.abordagem = keyToLabel[profileAbordagem] || profileAbordagem;
+  }
 
   // ── Salva dados no localStorage ── (apiKeyVal já validado no topo)
   try {
@@ -730,7 +750,9 @@ function saveProfile() {
     // os valores do cadastro a cada login (_supaLoadUserData sobrescreve do banco).
     if (acc.supa_id && typeof supa !== 'undefined') {
       supa.from('users').update({
-        nome: nome, crp: crp, abordagem: profileAbordagem, updated_at: new Date().toISOString()
+        // Rótulo real (ou texto livre da "Outra") — a chave crua no banco fazia o
+        // relogin exibir "psicanalise" minúsculo e quebrava a calibragem.
+        nome: nome, crp: crp, abordagem: tfUserData.abordagem, updated_at: new Date().toISOString()
       }).eq('id', acc.supa_id).then(function(r){
         if (r && r.error) console.warn('[TF] update users falhou:', r.error.message);
       }, function(){});
@@ -741,7 +763,7 @@ function saveProfile() {
   aplicarDadosNoApp();
 
   // ── Toast com abordagem ──
-  const labels = {tcc:'TCC', psicanalise:'Psicanálise', sistemica:'Sistêmica', humanista:'Humanista/Gestalt', act:'ACT/DBT'};
+  const labels = {tcc:'TCC', psicanalise:'Psicanálise', sistemica:'Sistêmica', humanista:'Humanista', act:'ACT/DBT', junguiana:'Junguiana', gestalt:'Gestalt', emdr:'EMDR', outra: tfUserData.abordagem};
   const abordLabel = labels[profileAbordagem] || profileAbordagem;
   // Sincroniza duração e valor padrão de sessão
   var duracaoEl = document.getElementById('perfil-duracao');

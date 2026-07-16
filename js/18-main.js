@@ -7,7 +7,9 @@ function abrirApp() {
     tfUserData.email       = savedData.email       || '';
     tfUserData.abordagem   = savedData.abordagem   || '';
     tfUserData.secundarias = savedData.secundarias || [];
-    tfUserData.abordagemKey = ABORDAGEM_KEY_MAP[tfUserData.abordagem] || 'tcc';
+    // Abordagem escrita à mão (opção "Outra") ganha a chave 'outra' — a calibragem
+    // mostra o texto honesto genérico em vez de fingir que a pessoa é de TCC.
+    tfUserData.abordagemKey = ABORDAGEM_KEY_MAP[tfUserData.abordagem] || (tfUserData.abordagem ? 'outra' : 'tcc');
   }
 
   // Persiste conta no localStorage para login futuro
@@ -264,9 +266,16 @@ function aplicarDadosNoApp() {
       (abordKey === 'psicanalise' && cardAbord === 'PSICANÁLISE') ||
       (abordKey === 'humanista'   && cardAbord === 'HUMANISTA') ||
       (abordKey === 'sistemica'   && cardAbord === 'SISTÊMICA') ||
-      (abordKey === 'act'         && (cardAbord === 'ACT' || cardAbord === 'ACT / DBT'))
+      (abordKey === 'act'         && (cardAbord === 'ACT' || cardAbord === 'ACT / DBT')) ||
+      (abordKey === 'junguiana'   && cardAbord === 'JUNGUIANA') ||
+      (abordKey === 'gestalt'     && cardAbord === 'GESTALT-TERAPIA') ||
+      (abordKey === 'emdr'        && cardAbord === 'EMDR') ||
+      (abordKey === 'outra'       && card.id === 'perfil-abordagem-outra-card')
     );
   });
+  // Abordagem escrita à mão: o campo do card "Outra" mostra o texto real dela.
+  var _outraInput = document.getElementById('perfil-abordagem-outra-input');
+  if (_outraInput && abordKey === 'outra') _outraInput.value = abordagem;
 
   // ── 5. CALIBRAÇÃO DA IA (perfil) ──
   var cal = (typeof abordagemCalibration !== 'undefined') ? abordagemCalibration[abordKey] : null;

@@ -36,6 +36,7 @@ function limparModalPaciente() {
   if (selAb) {
     selAb.selectedIndex = 0;
     const ab = tfUserData?.abordagem || 'TCC';
+    _npEnsureAbordagemOption(selAb, ab);
     for (let o of selAb.options) { if (o.text === ab || o.value === ab) { o.selected = true; break; } }
   }
   document.getElementById('modal-paciente-titulo').textContent = 'Novo paciente';
@@ -51,6 +52,14 @@ function limparModalPaciente() {
 function fecharModalPaciente() {
   limparModalPaciente();
   closeModal('modal-novo-paciente');
+}
+
+// Abordagem fora da lista fixa (terapeuta que escreveu a própria na opção
+// "Outra"): entra como <option> dinâmica p/ o select não mentir caindo em TCC.
+function _npEnsureAbordagemOption(sel, valor) {
+  if (!sel || !valor) return;
+  for (let o of sel.options) { if (o.text === valor || o.value === valor) return; }
+  sel.appendChild(new Option(valor, valor));
 }
 
 // Abertura padrão do modal: sempre limpa ANTES (restaura o onclick do botão
@@ -141,6 +150,7 @@ function showEditarPaciente(i) {
   document.getElementById('np-queixa').value      = p.notes || '';
   // Abordagem
   const selAb = document.getElementById('np-abordagem');
+  _npEnsureAbordagemOption(selAb, p.abordagem);
   for (let o of selAb.options) { if (o.value === p.abordagem) { o.selected = true; break; } }
   // Status
   const selSt = document.getElementById('np-status');

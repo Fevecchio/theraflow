@@ -656,6 +656,33 @@ const abordagemCalibration = {
     supervisao: 'Rastreia flexibilidade psicológica, evitação experiencial e alinhamento com valores do paciente.',
     plano: 'Metas baseadas em valores e ações comprometidas, com foco em qualidade de vida.',
   },
+  junguiana: {
+    notas: 'Notas narrativas com atenção a símbolos, sonhos, arquétipos e movimentos do processo de individuação.',
+    briefing: 'Perguntas sobre sonhos relatados, imagens e temas recorrentes desde a última sessão.',
+    supervisao: 'Acompanha material simbólico recorrente, temas arquetípicos e o momento do processo de individuação.',
+    plano: 'Objetivos processuais ligados à individuação — sem metas numéricas rígidas.',
+  },
+  gestalt: {
+    notas: 'Notas centradas no aqui-e-agora: awareness, ciclo de contato, figura-fundo e experimentos realizados em sessão.',
+    briefing: 'Perguntas sobre awareness no intervalo, situações inacabadas e a qualidade do contato nas relações.',
+    supervisao: 'Observa a qualidade do contato, interrupções do ciclo e temas de fundo que insistem em virar figura.',
+    plano: 'Objetivos de ampliação de awareness e fechamento de situações inacabadas — foco no processo.',
+  },
+  emdr: {
+    notas: 'Notas com foco em alvos de reprocessamento, medidas de perturbação (SUDS/VoC) e resposta à estimulação bilateral.',
+    briefing: 'Perguntas sobre perturbação residual dos alvos trabalhados, novos gatilhos e recursos de estabilização.',
+    supervisao: 'Rastreia alvos processados, evolução das medidas de perturbação e a estabilidade entre sessões.',
+    plano: 'Plano por alvos (passado, presente, futuro) com crenças positivas a instalar.',
+  },
+  // Abordagem escrita à mão (opção "Outra"): texto honesto — a IA calibra pelo
+  // NOME que o profissional escreveu (vai como texto livre nos prompts), sem
+  // fingir estrutura de uma escola que ele não escolheu.
+  outra: {
+    notas: 'A IA usa o nome da sua abordagem exatamente como você escreveu e mantém o vocabulário coerente com ela, sem forçar técnica que não apareceu na sessão.',
+    briefing: 'Perguntas de continuidade coerentes com a sua abordagem, a partir do que as sessões e o portal registram.',
+    supervisao: 'Acompanha a evolução com linguagem fiel ao seu registro clínico, sem impor estrutura de outra escola.',
+    plano: 'Objetivos no formato que você definir — a IA acompanha sem impor metas de um modelo que não é o seu.',
+  },
 };
 
 // Funções do campo de API key (toggleApiKeyVisibility/getApiKey/loadApiKeyToForm)

@@ -210,6 +210,8 @@ function validateScreen2() {
 const ABORDAGENS_LIST = [
   { val: 'TCC',        icon: '🧩' },
   { val: 'Psicanálise',icon: '🛋️' },
+  { val: 'Junguiana',  icon: '🌙' },
+  { val: 'Gestalt',    icon: '🌀' },
   { val: 'Humanista',  icon: '🌱' },
   { val: 'Sistêmica',  icon: '🔗' },
   { val: 'ACT',        icon: '🎯' },
