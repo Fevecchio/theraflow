@@ -46,6 +46,8 @@ function abrirApp() {
           ...(refId ? { referred_by: refId } : {}),
         }).eq('id', data.user.id).then(() => {
           if (refId) localStorage.removeItem('tf_referral');
+          // Secundárias do onboarding sobem já no cadastro (users.settings)
+          if (typeof _supaSync_settings === 'function') _supaSync_settings();
         });
       }
     }).catch(() => {});

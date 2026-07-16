@@ -257,23 +257,23 @@ body { background: #f7f8f6; color: #1a1f1c; font-family: 'DM Sans', sans-serif; 
 #tf-onboarding-layer .ab-divider {
   height: 1px; background: var(--border); margin: 20px 0 18px;
 }
-#tf-onboarding-layer /* ── SECUNDÁRIAS ── */
-.secundarias-grid {
+/* ── SECUNDÁRIAS (onboarding + Perfil compartilham os chips) ── */
+#tf-onboarding-layer .secundarias-grid, #page-perfil .secundarias-grid {
   display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
 }
-#tf-onboarding-layer .sec-chip {
+#tf-onboarding-layer .sec-chip, #page-perfil .sec-chip {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;
   border: 1.5px solid var(--border); background: var(--bg);
   cursor: pointer; transition: all .15s; user-select: none;
   color: var(--ink-soft);
 }
-#tf-onboarding-layer .sec-chip:hover { border-color: var(--sage-mid); background: var(--sage-light); }
-#tf-onboarding-layer .sec-chip.selected {
+#tf-onboarding-layer .sec-chip:hover, #page-perfil .sec-chip:hover { border-color: var(--sage-mid); background: var(--sage-light); }
+#tf-onboarding-layer .sec-chip.selected, #page-perfil .sec-chip.selected {
   border-color: var(--sage); background: var(--sage-light); color: var(--sage);
 }
-#tf-onboarding-layer .sec-chip .chip-check { font-size: 11px; opacity: 0; transition: opacity .15s; }
-#tf-onboarding-layer .sec-chip.selected .chip-check { opacity: 1; }
+#tf-onboarding-layer .sec-chip .chip-check, #page-perfil .sec-chip .chip-check { font-size: 11px; opacity: 0; transition: opacity .15s; }
+#tf-onboarding-layer .sec-chip.selected .chip-check, #page-perfil .sec-chip.selected .chip-check { opacity: 1; }
 #tf-onboarding-layer .ab-sec-outra-wrap { margin-top: 4px; }
 #tf-onboarding-layer /* ── IA BADGE ── */
 .ia-callout {

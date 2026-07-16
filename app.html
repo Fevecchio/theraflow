@@ -1916,18 +1916,10 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         </div>
 
         <div style="margin-top:14px">
-          <label for="perfil-abordagem-sec" class="perfil-label">Abordagem secundária (opcional)</label>
-          <select id="perfil-abordagem-sec" class="perfil-input">
-            <option value="">Nenhuma</option>
-            <option>TCC</option>
-            <option>Psicanálise / Psicodinâmica</option>
-            <option>Junguiana</option>
-            <option>Gestalt</option>
-            <option>Humanista</option>
-            <option>Sistêmica</option>
-            <option>ACT / DBT</option>
-            <option>EMDR</option>
-          </select>
+          <label class="perfil-label">Abordagens secundárias (opcional — terapeuta integrativo)</label>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5">Entram como contexto extra na nota clínica e no briefing. Pode marcar mais de uma.</div>
+          <div class="secundarias-grid" id="perfil-sec-grid"></div>
+          <input type="text" id="perfil-sec-outra-input" class="perfil-input" placeholder="+ Outra secundária — escreva e tecle Enter…" oninput="onPerfilSecOutraInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();_perfilAddSecLivre(this);}"/>
         </div>
       </div>
 

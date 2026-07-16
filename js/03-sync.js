@@ -592,6 +592,9 @@ function _supaSync_settings() {
         try { settings.bloqueios = JSON.parse(localStorage.getItem('tf_bloqueios') || '[]'); } catch(_) { settings.bloqueios = []; }
         try { settings.horarios  = JSON.parse(localStorage.getItem('tf_horarios')  || 'null'); } catch(_) { settings.horarios = null; }
         try { settings.plans     = JSON.parse(localStorage.getItem('tf_plans')     || '[]'); } catch(_) { settings.plans = []; }
+        // Abordagens secundárias do terapeuta (calibram nota/briefing) — SEMPRE
+        // incluídas: o update é do objeto inteiro, omitir = apagar no servidor.
+        try { settings.secundarias = JSON.parse(localStorage.getItem('tf_account') || '{}').secundarias || []; } catch(_) { settings.secundarias = []; }
         const { error } = await supa.from('users').update({ settings: settings }).eq('id', user.id);
         if (error) throw error;
       });

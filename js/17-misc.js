@@ -559,8 +559,10 @@ function initPerfil() {
     // e select morto que não salvava).
     var fBio = document.getElementById('perfil-bio');
     if (fBio) fBio.value = acc.bio || '';
-    var fSec = document.getElementById('perfil-abordagem-sec');
-    if (fSec) fSec.value = (acc.secundarias && acc.secundarias[0]) || '';
+    // Secundárias: chips múltiplos (mesmo modelo do onboarding). O select antigo
+    // de UMA só derrubava as demais em silêncio a cada save do Perfil.
+    perfilSecundarias = Array.isArray(acc.secundarias) ? acc.secundarias.slice() : [];
+    _perfilBuildSecChips();
     // Anos de experiência (item 4) — hero só mostra se houver valor REAL
     var fExp = document.getElementById('perfil-experiencia');
     if (fExp) fExp.value = acc.experiencia || '';
@@ -593,6 +595,10 @@ function selectPerfilAbordagem(el, key) {
     if (input) setTimeout(() => input.focus(), 50);
   }
 
+  // A nova primária sai das secundárias (mesma regra do onboarding)
+  perfilSecundarias = perfilSecundarias.filter(s => s !== _perfilAbordagemLabel());
+  _perfilBuildSecChips();
+
   // Atualiza preview de calibração da IA em tempo real
   const cal = abordagemCalibration[key];
   if (!cal) return;
@@ -612,6 +618,55 @@ function onPerfilOutraInput(input) {
   const card = document.getElementById('perfil-abordagem-outra-card');
   if (card && !card.classList.contains('selected')) selectPerfilAbordagem(card, 'outra');
   else profileAbordagem = 'outra';
+}
+
+/* ── Abordagens SECUNDÁRIAS no Perfil (chips múltiplos, espelho do onboarding) ── */
+var perfilSecundarias = [];
+
+// Rótulo da primária atual (p/ escondê-la dos chips): chave → nome; "outra" usa o texto do campo.
+function _perfilAbordagemLabel() {
+  if (profileAbordagem === 'outra') {
+    return document.getElementById('perfil-abordagem-outra-input')?.value.trim() || tfUserData.abordagem || '';
+  }
+  var keyToLabel = {tcc:'TCC', psicanalise:'Psicanálise', sistemica:'Sistêmica', humanista:'Humanista', act:'ACT', junguiana:'Junguiana', gestalt:'Gestalt', emdr:'EMDR'};
+  return keyToLabel[profileAbordagem] || tfUserData.abordagem || '';
+}
+
+function _perfilBuildSecChips() {
+  var grid = document.getElementById('perfil-sec-grid');
+  if (!grid) return;
+  var primaria = _perfilAbordagemLabel();
+  var nomeadas = (typeof ABORDAGENS_LIST !== 'undefined')
+    ? ABORDAGENS_LIST.map(function(a){ return a.val; })
+    : ['TCC','Psicanálise','Junguiana','Gestalt','Humanista','Sistêmica','ACT','EMDR'];
+  // Secundárias escritas à mão (onboarding ou aqui) viram chip também
+  var extras = perfilSecundarias.filter(function(s){ return nomeadas.indexOf(s) === -1; });
+  grid.innerHTML = '';
+  nomeadas.concat(extras).forEach(function(val) {
+    if (val === primaria) return;
+    var chip = document.createElement('div');
+    chip.className = 'sec-chip' + (perfilSecundarias.indexOf(val) !== -1 ? ' selected' : '');
+    chip.innerHTML = '<span>' + escHTML(val) + '</span><span class="chip-check">✓</span>';
+    chip.onclick = function(){ togglePerfilSecundaria(val); };
+    grid.appendChild(chip);
+  });
+}
+
+function togglePerfilSecundaria(val) {
+  if (perfilSecundarias.indexOf(val) !== -1) perfilSecundarias = perfilSecundarias.filter(function(s){ return s !== val; });
+  else perfilSecundarias.push(val);
+  _perfilBuildSecChips();
+}
+
+// Campo livre: vírgula ou Enter adicionam o chip (Enter via onkeydown no input)
+function onPerfilSecOutraInput(input) {
+  if (input.value.endsWith(',') || input.value.endsWith('\n')) _perfilAddSecLivre(input);
+}
+function _perfilAddSecLivre(input) {
+  var val = input.value.replace(/[,\n]/g, '').trim();
+  if (val && perfilSecundarias.indexOf(val) === -1 && val !== _perfilAbordagemLabel()) perfilSecundarias.push(val);
+  input.value = '';
+  _perfilBuildSecChips();
 }
 
 function exportarBackupLGPD() {
@@ -730,9 +785,10 @@ function saveProfile() {
     // Mini bio (item 1) → vai ao portal da paciente via metadata (_therapistBio, js/03)
     var bioEl = document.getElementById('perfil-bio');
     if (bioEl) { acc.bio = bioEl.value.trim(); tfUserData.bio = acc.bio; }
-    // Abordagem secundária (item 3) → _abordagemSecundariasIA já consome tfUserData.secundarias
-    var secEl = document.getElementById('perfil-abordagem-sec');
-    if (secEl) { acc.secundarias = secEl.value ? [secEl.value] : []; tfUserData.secundarias = acc.secundarias; }
+    // Abordagens secundárias (chips múltiplos) → _abordagemSecundariasIA consome tf_account.secundarias
+    perfilSecundarias = perfilSecundarias.filter(function(s){ return s !== tfUserData.abordagem; });
+    acc.secundarias = perfilSecundarias.slice();
+    tfUserData.secundarias = acc.secundarias;
     // Anos de experiência (item 4) — hero atualiza na hora
     var expEl = document.getElementById('perfil-experiencia');
     if (expEl) {
@@ -746,6 +802,9 @@ function saveProfile() {
     acc.crp = crp;
     acc.abordagem = tfUserData.abordagem;
     localStorage.setItem('tf_account', JSON.stringify(acc));
+    // Secundárias viajam em users.settings (mesmo canal de horários/bloqueios) —
+    // sem isto elas eram local-only e sumiam em outro aparelho.
+    if (typeof _supaSync_settings === 'function') _supaSync_settings();
     // T-A7: persiste no banco (users) — sem isto, nome/CRP/abordagem revertiam para
     // os valores do cadastro a cada login (_supaLoadUserData sobrescreve do banco).
     if (acc.supa_id && typeof supa !== 'undefined') {

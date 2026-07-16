@@ -221,10 +221,20 @@ async function _supaLoadUserData(userId) {
             Array.prototype.push.apply(plans, _st.plans);
           }
         }
-        if (!Array.isArray(_st.bloqueios) && !_st.horarios && !Array.isArray(_st.plans)) {
+        // Abordagens secundárias do terapeuta (calibram nota/briefing): servidor é
+        // a fonte no login — sem isto eram local-only e sumiam em outro aparelho.
+        if (Array.isArray(_st.secundarias)) {
+          var _accSec = JSON.parse(localStorage.getItem('tf_account') || '{}');
+          _accSec.secundarias = _st.secundarias;
+          localStorage.setItem('tf_account', JSON.stringify(_accSec));
+          if (typeof tfUserData !== 'undefined') tfUserData.secundarias = _st.secundarias;
+          if (typeof aplicarDadosNoApp === 'function') aplicarDadosNoApp();
+        }
+        if (!Array.isArray(_st.bloqueios) && !_st.horarios && !Array.isArray(_st.plans) && !Array.isArray(_st.secundarias)) {
           var _temLocal = (localStorage.getItem('tf_bloqueios') || '[]') !== '[]'
             || !!localStorage.getItem('tf_horarios')
-            || (localStorage.getItem('tf_plans') || '[]') !== '[]';
+            || (localStorage.getItem('tf_plans') || '[]') !== '[]'
+            || (Array.isArray(mergedAcc.secundarias) && mergedAcc.secundarias.length > 0);
           if (_temLocal && typeof _supaSync_settings === 'function') _supaSync_settings();
         }
       } catch(_) {}
