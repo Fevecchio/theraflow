@@ -92,7 +92,9 @@ async function callClaude(system, userPrompt) {
     },
     body: JSON.stringify({
       model: NOTE_MODEL,
-      max_tokens: 1500,
+      // 1500 cortava o P (Plano) em sessões ricas — flagrado no teste cego 16/07
+      // (rodada 2: o próprio Sonnet saiu truncado). Teto é cap, não custo fixo.
+      max_tokens: 2500,
       temperature: 0.3, // documentação clínica pede consistência/fidelidade, não criatividade
       system,
       messages: [{ role: 'user', content: userPrompt }],
