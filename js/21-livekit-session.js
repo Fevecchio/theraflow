@@ -858,7 +858,10 @@ async function _lkProcessSession() {
         body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem, abordagemSecundarias: _secArr }),
       });
       if (!nr.ok) throw new Error('session-note ' + nr.status);
-      note = (await nr.json()).note;
+      const _nj = await nr.json();
+      note = _nj.note;
+      // Medição de custo (16/07): só números p/ o PostHog — nada de conteúdo clínico (regra nº 3).
+      try { if (_nj.usage) tfTrack('ia_consumo', { fluxo: 'nota_sessao', tokens_in: _nj.usage.input || 0, tokens_out: _nj.usage.output || 0 }); } catch(_) {}
       // Descarta recusa do Claude (não deve virar nota clínica). Mantém a transcrição real.
       if (_lkIsRefusal(note)) note = '';
       _lkProcStep('s3', 'done');

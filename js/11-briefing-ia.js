@@ -140,11 +140,22 @@ function _getBriefingCache(key) {
 
 /* Fingerprint dos dados clínicos: sessões, notas e (caches novos) humor/diário.
  * Campos ausentes em caches antigos não invalidam (compat). */
+
+// Carimbo _up mais recente das notas: EDITAR uma nota existente não muda a contagem,
+// mas muda o _up (migração 027 exige _up em criação/edição) — sem isto, o pontinho
+// âmbar não acendia após edição e o briefing parecia atualizado sem estar (achado 16/07).
+function _notesLastUp(bp) {
+  try {
+    return (bp.prontuarioNotes || []).reduce(function(m, n) { return Math.max(m, (n && n._up) || 0); }, 0);
+  } catch(_) { return 0; }
+}
+
 function _briefingCacheUnchanged(c, bp) {
   if (c.sessionCount !== (bp.sessions || 0)) return false;
   if (c.noteCount !== (bp.prontuarioNotes || []).length) return false;
   if (c.moodCount !== undefined && c.moodCount !== (bp.moodHistory || []).length) return false;
   if (c.diaryCount !== undefined && c.diaryCount !== (bp.diary || []).length) return false;
+  if (c.notesUp !== undefined && c.notesUp !== _notesLastUp(bp)) return false;
   return true;
 }
 
@@ -158,7 +169,8 @@ function _saveBriefingCache(key, content) {
       sessionCount: bp.sessions || 0,
       noteCount: (bp.prontuarioNotes || []).length,
       moodCount: (bp.moodHistory || []).length,
-      diaryCount: (bp.diary || []).length
+      diaryCount: (bp.diary || []).length,
+      notesUp: _notesLastUp(bp)
     }));
   } catch(_) {}
 }
@@ -326,6 +338,8 @@ Máximo 300 palavras. Seja específico e cite elementos concretos do histórico/
   const data = await res.json();
   const text = data.content || '';
   if (!text || text.length < 80) throw new Error('Resposta vazia');
+  // Medição de custo (16/07): só números p/ o PostHog — nada de conteúdo clínico (regra nº 3).
+  try { if (data.usage) tfTrack('ia_consumo', { fluxo: 'briefing', tokens_in: data.usage.input || 0, tokens_out: data.usage.output || 0 }); } catch(_) {}
   _saveBriefingCache((bp.id || bp.name), text);
   return text;
 }

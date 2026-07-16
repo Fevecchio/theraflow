@@ -131,7 +131,12 @@ export default async function handler(req, res) {
   // ("feriado"→"criado"); custo/sessão segue centavos e a transcrição é pós-sessão,
   // então a latência extra não aparece para o usuário. Prompt curto dá contexto de
   // vocabulário ao Whisper — reduz confusões acústicas sem induzir conteúdo.
-  form.append('model', 'whisper-large-v3');
+  // ?model=turbo (16/07): SÓ p/ reteste A/B autenticado — o prompt de vocabulário
+  // entrou DEPOIS do co-teste que reprovou o turbo; vale reavaliar com ele. O padrão
+  // de produção NÃO muda sem o A/B aprovar (whitelist fechada, nada de modelo livre).
+  const useTurbo = /[?&]model=turbo\b/.test(req.url || '');
+  const whisperModel = useTurbo ? 'whisper-large-v3-turbo' : 'whisper-large-v3';
+  form.append('model', whisperModel);
   form.append('language', 'pt');
   form.append('prompt', 'Transcrição de uma sessão de psicoterapia em português do Brasil, conversa entre psicóloga e paciente.');
   form.append('response_format', wantSegments ? 'verbose_json' : 'text');
@@ -163,10 +168,13 @@ export default async function handler(req, res) {
       const segments = Array.isArray(j.segments)
         ? j.segments.map(s => ({ start: s.start, end: s.end, text: s.text, no_speech_prob: s.no_speech_prob }))
         : [];
-      return res.status(200).json({ text: j.text || '', segments });
+      // Medição de custo (16/07): segundos de áudio processados — só números, nunca conteúdo.
+      try { console.log('[ia-usage]', JSON.stringify({ fn: 'transcribe', user: user.id, model: whisperModel, audio_seg: Math.round(j.duration || 0), bytes: audio.length })); } catch (_) {}
+      return res.status(200).json({ text: j.text || '', segments, model: whisperModel });
     }
     const text = await r.text(); // response_format=text → texto puro
-    return res.status(200).json({ text });
+    try { console.log('[ia-usage]', JSON.stringify({ fn: 'transcribe', user: user.id, model: whisperModel, bytes: audio.length })); } catch (_) {}
+    return res.status(200).json({ text, model: whisperModel });
   } catch (err) {
     console.error('[transcribe] fetch Groq falhou:', err.message);
     return res.status(502).json({ error: 'Upstream error: ' + err.message });

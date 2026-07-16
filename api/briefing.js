@@ -79,6 +79,8 @@ async function planBlocksAI(userId) {
   } catch (_) { return false; }
 }
 
+const BRIEFING_MODEL = 'claude-sonnet-4-6';
+
 async function callClaude(system, userPrompt) {
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_KEY) throw new Error('ANTHROPIC_API_KEY não configurada');
@@ -91,7 +93,7 @@ async function callClaude(system, userPrompt) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: BRIEFING_MODEL,
       max_tokens: 1024,
       temperature: 0.4, // análise clínica: consistência entre gerações do mesmo histórico
       system,
@@ -169,7 +171,13 @@ export default async function handler(req, res) {
 
   const data = await claudeRes.json();
   const content = data?.content?.[0]?.text || '';
-  return res.status(200).json({ content });
+  // Medição de custo (16/07): SÓ números — nenhum conteúdo clínico no log (regra nº 3).
+  let usage = { input: 0, output: 0 };
+  try {
+    usage = { input: data?.usage?.input_tokens || 0, output: data?.usage?.output_tokens || 0 };
+    console.log('[ia-usage]', JSON.stringify({ fn: 'briefing', user: user.id, model: BRIEFING_MODEL, tokens_in: usage.input, tokens_out: usage.output }));
+  } catch (_) {}
+  return res.status(200).json({ content, usage });
 }
 
 function buildDefaultSystem(p) {

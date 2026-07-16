@@ -172,5 +172,11 @@ Forma: frases curtas e objetivas; rótulos "S —", "O —", "A —", "P —" em
 
   const data = await claudeRes.json();
   const note = data?.content?.[0]?.text || '';
-  return res.status(200).json({ note });
+  // Medição de custo (16/07): SÓ números — nenhum conteúdo clínico no log (regra nº 3).
+  let usage = { input: 0, output: 0 };
+  try {
+    usage = { input: data?.usage?.input_tokens || 0, output: data?.usage?.output_tokens || 0 };
+    console.log('[ia-usage]', JSON.stringify({ fn: 'session-note', user: user.id, model: NOTE_MODEL, tokens_in: usage.input, tokens_out: usage.output }));
+  } catch (_) {}
+  return res.status(200).json({ note, usage });
 }
