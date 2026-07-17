@@ -17,7 +17,14 @@ function carregarAppointments() {
     appointments = JSON.parse(localStorage.getItem('tf_appointments') || '[]')
       .map(function(a){ return Object.assign({}, a, { id: Number(a.id) }); });
   } catch(e) { appointments = []; }
-  if (appointments.length === 0) { _gerarAppointmentsDemo(); _salvarAppointments(); }
+  // Limpeza única: contas reais criadas antes deste fix podem ter sessões-DEMO
+  // ("Rafael Andrade" etc.) persistidas por engano na 1ª carga (patientId nulo
+  // é a marca — paciente real sempre tem id do Supabase). Mesmo espírito do
+  // fix de 14/07 em carregarCharges(). Conta real NUNCA gera agenda demo.
+  var _demoNomes = { 'Camila Rocha':1,'Rafael Andrade':1,'Marcos Oliveira':1,'Juliana Costa':1,'Lúcia Fernandes':1,'Pedro Alves':1 };
+  var _antes = appointments.length;
+  appointments = appointments.filter(function(a){ return !(a && !a.patientId && _demoNomes[a.patientName]); });
+  if (appointments.length !== _antes) _salvarAppointments();
 }
 
 function marcarPresenca(apptId, tipo) {
