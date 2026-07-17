@@ -854,7 +854,7 @@ function pacMarcarMaterialLido(idx, mid) {
   var g = (typeof _pacGetP === 'function') ? _pacGetP(idx) : null; if (!g) return;
   var p = g.p;
   if (!p.readMaterials) p.readMaterials = [];
-  var pos = p.readMaterials.indexOf(mid);
+  var pos = p.readMaterials.map(String).indexOf(String(mid));
   if (pos >= 0) p.readMaterials.splice(pos, 1); else p.readMaterials.push(mid);
   if (g.fromLS) localStorage.setItem('tf_patients', JSON.stringify(g.pacs));
   if (typeof _loggedPatientData !== 'undefined' && _loggedPatientData) _loggedPatientData.readMaterials = p.readMaterials;

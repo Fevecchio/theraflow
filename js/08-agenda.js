@@ -671,7 +671,7 @@ function renderDayView() {
             ? ' <span style="font-size:9.5px;padding:1px 6px;border-radius:8px;background:var(--sage-light);color:var(--sage-dark);font-weight:600;vertical-align:middle">✓ confirmada</span>' : '';
           return '<div class="'+escHTML(a.color)+' appt-block" style="display:flex;flex-direction:column;gap:5px;margin-bottom:4px;padding:8px">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
-              + '<div onclick="event.stopPropagation();_mostrarOpcoesAppt('+pi+','+a.id+')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong>'+confTag+'<br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
+              + '<div onclick="event.stopPropagation();_mostrarOpcoesAppt('+pi+',\''+a.id+'\')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong>'+confTag+'<br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
               + '<div style="display:flex;gap:4px;flex-shrink:0">'
                 + '<button class="btn btn-purple btn-sm" onclick="event.stopPropagation();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="font-size:10px;padding:3px 7px" title="Briefing IA">✦</button>'
                 + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();reagendarAppointment(\''+a.id+'\')" style="font-size:10px;padding:3px 7px" title="Reagendar">↻</button>'
@@ -719,8 +719,8 @@ function renderDayView() {
     : pendentes.map(function(a){
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
           + '<span style="font-size:13px;flex:1">'+escHTML(_firstName(a.patientName))+' · '+escHTML(a.date.split('-').reverse().slice(0,2).join('/'))+'</span>'
-          + '<button class="btn btn-secondary btn-sm" onclick="_lembrarConfirmacao('+a.id+')" title="Envia lembrete WhatsApp e marca como confirmada">'+_tfIcon('send')+' Lembrar</button>'
-          + '<button class="btn btn-secondary btn-sm" onclick="_marcarConfirmada('+a.id+')" title="Paciente já confirmou por fora — marcar sem enviar" style="padding-left:8px;padding-right:8px;color:var(--sage)">✓</button>'
+          + '<button class="btn btn-secondary btn-sm" onclick="_lembrarConfirmacao(\''+a.id+'\')" title="Envia lembrete WhatsApp e marca como confirmada">'+_tfIcon('send')+' Lembrar</button>'
+          + '<button class="btn btn-secondary btn-sm" onclick="_marcarConfirmada(\''+a.id+'\')" title="Paciente já confirmou por fora — marcar sem enviar" style="padding-left:8px;padding-right:8px;color:var(--sage)">✓</button>'
           + '</div>';
       }).join('');
 
@@ -820,7 +820,7 @@ function renderWeekView() {
         // Clique unificado com a view Dia: abre o popup de opções (antes entrava
         // direto na Sessão — um clique de consulta iniciava atendimento). V3.
         gridHtml += '<div class="'+escHTML(a.color)+' appt-block" style="font-size:11px;padding:3px 5px;margin-bottom:2px" title="'+escHTML(a.patientName)+' — '+escHTML(a.abordagem||'')+'">'
-          + '<div style="cursor:pointer" onclick="event.stopPropagation();_mostrarOpcoesAppt('+a.patientIdx+','+a.id+')">'
+          + '<div style="cursor:pointer" onclick="event.stopPropagation();_mostrarOpcoesAppt('+a.patientIdx+',\''+a.id+'\')">'
           + '<strong>'+escHTML(_firstName(a.patientName))+'</strong><br/>'+escHTML(a.abordagem||'')+' '+(a.time||'')+'</div>'
           + pBadge
           + '</div>';

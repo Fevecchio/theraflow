@@ -95,7 +95,7 @@ function renderMetasPortal() {
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:'+(m.done?'var(--sage-light)':'var(--bg)')+';border:1px solid '+(m.done?'rgba(74,124,89,.2)':'var(--border)')+';">'
       +'<input type="checkbox"'+(m.done?' checked':'')+' onchange="toggleMetaPortal('+m.id+',this)" style="width:16px;height:16px;accent-color:var(--sage);cursor:pointer;flex-shrink:0"/>'
       +'<span style="flex:1;font-size:13.5px;'+(m.done?'text-decoration:line-through;color:var(--muted)':'color:var(--ink)')+'">'+escHTML(m.text)+'</span>'
-      +'<button onclick="excluirMetaPortal('+m.id+')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:5px" title="Remover">✕</button>'
+      +'<button onclick="excluirMetaPortal(\''+m.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:5px" title="Remover">✕</button>'
       +'</div>';
   }).join('');
 }
@@ -123,7 +123,7 @@ function toggleMetaPortal(id, cb) {
 function excluirMetaPortal(id) {
   const p = patients[currentPortalPatientIdx] || patients[0];
   if (!p?.portalMetas) return;
-  p.portalMetas = p.portalMetas.filter(function(x){ return x.id !== id; });
+  p.portalMetas = p.portalMetas.filter(function(x){ return String(x.id) !== String(id); });
   _tfTombstone(p, 'portalMetas', id); // P10: cópia velha de outro device não ressuscita
   salvarPacientes();
   renderMetasPortal();
@@ -968,7 +968,7 @@ function renderPatientApp(idx, pacs) {
     + '<div class="patient-section-header"><div class="patient-section-title">📚 Materiais da sua terapeuta <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">'+readMats.length+'/'+mats.length+' lidos</span></div></div>'
     + '<div class="patient-section-body" style="display:flex;flex-direction:column;gap:10px">'
       + mats.map(function(m){
-          var lido = readMats.indexOf(m.id) >= 0;
+          var lido = readMats.map(String).indexOf(String(m.id)) >= 0;
           var tIcon = m.tipo==='livro'?'📖':m.tipo==='artigo'?'📄':m.tipo==='video'?'🎬':m.tipo==='podcast'?'🎙':'🔗';
           return '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">'
             + '<div style="font-size:22px;line-height:1;flex-shrink:0;margin-top:1px">'+tIcon+'</div>'
@@ -976,7 +976,7 @@ function renderPatientApp(idx, pacs) {
               + (m.url ? '<a href="'+escHTML(m.url)+'" target="_blank" rel="noopener" style="font-size:13.5px;font-weight:500;color:var(--sage);text-decoration:none;'+(lido?'opacity:.55;text-decoration:line-through':'')+'">'+escHTML(m.titulo)+'</a>'
                        : '<div style="font-size:13.5px;font-weight:500;color:var(--ink);'+(lido?'opacity:.55;text-decoration:line-through':'')+'">'+escHTML(m.titulo)+'</div>')
               + (m.desc ? '<div style="font-size:12px;color:var(--muted);margin-top:3px">'+escHTML(m.desc)+'</div>' : '')
-              + '<div style="margin-top:6px"><button onclick="pacMarcarMaterialLido('+idx+','+m.id+')" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid '+(lido?'var(--sage)':'var(--border)')+';background:'+(lido?'#eaf6f0':'transparent')+';color:'+(lido?'var(--sage)':'var(--muted)')+';cursor:pointer;font-family:inherit">'+(lido?'✓ Lido':'Marcar como lido')+'</button></div>'
+              + '<div style="margin-top:6px"><button onclick="pacMarcarMaterialLido('+idx+',\''+m.id+'\')" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid '+(lido?'var(--sage)':'var(--border)')+';background:'+(lido?'#eaf6f0':'transparent')+';color:'+(lido?'var(--sage)':'var(--muted)')+';cursor:pointer;font-family:inherit">'+(lido?'✓ Lido':'Marcar como lido')+'</button></div>'
             + '</div>'
           + '</div>';
         }).join('')
