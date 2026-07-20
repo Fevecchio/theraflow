@@ -709,6 +709,15 @@ function exportarRelatorioEvolucao() {
   setTimeout(function(){ win.print(); }, 400);
 }
 
+// Número de 5 dígitos ESTÁVEL por paciente (mesmo id → mesmo número sempre).
+// Hash simples só para exibição — não é identificador criptográfico/legal.
+function _prontuarioNumDeterministico(p) {
+  var s = String((p && (p.id || p.name)) || 'x');
+  var h = 0;
+  for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+  return String(10000 + (h % 90000));
+}
+
 function exportarProntuario() {
   const p = patients[currentPatientIdx] || patients[0];
   if (!p) { showToast('Selecione um paciente primeiro.'); return; }
@@ -882,9 +891,11 @@ function exportarProntuario() {
           '</div></div>'
       : '') +
 
-    // Número do prontuário
+    // Número do prontuário — determinístico a partir do id do paciente (antes
+    // era Math.random() a cada exportação: reexportar o MESMO prontuário duas
+    // vezes dava dois "números de protocolo" diferentes pro mesmo conteúdo).
     '<div style="background:#f0f5f1;border-radius:8px;padding:10px 14px;margin-bottom:24px;font-size:11px;color:#4a7c59;font-weight:600;letter-spacing:.5px">' +
-      'Nº PRN-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*90000)+10000) +
+      'Nº PRN-' + new Date().getFullYear() + '-' + _prontuarioNumDeterministico(p) +
       '<span style="font-weight:400;color:#8a9490;margin-left:12px">Gerado em ' + hoje + ' via Teravia</span>' +
     '</div>' +
 

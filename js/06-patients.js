@@ -1438,6 +1438,10 @@ function renderPatientFicha(i) {
   // ── Materiais ──
   _materialPatientIdx = i;
   var mats = p.materials || [];
+  // O paciente já marca "lido"/"não lido" no portal dele (readMaterials, js/04) e o
+  // dado sincroniza normalmente — só nunca tinha sido exibido aqui. O terapeuta não
+  // tinha como saber se o material enviado foi sequer aberto.
+  var _readSet = (p.readMaterials || []).map(String);
   var matsHtml;
   if (mats.length === 0) {
     matsHtml = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Nenhum material adicionado ainda.</div>';
@@ -1451,12 +1455,16 @@ function renderPatientFicha(i) {
       var descHtml = m.desc ? '<div class="material-desc">' + escHTML(m.desc) + '</div>' : '';
       var labelMap = (typeof MATERIAL_LABELS !== 'undefined' ? MATERIAL_LABELS : {});
       var tag = '<span style="font-size:10.5px;background:var(--line-2);color:var(--muted);padding:2px 7px;border-radius:10px;font-weight:500">' + escHTML(labelMap[m.tipo] || m.tipo) + '</span>';
+      var lido = _readSet.indexOf(String(m.id)) !== -1;
+      var readTag = lido
+        ? '<span style="font-size:10.5px;color:var(--sage);font-weight:600">✓ Lido pelo paciente</span>'
+        : '<span style="font-size:10.5px;color:var(--muted)">○ Ainda não lido</span>';
       return '<div class="material-card">'
         + '<div class="material-icon ' + m.tipo + '">' + icon + '</div>'
         + '<div style="flex:1;min-width:0">'
         + '<div class="material-title" style="display:flex;align-items:center;gap:8px">' + tituloHtml + tag + '</div>'
         + descHtml
-        + '<div class="material-date">' + escHTML(m.date) + '</div>'
+        + '<div class="material-date">' + escHTML(m.date) + ' · ' + readTag + '</div>'
         + '</div>'
         + '<div class="material-actions">'
         + (safeMatUrl ? '<a href="' + safeMatUrl + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none">↗ Abrir</a>' : '')
@@ -1737,17 +1745,21 @@ function renderTrajetoriaTerapeuta(i) {
     + '</details>';
 }
 
-function salvarResumoParaPaciente(patientIdx, apptId) {
+async function salvarResumoParaPaciente(patientIdx, apptId) {
   var ta = document.getElementById('resumo-pac-' + apptId);
   if (!ta) return;
   var texto = ta.value.trim();
   // Atualiza no array global de appointments
   var appt = appointments.find(function(a) { return String(a.id) === String(apptId); });
+  var _syncOk = true;
   if (appt) {
     appt.resumoParaPaciente = texto;
     delete appt.resumoPendente; // publicado (ou removido) → rascunho deixa de existir
     _salvarAppointments();
-    _supaSync_appointments().catch(function(){});
+    // Antes era fire-and-forget (.catch(function(){})) — o toast de sucesso disparava
+    // ANTES de saber se o sync deu certo. Se falhasse, o terapeuta já tinha lido
+    // "visível na jornada do paciente" quando na verdade nada chegou ao servidor.
+    _syncOk = await _supaSync_appointments();
   }
   // Atualiza no metadata do paciente (para sync via _supaSync_patients).
   // Cria a entrada se não existir — rascunhos não têm espelho (privacidade), então
@@ -1763,7 +1775,13 @@ function salvarResumoParaPaciente(patientIdx, apptId) {
     var paDel = p.appointments.find(function(a) { return String(a.id) === String(apptId); });
     if (paDel) { paDel.resumoParaPaciente = ''; salvarPacientes(); }
   }
-  showToast(texto ? '✓ Resumo publicado — visível na jornada do paciente' : '✓ Resumo removido');
+  if (!texto) {
+    showToast('✓ Resumo removido');
+  } else if (_syncOk) {
+    showToast('✓ Resumo publicado — visível na jornada do paciente');
+  } else {
+    showToast('⚠ Resumo salvo aqui, mas a sincronização falhou — pode não estar visível ainda pro paciente. Tentaremos de novo automaticamente.');
+  }
   // Re-render: badge "rascunho" e botão "Publicar" saem na hora
   if (typeof currentPatientTab !== 'undefined' && currentPatientTab === 'overview') renderPatientOverview(patientIdx);
 }

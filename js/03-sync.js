@@ -488,8 +488,12 @@ async function _supaSync_tasks() {
   }
 }
 
+// Retorna true (confirmado no servidor) / false (falhou) — mesmo contrato de
+// _supaSync_patients. Adicionado para salvarResumoParaPaciente poder esperar
+// a confirmação real antes de dizer "publicado" (toast era otimista, disparava
+// antes do resultado do sync — callers antigos que ignoram o retorno continuam ok).
 async function _supaSync_appointments() {
-  if (window._tfDemo) return;
+  if (window._tfDemo) return true;
   try {
     await _syncRace(async function() {
       const { data: { user } } = await supa.auth.getUser();
@@ -562,11 +566,13 @@ async function _supaSync_appointments() {
         }
       }
     });
+    return true;
   } catch(e) {
     _syncErrorCount++;
     _setSyncStatus('error');
     console.warn('[Supa] Sync appointments:', e.message);
     if (_syncErrorCount >= 2 && typeof showToast === 'function') showToast('⚠ Sync de agenda falhou — dados preservados localmente.');
+    return false;
   }
 }
 
