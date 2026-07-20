@@ -145,11 +145,12 @@ function _lkGuardUnload(e) {
 
 // Rascunho de recuperação: grava transcrição+nota assim que existem, para não perder o
 // trabalho se o navegador fechar entre gerar e salvar. Limpo ao salvar no prontuário.
-function _lkSaveDraft(sp, transcript, note) {
+function _lkSaveDraft(sp, transcript, note, notasManuais) {
   try {
     localStorage.setItem('tf_lk_draft', JSON.stringify({
       patientId: sp && sp.id, patientName: sp && sp.name,
       at: new Date().toISOString(), transcript: transcript || '', note: note || '',
+      notasManuais: notasManuais || '',
     }));
   } catch (_) {}
 }
@@ -179,7 +180,7 @@ function _lkCheckDraftOnBoot() {
   document.getElementById('lk-draft-open').onclick = function() {
     bar.remove();
     if (typeof _lkShowPostSession === 'function') {
-      _lkShowPostSession({ transcript: draft.transcript || '', note: draft.note || '' });
+      _lkShowPostSession({ transcript: draft.transcript || '', note: draft.note || '', notasManuais: draft.notasManuais || '' });
     }
   };
   document.getElementById('lk-draft-dismiss').onclick = function() {
@@ -787,6 +788,18 @@ async function _lkProcessSession() {
   const { segsTher, segsPac } = _lkRetry;
   const sp = _tfSessionPatient();
 
+  // Anotações que o terapeuta digitou ao vivo em #session-ai-note (campo não é
+  // tocado até o sucesso da geração, então segue intacto aqui — inclusive num
+  // retry). Filtra o template não editado (_notaTemplateTexto) para não mandar
+  // pra IA um texto igual "[relato do paciente...]" como se fosse conteúdo real.
+  const _notasRaw = (document.getElementById('session-ai-note')?.value || '').trim();
+  let _notasManuais = '';
+  if (_notasRaw) {
+    let _tpl = '';
+    try { if (sp && typeof _notaTemplateTexto === 'function') _tpl = _notaTemplateTexto(sp).trim(); } catch (_) {}
+    if (_notasRaw !== _tpl) _notasManuais = _notasRaw.slice(0, 4000);
+  }
+
   // Guard defensivo por SEGMENTO (não deveria disparar: 4min a 32kbps ≈ 1MB).
   const LIMITE = 4.4 * 1024 * 1024;
   if (segsTher.concat(segsPac || []).some((s) => s.blob.size > LIMITE)) {
@@ -855,7 +868,7 @@ async function _lkProcessSession() {
       const nr = await fetch('/api/session-note', {
         method: 'POST',
         headers: await _lkAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem, abordagemSecundarias: _secArr }),
+        body: JSON.stringify({ transcript, abordagem: sp && sp.abordagem, abordagemSecundarias: _secArr, notasTerapeuta: _notasManuais }),
       });
       if (!nr.ok) throw new Error('session-note ' + nr.status);
       const _nj = await nr.json();
@@ -876,14 +889,14 @@ async function _lkProcessSession() {
       ? _gerarResumoPortalIA(sp, note).catch(function () { return null; })
       : null;
 
-    _lkSaveDraft(sp, transcript, note); // rascunho: sobrevive a fechar o navegador antes de salvar
+    _lkSaveDraft(sp, transcript, note, _notasManuais); // rascunho: sobrevive a fechar o navegador antes de salvar
     _lkRetry = null;                    // deu certo — não precisa mais reprocessar
     const ta = document.getElementById('session-ai-note');
     if (ta && note) ta.value = note;
     _lkHideProcessing();
     // O evento do negócio: o pitch inteiro é "nota em 2 min" (só metadado, nunca o texto)
     if (note && typeof tfTrack === 'function') tfTrack('nota_ia_gerada', { origem: 'sessao_ao_vivo' });
-    _lkShowPostSession({ transcript, note });
+    _lkShowPostSession({ transcript, note, notasManuais: _notasManuais });
     if (typeof showToast === 'function') showToast(note ? 'Nota gerada ✓ Revise antes de salvar.' : 'Transcrição pronta ✓ (nota não gerada)');
   } catch (err) {
     console.error('[livekit] pós-sessão falhou', err);
@@ -905,7 +918,7 @@ function _lkIsRefusal(t) {
 
 // Modal pós-sessão HONESTO — mostra a transcrição REAL e a nota REAL (sem conteúdo fabricado).
 // Estados: default (transcrição+nota) · empty (silêncio) · noPatient · tooLong (áudio > limite) · retry (falhou).
-function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry, errMsg }) {
+function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry, errMsg, notasManuais }) {
   const old = document.getElementById('lk-post-modal'); if (old) old.remove();
   const esc = (s) => (typeof escHTML === 'function' ? escHTML(s) : String(s || '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])));
   const sp = _tfSessionPatient();
@@ -952,15 +965,26 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
     }
   } catch (_) {}
 
+  // Anotações que o terapeuta digitou ao vivo — NUNCA descartadas: mostradas aqui
+  // intactas (mesmo padrão do modal demo) para conferência, junto com o aviso de
+  // que elas já foram incorporadas ao rascunho da IA (api/session-note recebe
+  // notasTerapeuta e funde as duas fontes — não é mais "a IA sobrescreve").
+  const manualBlock = notasManuais ? `
+    <div style="margin-bottom:14px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:10px 14px">
+      <div style="font-size:11px;font-weight:700;color:#b45309;margin-bottom:4px">📝 Suas anotações durante a sessão</div>
+      <div style="font-size:12.5px;color:#6b4a12;white-space:pre-wrap;line-height:1.5">${esc(notasManuais)}</div>
+    </div>` : '';
+
   const contentBlock = `
     <div style="margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Transcrição da sessão (real)</div>
       <div style="background:#f8faf8;border:1px solid #e6efe9;border-radius:10px;padding:12px 14px;font-size:13px;color:#333;line-height:1.6;max-height:180px;overflow-y:auto;white-space:pre-wrap">${esc(transcript)}</div>
     </div>
+    ${manualBlock}
     <div>
       <div style="font-size:11px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">✦ Nota clínica — rascunho gerado pela IA</div>
       <textarea id="lk-post-note" style="width:100%;box-sizing:border-box;min-height:200px;border:1.5px solid #d1e7d9;border-radius:10px;padding:12px 14px;font-size:13px;font-family:'DM Sans',sans-serif;line-height:1.6;resize:vertical;outline:none">${esc(note)}</textarea>
-      <div style="font-size:11px;color:#999;margin-top:6px">Revise e edite antes de salvar no prontuário. A gravação de áudio não foi armazenada.</div>${chargeWarn}
+      <div style="font-size:11px;color:#999;margin-top:6px">Revise e edite antes de salvar no prontuário. A gravação de áudio não foi armazenada.${notasManuais ? ' Suas anotações acima já foram incorporadas ao rascunho — confira.' : ''}</div>${chargeWarn}
     </div>`;
 
   const bodyHTML = isContent ? contentBlock : tooLong ? tooLongBlock : retry ? retryBlock : emptyBlock;
