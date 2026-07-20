@@ -13,6 +13,12 @@ function calcularIdade(nascStr) {
 
 function lerCamposPaciente() {
   const nascimento = document.getElementById('np-nascimento')?.value || '';
+  // valorSessao: vazio = undefined (sobrepõe nada, usa o padrão do Perfil).
+  // Preenchido = número > 0 sobrepõe o valor padrão SÓ para este paciente
+  // (preço social/reduzido) — o código em js/08/09/21 já lia sp.valorSessao
+  // antes deste campo existir na tela; o aviso "defina na ficha" era impossível de seguir.
+  const _valorRaw = (document.getElementById('np-valor-sessao')?.value || '').trim();
+  const valorSessao = _valorRaw ? parseFloat(_valorRaw.replace(',', '.')) : undefined;
   return {
     nome:       document.getElementById('np-nome')?.value.trim() || '',
     email:      document.getElementById('np-email')?.value.trim() || '',
@@ -24,11 +30,12 @@ function lerCamposPaciente() {
     notes:      document.getElementById('np-queixa')?.value.trim() || '',
     nascimento,
     age:        calcularIdade(nascimento),
+    valorSessao: (valorSessao > 0) ? valorSessao : undefined,
   };
 }
 
 function limparModalPaciente() {
-  ['np-nome','np-email','np-whatsapp','np-cidade','np-cid','np-queixa','np-nascimento'].forEach(id => {
+  ['np-nome','np-email','np-whatsapp','np-cidade','np-cid','np-queixa','np-nascimento','np-valor-sessao'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const selStatus = document.getElementById('np-status'); if (selStatus) selStatus.selectedIndex = 0;
@@ -96,6 +103,7 @@ function criarPaciente() {
     progress: 0, mood: null, moodTrend: null,
     fin: '—', finStatus: 'ok', alert: null,
     notes: d.notes, exercises: [],
+    valorSessao: d.valorSessao,
     _pendingSync: true // marca persistente: paciente ainda não confirmado no Supabase (F2.2)
   });
   _newLocalPatientIds.add(_newPatId);
@@ -148,6 +156,8 @@ function showEditarPaciente(i) {
   document.getElementById('np-cidade').value      = p.cidade !== '—' ? p.cidade : '';
   document.getElementById('np-cid').value         = p.cid !== '—' ? p.cid : '';
   document.getElementById('np-queixa').value      = p.notes || '';
+  const _valorEl = document.getElementById('np-valor-sessao');
+  if (_valorEl) _valorEl.value = (p.valorSessao > 0) ? p.valorSessao : '';
   // Abordagem
   const selAb = document.getElementById('np-abordagem');
   _npEnsureAbordagemOption(selAb, p.abordagem);
@@ -217,6 +227,7 @@ function salvarEdicaoPaciente(i) {
   p.abordagem  = d.abordagem;
   p.status     = d.status;
   p.notes      = d.notes;
+  p.valorSessao = d.valorSessao;
   p.initials   = d.nome.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
   // Propaga o rename para tudo que referencia o paciente por NOME — sem isto, renomear
   // órfã cobranças (fin volta a "—"), agenda (fallback por nome quebra) e tarefas. F2.4.

@@ -61,7 +61,17 @@ function _ofereceCobrancaPresenca(appt) {
   if (jaExiste) return;
   var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
   var valor = parseFloat(p.valorSessao || acc.valor_sessao) || 0;
-  if (!valor) return; // sem valor configurado, silencioso
+  if (!valor) {
+    // Antes era silencioso — o terapeuta esperava a oferta de cobrança e ela
+    // simplesmente não aparecia, sem saber por quê. Mesmo aviso já usado no
+    // encerramento de sessão (js/09/js/21). Delay igual ao caminho de sucesso
+    // abaixo: showToast é single-instance — sem o delay, este aviso apagaria
+    // o toast "✓ Presença registrada." antes do terapeuta ver.
+    setTimeout(function() {
+      if (typeof showToast === 'function') showToast('◈ Presença registrada SEM cobrança — defina o valor da sessão na ficha do paciente (✎ Editar) ou no Perfil.');
+    }, 1500);
+    return;
+  }
   // Toast com ação inline (breve respiro após o toast da presença). Vale na
   // Agenda E no Dashboard — o "✓ confirmar" do dash também chega aqui (15/07).
   setTimeout(function() {
@@ -445,6 +455,11 @@ function confirmarAgendamento() {
           showToast('ℹ Sessão em menos de 15 min — lembretes não agendados');
         }
       }
+    } else if (!p.email && (_enviarInvite || _enviarReminder)) {
+      // Antes era silencioso: as caixas de convite/lembrete vêm marcadas por
+      // padrão e o terapeuta confiava que o e-mail sairia — paciente cadastrado
+      // só com WhatsApp (comum) nunca recebia nada, sem nenhum aviso.
+      showToast('⚠ ' + _firstName(p.name) + ' não tem e-mail cadastrado — convite/lembrete por e-mail NÃO foram enviados.');
     }
 
     // WhatsApp: abre o wa.me com o convite (antes o checkbox era decorativo).
@@ -823,7 +838,11 @@ function renderWeekView() {
           + '<span onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'compareceu\')" style="font-size:9px;cursor:pointer;color:var(--sage-dark);background:var(--sage-light);border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
           + '<span onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'faltou\')" style="font-size:9px;cursor:pointer;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
           + '</div>';
-        else if (a.confirmada) pBadge = '<div style="font-size:9px;color:var(--sage-dark);background:var(--sage-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block" title="Presença confirmada pelo paciente">✓ conf.</div>';
+        // "confirmada" é otimista: marca que o lembrete de WhatsApp foi enviado,
+        // não que o paciente respondeu (ver comentário em _lembrarConfirmacao).
+        // O tooltip dizia "confirmada PELO PACIENTE" — superprometia justo no
+        // dado que decide se vale insistir com quem pode faltar.
+        else if (a.confirmada) pBadge = '<div style="font-size:9px;color:var(--sage-dark);background:var(--sage-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block" title="Lembrete enviado (confirmação otimista — paciente pode não ter respondido)">✓ conf.</div>';
         // Clique unificado com a view Dia: abre o popup de opções (antes entrava
         // direto na Sessão — um clique de consulta iniciava atendimento). V3.
         gridHtml += '<div class="'+escHTML(a.color)+' appt-block" style="font-size:11px;padding:3px 5px;margin-bottom:2px" title="'+escHTML(a.patientName)+' — '+escHTML(a.abordagem||'')+'">'
@@ -890,7 +909,10 @@ function exportarAgendaICS() {
     lines.push('UID:' + uid);
     lines.push('SUMMARY:Sessão — ' + nome);
     lines.push('DESCRIPTION:Abordagem: ' + (a.abordagem||'—') + '\\nTerapeuta: ' + nomeT);
-    lines.push('LOCATION:Consultório');
+    // Antes sempre "Consultório", mesmo pra sessão por vídeo (o próprio lembrete
+    // ao paciente diz "a sala fica no portal"). p.sessionLink é o sinal que já
+    // existe no modelo de dados pra "este paciente atende por vídeo".
+    lines.push('LOCATION:' + (p && p.sessionLink ? 'Sessão por vídeo (link no portal do paciente)' : 'Consultório'));
     if (allDay) { lines.push('DTSTART;VALUE=DATE:' + dtStart); lines.push('DTEND;VALUE=DATE:' + dtEnd); }
     else        { lines.push('DTSTART:' + dtStart); lines.push('DTEND:' + dtEnd); }
     lines.push('STATUS:' + (a.status === 'cancelada' ? 'CANCELLED' : 'CONFIRMED'));

@@ -27,6 +27,25 @@ function buildThemes(p) {
 let currentBriefingPatientIdx = 0;
 let _briefingForceRefresh = false;
 
+// O badge "Briefing gerado por IA" era escrito uma vez ao abrir a página e
+// nunca atualizado — se a IA falhasse (chave inválida, saldo zero) e caísse no
+// fallback local (heurística de palavras-chave, SEM análise clínica real), o
+// badge continuava afirmando "gerado por IA" logo acima do conteúdo local.
+// Chamado no sucesso (renderBriefingContent) E no fallback (renderBriefingFallback)
+// pra sempre refletir o que está de fato na tela.
+function _setBriefingBadge(real) {
+  var bp = patients[currentBriefingPatientIdx] || patients[0];
+  var el = document.getElementById('b-ai-badge-text');
+  if (!el || !bp) return;
+  if (real) {
+    el.textContent = (bp.sessions || 0) > 0
+      ? 'Briefing gerado por IA · baseado em ' + bp.sessions + (bp.sessions === 1 ? ' sessão anterior' : ' sessões anteriores')
+      : 'Briefing gerado por IA · primeira sessão — sem histórico ainda';
+  } else {
+    el.textContent = '⚡ Análise local — a IA não pôde ser consultada agora (não é leitura clínica do histórico)';
+  }
+}
+
 function initBriefing() {
   // Tag "IA ativa" (item 10 dos desligados): checagem REAL do serviço — era um
   // selo decorativo sempre aceso. Qualquer resposta do endpoint (mesmo 4xx de
@@ -93,10 +112,7 @@ function initBriefing() {
   if (_histEl) _histEl.textContent = _hist;
   var _memTag = document.getElementById('b-hero-mem-tag');
   if (_memTag) _memTag.textContent = (p.sessions || 0) + (p.sessions === 1 ? ' sessão na memória' : ' sessões na memória');
-  var _aiBadge = document.getElementById('b-ai-badge-text');
-  if (_aiBadge) _aiBadge.textContent = (p.sessions || 0) > 0
-    ? 'Briefing gerado por IA · baseado em ' + p.sessions + (p.sessions === 1 ? ' sessão anterior' : ' sessões anteriores')
-    : 'Briefing gerado por IA · primeira sessão — sem histórico ainda';
+  _setBriefingBadge(true); // reabrir a página assume IA até a próxima chamada provar o contrário
   // Atualiza header do resultado
   const resHeader = document.querySelector('#b-state-result > div:first-child > div > div:first-child');
   if (resHeader) resHeader.textContent = `Briefing — ${p.name}`;
@@ -447,6 +463,7 @@ function renderBriefingContent(text) {
   if(text.length < 80) { renderBriefingFallback(); return; }
   const blocks = _parseBriefingBlocks(text);
   if(!blocks.length) { renderBriefingFallback(); return; }
+  _setBriefingBadge(true); // conteúdo real da IA — restaura o badge se uma tentativa anterior tinha falhado
   let html = '';
   blocks.forEach((b) => {
     const content = b.content;
@@ -461,6 +478,7 @@ function renderBriefingContent(text) {
 }
 
 function renderBriefingFallback() {
+  _setBriefingBadge(false); // heurística local, não análise da IA — o badge não pode continuar dizendo "gerado por IA"
   const bp = patients[currentBriefingPatientIdx] || patients[0] || {};
   const nome = bp.name || 'Paciente';
   const abordagem = bp.abordagem || 'TCC';
