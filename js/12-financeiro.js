@@ -1864,6 +1864,7 @@ function initPortal() {
   renderMoodHistory();
   renderDiarioPortal(p);
   renderDiarioLivre(p);
+  if (typeof updateDiaryCount === 'function') updateDiaryCount(); // era só chamado pela composição removida da prévia — "3 registros" ficava estático
   renderMensagemPortal();
   renderDicaPortal();
   renderMetasPortal();

@@ -753,20 +753,20 @@ function _recalcFinStatus() {
 function _recalcNextSessions() {
   if (typeof appointments === 'undefined') return;
   var nowIso = hojeISO();
-  // Constrói mapa patientIdx → próxima data
-  var mapa = {};
-  var mapaKey = {};
-  appointments.forEach(function(a) {
-    if (a.status === 'cancelada' || a.date < nowIso) return;
-    var key = a.date + 'T' + (a.time || '00:00');
-    if (!mapaKey[a.patientIdx] || key < mapaKey[a.patientIdx]) {
-      mapa[a.patientIdx] = a.date;
-      mapaKey[a.patientIdx] = key;
-    }
-  });
+  // Identidade segura (patientId via _apptsDoPaciente), não patientIdx cru —
+  // isto alimenta o metadata que o PORTAL REMOTO do paciente lê pra mostrar
+  // "próxima sessão"; um índice deslocado mostraria a data errada pro paciente.
   patients.forEach(function(p, i) {
-    if (mapa[i]) {
-      var np = mapa[i].split('-');
+    var proximas = _apptsDoPaciente(p, i).filter(function(a) {
+      return a.status !== 'cancelada' && a.date >= nowIso;
+    });
+    if (proximas.length) {
+      var melhor = proximas.reduce(function(best, a) {
+        var key = a.date + 'T' + (a.time || '00:00');
+        var bestKey = best.date + 'T' + (best.time || '00:00');
+        return key < bestKey ? a : best;
+      });
+      var np = melhor.date.split('-');
       p.next = np[2] + '/' + np[1] + '/' + np[0];
     } else if (p.sessions > 0) {
       p.next = '—';
@@ -777,21 +777,15 @@ function _recalcNextSessions() {
 function _recalcSessions() {
   // Demo patients have accurate sessions in DEMO_PATIENTS — don't overwrite with appointment counts
   if (window._tfDemo) return;
-  // Conta sessões realizadas a partir de appointments com presença='compareceu'
-  // Só atualiza se o valor de appointments for >= ao armazenado (não regride)
+  // Conta sessões realizadas a partir de appointments com presença='compareceu'.
+  // Identidade segura (patientId via _apptsDoPaciente), não patientIdx cru.
   if (typeof appointments === 'undefined') return;
-  var contadores = {};
-  appointments.forEach(function(a) {
-    if (a.presenca === 'compareceu' && a.patientIdx !== undefined && a.patientIdx >= 0) {
-      contadores[a.patientIdx] = (contadores[a.patientIdx] || 0) + 1;
-    }
-  });
   patients.forEach(function(p, i) {
-    var contAppt = contadores[i] || 0;
+    var apptsP = _apptsDoPaciente(p, i);
+    var hasPresenca = apptsP.some(function(a){ return a.presenca; });
     // Só sobrescreve sessions se há dados reais de presença para o paciente;
     // caso contrário preserva o valor existente (ex.: dados demo).
-    var hasPresenca = appointments.some(function(a){ return a.patientIdx === i && a.presenca; });
-    if (hasPresenca) p.sessions = contAppt;
+    if (hasPresenca) p.sessions = apptsP.filter(function(a){ return a.presenca === 'compareceu'; }).length;
   });
 }
 

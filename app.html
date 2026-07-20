@@ -2163,22 +2163,20 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div class="section-title">Check-in de humor</div>
           <span class="tag tag-green" style="font-size:11px">Diário</span>
         </div>
-        <div style="font-size:13px;color:var(--muted);margin-top:4px;margin-bottom:4px">Como você está neste momento?</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;margin-bottom:4px">Como o paciente registrou o humor dele</div>
 
         <!-- Redesign B5: MESMO check-in do portal real (rostos SVG + rótulo) —
-             populado por initPortal via _PAC_MOODS; o hidden mantém o contrato
-             de saveMoodCheckin (#mood-slider.value). -->
+             populado por initPortal via _PAC_MOODS. PRÉVIA somente-leitura:
+             quem registra é o paciente, no portal dele — _fillPreviewMoodRow
+             (js/13) desabilita os botões/nota e troca este botão por um aviso. -->
         <div class="pac-mood-row" id="mood-emojis"></div>
-        <input type="hidden" id="mood-slider" value="5"/>
 
-        <textarea class="mood-note-input" id="mood-note" placeholder="O que está passando pela sua cabeça? (opcional)" rows="2"></textarea>
+        <textarea class="mood-note-input" id="mood-note" placeholder="O que está passando pela sua cabeça? (opcional)" rows="2" disabled style="opacity:.65"></textarea>
 
         <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
-          <button class="btn btn-primary" onclick="saveMoodCheckin()" id="mood-save-btn">Registrar humor</button>
+          <button class="btn btn-primary" id="mood-save-btn" disabled style="opacity:.7;cursor:default">👁 Prévia — o paciente registra no portal dele</button>
           <span style="font-size:12px;color:var(--muted)" id="mood-last-label"></span>
         </div>
-
-        <div class="mood-saved-msg" id="mood-saved-msg">✓ Humor registrado com sucesso! Sua terapeuta poderá ver na próxima sessão.</div>
 
         <!-- Mini mood history -->
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
@@ -2194,7 +2192,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <div class="section-title" style="margin:0">Diário da semana</div>
             <span style="font-size:11px;color:var(--muted);background:var(--line-2);padding:3px 10px;border-radius:20px" id="diary-count">3 registros</span>
           </div>
-          <div style="font-size:12px;color:var(--muted);line-height:1.5">Escreva quando quiser — sua terapeuta verá na próxima sessão</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">Registros que o paciente escreve no portal dele, entre as sessões</div>
         </div>
 
         <!-- Abas -->
@@ -2203,11 +2201,15 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <button id="diary-tab-tcc" onclick="switchDiaryTab('tcc')" style="flex:1;padding:10px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s">Diário TCC</button>
         </div>
 
-        <!-- ABA: Registro livre -->
+        <!-- ABA: Registro livre — PRÉVIA somente-leitura: quem escreve é o
+             paciente (pacSalvarDiario, no portal dele). O terapeuta só LÊ e
+             pode responder (ver renderDiarioLivre/salvarRespostaDiario, js/12,
+             que continua ativo — é comentário do terapeuta, não fabricação de
+             registro do paciente). -->
         <div id="diary-panel-livre" style="padding:16px 20px">
-          <textarea id="diary-livre-text" placeholder="O que está passando pela sua cabeça? Pode ser qualquer coisa — uma situação difícil, uma conquista, algo que ficou na cabeça depois da última sessão…" style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13.5px;font-family:inherit;resize:none;outline:none;line-height:1.6;color:var(--ink);box-sizing:border-box;transition:border-color .15s" onfocus="this.style.borderColor='var(--sage)';" onblur="this.style.borderColor='var(--border)'"></textarea>
+          <textarea id="diary-livre-text" placeholder="Aqui é o paciente quem escreve, no portal dele." disabled style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13.5px;font-family:inherit;resize:none;outline:none;line-height:1.6;color:var(--ink);box-sizing:border-box;opacity:.65"></textarea>
           <div style="display:flex;justify-content:flex-end;margin-top:8px">
-            <button class="btn btn-primary btn-sm" onclick="saveDiaryLivre()">Salvar registro</button>
+            <span style="font-size:12px;color:var(--muted);font-style:italic">👁 Prévia — o paciente escreve e salva no portal dele</span>
           </div>
           <!-- Registros salvos (preenchido dinamicamente por renderDiarioLivre) -->
           <div id="diary-livre-list" style="display:flex;flex-direction:column;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"></div>

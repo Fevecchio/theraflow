@@ -170,8 +170,12 @@ function renderExercises() {
         ? '<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px"><span>' + concluidos + '/' + total + ' realizados</span><span>' + pct + '%</span></div>' +
           '<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + (pct >= 100 ? 'var(--sage)' : 'var(--amber)') + ';border-radius:3px;transition:width .4s"></div></div></div>'
         : '';
+      // PRÉVIA somente-leitura: quem marca "concluído"/"+1" é o paciente, no
+      // portal dele (pacToggleEx/pacIncrementarEx, js/13). O terapeuta só
+      // GERENCIA quais exercícios existem (editar/remover/adicionar) — não
+      // fabrica o progresso do paciente clicando aqui.
       return '<div class="exercise-item ' + (ex.done || pct >= 100 ? 'completed' : '') + '" id="exercise-item-' + ex.id + '">' +
-        '<div class="exercise-check" onclick="toggleExercise(' + ex.id + ')" style="cursor:pointer">✓</div>' +
+        '<div class="exercise-check" title="Só o paciente marca conclusão, no portal dele" style="cursor:default;opacity:.7">✓</div>' +
         '<div style="flex:1">' +
           '<div class="exercise-title">' + escHTML(ex.title) + '</div>' +
           '<div class="exercise-meta">' + escHTML(ex.desc) + '</div>' +
@@ -182,7 +186,6 @@ function renderExercises() {
           progressBar +
         '</div>' +
         '<div style="display:flex;flex-direction:column;gap:4px;margin-left:8px;flex-shrink:0">' +
-          (total > 1 && pct < 100 ? '<button onclick="incrementarExercicio(' + ex.id + ')" title="Marcar realização" style="background:var(--sage-light);border:1px solid var(--sage);border-radius:6px;cursor:pointer;font-size:11px;padding:2px 7px;color:var(--sage);font-weight:600">+1</button>' : '') +
           '<button onclick="abrirModalExercicio(' + ex.id + ')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)">✎</button>' +
           '<button onclick="excluirExercicio(' + ex.id + ')" title="Remover" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)">✕</button>' +
         '</div>' +
@@ -192,26 +195,12 @@ function renderExercises() {
   updateExerciseCounter();
 }
 
-function toggleExercise(exerciseId) {
-  const p = patients[currentPortalPatientIdx] || patients[0];
-  if (!p?.exercises) return;
-  const ex = p.exercises.find(e => e.id === exerciseId);
-  if (ex) { ex.done = !ex.done; ex._up = Date.now(); salvarPacientes(); }
-  renderExercises();
-}
-
-function incrementarExercicio(exerciseId) {
-  const p = patients[currentPortalPatientIdx] || patients[0];
-  if (!p?.exercises) return;
-  const ex = p.exercises.find(e => e.id === exerciseId);
-  if (!ex) return;
-  ex.concluidos = Math.min((ex.concluidos || 0) + 1, ex.total || 1);
-  ex._up = Date.now();
-  if (ex.concluidos >= (ex.total || 1)) { ex.done = true; showToast('🎉 Exercício concluído! Parabéns, ' + (p.name||'').split(' ')[0] + '!'); }
-  else showToast('✓ Realização registrada — ' + ex.concluidos + '/' + ex.total);
-  salvarPacientes();
-  renderExercises();
-}
+// toggleExercise/incrementarExercicio foram removidas: marcavam ex.done/
+// ex.concluidos no exercício REAL do paciente a partir de um clique na PRÉVIA
+// do terapeuta — mesma classe de bug do humor/diário. Quem marca conclusão é
+// o paciente, no portal dele (pacToggleEx/pacIncrementarEx). O terapeuta
+// continua gerenciando quais exercícios existem via abrirModalExercicio/
+// excluirExercicio (ambos abaixo, intocados).
 
 function abrirModalExercicio(exerciseId) {
   _editingExerciseId = exerciseId || null;
@@ -271,69 +260,31 @@ function excluirExercicio(exerciseId) {
   showToast('Exercício removido.');
 }
 
-function selectMoodEmoji(el) {
-  // Redesign B5: a prévia usa os MESMOS botões do portal real (.pac-mood-btn),
-  // escopados ao #mood-emojis para não colidir com a camada do paciente.
-  document.querySelectorAll('#mood-emojis .pac-mood-btn').forEach(e => e.classList.remove('sel'));
-  el.classList.add('sel');
-  const val = parseInt(el.dataset.mood);
-  document.getElementById('mood-slider').value = val;
-}
-
 /* Popula o check-in da PRÉVIA com a escala nova (chamado pelo initPortal).
-   updateMoodSlider morreu junto com o slider arco-íris da prévia. */
+   updateMoodSlider morreu junto com o slider arco-íris da prévia.
+   Esta tela é a PRÉVIA do terapeuta — quem registra humor é o paciente, no
+   portal dele (pacSalvarMood, formato {value,emoji,date}). saveMoodCheckin
+   gravava aqui em formato ANTIGO (número cru) direto no moodHistory REAL do
+   paciente — um clique de curiosidade do terapeuta fabricava um check-in que
+   nunca aconteceu e corrompia o formato (reabria o bug fechado na migration
+   028_merge_mood_paciente.sql). Mesmo padrão já usado no Diário especializado
+   (renderDiarioPortal, js/12): desabilita e troca o botão por um aviso. */
 function _fillPreviewMoodRow() {
   var row = document.getElementById('mood-emojis');
   if (!row || typeof _PAC_MOODS === 'undefined') return;
   row.innerHTML = _PAC_MOODS.map(function(m){
-    return '<button type="button" class="pac-mood-btn" data-mood="' + m.val + '" data-emoji="' + m.emoji + '" onclick="selectMoodEmoji(this)">' + _pacMoodSvg(m) + '<span class="pac-mood-lbl">' + m.label + '</span></button>';
+    return '<button type="button" class="pac-mood-btn" data-mood="' + m.val + '" data-emoji="' + m.emoji + '" disabled style="opacity:.6;cursor:default">' + _pacMoodSvg(m) + '<span class="pac-mood-lbl">' + m.label + '</span></button>';
   }).join('');
-}
-
-function saveMoodCheckin() {
-  const sliderVal = parseInt(document.getElementById('mood-slider').value);
-  // Atualiza moodHistory real do paciente atual no portal
-  const _mp = patients[currentPortalPatientIdx] || patients[0];
-  if (_mp) {
-    if (!_mp.moodHistory) _mp.moodHistory = [];
-    const _todayKey = hojeISO();
-    if (_mp._moodLastDate === _todayKey && _mp.moodHistory.length > 0) {
-      // já registrou hoje — substitui último valor
-      _mp.moodHistory[_mp.moodHistory.length - 1] = sliderVal;
-    } else {
-      _mp.moodHistory.push(sliderVal);
-      _mp._moodLastDate = _todayKey;
-    }
-    _mp.mood = sliderVal;
-    // Atualiza trend: compara com valor anterior
-    if (_mp.moodHistory.length >= 2) {
-      const prev = _mp.moodHistory[_mp.moodHistory.length - 2];
-      _mp.moodTrend = sliderVal > prev ? 'up' : sliderVal < prev ? 'down' : 'stable';
-    }
-    salvarPacientes();
-    // Atualiza contador de check-ins no painel
-    const statC = document.getElementById('portal-stat-checkins');
-    if (statC) { const cnt = _mp.moodHistory.length; statC.textContent = cnt + ' check-in' + (cnt !== 1 ? 's' : ''); }
-  } else {
-    // fallback: array global
-    moodHistory[moodHistory.length - 1] = sliderVal;
+  var note = document.getElementById('mood-note');
+  if (note) { note.disabled = true; note.style.opacity = '.65'; }
+  var btn = document.getElementById('mood-save-btn');
+  if (btn && btn.tagName === 'BUTTON') {
+    btn.textContent = '👁 Prévia — o paciente registra no portal dele';
+    btn.disabled = true;
+    btn.removeAttribute('onclick');
+    btn.style.opacity = '.7';
+    btn.style.cursor = 'default';
   }
-  renderMoodHistory();
-  const msg = document.getElementById('mood-saved-msg');
-  msg.classList.add('show');
-  const btn = document.getElementById('mood-save-btn');
-  btn.textContent = '✓ Registrado';
-  btn.style.background = '#3d6b4b';
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2,'0');
-  const m = String(now.getMinutes()).padStart(2,'0');
-  const lastReg = document.querySelector('#mood-save-btn + span');
-  if (lastReg) lastReg.textContent = `Último registro: hoje às ${h}:${m}`;
-  setTimeout(() => {
-    msg.classList.remove('show');
-    btn.textContent = 'Registrar humor';
-    btn.style.background = '';
-  }, 3000);
 }
 
 function renderMoodHistory() {
@@ -494,31 +445,12 @@ function switchDiaryTab(tab) {
   btnTcc.style.fontWeight = !isLivre ? '600' : '500';
 }
 
-function saveDiaryLivre() {
-  const ta = document.getElementById('diary-livre-text');
-  const text = ta.value.trim();
-  if (!text) { showToast('Escreva algo antes de salvar.'); return; }
-  const now = new Date();
-  const days = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const dateStr = days[now.getDay()] + ', ' + String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0');
-  const horaStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  // Persistir no paciente — MESMO formato do portal (tipo/texto) e depois
-  // re-renderizar a lista inteira: inserir card manualmente após o unshift
-  // deixava os índices `ei` dos botões "Responder" já renderizados apontando
-  // para a entrada errada (reply ia parar em outro registro). Revisão 09/07.
-  var pPortal = patients[currentPortalPatientIdx];
-  if (pPortal) {
-    if (!pPortal.diary) pPortal.diary = [];
-    var _dts = Date.now();
-    pPortal.diary.unshift({ tipo: 'livre', texto: text, date: dateStr, hora: horaStr, ts: _dts, _up: _dts });
-    tfTrack('portal_diario_salvo', { tipo: 'livre' }); // só metadado — nunca o texto
-    salvarPacientes();
-    if (typeof renderDiarioLivre === 'function') renderDiarioLivre(pPortal);
-  }
-  ta.value = '';
-  updateDiaryCount();
-  showToast('Registro salvo. ' + (_pacTherapistFirst() || 'Sua terapeuta') + ' verá na próxima sessão.');
-}
+// saveDiaryLivre foi removida: gravava no diary REAL do paciente com o campo
+// #diary-livre-text da PRÉVIA do terapeuta — mesma classe de bug do saveDiaryEsp
+// já removido (F4.6 item 6). Quem escreve o registro livre é o paciente, no
+// portal dele (pacSalvarDiario, tipo 'livre'); a prévia agora é somente-leitura
+// (textarea/botão desabilitados em app.html). O terapeuta ainda pode RESPONDER
+// a um registro existente via salvarRespostaDiario (js/12) — isso continua ativo.
 
 let tccEmocaoSelecionada = '';
 function selectEmoTCC(btn, emocao) {

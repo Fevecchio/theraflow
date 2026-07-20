@@ -152,9 +152,10 @@ function gerarAlertasReais() {
 
   // ── 6. FALTAS REITERADAS ────────────────────────────────────────────────
   patients.forEach(function(p, i) {
-    var pidx = patients.indexOf(p);
-    var faltasRecentes = appointments.filter(function(a){
-      return a.patientIdx === pidx && a.presenca === 'faltou';
+    // Identidade segura (patientId), não patientIdx cru — índice desloca com
+    // exclusões e já gravou falta no paciente errado (CLAUDE.md, campo minado do sync).
+    var faltasRecentes = _apptsDoPaciente(p, i).filter(function(a){
+      return a.presenca === 'faltou';
     });
     // Considera apenas as últimas 30 dias
     var limite = new Date(isoHoje); limite.setDate(limite.getDate() - 30);
@@ -666,8 +667,10 @@ function exportarRelatorioEvolucao() {
     sparkSvg = '<svg width="'+W+'" height="'+H+'" style="display:block"><polyline points="'+pts+'" fill="none" stroke="'+cor+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   }
 
-  // Presença
-  var apptsPac = (typeof appointments!=='undefined'?appointments:[]).filter(function(a){ return a.patientIdx===(currentPatientIdx||0); });
+  // Presença — identidade segura (patientId), não patientIdx/currentPatientIdx
+  // cru: se p caiu no fallback patients[0] acima, currentPatientIdx nem
+  // corresponde a p (documento exportado viria com sessões de outro paciente).
+  var apptsPac = (typeof _apptsDoPaciente === 'function') ? _apptsDoPaciente(p, patients.indexOf(p)) : [];
   var compareceu = apptsPac.filter(function(a){ return a.presenca==='compareceu'; }).length;
   var faltou = apptsPac.filter(function(a){ return a.presenca==='faltou'; }).length;
   var taxaPresenca = apptsPac.filter(function(a){return a.presenca;}).length
@@ -720,11 +723,12 @@ function exportarProntuario() {
   var emailSup = '';
   try { emailSup = JSON.parse(localStorage.getItem('tf_account')||'{}').email_suporte || ''; } catch(e){}
 
-  // Sessões agendadas deste paciente (histórico)
+  // Sessões agendadas deste paciente (histórico) — identidade segura (patientId),
+  // não patientIdx cru: este é um documento clínico exportado, o pior lugar
+  // possível pra vir com o histórico de outro paciente.
   var sessoesPaciente = [];
   try {
-    var pidx = patients.indexOf(p);
-    sessoesPaciente = appointments.filter(function(a){ return a.patientIdx === pidx && a.status !== 'cancelada'; })
+    sessoesPaciente = _apptsDoPaciente(p, patients.indexOf(p)).filter(function(a){ return a.status !== 'cancelada'; })
       .sort(function(a,b){ return a.date < b.date ? -1 : 1; });
   } catch(e) {}
 
@@ -1119,7 +1123,11 @@ function atualizarMetricasSupervisao() {
     }
   });
 
-  // Tabela "Pacientes que merecem atenção"
+  // Tabela "Pacientes que merecem atenção" — quando não há ninguém real na lista,
+  // o tbody tinha 3 pacientes FICTÍCIOS hardcoded em app.html (Rafael Andrade,
+  // Pedro Alves, Juliana Costa, com linguagem de risco) que nunca eram limpos.
+  // Mesma classe de bug das sessões-fantasma (17/07) — corrigido aqui com um
+  // estado vazio honesto, no padrão já usado em _renderContratransferencia.
   const tbody = document.querySelector('#sup-tab-carteira table tbody');
   if (tbody) {
     const atentos = patients
@@ -1139,6 +1147,8 @@ function atualizarMetricasSupervisao() {
           <td><button class="btn btn-secondary btn-sm" onclick="currentBriefingPatientIdx=${p._i};navigate('briefing')">✦ Briefing</button></td>
         </tr>`;
       }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;font-size:13px">🌱 Nenhum paciente precisa de atenção especial esta semana.</td></tr>';
     }
   }
 }
