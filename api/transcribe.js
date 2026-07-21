@@ -176,8 +176,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    let { r, provider, model } = await callGroq();
-    if (!r.ok && isRetryable(r.status) && process.env.OPENAI_API_KEY) {
+    // TEMP (21/07, remover após o teste cego Groq vs OpenAI): força um provider
+    // específico p/ comparar qualidade lado a lado, sem depender de o Groq falhar de verdade.
+    const forceProvider = /[?&]provider=(groq|openai)\b/.exec(req.url || '')?.[1];
+    let { r, provider, model } = forceProvider === 'openai' ? await callOpenAI() : await callGroq();
+    if (!forceProvider && !r.ok && isRetryable(r.status) && process.env.OPENAI_API_KEY) {
       const groqErrTxt = await r.text().catch(() => '');
       console.warn('[transcribe] Groq', r.status, groqErrTxt.slice(0, 200), '— tentando fallback OpenAI');
       ({ r, provider, model } = await callOpenAI());
