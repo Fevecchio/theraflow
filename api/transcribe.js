@@ -125,8 +125,6 @@ export default async function handler(req, res) {
   // e intercala os segmentos por tempo — rótulo de falante "de graça", sem modelo de diarização.
   const wantSegments = /[?&]segments=1\b/.test(req.url || '');
 
-  const form = new FormData();
-  form.append('file', new Blob([audio], { type: mime }), 'sessao.webm');
   // large-v3 COMPLETO (não turbo): o turbo trocava palavras em pt-BR no co-teste
   // ("feriado"→"criado"); custo/sessão segue centavos e a transcrição é pós-sessão,
   // então a latência extra não aparece para o usuário. Prompt curto dá contexto de
@@ -136,21 +134,58 @@ export default async function handler(req, res) {
   // de produção NÃO muda sem o A/B aprovar (whitelist fechada, nada de modelo livre).
   const useTurbo = /[?&]model=turbo\b/.test(req.url || '');
   const whisperModel = useTurbo ? 'whisper-large-v3-turbo' : 'whisper-large-v3';
-  form.append('model', whisperModel);
-  form.append('language', 'pt');
-  form.append('prompt', 'Transcrição de uma sessão de psicoterapia em português do Brasil, conversa entre psicóloga e paciente.');
-  form.append('response_format', wantSegments ? 'verbose_json' : 'text');
+  const PROMPT_PT = 'Transcrição de uma sessão de psicoterapia em português do Brasil, conversa entre psicóloga e paciente.';
+  const responseFormat = wantSegments ? 'verbose_json' : 'text';
 
-  try {
+  function buildForm(model) {
+    const f = new FormData();
+    f.append('file', new Blob([audio], { type: mime }), 'sessao.webm');
+    f.append('model', model);
+    f.append('language', 'pt');
+    f.append('prompt', PROMPT_PT);
+    f.append('response_format', responseFormat);
+    return f;
+  }
+
+  // Status que indicam saturação/upstream fora do ar — vale tentar outro provedor.
+  // 4xx de conteúdo (400/413 etc.) não se beneficiam de trocar de provedor.
+  function isRetryable(status) { return status === 429 || status >= 500; }
+
+  async function callGroq() {
     const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${GROQ}` },
-      body: form,
+      body: buildForm(whisperModel),
     });
+    return { r, provider: 'groq', model: whisperModel };
+  }
+
+  // Plano B (21/07): Groq tem travado com poucas sessões simultâneas (teto de
+  // audio-seg/hora do Free) e o upgrade pago está bloqueado pelo próprio Groq
+  // ("temporarily unavailable due to high demand", sem ETA). Mesmo formato de
+  // API (compatível OpenAI) — só troca endpoint/chave/nome do modelo. OpenAI
+  // só expõe 'whisper-1' (não versiona large-v3 no nome), e custa ~3x mais que
+  // o Groq — por isso SÓ é acionado quando o Groq falha, nunca como padrão.
+  async function callOpenAI() {
+    const r = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+      body: buildForm('whisper-1'),
+    });
+    return { r, provider: 'openai', model: 'whisper-1' };
+  }
+
+  try {
+    let { r, provider, model } = await callGroq();
+    if (!r.ok && isRetryable(r.status) && process.env.OPENAI_API_KEY) {
+      const groqErrTxt = await r.text().catch(() => '');
+      console.warn('[transcribe] Groq', r.status, groqErrTxt.slice(0, 200), '— tentando fallback OpenAI');
+      ({ r, provider, model } = await callOpenAI());
+    }
     if (!r.ok) {
       const errTxt = await r.text().catch(() => '');
-      console.error('[transcribe] Groq HTTP', r.status, errTxt.slice(0, 200));
-      return res.status(502).json({ error: `Groq ${r.status}: ${errTxt.slice(0, 200)}` });
+      console.error(`[transcribe] ${provider} HTTP`, r.status, errTxt.slice(0, 200));
+      return res.status(502).json({ error: `${provider} ${r.status}: ${errTxt.slice(0, 200)}` });
     }
     // LGPD: trilha de auditoria do ato mais sensível (processamento de áudio de
     // sessão) — fire-and-forget, nunca derruba a transcrição. Só metadados: o
@@ -160,7 +195,7 @@ export default async function handler(req, res) {
       fetch(`${SUPA_URL}/rest/v1/audit_logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: svc, Authorization: `Bearer ${svc}`, Prefer: 'return=minimal' },
-        body: JSON.stringify({ user_id: user.id, acao: 'session_transcribed', detalhes: { segments: !!wantSegments } }),
+        body: JSON.stringify({ user_id: user.id, acao: 'session_transcribed', detalhes: { segments: !!wantSegments, provider } }),
       }).catch(() => {});
     } catch (_) {}
     if (wantSegments) {
@@ -168,15 +203,15 @@ export default async function handler(req, res) {
       const segments = Array.isArray(j.segments)
         ? j.segments.map(s => ({ start: s.start, end: s.end, text: s.text, no_speech_prob: s.no_speech_prob }))
         : [];
-      // Medição de custo (16/07): segundos de áudio processados — só números, nunca conteúdo.
-      try { console.log('[ia-usage]', JSON.stringify({ fn: 'transcribe', user: user.id, model: whisperModel, audio_seg: Math.round(j.duration || 0), bytes: audio.length })); } catch (_) {}
-      return res.status(200).json({ text: j.text || '', segments, model: whisperModel });
+      // Medição de custo (16/07, +provider 21/07): segundos de áudio processados — só números, nunca conteúdo.
+      try { console.log('[ia-usage]', JSON.stringify({ fn: 'transcribe', user: user.id, model, provider, audio_seg: Math.round(j.duration || 0), bytes: audio.length })); } catch (_) {}
+      return res.status(200).json({ text: j.text || '', segments, model, provider });
     }
     const text = await r.text(); // response_format=text → texto puro
-    try { console.log('[ia-usage]', JSON.stringify({ fn: 'transcribe', user: user.id, model: whisperModel, bytes: audio.length })); } catch (_) {}
-    return res.status(200).json({ text, model: whisperModel });
+    try { console.log('[ia-usage]', JSON.stringify({ fn: 'transcribe', user: user.id, model, provider, bytes: audio.length })); } catch (_) {}
+    return res.status(200).json({ text, model, provider });
   } catch (err) {
-    console.error('[transcribe] fetch Groq falhou:', err.message);
+    console.error('[transcribe] fetch falhou:', err.message);
     return res.status(502).json({ error: 'Upstream error: ' + err.message });
   }
 }
