@@ -391,8 +391,9 @@ function confirmarAgendamento() {
     if (recVal === 'quinzenal')  { for(let w=1;w<=4;w++){ const nd=new Date(dataVal+'T12:00:00'); nd.setDate(nd.getDate()+w*14); datas.push(localDateISO(nd)); } }
     if (recVal === 'mensal')     { for(let w=1;w<=2;w++){ const nd=new Date(dataVal+'T12:00:00'); nd.setMonth(nd.getMonth()+w); datas.push(localDateISO(nd)); } }
 
+    var _firstApptRef = null;
     datas.forEach(function(dt, i){
-      appointments.push({
+      var _novoAppt = {
         id: Date.now() + i,
         patientIdx: pidx,
         patientId: p.id || null, // C3: identidade estável (índice desloca com exclusões)
@@ -404,7 +405,9 @@ function confirmarAgendamento() {
         color: APPT_COLORS[colorIdx],
         status: 'agendada',
         recorrencia: recVal
-      });
+      };
+      appointments.push(_novoAppt);
+      if (i === 0) _firstApptRef = _novoAppt;
     });
 
     var proxima = datas[0];
@@ -484,7 +487,15 @@ function confirmarAgendamento() {
         // entra se ainda couber no relógio. Só pulamos tudo se nem 15min couber.
         var _sessionDt = new Date(datas[0] + 'T' + horaVal + ':00');
         if (_sessionDt.getTime() - 15 * 60 * 1000 > Date.now()) {
-          _sendEmail('reminder', p.email, _emailData);
+          // Guarda os ids dos e-mails agendados no Resend — se a sessão for
+          // reagendada depois, dá pra cancelar estes (senão o lembrete "15min"
+          // dispara com o HORÁRIO ANTIGO, informação errada pro paciente).
+          _sendEmail('reminder', p.email, _emailData).then(function(_r){
+            if (_r && Array.isArray(_r.agendados) && _firstApptRef) {
+              _firstApptRef.remindEmailIds = _r.agendados.map(function(a){ return a.id; }).filter(Boolean);
+              _salvarAppointments();
+            }
+          });
           if (_sessionDt.getTime() - 24 * 60 * 60 * 1000 <= Date.now()) {
             showToast('ℹ Sessão em menos de 24h — só o lembrete de 15 min foi agendado');
           }
@@ -635,16 +646,51 @@ function confirmarReagendamento(id) {
   if (!novaData || !novaHora) { showToast('⚠ Preencha data e horário.'); return; }
   var novaDuracao = parseInt(document.getElementById('reagendar-duracao')?.value || appt.duration || 50);
   var dataAnterior = appt.date + ' ' + appt.time;
+  var _idsAntigos = appt.remindEmailIds; // captura ANTES de sobrescrever, pra cancelar
   appt.date = novaData;
   appt.time = novaHora;
   appt.duration = novaDuracao;
   appt.confirmada = false; // nova data ainda não foi confirmada pelo paciente
+  appt.remindEmailIds = null;
   _salvarAppointments();
   document.getElementById('modal-reagendar')?.remove();
   if (agendaCurrentView === 'dia') renderDayView();
   else if (agendaCurrentView === 'semana') renderWeekView();
   showToast('✓ Sessão reagendada de ' + dataAnterior + ' para ' + novaData + ' às ' + novaHora);
   tfTrack('session_rescheduled', {});
+
+  // Bug 22/07: reagendar NUNCA avisava o paciente por e-mail — o convite e os
+  // lembretes 24h/15min só saíam no agendamento original. Agora reenvia a
+  // confirmação com a data/hora NOVA e reagenda os lembretes; cancela os
+  // lembretes antigos (senão o "15min" dispara sozinho no horário velho).
+  var p = patients[appt.patientIdx];
+  if (!p || (appt.patientName && p.name !== appt.patientName)) p = patients.find(function(x){ return x.name === appt.patientName; }) || p;
+  if (p && p.email && typeof _sendEmail === 'function') {
+    if (Array.isArray(_idsAntigos) && _idsAntigos.length) {
+      _sendEmail('cancel-reminder', p.email, { ids: _idsAntigos }).catch(function(){});
+    }
+    var _acc2 = {}; try { _acc2 = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch(e){}
+    var _emailData2 = {
+      terapeutaNome: _acc2.nome || (typeof tfUserData !== 'undefined' && tfUserData?.nome) || 'Seu terapeuta',
+      terapeutaCrp: _acc2.crp || (typeof tfUserData !== 'undefined' && tfUserData?.crp) || '',
+      pacienteNome: p.name,
+      data: fmtDataBR(novaData), hora: novaHora, duracao: novaDuracao,
+      sessionLink: p.sessionLink || '',
+      sessionDateISO: novaData
+    };
+    _sendEmail('invite', p.email, _emailData2);
+    var _novoDt = new Date(novaData + 'T' + novaHora + ':00');
+    if (_novoDt.getTime() - 15 * 60 * 1000 > Date.now()) {
+      _sendEmail('reminder', p.email, _emailData2).then(function(_r){
+        if (_r && Array.isArray(_r.agendados)) {
+          appt.remindEmailIds = _r.agendados.map(function(a){ return a.id; }).filter(Boolean);
+          _salvarAppointments();
+        }
+      });
+    }
+  } else if (p && !p.email) {
+    showToast('⚠ ' + _firstName(p.name) + ' não tem e-mail cadastrado — não foi possível avisar do reagendamento por e-mail.');
+  }
 }
 
 /* ── ESTADO "CONFIRMADA" (anti no-show, v1 otimista — item 5 dos desligados) ──

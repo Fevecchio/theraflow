@@ -3,9 +3,10 @@
  * Deploy: Vercel → /api/send-email  (Node.js runtime)
  *
  * Templates disponíveis:
- *   'invite'   — convite de sessão para o paciente (com link Whereby)
- *   'reminder' — lembrete 24h antes da sessão
- *   'portal'   — acesso ao portal do paciente (email + senha)
+ *   'invite'          — convite de sessão para o paciente (com link Whereby)
+ *   'reminder'        — lembrete 24h e 15min antes da sessão (agendado via Resend scheduledAt)
+ *   'portal'          — acesso ao portal do paciente (email + senha)
+ *   'cancel-reminder' — cancela lembretes agendados por id (usado ao reagendar)
  *
  * Env vars necessárias (Vercel → Settings → Environment Variables):
  *   RESEND_API_KEY = re_xxxxxxxxxxxxxxxxx
@@ -359,6 +360,25 @@ export default async function handler(req, res) {
       console.error('[send-email] Exceção (reminder):', e.message);
       return res.status(500).json({ error: e.message });
     }
+  }
+
+  // Cancela lembretes 24h/15min já agendados no Resend (scheduledAt) — usado ao
+  // reagendar uma sessão, senão o lembrete "sua sessão começa em 15 minutos"
+  // dispara sozinho no HORÁRIO ANTIGO, informação errada pro paciente. Tolerante:
+  // um id que já disparou/não existe mais não derruba o reagendamento.
+  if (template === 'cancel-reminder') {
+    const ids = Array.isArray(data?.ids) ? data.ids.filter(Boolean) : [];
+    if (!ids.length) return res.status(200).json({ ok: true, cancelados: [] });
+    const cancelados = [];
+    for (const id of ids) {
+      try {
+        await resend.emails.cancel(id);
+        cancelados.push(id);
+      } catch (e) {
+        console.warn('[send-email] cancel falhou (id já disparado/inválido, ok ignorar):', id, e.message);
+      }
+    }
+    return res.status(200).json({ ok: true, cancelados });
   }
 
   let subject, html, scheduledAt = null;
