@@ -1116,7 +1116,7 @@ function pacSalvarAnamnese(idx) {
     if (!secao) return;
     secao.innerHTML = ok !== false
       ? '<div style="text-align:center;padding:24px 0">'
-        + '<div style="font-size:36px;margin-bottom:10px">✅</div>'
+        + '<div style="color:var(--sage);margin-bottom:10px">' + (typeof _tfIcon === 'function' ? _tfIcon('checkCircle', 36) : '') + '</div>'
         + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Formulário enviado!</div>'
         + '<div style="font-size:13px;color:var(--muted)">Sua terapeuta receberá as informações antes da próxima sessão.</div>'
         + '</div>'

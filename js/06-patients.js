@@ -800,8 +800,10 @@ function _recalcNextSessions() {
       });
       var np = melhor.date.split('-');
       p.next = np[2] + '/' + np[1] + '/' + np[0];
+      p.nextTime = melhor.time || null; // portal do paciente mostrava a sessão sem horário (só data)
     } else if (p.sessions > 0) {
       p.next = '—';
+      p.nextTime = null;
     }
   });
 }
@@ -1700,8 +1702,10 @@ function selectPatient(i, el) {
       if (futurosP.length) {
         var np = futurosP[0].date.split('-');
         p.next = np[2] + '/' + np[1] + '/' + np[0];
+        p.nextTime = futurosP[0].time || null;
       } else if (!p.next) {
         p.next = '—';
+        p.nextTime = null;
       }
       var passadosP = appointments.filter(function(a){
         return _matchAppt(a) && a.date < nowIso;

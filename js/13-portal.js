@@ -652,9 +652,20 @@ function _pacEnsureLiveCss() {
 // Extraído p/ o poll poder atualizar SÓ o card in-place — sem re-renderizar o portal
 // inteiro (que voltaria à Home e apagaria texto que a paciente esteja digitando).
 function _pacSessCardHtml(p) {
-  var proximaStr = p.next && p.next !== '—' ? p.next : null;
+  var proximaStr = p.next && p.next !== '—' ? (p.next + (p.nextTime ? ' às ' + p.nextTime : '')) : null;
   var sessionLink = p.sessionLink || null;
   var live = _pacSessionLive(p);
+  // Horário marcado já chegou mas o profissional ainda não abriu a sala — sem
+  // isto a paciente só via "Remarcar", como se algo tivesse dado errado, quando
+  // é só questão de segundos até o profissional entrar (pedido 22/07).
+  var horaChegou = false;
+  if (!live && p.next && p.next !== '—' && p.nextTime) {
+    var _dp = p.next.split('/');
+    if (_dp.length === 3) {
+      var _dt = new Date(_dp[2] + '-' + _dp[1] + '-' + _dp[0] + 'T' + p.nextTime + ':00');
+      if (!isNaN(_dt.getTime())) horaChegou = Date.now() >= _dt.getTime();
+    }
+  }
   // Link /sala fora do ao-vivo = token expirado (efêmero) — não oferecer como botão legado.
   var legacyLink = (sessionLink && !_isSalaLink(sessionLink)) ? sessionLink : null;
   var tFirst = _pacTherapistFirst();
@@ -665,7 +676,7 @@ function _pacSessCardHtml(p) {
         ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px"><span style="width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 rgba(179,86,74,.5);animation:pacLivePulse 1.6s ease-out infinite;flex-shrink:0"></span><span class="pac-hero-k">Sessão ao vivo agora</span></div>'
           + '<div class="pac-hero-v">' + (tFirst ? escHTML(tFirst) + ' está esperando por você' : 'Sua sessão está aberta — entre quando quiser') + '</div>'
         : (proximaStr
-            ? '<div class="pac-hero-k">Próxima sessão</div><div class="pac-hero-v">' + escHTML(proximaStr) + '</div>' + (tFirst ? '<div class="pac-hero-s">com ' + escHTML(tFirst) + '</div>' : '')
+            ? '<div class="pac-hero-k">' + (horaChegou ? 'Sua sessão está começando' : 'Próxima sessão') + '</div><div class="pac-hero-v">' + escHTML(proximaStr) + '</div>' + (horaChegou ? '<div class="pac-hero-s">Aguarde um instante — ' + (tFirst ? escHTML(tFirst) : 'seu profissional') + ' já vai entrar.</div>' : (tFirst ? '<div class="pac-hero-s">com ' + escHTML(tFirst) + '</div>' : ''))
             // "Como você está chegando?" confundia sem sessão marcada (chegando aonde?)
             // — feedback do usuário 11/07; o convite agora é direto ao check-in.
             : '<div class="pac-hero-k">Para hoje</div><div class="pac-hero-v">Reserve um minuto para você</div><div class="pac-hero-s">Seu check-in leva 10 segundos' + (tFirst ? ' — e ' + escHTML(tFirst) + ' acompanha de perto.' : '.') + '</div>'))
@@ -960,7 +971,7 @@ function renderPatientApp(idx, pacs) {
       + '<div class="patient-section-body">'
         + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.6">Sua terapeuta precisa de algumas informações. Preencha com calma — tudo é confidencial.</div>'
         + '<div class="form-group" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">O que te traz para a terapia?</label><textarea id="pac-ana-queixa" rows="3" placeholder="Descreva com suas palavras…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.queixaPrincipal||'') + '</textarea></div>'
-        + '<div class="form-group" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Há quanto tempo você sente isso?</label><input id="pac-ana-inicio" type="text" placeholder="Ex: alguns meses…" value="' + escHTML(_ana.inicioSintomas||'') + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/></div>'
+        + '<div class="form-group" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">Há quanto tempo você sente isso?</label><input id="pac-ana-inicio" type="text" autocomplete="off" placeholder="Ex: alguns meses…" value="' + escHTML(_ana.inicioSintomas||'') + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/></div>'
         + '<div class="form-group" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px">O que você espera alcançar?</label><textarea id="pac-ana-objetivos" rows="2" placeholder="Seus objetivos…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">' + escHTML(_ana.objetivosTerapia||'') + '</textarea></div>'
         + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="pac-ana-terapia-ant"' + (_ana.terapiaAnterior?' checked':'') + ' style="accent-color:var(--sage);width:16px;height:16px"/> Já fiz terapia antes</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="pac-ana-psiquiatra"' + (_ana.psiquiatra?' checked':'') + ' style="accent-color:var(--sage);width:16px;height:16px"/> Acompanho psiquiatra atualmente</label></div>'
         + '<button onclick="pacSalvarAnamnese(' + idx + ')" style="width:100%;padding:12px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Enviar para minha terapeuta</button>'
@@ -1091,7 +1102,7 @@ function renderPatientApp(idx, pacs) {
         }).join('')
     + '</div>'
     + '<input type="hidden" id="pac-mood-slider" value="5"/>'
-    + '<input id="pac-mood-note" type="text" placeholder="Quer nomear melhor? Uma palavra basta. (opcional)" style="width:100%;margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:\'DM Sans\',sans-serif;outline:none;background:var(--bg);color:var(--ink);box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'
+    + '<input id="pac-mood-note" type="text" autocomplete="off" placeholder="Quer nomear melhor? Uma palavra basta. (opcional)" style="width:100%;margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:\'DM Sans\',sans-serif;outline:none;background:var(--bg);color:var(--ink);box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'
     + '<div style="display:flex;align-items:center;gap:12px;margin-top:12px">'
       + '<button onclick="pacSalvarMood('+idx+')" class="pac-btn-solid">Registrar</button>'
       + '<div id="pac-mood-saved" style="font-size:12px;color:var(--muted)"></div>'
@@ -1265,7 +1276,7 @@ function _pacRenderChatBlock(p, msgs, idx) {
     + '</div>'
     + '<div class="chat-thread" id="pac-chat-thread">'+thread+'</div>'
     + '<div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">'
-    + '<input id="pac-chat-input" type="text" placeholder="Escreva para '+escHTML(_tFirst)+'…" '
+    + '<input id="pac-chat-input" type="text" autocomplete="off" placeholder="Escreva para '+escHTML(_tFirst)+'…" '
     + 'style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none;background:var(--bg);color:var(--ink)" '
     + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'" '
     + 'onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();pacEnviarMensagem('+idx+')}">'

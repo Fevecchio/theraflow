@@ -237,9 +237,9 @@ async function _supaSync_patients(opts) {
       if (typeof _recalcNextSessions === 'function') { try { _recalcNextSessions(); } catch(_){} }
       // _recalcNextSessions muta patients[] em memória (não o `pats` do localStorage) →
       // mapa id→next a partir do array vivo.
-      var _nextById = {};
+      var _nextById = {}, _nextTimeById = {};
       if (typeof patients !== 'undefined' && Array.isArray(patients)) {
-        patients.forEach(function(q){ if (q && q.id) _nextById[q.id] = q.next || null; });
+        patients.forEach(function(q){ if (q && q.id) { _nextById[q.id] = q.next || null; _nextTimeById[q.id] = q.nextTime || null; } });
       }
       var _accSync = {}; try { _accSync = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch(_){}
       var _terNome = _accSync.nome || (typeof tfUserData !== 'undefined' && tfUserData ? tfUserData.nome : '') || '';
@@ -298,6 +298,7 @@ async function _supaSync_patients(opts) {
           // Portal remoto (Lote 2): próxima sessão + identidade do terapeuta + revogação.
           // Campos do TERAPEUTA (não do paciente) — a RPC 020 os devolve no login.
           next: (p.id && _nextById[p.id]) ? _nextById[p.id] : (p.next || null),
+          nextTime: (p.id && _nextById[p.id]) ? _nextTimeById[p.id] : (p.nextTime || null), // portal mostrava a sessão sem horário — servidor já esperava este campo (migration 020), só não chegava
           _therapistNome: _terNome,
           _therapistWhatsapp: _terWpp,
           _therapistBio: _accSync.bio || null, // mini bio no portal (item 1 dos desligados)

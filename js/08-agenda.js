@@ -413,6 +413,7 @@ function confirmarAgendamento() {
     var proxima = datas[0];
     var parts = proxima.split('-');
     p.next = parts[2]+'/'+parts[1]+'/'+parts[0];
+    p.nextTime = horaVal;
 
     // Pré-pago (exceção do paciente OU padrão da clínica em Financeiro): a
     // cobrança nasce AGORA, no agendamento — não espera a sessão acontecer
