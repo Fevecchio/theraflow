@@ -43,6 +43,24 @@ function supaHeaders(serviceKey) {
   return { 'Content-Type': 'application/json', 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` };
 }
 
+// Auditoria B-3: fecha o reconhecimento ANÔNIMO. O diagnóstico (env presentes,
+// remetente, tabelas) só sai para quem prova ser terapeuta (JWT válido) ou tem o
+// DIAG_SECRET. Sem isso, qualquer um mapeava a stack via GET público.
+async function isAuthorizedDiag(req) {
+  const DIAG_SECRET = process.env.DIAG_SECRET || '';
+  const secret = req.headers['x-diag-secret'] || (req.body || {}).secret || '';
+  if (DIAG_SECRET && secret === DIAG_SECRET) return true;
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!token || !serviceKey) return false;
+  try {
+    const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
+      headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${token}` },
+    });
+    return r.ok; // JWT de terapeuta válido
+  } catch (_) { return false; }
+}
+
 async function tableStatus(serviceKey, table) {
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/${table}?select=*&limit=1`, { headers: supaHeaders(serviceKey) });
@@ -56,6 +74,11 @@ export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   setCors(res, origin);
   if (req.method === 'OPTIONS') return res.status(204).end();
+
+  // B-3: sem autorização, não vaza NADA de infra — resposta neutra.
+  if (!(await isAuthorizedDiag(req))) {
+    return res.status(401).json({ ok: false, error: 'Não autorizado. Envie um JWT de terapeuta (Authorization: Bearer) ou o DIAG_SECRET (header x-diag-secret).' });
+  }
 
   const RESEND_KEY = process.env.RESEND_API_KEY || '';
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';

@@ -521,7 +521,7 @@ async function pacConfirmarReset() {
   function _err(m) { if (errEl) { errEl.textContent = m; errEl.style.display = ''; } else { try { alert(m); } catch(_) {} } }
   if (errEl) errEl.style.display = 'none';
 
-  if (!nova || nova.length < 6) return _err('A nova senha deve ter pelo menos 6 caracteres.');
+  if (!nova || nova.length < 8) return _err('A nova senha deve ter pelo menos 8 caracteres.');
   if (nova !== nova2) return _err('As senhas não coincidem.');
 
   var token = window._pacResetToken;

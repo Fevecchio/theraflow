@@ -165,7 +165,7 @@
     <div class="pac-flow-logo">Teravia</div>
     <div class="pac-flow-title">Crie sua senha</div>
     <div class="pac-flow-sub">Defina uma senha pessoal que só você saberá. Você usará ela nos próximos acessos.</div>
-    <input class="pac-flow-input" id="pac-nova-senha" type="password" placeholder="Nova senha (mín. 6 caracteres)" maxlength="50"/>
+    <input class="pac-flow-input" id="pac-nova-senha" type="password" placeholder="Nova senha (mín. 8 caracteres)" maxlength="50"/>
     <input class="pac-flow-input" id="pac-nova-senha-conf" type="password" placeholder="Confirme a senha"/>
     <div id="pac-senha-error" style="display:none;font-size:13px;color:#c0392b;margin-bottom:10px;text-align:left"></div>
     <button class="pac-flow-btn" onclick="pacConfirmarNovaSenha()">Criar minha senha →</button>
@@ -178,7 +178,7 @@
     <div class="pac-flow-logo">Teravia</div>
     <div class="pac-flow-title">Criar nova senha</div>
     <div class="pac-flow-sub">Defina a nova senha do seu portal. Você usará ela para entrar a partir de agora.</div>
-    <input class="pac-flow-input" id="pac-reset-nova" type="password" placeholder="Nova senha (mín. 6 caracteres)" maxlength="50"/>
+    <input class="pac-flow-input" id="pac-reset-nova" type="password" placeholder="Nova senha (mín. 8 caracteres)" maxlength="50"/>
     <input class="pac-flow-input" id="pac-reset-nova2" type="password" placeholder="Confirme a nova senha" maxlength="50" onkeydown="if(event.key==='Enter')pacConfirmarReset()"/>
     <div id="pac-reset-error" style="display:none;font-size:13px;color:#c0392b;margin-bottom:10px;text-align:left"></div>
     <button class="pac-flow-btn" id="pac-reset-btn" onclick="pacConfirmarReset()">Salvar nova senha →</button>
@@ -317,7 +317,7 @@ window.pacConfirmarNovaSenha = async function() {
   var s2 = document.getElementById('pac-nova-senha-conf').value.trim();
   var errEl = document.getElementById('pac-senha-error');
   errEl.style.display = 'none';
-  if (!s1 || s1.length < 6) { errEl.textContent = 'A senha deve ter pelo menos 6 caracteres.'; errEl.style.display = ''; return; }
+  if (!s1 || s1.length < 8) { errEl.textContent = 'A senha deve ter pelo menos 8 caracteres.'; errEl.style.display = ''; return; }
   if (s1 !== s2) { errEl.textContent = 'As senhas não coincidem.'; errEl.style.display = ''; return; }
   // Salva hash da nova senha
   var hash = await _portalHash(s1);
@@ -517,9 +517,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   _prePreencharEmail();
 
-  // Pré-marca checkbox se já tinha "manter conectado" salvo
+  // Pré-marca checkbox só se houver "manter conectado" salvo E ainda válido
+  // (função é hoisted; apaga token vencido de passagem).
   try {
-    var _saved = JSON.parse(localStorage.getItem('tf_pac_remember') || 'null');
+    var _saved = _pacRememberValido();
     if (_saved && _saved.email) {
       var _keepEl = document.getElementById('pac-keep-logged');
       if (_keepEl) _keepEl.checked = true;
@@ -547,7 +548,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Fallback: auto-login com credenciais salvas ("manter conectado")
       try {
-        var _saved = JSON.parse(localStorage.getItem('tf_pac_remember') || 'null');
+        var _saved = _pacRememberValido();
         if (_saved && _saved.email && _saved.hash) {
           _autoLoginFromRemember(_saved);
           return;
@@ -560,15 +561,35 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }, 600);
 
+  // Validade do "manter conectado" (auditoria M-1): o hash guardado é uma
+  // credencial de dado clínico — expira e é apagado no boot se vencido. 7 dias
+  // cobre o uso ativo típico (check-in ~semanal) mantendo a janela curta; baixe
+  // para 3 se quiser priorizar segurança sobre comodidade. DIAS é local de
+  // propósito (evita depender da ordem de atribuição de uma var externa).
+  function _pacRememberValido() {
+    var DIAS = 7;
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('tf_pac_remember') || 'null'); } catch(_) { return null; }
+    if (!s || !s.email || !s.hash) return null;
+    // Token antigo sem savedAt (pré-M-1) OU vencido → apaga e exige login.
+    if (!s.savedAt || (Date.now() - s.savedAt) > DIAS * 24 * 60 * 60 * 1000) {
+      try { localStorage.removeItem('tf_pac_remember'); } catch(_) {}
+      return null;
+    }
+    return s;
+  }
+
   // ── Salva/remove credenciais "manter conectado" após login bem-sucedido ──
   // Chamado pelo _wrapLoginPaciente após o portal renderizar
   window._pacSalvarRemember = async function(p) {
     var keepEl = document.getElementById('pac-keep-logged');
     if (keepEl && keepEl.checked && p && p.email) {
       var h = await _portalHash(document.getElementById('pac-login-senha') ? document.getElementById('pac-login-senha').value : '');
-      // Salva hash atual do paciente (já foi validado pelo login)
+      // Salva hash atual do paciente (já foi validado pelo login). savedAt carimba
+      // a validade: o hash É uma credencial (dado clínico), então NÃO fica no
+      // dispositivo para sempre — expira em TF_REMEMBER_DIAS (auditoria M-1, 22/07).
       var hashToSave = p.portalPasswordHash || h;
-      try { localStorage.setItem('tf_pac_remember', JSON.stringify({ email: p.email, hash: hashToSave })); } catch(_) {}
+      try { localStorage.setItem('tf_pac_remember', JSON.stringify({ email: p.email, hash: hashToSave, savedAt: Date.now() })); } catch(_) {}
     } else if (!keepEl || !keepEl.checked) {
       try { localStorage.removeItem('tf_pac_remember'); } catch(_) {}
     }

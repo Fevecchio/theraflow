@@ -369,8 +369,34 @@ export default async function handler(req, res) {
   if (template === 'cancel-reminder') {
     const ids = Array.isArray(data?.ids) ? data.ids.filter(Boolean) : [];
     if (!ids.length) return res.status(200).json({ ok: true, cancelados: [] });
+    // Defesa em profundidade (auditoria B-1): só cancela ids que pertencem a um
+    // appointment do PRÓPRIO caller. Sem isto, um terapeuta autenticado poderia
+    // passar o id de um lembrete de outro terapeuta e cancelá-lo (DoS leve). Os
+    // ids legítimos SEMPRE estão em metadata.remindEmailIds de um appt do caller
+    // (gravado no agendamento), então esta trava nunca bloqueia o fluxo real.
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    let ownedIds = new Set();
+    if (SERVICE_KEY) {
+      try {
+        const ar = await fetch(
+          `${SUPA_URL}/rest/v1/appointments?user_id=eq.${encodeURIComponent(caller.id)}&select=metadata`,
+          { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+        );
+        const rows = ar.ok ? await ar.json() : [];
+        (Array.isArray(rows) ? rows : []).forEach((a) => {
+          const rl = a && a.metadata && a.metadata.remindEmailIds;
+          if (Array.isArray(rl)) rl.forEach((x) => x && ownedIds.add(String(x)));
+        });
+      } catch (e) {
+        console.warn('[send-email] cancel-reminder: falha ao validar posse dos ids:', e.message);
+      }
+    }
     const cancelados = [];
     for (const id of ids) {
+      if (!ownedIds.has(String(id))) {
+        console.warn('[send-email] cancel-reminder: id ignorado (não pertence ao caller):', caller.id);
+        continue;
+      }
       try {
         await resend.emails.cancel(id);
         cancelados.push(id);

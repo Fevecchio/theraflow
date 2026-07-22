@@ -234,8 +234,8 @@ async function handleConfirm(req, res) {
   if (!token || typeof token !== 'string') {
     return res.status(400).json({ error: 'Token ausente' });
   }
-  if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 6) {
-    return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres.' });
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 8) {
+    return res.status(400).json({ error: 'A nova senha deve ter pelo menos 8 caracteres.' });
   }
   const senha = newPassword.trim();
 

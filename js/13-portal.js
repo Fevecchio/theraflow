@@ -779,7 +779,7 @@ function _pacForcarNovaSenha(p, idx) {
   ov.innerHTML = '<div style="background:var(--white);border-radius:16px;max-width:380px;width:100%;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit">'
     + '<div style="font-size:19px;font-weight:700;color:#1a2a1e;margin-bottom:6px">Crie sua senha de acesso 🔐</div>'
     + '<div style="font-size:13px;color:#5a6b60;line-height:1.5;margin-bottom:16px">Por segurança, defina uma senha pessoal para continuar. A senha temporária que você recebeu deixa de valer.</div>'
-    + '<input id="pac-fps-1" type="password" placeholder="Nova senha (mín. 6 caracteres)" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
+    + '<input id="pac-fps-1" type="password" placeholder="Nova senha (mín. 8 caracteres)" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
     + '<input id="pac-fps-2" type="password" placeholder="Confirme a nova senha" style="width:100%;padding:11px 13px;border:1.5px solid #dce3dd;border-radius:10px;font-size:14px;margin-bottom:10px;box-sizing:border-box;font-family:inherit"/>'
     + '<div id="pac-fps-err" style="display:none;color:#c0392b;font-size:12.5px;margin-bottom:10px"></div>'
     + '<button id="pac-fps-btn" style="width:100%;padding:12px;background:#4a7c59;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Salvar e entrar</button>'
@@ -791,7 +791,7 @@ function _pacForcarNovaSenha(p, idx) {
     var s2 = (document.getElementById('pac-fps-2').value || '').trim();
     var err = document.getElementById('pac-fps-err');
     err.style.display = 'none';
-    if (s1.length < 6) { err.textContent = 'A senha deve ter pelo menos 6 caracteres.'; err.style.display = ''; return; }
+    if (s1.length < 8) { err.textContent = 'A senha deve ter pelo menos 8 caracteres.'; err.style.display = ''; return; }
     if (s1 !== s2) { err.textContent = 'As senhas não coincidem.'; err.style.display = ''; return; }
     btn.disabled = true; btn.textContent = 'Salvando…';
     var hash = await _portalHash(s1);
@@ -1162,7 +1162,7 @@ function renderPatientApp(idx, pacs) {
       + '</div>'
       + '<div id="pac-alterar-senha-form" style="display:none;padding:4px 0 8px">'
         + '<div style="position:relative;margin-bottom:8px"><input id="pac-senha-atual" type="password" placeholder="Senha atual" class="pac-flow-input" autocomplete="current-password" style="margin-bottom:0;padding-right:40px"/><span onclick="var e=document.getElementById(\'pac-senha-atual\');e.type=e.type===\'password\'?\'text\':\'password\'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;user-select:none;color:var(--muted);display:flex;align-items:center"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></span></div>'
-        + '<div style="position:relative;margin-bottom:8px"><input id="pac-senha-nova" type="password" placeholder="Nova senha (mín. 6 caracteres)" class="pac-flow-input" autocomplete="new-password" style="margin-bottom:0;padding-right:40px"/><span onclick="var e=document.getElementById(\'pac-senha-nova\');e.type=e.type===\'password\'?\'text\':\'password\'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;user-select:none;color:var(--muted);display:flex;align-items:center"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></span></div>'
+        + '<div style="position:relative;margin-bottom:8px"><input id="pac-senha-nova" type="password" placeholder="Nova senha (mín. 8 caracteres)" class="pac-flow-input" autocomplete="new-password" style="margin-bottom:0;padding-right:40px"/><span onclick="var e=document.getElementById(\'pac-senha-nova\');e.type=e.type===\'password\'?\'text\':\'password\'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;user-select:none;color:var(--muted);display:flex;align-items:center"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></span></div>'
         + '<div style="position:relative;margin-bottom:10px"><input id="pac-senha-nova2" type="password" placeholder="Confirmar nova senha" class="pac-flow-input" autocomplete="new-password" style="margin-bottom:0;padding-right:40px"/><span onclick="var e=document.getElementById(\'pac-senha-nova2\');e.type=e.type===\'password\'?\'text\':\'password\'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;user-select:none;color:var(--muted);display:flex;align-items:center"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></span></div>'
         + '<div id="pac-senha-alterar-err" style="display:none;font-size:13px;color:#c0392b;margin-bottom:8px;padding:8px 10px;background:#fff0f0;border-radius:7px;border:1px solid #fcc"></div>'
         + '<div id="pac-senha-alterar-ok" style="display:none;font-size:13px;color:var(--sage);margin-bottom:8px;padding:8px 10px;background:#f0faf4;border-radius:7px;border:1px solid rgba(74,124,89,.3)">✓ Senha alterada com sucesso!</div>'
@@ -1634,7 +1634,7 @@ async function pacConfirmarAlteracaoSenha() {
   errEl.style.display = 'none'; okEl.style.display = 'none';
 
   if (!atual) { errEl.textContent = 'Digite a senha atual.'; errEl.style.display = ''; return; }
-  if (!nova || nova.length < 6) { errEl.textContent = 'A nova senha deve ter pelo menos 6 caracteres.'; errEl.style.display = ''; return; }
+  if (!nova || nova.length < 8) { errEl.textContent = 'A nova senha deve ter pelo menos 8 caracteres.'; errEl.style.display = ''; return; }
   if (nova !== nova2) { errEl.textContent = 'As senhas não coincidem.'; errEl.style.display = ''; return; }
 
   var p = _loggedPatientData;
