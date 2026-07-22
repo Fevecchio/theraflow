@@ -281,6 +281,7 @@ async function _supaSync_patients(opts) {
           mood: p.mood || null,
           fin: p.fin || null,
           forma_pagamento: p.forma_pagamento || null,
+          pagamentoModo: p.pagamentoModo || null, // exceção do paciente ao padrão da clínica (ver _pagamentoModoEfetivo)
           portalPasswordHash: p.portalPasswordHash || null,
           // portalPassword (plaintext) NÃO sobe ao banco (F3.2 / migration 008) — só o hash.
           // A senha em claro vive no máximo em memória durante o envio do convite.
@@ -601,6 +602,9 @@ function _supaSync_settings() {
         // Abordagens secundárias do terapeuta (calibram nota/briefing) — SEMPRE
         // incluídas: o update é do objeto inteiro, omitir = apagar no servidor.
         try { settings.secundarias = JSON.parse(localStorage.getItem('tf_account') || '{}').secundarias || []; } catch(_) { settings.secundarias = []; }
+        // Padrão da clínica de cobrança (Financeiro → Pré/Pós-sessão) — SEMPRE incluído
+        // pelo mesmo motivo das secundárias: omitir apaga no servidor.
+        try { settings.pagamentoModoPadrao = JSON.parse(localStorage.getItem('tf_account') || '{}').pagamentoModoPadrao === 'pre' ? 'pre' : 'pos'; } catch(_) { settings.pagamentoModoPadrao = 'pos'; }
         const { error } = await supa.from('users').update({ settings: settings }).eq('id', user.id);
         if (error) throw error;
       });

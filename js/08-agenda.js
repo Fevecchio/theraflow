@@ -110,6 +110,7 @@ function _criarCobrancaPresenca(nomePaciente, valor, dataIso) {
     status: 'pending',
     deleted: false,
     billing: 'avulso',
+    timing: 'pos',
     session: diaFmt,
     method: 'PIX',
   });
@@ -409,6 +410,42 @@ function confirmarAgendamento() {
     var proxima = datas[0];
     var parts = proxima.split('-');
     p.next = parts[2]+'/'+parts[1]+'/'+parts[0];
+
+    // Pré-pago (exceção do paciente OU padrão da clínica em Financeiro): a
+    // cobrança nasce AGORA, no agendamento — não espera a sessão acontecer
+    // (esse é o comportamento 'pos', em js/09-sessions.js e
+    // _criarCobrancaPresenca acima). MESMO shape/id NUMÉRICO dessas duas
+    // rotinas (id string com hífen quebra onclick do financeiro).
+    if ((typeof _pagamentoModoEfetivo === 'function' ? _pagamentoModoEfetivo(p) : 'pos') === 'pre') {
+      var _accPre = {}; try { _accPre = JSON.parse(localStorage.getItem('tf_account')||'{}'); } catch(e){}
+      var _valorPre = parseFloat(p.valorSessao || _accPre.valor_sessao) || 0;
+      if (_valorPre > 0) {
+        datas.forEach(function(dt, di) {
+          var _jaTemPre = charges.some(function(c){ return !c.deleted && c.patient === p.name && c.date === dt; });
+          if (_jaTemPre) return;
+          charges.push({
+            id: Date.now() + di + 700000,
+            patient: p.name,
+            initials: p.initials,
+            color: p.color || '#4a7c59',
+            desc: 'Sessão ' + fmtDataBR(dt),
+            value: _valorPre,
+            date: dt,
+            status: 'pending',
+            deleted: false,
+            billing: 'avulso',
+            timing: 'pre',
+            session: fmtDataBR(dt),
+            method: 'PIX',
+          });
+        });
+        salvarCharges();
+        p.finStatus = 'pending'; p.fin = 'Pendente';
+      } else {
+        showToast('◈ Sessão agendada como pré-paga, mas SEM cobrança — defina o valor da sessão na ficha do paciente (✎ Editar) ou no Perfil.');
+      }
+    }
+
     salvarPacientes();
     _salvarAppointments();
     tfTrack('session_scheduled', { recorrencia: recVal, occurrences: datas.length });

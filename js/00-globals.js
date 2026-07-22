@@ -230,11 +230,19 @@ async function _supaLoadUserData(userId) {
           if (typeof tfUserData !== 'undefined') tfUserData.secundarias = _st.secundarias;
           if (typeof aplicarDadosNoApp === 'function') aplicarDadosNoApp();
         }
-        if (!Array.isArray(_st.bloqueios) && !_st.horarios && !Array.isArray(_st.plans) && !Array.isArray(_st.secundarias)) {
+        // Padrão de cobrança da clínica (Financeiro → Pré/Pós-sessão): servidor é a
+        // fonte no login, mesmo padrão das secundárias acima.
+        if (_st.pagamentoModoPadrao === 'pre' || _st.pagamentoModoPadrao === 'pos') {
+          var _accPag = JSON.parse(localStorage.getItem('tf_account') || '{}');
+          _accPag.pagamentoModoPadrao = _st.pagamentoModoPadrao;
+          localStorage.setItem('tf_account', JSON.stringify(_accPag));
+        }
+        if (!Array.isArray(_st.bloqueios) && !_st.horarios && !Array.isArray(_st.plans) && !Array.isArray(_st.secundarias) && !_st.pagamentoModoPadrao) {
           var _temLocal = (localStorage.getItem('tf_bloqueios') || '[]') !== '[]'
             || !!localStorage.getItem('tf_horarios')
             || (localStorage.getItem('tf_plans') || '[]') !== '[]'
-            || (Array.isArray(mergedAcc.secundarias) && mergedAcc.secundarias.length > 0);
+            || (Array.isArray(mergedAcc.secundarias) && mergedAcc.secundarias.length > 0)
+            || !!mergedAcc.pagamentoModoPadrao;
           if (_temLocal && typeof _supaSync_settings === 'function') _supaSync_settings();
         }
       } catch(_) {}

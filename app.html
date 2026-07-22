@@ -1158,19 +1158,20 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
   </div>
 
-  <!-- Modalidade de cobrança (configurável) -->
+  <!-- Modalidade de cobrança (configurável) — padrão da clínica p/ pacientes
+       NOVOS; pacientes com exceção na própria ficha ignoram isto (ver
+       _pagamentoModoEfetivo em js/01-utils.js). -->
   <div class="fin-config-bar" id="fin-config-bar">
     <div>
-      <div class="fin-config-label">Modalidade de cobrança</div>
-      <div class="fin-config-desc" id="fin-mode-desc">Cobrança enviada antes da sessão. Pagamento funciona como confirmação de presença.</div>
+      <div class="fin-config-label">Modalidade de cobrança <span style="color:var(--muted);font-weight:400">· padrão da clínica</span></div>
+      <div class="fin-config-desc" id="fin-mode-desc">Cobrança enviada depois da sessão. O paciente paga após ser atendido.</div>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
       <div class="fin-mode-toggle">
-        <button class="fin-mode-btn active" onclick="setFinMode('pre',this)" data-mode="pre">Pré-sessão</button>
-        <button class="fin-mode-btn" onclick="setFinMode('post',this)" data-mode="post">Pós-sessão</button>
-        <button class="fin-mode-btn" onclick="setFinMode('hybrid',this)" data-mode="hybrid">Híbrido</button>
+        <button class="fin-mode-btn" onclick="setFinMode('pre',this)" data-mode="pre">Pré-sessão</button>
+        <button class="fin-mode-btn active" onclick="setFinMode('pos',this)" data-mode="pos">Pós-sessão</button>
       </div>
-      <span class="fin-mode-badge fin-mode-badge-pre" id="fin-mode-badge">⚡ Pré-sessão ativo</span>
+      <span class="fin-mode-badge fin-mode-badge-post" id="fin-mode-badge">🕐 Pós-sessão ativo</span>
     </div>
   </div>
 
@@ -2365,6 +2366,16 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
     <div class="form-row">
       <div class="form-group"><label for="np-valor-sessao">Valor da sessão <span style="color:var(--muted);font-size:11px">· opcional, sobrepõe o padrão do Perfil</span></label><input class="form-input" id="np-valor-sessao" type="number" min="0" step="0.01" placeholder="Ex: 89.00 — deixe em branco p/ usar o valor padrão"/></div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;color:var(--ink-soft);margin-top:22px">
+          <input type="checkbox" id="np-pagamento-excecao" style="accent-color:var(--sage);width:15px;height:15px" onchange="_toggleNpPagamentoExcecao(this)"/>
+          Cobrança diferente do padrão da clínica p/ este paciente
+        </label>
+        <select class="form-input" id="np-pagamento-modo" style="display:none;margin-top:8px">
+          <option value="pos">Depois da sessão</option>
+          <option value="pre">Antes da sessão (pré-pago)</option>
+        </select>
+      </div>
     </div>
     <div class="form-group"><label for="np-queixa">Queixa principal</label><textarea class="note-area" id="np-queixa" style="min-height:80px" placeholder="Descreva a queixa inicial…"></textarea></div>
     <div id="np-consentimento-wrap" style="margin:4px 0 12px;padding:10px 12px;background:#f7f8f6;border-radius:8px;border:1px solid var(--border)">

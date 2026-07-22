@@ -1043,6 +1043,7 @@ function indexPostSession() {
           status: 'pending',
           deleted: false,
           billing: 'avulso',
+          timing: 'pos',
           session: _diaCharge,
           method: 'PIX',
         });

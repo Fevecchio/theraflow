@@ -31,13 +31,27 @@ function lerCamposPaciente() {
     nascimento,
     age:        calcularIdade(nascimento),
     valorSessao: (valorSessao > 0) ? valorSessao : undefined,
+    // Quando gerar a cobrança: undefined = usa o padrão da clínica (Financeiro).
+    // Exceção só entra se o terapeuta marcou o checkbox — ver _pagamentoModoEfetivo.
+    pagamentoModo: document.getElementById('np-pagamento-excecao')?.checked
+      ? (document.getElementById('np-pagamento-modo')?.value === 'pre' ? 'pre' : 'pos')
+      : undefined,
   };
+}
+
+// Mostra/esconde o select de exceção conforme o checkbox — o select some quando
+// desmarcado pra não sugerir que há uma escolha feita quando não há.
+function _toggleNpPagamentoExcecao(chk) {
+  const sel = document.getElementById('np-pagamento-modo');
+  if (sel) sel.style.display = chk.checked ? '' : 'none';
 }
 
 function limparModalPaciente() {
   ['np-nome','np-email','np-whatsapp','np-cidade','np-cid','np-queixa','np-nascimento','np-valor-sessao'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  const chkPag = document.getElementById('np-pagamento-excecao'); if (chkPag) chkPag.checked = false;
+  const selPag = document.getElementById('np-pagamento-modo'); if (selPag) { selPag.value = 'pos'; selPag.style.display = 'none'; }
   const selStatus = document.getElementById('np-status'); if (selStatus) selStatus.selectedIndex = 0;
   const selAb = document.getElementById('np-abordagem');
   if (selAb) {
@@ -104,6 +118,7 @@ function criarPaciente() {
     fin: '—', finStatus: 'ok', alert: null,
     notes: d.notes, exercises: [],
     valorSessao: d.valorSessao,
+    pagamentoModo: d.pagamentoModo,
     _pendingSync: true // marca persistente: paciente ainda não confirmado no Supabase (F2.2)
   });
   _newLocalPatientIds.add(_newPatId);
@@ -158,6 +173,11 @@ function showEditarPaciente(i) {
   document.getElementById('np-queixa').value      = p.notes || '';
   const _valorEl = document.getElementById('np-valor-sessao');
   if (_valorEl) _valorEl.value = (p.valorSessao > 0) ? p.valorSessao : '';
+  const _temExcecao = p.pagamentoModo === 'pre' || p.pagamentoModo === 'pos';
+  const _chkPagEd = document.getElementById('np-pagamento-excecao');
+  if (_chkPagEd) _chkPagEd.checked = _temExcecao;
+  const _selPagEd = document.getElementById('np-pagamento-modo');
+  if (_selPagEd) { _selPagEd.value = _temExcecao ? p.pagamentoModo : 'pos'; _selPagEd.style.display = _temExcecao ? '' : 'none'; }
   // Abordagem
   const selAb = document.getElementById('np-abordagem');
   _npEnsureAbordagemOption(selAb, p.abordagem);
@@ -228,6 +248,7 @@ function salvarEdicaoPaciente(i) {
   p.status     = d.status;
   p.notes      = d.notes;
   p.valorSessao = d.valorSessao;
+  p.pagamentoModo = d.pagamentoModo;
   p.initials   = d.nome.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
   // Propaga o rename para tudo que referencia o paciente por NOME — sem isto, renomear
   // órfã cobranças (fin volta a "—"), agenda (fallback por nome quebra) e tarefas. F2.4.
@@ -1171,7 +1192,10 @@ function renderPatientOverview(i) {
         : '<span style="font-size:13px;color:var(--muted)">—</span>',
         p.mood !== null && p.mood !== undefined ? moodTrendIcon + ' ' + (p.moodTrend==='up'?'melhorando':p.moodTrend==='down'?'em queda':'estável') : 'sem registro')
     + _cell('Presença', taxaP !== null ? '<span style="color:' + taxaCor + '">' + taxaP + '%</span>' : '<span style="font-size:13px;color:var(--muted)">—</span>', taxaP !== null ? compareceuN + '✓ de ' + comPresenca.length : 'poucos registros')
-    + _cell('Financeiro', '<span class="tag ' + (p.finStatus==='ok'?'tag-green':p.finStatus==='overdue'?'tag-red':'tag-amber') + '" style="font-size:11px">' + (p.fin || '—') + '</span>', '')
+    + _cell('Financeiro', (p.fin && p.fin !== '—')
+        ? '<span class="tag ' + (p.finStatus==='ok'?'tag-green':p.finStatus==='overdue'?'tag-red':'tag-amber') + '" style="font-size:11px">' + p.fin + '</span>'
+        : '<span style="font-size:13px;color:var(--muted)">—</span>',
+        (p.fin && p.fin !== '—') ? '' : ((typeof _pagamentoModoEfetivo === 'function' && _pagamentoModoEfetivo(p) === 'pre') ? 'cobrança nasce ao agendar' : 'cobrança nasce após a sessão'))
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:0 2px">'
     + '<div class="progress-bar" style="flex:1;height:5px"><div class="progress-fill" style="width:' + (p.progress || 0) + '%;transition:width .6s"></div></div>'
@@ -1351,9 +1375,9 @@ function renderPatientNotas(i) {
   } else {
     var eventos = apptsPac.map(function(a, ai) {
       var nota = notasIdx[fmtDataBR(a.date)];
-      var presencaLabel = a.presenca === 'faltou' ? 'Falta' : a.presenca === 'atrasou' ? 'Atrasou' : '';
-      var statusLabel = a.status === 'cancelada' ? 'Cancelada' : (presencaLabel || 'Realizada');
-      var dotColor = a.status === 'cancelada' ? 'var(--muted)' : a.presenca === 'faltou' ? 'var(--red)' : a.presenca === 'atrasou' ? 'var(--amber)' : 'var(--sage)';
+      var presencaLabel = a.presenca === 'compareceu' ? 'Realizada' : a.presenca === 'faltou' ? 'Falta' : a.presenca === 'atrasou' ? 'Atrasou' : '';
+      var statusLabel = a.status === 'cancelada' ? 'Cancelada' : (presencaLabel || 'Agendada');
+      var dotColor = a.status === 'cancelada' ? 'var(--muted)' : a.presenca === 'faltou' ? 'var(--red)' : a.presenca === 'atrasou' ? 'var(--amber)' : a.presenca === 'compareceu' ? 'var(--sage)' : 'var(--blue)';
       var tagHtml = a.status === 'cancelada'
         ? '<span class="tag tag-gray" style="font-size:10px">Cancelada</span>'
         : a.presenca === 'faltou' ? '<span class="tag tag-red" style="font-size:10px">Faltou</span>'

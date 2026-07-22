@@ -78,7 +78,7 @@ function criarNovaCobranca() {
 
 /* ── FINANCEIRO & COBRANÇAS ── */
 let charges = [];
-let currentFinMode = 'pre';
+let currentFinMode = 'pos'; // sobrescrito por _finModeInit() com o valor real salvo
 
 // Popula o select de mês com os meses REAIS das cobranças (value YYYY-MM).
 // Antes as opções eram fixas ("Março 2026") sem value válido → o filtro por mês
@@ -151,9 +151,13 @@ function renderCharges(mesFilter) {
       ? c.planLabel || ''
       : `Sessão ${c.session}`;
 
-    const timingLabel = currentFinMode === 'pre' && c.status !== 'paid' && c.billing !== 'mensal'
+    // Selo por cobrança individual (não pelo padrão global atual — c.timing é
+    // gravado no momento da criação, então reflete a REALIDADE daquela cobrança
+    // mesmo que o padrão da clínica mude depois. Cobrança sem timing = criada
+    // manualmente (+ Nova cobrança), não se aplica.
+    const timingLabel = c.timing === 'pre' && c.status !== 'paid' && c.billing !== 'mensal'
       ? `<span style="font-size:10px;background:var(--sage-light);color:var(--sage);padding:1px 6px;border-radius:4px;margin-left:6px">pré-sessão</span>`
-      : currentFinMode === 'post' && c.status !== 'paid' && c.billing !== 'mensal'
+      : c.timing === 'pos' && c.status !== 'paid' && c.billing !== 'mensal'
         ? `<span style="font-size:10px;background:var(--amber-light);color:var(--amber);padding:1px 6px;border-radius:4px;margin-left:6px">pós-sessão</span>`
         : '';
 
@@ -171,27 +175,44 @@ function renderCharges(mesFilter) {
   }).join('');
 }
 
-function setFinMode(mode, el) {
-  currentFinMode = mode;
-  document.querySelectorAll('.fin-mode-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-
+// Aplica o modo (pre/pos) na UI da barra de config — usada tanto pelo clique
+// do terapeuta quanto pelo _finModeInit() ao entrar na página.
+function _finModeApplyUI(mode) {
+  document.querySelectorAll('.fin-mode-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+  });
   const desc = document.getElementById('fin-mode-desc');
   const badge = document.getElementById('fin-mode-badge');
-
+  if (!desc || !badge) return;
   if (mode === 'pre') {
-    desc.textContent = 'Cobrança enviada antes da sessão. Pagamento funciona como confirmação de presença.';
+    desc.textContent = 'Cobrança enviada antes da sessão. Novos pacientes nascem com este padrão (dá p/ fazer exceção na ficha de cada um).';
     badge.className = 'fin-mode-badge fin-mode-badge-pre';
     badge.innerHTML = '⚡ Pré-sessão ativo';
-  } else if (mode === 'post') {
-    desc.textContent = 'Cobrança enviada após a sessão. O paciente paga depois de ser atendido.';
+  } else {
+    desc.textContent = 'Cobrança enviada depois da sessão. O paciente paga após ser atendido — padrão para novos pacientes.';
     badge.className = 'fin-mode-badge fin-mode-badge-post';
     badge.innerHTML = '🕐 Pós-sessão ativo';
-  } else {
-    desc.textContent = 'Cobrança enviada antes, mas sessão acontece mesmo sem pagamento. Cobrança vira pendente se não pagar.';
-    badge.className = 'fin-mode-badge fin-mode-badge-hybrid';
-    badge.innerHTML = '🔄 Híbrido ativo';
   }
+}
+
+// Lê o padrão salvo (tf_account.pagamentoModoPadrao) ao entrar no Financeiro —
+// sem isto a barra sempre mostrava 'pre' fixo no HTML, mesmo sem ter sido
+// escolhido por ninguém (a real "carcaça de feature" que gerou esta função).
+function _finModeInit() {
+  var acc = {}; try { acc = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch(e){}
+  currentFinMode = acc.pagamentoModoPadrao === 'pre' ? 'pre' : 'pos';
+  _finModeApplyUI(currentFinMode);
+}
+
+function setFinMode(mode, el) {
+  currentFinMode = mode === 'pre' ? 'pre' : 'pos';
+  _finModeApplyUI(currentFinMode);
+  try {
+    var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    acc.pagamentoModoPadrao = currentFinMode;
+    localStorage.setItem('tf_account', JSON.stringify(acc));
+  } catch(e) {}
+  if (typeof _supaSync_settings === 'function') _supaSync_settings();
   renderCharges();
 }
 
@@ -1038,6 +1059,7 @@ function _salvarConfigRegua() {
 }
 
 function initFinanceiro() {
+  _finModeInit();
   _gerarTarefasCobranca();
   _renderReguaGuia();
   _gerarCobrancasDosPlanos(); // planos mensais: gera a cobrança do mês se ainda não existe

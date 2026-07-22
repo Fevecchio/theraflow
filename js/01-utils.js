@@ -152,6 +152,18 @@ function _proximaSessaoDoPaciente(p, idx) {
   }).sort(function (a, b) { return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); })[0] || null;
 }
 
+/* Modo de cobrança efetivo do paciente: exceção na ficha (p.pagamentoModo)
+ * vence; sem exceção, usa o padrão da clínica (Perfil/Financeiro); sem padrão
+ * configurado, 'pos' — o único comportamento que já existia antes desta feature
+ * (cobrar depois da sessão), pra não mudar cobrança de paciente nenhum sozinho. */
+function _pagamentoModoEfetivo(p) {
+  if (p && (p.pagamentoModo === 'pre' || p.pagamentoModo === 'pos')) return p.pagamentoModo;
+  try {
+    var acc = JSON.parse(localStorage.getItem('tf_account') || '{}');
+    return acc.pagamentoModoPadrao === 'pre' ? 'pre' : 'pos';
+  } catch (e) { return 'pos'; }
+}
+
 /* Lembrete de sessão pronto para wa.me. Com appt usa o template do Perfil com a
  * data real ("hoje" quando for hoje); sem appt, versão genérica honesta. */
 function _wppMsgLembreteSessao(p, appt) {
