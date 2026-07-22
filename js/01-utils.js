@@ -164,6 +164,10 @@ function _proximaSessaoDoPaciente(p, idx) {
   var hoje = (typeof hojeISO === 'function') ? hojeISO() : '';
   return appointments.filter(function (a) {
     if (!a || a.status === 'cancelada' || !a.date || a.date < hoje) return false;
+    // Sessão de HOJE já registrada (presença marcada) não é mais "próxima" — sem
+    // isto, terminar a sessão e voltar pra ficha mostrava a mesma sessão que
+    // acabou de acontecer como se ainda estivesse por vir (pedido 22/07).
+    if (a.date === hoje && a.presenca) return false;
     if (p && p.id && a.patientId) return String(a.patientId) === String(p.id);
     return a.patientIdx === idx; // fallback demo/legado sem ids
   }).sort(function (a, b) { return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); })[0] || null;

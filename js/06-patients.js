@@ -790,7 +790,9 @@ function _recalcNextSessions() {
   // "próxima sessão"; um índice deslocado mostraria a data errada pro paciente.
   patients.forEach(function(p, i) {
     var proximas = _apptsDoPaciente(p, i).filter(function(a) {
-      return a.status !== 'cancelada' && a.date >= nowIso;
+      if (a.status === 'cancelada' || a.date < nowIso) return false;
+      if (a.date === nowIso && a.presenca) return false; // sessão de hoje já ocorrida não é "próxima"
+      return true;
     });
     if (proximas.length) {
       var melhor = proximas.reduce(function(best, a) {
@@ -1186,6 +1188,19 @@ function renderPatientOverview(i) {
       + '<div style="font-family:\'Instrument Serif\',serif;font-size:21px;line-height:1.2">' + valorHtml + '</div>'
       + '</div>';
   }
+  // Card "Financeiro" clicável (pedido 22/07, mesmo padrão do "Próxima"): leva
+  // direto pro Financeiro em vez de só mostrar o status parado na tela.
+  function _cellFinanceiro(p) {
+    var valorHtml = (p.fin && p.fin !== '—')
+      ? '<span class="tag ' + (p.finStatus==='ok'?'tag-green':p.finStatus==='overdue'?'tag-red':'tag-amber') + '" style="font-size:11px">' + p.fin + '</span>'
+      : '<span style="font-size:13px;color:var(--muted)">—</span>';
+    var sub = (p.fin && p.fin !== '—') ? '' : ((typeof _pagamentoModoEfetivo === 'function' && _pagamentoModoEfetivo(p) === 'pre') ? 'cobrança nasce ao agendar' : 'cobrança nasce após a sessão');
+    return '<div style="flex:1;min-width:104px;padding:10px 12px;cursor:pointer" onclick="navigate(\'financeiro\')" title="Ver no Financeiro">'
+      + '<div class="stat-label" style="margin-bottom:2px">Financeiro</div>'
+      + '<div style="font-family:\'Instrument Serif\',serif;font-size:21px;line-height:1.2">' + valorHtml + '</div>'
+      + (sub ? '<div style="font-size:10.5px;color:var(--muted);margin-top:1px">' + sub + '</div>' : '')
+      + '</div>';
+  }
   var stripHtml = '<div style="display:flex;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;overflow:hidden">'
     + _cell('Sessões', String(p.sessions || 0), p.lastSession ? 'última ' + escHTML(p.lastSession) : '')
     + _cellProxima(p, i)
@@ -1194,10 +1209,7 @@ function renderPatientOverview(i) {
         : '<span style="font-size:13px;color:var(--muted)">—</span>',
         p.mood !== null && p.mood !== undefined ? moodTrendIcon + ' ' + (p.moodTrend==='up'?'melhorando':p.moodTrend==='down'?'em queda':'estável') : 'sem registro')
     + _cell('Presença', taxaP !== null ? '<span style="color:' + taxaCor + '">' + taxaP + '%</span>' : '<span style="font-size:13px;color:var(--muted)">—</span>', taxaP !== null ? compareceuN + '✓ de ' + comPresenca.length : 'poucos registros')
-    + _cell('Financeiro', (p.fin && p.fin !== '—')
-        ? '<span class="tag ' + (p.finStatus==='ok'?'tag-green':p.finStatus==='overdue'?'tag-red':'tag-amber') + '" style="font-size:11px">' + p.fin + '</span>'
-        : '<span style="font-size:13px;color:var(--muted)">—</span>',
-        (p.fin && p.fin !== '—') ? '' : ((typeof _pagamentoModoEfetivo === 'function' && _pagamentoModoEfetivo(p) === 'pre') ? 'cobrança nasce ao agendar' : 'cobrança nasce após a sessão'))
+    + _cellFinanceiro(p)
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:0 2px">'
     + '<div class="progress-bar" style="flex:1;height:5px"><div class="progress-fill" style="width:' + (p.progress || 0) + '%;transition:width .6s"></div></div>'
@@ -1252,7 +1264,14 @@ function renderPatientOverview(i) {
       }
       var texto = ultNota ? (ultNota.text || '') : (p.notes || '');
       if (!texto && !resumoChip) return '';
-      var rotulo = ultNota ? 'Última sessão — ' + escHTML(ultNota.date || '') : 'Queixa inicial';
+      // Horário da sessão (pedido 22/07): cruza com o appointment da mesma data
+      // (ultAppt, já calculado acima) — prontuarioNotes não guarda hora, só DD/MM.
+      var _horaUlt = '';
+      if (ultNota && ultAppt && ultAppt.time && ultAppt.date) {
+        var _uaP = ultAppt.date.split('-');
+        if (_uaP.length === 3 && (_uaP[2] + '/' + _uaP[1]) === ultNota.date) _horaUlt = ' · ' + ultAppt.time;
+      }
+      var rotulo = ultNota ? 'Última sessão — ' + escHTML(ultNota.date || '') + escHTML(_horaUlt) : 'Queixa inicial';
       var trecho = texto.length > 320 ? texto.substring(0, 320) + '…' : texto;
       return '<div class="card card-sm" style="background:var(--bg);margin-bottom:16px">'
         + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">'
@@ -1697,7 +1716,9 @@ function selectPatient(i, el) {
         return a.status !== 'cancelada' && (a.patientIdx === i || a.patientName === p.name);
       };
       var futurosP = appointments.filter(function(a){
-        return _matchAppt(a) && a.date >= nowIso;
+        if (!_matchAppt(a) || a.date < nowIso) return false;
+        if (a.date === nowIso && a.presenca) return false; // sessão de hoje já ocorrida não é "próxima"
+        return true;
       }).sort(function(a,b){ return a.date < b.date ? -1 : 1; });
       if (futurosP.length) {
         var np = futurosP[0].date.split('-');
