@@ -416,6 +416,7 @@ async function _supaSync_charges() {
           // espalha o metadata de volta, preservando o dedup por plano+mês.
           planId: c.planId || null,
           planMes: c.planMes || null,
+          timing: c.timing || null, // selo pré/pós-sessão — sem isto sumia após relogin/outro aparelho
         },
       })).filter(r => r.patient_id);
       if (rows.length) {
@@ -528,6 +529,9 @@ async function _supaSync_appointments() {
           resumoParaPaciente: a.resumoParaPaciente || null,
           resumoPendente: a.resumoPendente || null, // rascunho aguardando aprovação do terapeuta
           meuInsight: a.meuInsight || null,
+          // Ids dos lembretes agendados no Resend — sem isto o reagendamento pós-restore
+          // não consegue cancelar o lembrete antigo (dispararia com o horário velho).
+          remindEmailIds: (Array.isArray(a.remindEmailIds) && a.remindEmailIds.length) ? a.remindEmailIds : null,
         },
       }));
       // Caminho preferido: RPC merge-aware (022) — preserva metadata.meuInsight

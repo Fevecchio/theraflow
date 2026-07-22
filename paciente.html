@@ -459,7 +459,8 @@ async function _tryRestorePacientSession() {
     var _rm = ['moodHistory','moodNotes','exercises','materials','diary','metas','portalMetas',
       'appointments','sessionLink','sessionLinkAt','_moodLastDate','mood','checkInStreak',
       'lastCheckInDate','readMaterials','portalNota','portalNotifHour','portalDica',
-      'portalMensagem','anamnese','portalAnamneseAtiva','pwdTemp'];
+      'portalMensagem','anamnese','portalAnamneseAtiva','pwdTemp',
+      'next','nextTime','_therapistNome','_therapistWhatsapp','_therapistBio']; // 22/07: tinha divergido da lista do login (js/04) — restore perdia próxima sessão e nome da terapeuta, e com "manter conectado" padrão este virou o caminho mais comum
     var _sel = 'id,name,email,phone,age,cidade,abordagem,status,sessions_count,valor_sessao,progress,'
       + _rm.map(function(k){ return 'metadata->' + k; }).join(',');
     var patRes = await supaPatient.from('patients').select(_sel).eq('id', linkRes.data.patient_id).single();

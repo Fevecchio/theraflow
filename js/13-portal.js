@@ -663,7 +663,12 @@ function _pacSessCardHtml(p) {
     var _dp = p.next.split('/');
     if (_dp.length === 3) {
       var _dt = new Date(_dp[2] + '-' + _dp[1] + '-' + _dp[0] + 'T' + p.nextTime + ':00');
-      if (!isNaN(_dt.getTime())) horaChegou = Date.now() >= _dt.getTime();
+      // Janela de 2h: passou disso, "está começando / já vai entrar" viraria mentira
+      // (dado stale) — volta ao card normal de próxima sessão.
+      if (!isNaN(_dt.getTime())) {
+        var _desde = Date.now() - _dt.getTime();
+        horaChegou = _desde >= 0 && _desde < 2 * 60 * 60 * 1000;
+      }
     }
   }
   // Link /sala fora do ao-vivo = token expirado (efêmero) — não oferecer como botão legado.
