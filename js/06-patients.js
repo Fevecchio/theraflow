@@ -1145,9 +1145,27 @@ function renderPatientOverview(i) {
       + (sub ? '<div style="font-size:10.5px;color:var(--muted);margin-top:1px">' + sub + '</div>' : '')
       + '</div>';
   }
+  // Card "Próxima" clicável: sem sessão → abre "+ Nova sessão" com este paciente
+  // já pré-selecionado; com sessão → abre o mesmo popup de opções da Agenda
+  // (iniciar/briefing/reagendar/cancelar). Pedido do usuário 22/07 — dava fluxo
+  // natural do cadastro do paciente direto pro agendamento, sem passar pela Agenda.
+  function _cellProxima(p, i) {
+    var proxAppt = (typeof _proximaSessaoDoPaciente === 'function') ? _proximaSessaoDoPaciente(p, i) : null;
+    var onclickAttr = proxAppt
+      ? "_mostrarOpcoesAppt(" + i + ",'" + String(proxAppt.id) + "')"
+      : "showAgendarModal(null,null," + i + ")";
+    var valorHtml = p.next && p.next !== '—'
+      ? '<span style="font-size:16px">' + escHTML(p.next) + '</span>'
+      : '<span style="font-size:13px;color:var(--sage)">+ marcar</span>';
+    return '<div style="flex:1;min-width:104px;padding:10px 12px;cursor:pointer" onclick="' + onclickAttr + '" title="'
+      + (proxAppt ? 'Ver, iniciar ou reagendar a sessão' : 'Marcar a próxima sessão') + '">'
+      + '<div class="stat-label" style="margin-bottom:2px">Próxima</div>'
+      + '<div style="font-family:\'Instrument Serif\',serif;font-size:21px;line-height:1.2">' + valorHtml + '</div>'
+      + '</div>';
+  }
   var stripHtml = '<div style="display:flex;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;overflow:hidden">'
     + _cell('Sessões', String(p.sessions || 0), p.lastSession ? 'última ' + escHTML(p.lastSession) : '')
-    + _cell('Próxima', p.next && p.next !== '—' ? '<span style="font-size:16px">' + escHTML(p.next) + '</span>' : '<span style="font-size:13px;color:var(--muted)">não marcada</span>', '')
+    + _cellProxima(p, i)
     + _cell('Humor', p.mood !== null && p.mood !== undefined
         ? '<span style="color:' + moodColor + '">' + p.mood + '<span style="font-size:12px;color:var(--muted)">/10</span></span> ' + moodSparkline
         : '<span style="font-size:13px;color:var(--muted)">—</span>',

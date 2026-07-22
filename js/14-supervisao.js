@@ -313,7 +313,7 @@ function connectCalendar(provider) {
   showToast('⏳ Sincronização com ' + label + ' em breve — disponível na próxima atualização.');
 }
 
-function showAgendarModal(preData, preHora) {
+function showAgendarModal(preData, preHora, prePacienteIdx) {
   const existing = document.getElementById('modal-agendar');
   if (existing) existing.remove();
 
@@ -337,7 +337,7 @@ function showAgendarModal(preData, preHora) {
             <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Paciente</label>
             <select id="agendar-paciente-select" onchange="agendarPacienteChange(this)" style="width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a1a">
               <option value="">Selecionar paciente...</option>
-              ${patients.map((p,i) => `<option value="${i}">${escHTML(p.name)}</option>`).join('')}
+              ${patients.map((p,i) => `<option value="${i}"${(prePacienteIdx!==undefined && prePacienteIdx!==null && String(prePacienteIdx)===String(i))?' selected':''}>${escHTML(p.name)}</option>`).join('')}
               <option value="novo" style="font-weight:600;color:#4a7c59">+ Novo paciente</option>
             </select>
             <!-- Campos para novo paciente -->
