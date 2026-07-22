@@ -1000,7 +1000,7 @@ function renderPatientDetailShell(i) {
           <span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span>
           <span>📍 ${escHTML(p.cidade || '—')}</span>
           <span>📋 ${escHTML(p.abordagem)}</span>
-          <span>🗓 Próxima: ${p.next || '—'}</span>
+          <span>🗓 Próxima: ${p.next || '—'}${(p.next && p.next !== '—' && p.nextTime) ? ' às ' + escHTML(p.nextTime) : ''}</span>
           <span style="display:flex;align-items:center;gap:4px">
             ✉️ <a href="mailto:${p.email}" style="color:var(--sage);text-decoration:none;font-size:12px">${p.email}</a>
             <button onclick="event.stopPropagation();navigator.clipboard?.writeText('${p.email}');showToast('Email copiado!')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);padding:0 2px" title="Copiar email">⎘</button>
@@ -1180,7 +1180,7 @@ function renderPatientOverview(i) {
       ? "_mostrarOpcoesAppt(" + i + ",'" + String(proxAppt.id) + "')"
       : "showAgendarModal(null,null," + i + ")";
     var valorHtml = p.next && p.next !== '—'
-      ? '<span style="font-size:16px">' + escHTML(p.next) + '</span>'
+      ? '<span style="font-size:16px">' + escHTML(p.next) + (proxAppt && proxAppt.time ? ' <span style="font-size:12px;color:var(--muted)">' + escHTML(proxAppt.time) + '</span>' : '') + '</span>'
       : '<span style="font-size:13px;color:var(--sage)">+ marcar</span>';
     return '<div style="flex:1;min-width:104px;padding:10px 12px;cursor:pointer" onclick="' + onclickAttr + '" title="'
       + (proxAppt ? 'Ver, iniciar ou reagendar a sessão' : 'Marcar a próxima sessão') + '">'

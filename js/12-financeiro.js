@@ -154,10 +154,12 @@ function renderCharges(mesFilter) {
     // Selo por cobrança individual (não pelo padrão global atual — c.timing é
     // gravado no momento da criação, então reflete a REALIDADE daquela cobrança
     // mesmo que o padrão da clínica mude depois. Cobrança sem timing = criada
-    // manualmente (+ Nova cobrança), não se aplica.
-    const timingLabel = c.timing === 'pre' && c.status !== 'paid' && c.billing !== 'mensal'
+    // manualmente (+ Nova cobrança) ou de antes desta feature — não se aplica.
+    // Mostra também em cobrança já paga (pedido 22/07 — sumia depois de marcar
+    // "Pago", que é justamente quando o terapeuta mais quer conferir o padrão).
+    const timingLabel = c.timing === 'pre' && c.billing !== 'mensal'
       ? `<span style="font-size:10px;background:var(--sage-light);color:var(--sage);padding:1px 6px;border-radius:4px;margin-left:6px">pré-sessão</span>`
-      : c.timing === 'pos' && c.status !== 'paid' && c.billing !== 'mensal'
+      : c.timing === 'pos' && c.billing !== 'mensal'
         ? `<span style="font-size:10px;background:var(--amber-light);color:var(--amber);padding:1px 6px;border-radius:4px;margin-left:6px">pós-sessão</span>`
         : '';
 
