@@ -200,8 +200,11 @@ export default async function handler(req, res) {
     } catch (_) {}
     if (wantSegments) {
       const j = await r.json(); // verbose_json → { text, segments: [{start,end,text,no_speech_prob,...}] }
+      // avg_logprob: confiança média do modelo no segmento (Whisper alucina com
+      // valores bem negativos, tipicamente < -1) — cliente usa isso + no_speech_prob
+      // pra descartar trechos inventados antes de virarem nota clínica.
       const segments = Array.isArray(j.segments)
-        ? j.segments.map(s => ({ start: s.start, end: s.end, text: s.text, no_speech_prob: s.no_speech_prob }))
+        ? j.segments.map(s => ({ start: s.start, end: s.end, text: s.text, no_speech_prob: s.no_speech_prob, avg_logprob: s.avg_logprob }))
         : [];
       // Medição de custo (16/07, +provider 21/07): segundos de áudio processados — só números, nunca conteúdo.
       try { console.log('[ia-usage]', JSON.stringify({ fn: 'transcribe', user: user.id, model, provider, audio_seg: Math.round(j.duration || 0), bytes: audio.length })); } catch (_) {}

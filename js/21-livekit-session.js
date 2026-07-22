@@ -630,6 +630,18 @@ async function _lkTranscribe(blob) {
 // (offset do segmento + timestamp do Whisper dentro dele) → diálogo
 // "Terapeuta:/Paciente:". Usa 'Paciente' (não o nome real): o transcript segue
 // pseudonimizado até o Claude (LGPD). Exportada p/ unit-test node.
+// Forçamos language=pt no Whisper (api/transcribe.js) — em áudio curto/ambíguo o
+// modelo às vezes "inventa" texto multilíngue mesmo assim (cirílico, CJK etc.),
+// sem sinalizar no_speech_prob porque ele "acha" que tem fala. Proporção alta de
+// script fora do latino num idioma forçado pt-BR é sinal quase certo de alucinação.
+function _pareceAlucinado(text) {
+  if (!text) return false;
+  var letras = text.replace(/[^\p{L}]/gu, '');
+  if (letras.length < 4) return false;
+  var naoLatinas = (text.match(/[Ѐ-ӿͰ-Ͽ一-鿿぀-ヿ가-힯]/gu) || []).length;
+  return (naoLatinas / letras.length) > 0.15;
+}
+
 function _lkMergeSegments(therResults, therSegs, pacResults, pacSegs) {
   const rows = [];
   const push = (results, segs, who) => {
@@ -642,6 +654,8 @@ function _lkMergeSegments(therResults, therSegs, pacResults, pacSegs) {
         const t = (s.text || '').trim();
         if (!t) return;
         if (typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85) return; // anti-alucinação em silêncio
+        if (typeof s.avg_logprob === 'number' && s.avg_logprob < -1.0) return; // anti-alucinação: baixa confiança do modelo
+        if (_pareceAlucinado(t)) return; // anti-alucinação: script fora do português forçado
         rows.push({ at: off + (s.start || 0), who, t });
       });
     });
@@ -872,7 +886,9 @@ async function _lkProcessSession() {
       });
       if (!nr.ok) throw new Error('session-note ' + nr.status);
       const _nj = await nr.json();
-      note = _nj.note;
+      // Rede de segurança: o prompt pede texto puro, mas o modelo às vezes vaza
+      // markdown (##, **, ---) mesmo assim — o textarea não renderiza isso.
+      note = (typeof _stripMarkdown === 'function') ? _stripMarkdown(_nj.note) : _nj.note;
       // Medição de custo (16/07): só números p/ o PostHog — nada de conteúdo clínico (regra nº 3).
       try { if (_nj.usage) tfTrack('ia_consumo', { fluxo: 'nota_sessao', tokens_in: _nj.usage.input || 0, tokens_out: _nj.usage.output || 0 }); } catch(_) {}
       // Descarta recusa do Claude (não deve virar nota clínica). Mantém a transcrição real.

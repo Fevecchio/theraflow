@@ -931,6 +931,21 @@ function closePostSession() {
   }, 150);
 }
 
+// "Salvar nota" na barra lateral da sessão AO VIVO — bug 22/07: chamava
+// indexPostSession() direto, que ENCERRA a sessão de verdade (marca presença,
+// grava no prontuário, mostra exercícios) SEM derrubar a chamada nem transcrever
+// (esse trabalho é só do botão vermelho "Encerrar" → endWherebySession). O
+// terapeuta perdia a sessão real e a nota que sobrava no prontuário era o
+// rascunho manual, não a nota da IA (o guard _sessionAlreadySaved bloqueava o
+// save de verdade depois). O texto já fica no textarea em memória — é o que
+// _lkProcessSession lê direto ao encerrar de verdade; isto aqui é só a
+// confirmação visual de que não foi perdido.
+function salvarNotaRascunhoSessao() {
+  var ta = document.getElementById('session-ai-note');
+  if (!ta || !ta.value.trim()) { showToast('⚠ Escreva algo antes de salvar.'); if (ta) ta.focus(); return; }
+  showToast('✓ Nota salva — a IA completa ao encerrar a sessão.');
+}
+
 function indexPostSession() {
   if (_sessionAlreadySaved) return;
   _sessionAlreadySaved = true;

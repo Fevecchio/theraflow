@@ -1755,34 +1755,61 @@ function renderTrajetoriaTerapeuta(i) {
     var pendenteBadge = pendente
       ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fff8e6;color:#c97d2e;font-weight:600">🕓 rascunho da IA — não publicado</span>'
       : '';
+    var idSafe = escHTML(String(a.id));
+    // Publicado (já revisado e no ar pro paciente): SÓ leitura + lápis — mostrar
+    // "Salvar"/"✨ IA" aqui dava a impressão de que ainda falta fazer algo com uma
+    // sessão que já foi concluída (pedido do usuário 22/07, regra "UI nunca mente").
+    var bodyHtml = resumo
+      ? '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">Resumo publicado para o paciente:</div>'
+        + '<div id="resumo-pac-viewrow-' + idSafe + '" style="display:flex;gap:6px;align-items:flex-start">'
+        + '<div style="flex:1;font-size:12px;color:var(--ink-soft);line-height:1.5;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;white-space:pre-wrap">' + escHTML(resumo) + '</div>'
+        + '<button onclick="_editarResumoPublicado(\'' + idSafe + '\')" title="Editar resumo" style="background:var(--white);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 9px;cursor:pointer;font-family:inherit;flex-shrink:0">✎</button>'
+        + '</div>'
+        + '<div id="resumo-pac-editwrap-' + idSafe + '" style="display:none;gap:6px;align-items:flex-start;margin-top:6px">'
+        + '<textarea id="resumo-pac-' + idSafe + '" style="flex:1;border:1.5px solid var(--sage);border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:var(--white);color:var(--ink);line-height:1.5">' + escHTML(resumo) + '</textarea>'
+        + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + idSafe + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">Salvar</button>'
+        + '</div>'
+      : '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">' + (pendente ? 'Revise o rascunho — o paciente só vê depois que você publicar:' : 'Resumo para o paciente (opcional):') + '</div>'
+        + '<div style="display:flex;gap:6px;align-items:flex-start">'
+        + '<textarea id="resumo-pac-' + idSafe + '" placeholder="Escreva um resumo acessível desta sessão para o paciente ver na jornada…" '
+        + 'style="flex:1;border:1.5px solid ' + (pendente ? '#f0d060' : 'var(--border)') + ';border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:' + (pendente ? '#fffdf5' : 'var(--bg)') + ';color:var(--ink);line-height:1.5" '
+        + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
+        + escHTML(pendente)
+        + '</textarea>'
+        + '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
+        + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + idSafe + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">' + (pendente ? '✓ Publicar' : 'Salvar') + '</button>'
+        + '<button onclick="regenerarResumoIA(' + i + ',\'' + idSafe + '\')" style="background:var(--white);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">✨ IA</button>'
+        + '</div>'
+        + '</div>';
     return '<div style="border-bottom:1px solid var(--border);padding:10px 0">'
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">'
       + '<span style="font-size:12px;font-weight:600;color:var(--ink)">' + dateStr + '</span>'
       + '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:' + (a.presenca==='compareceu'?'#e8f5ee':a.presenca==='faltou'?'#fdecea':'#fff8e6') + ';color:' + statusColor + '">' + statusLabel + '</span>'
       + pendenteBadge
       + '</div>'
-      + '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">' + (pendente ? 'Revise o rascunho — o paciente só vê depois que você publicar:' : 'Resumo para o paciente (opcional):') + '</div>'
-      + '<div style="display:flex;gap:6px;align-items:flex-start">'
-      + '<textarea id="resumo-pac-' + a.id + '" placeholder="Escreva um resumo acessível desta sessão para o paciente ver na jornada…" '
-      + 'style="flex:1;border:1.5px solid ' + (pendente ? '#f0d060' : 'var(--border)') + ';border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:' + (pendente ? '#fffdf5' : 'var(--bg)') + ';color:var(--ink);line-height:1.5" '
-      + 'onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'
-      + escHTML(resumo || pendente)
-      + '</textarea>'
-      + '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
-      + '<button onclick="salvarResumoParaPaciente(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--sage-light);border:1px solid var(--sage-100);color:var(--sage);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">' + (pendente ? '✓ Publicar' : 'Salvar') + '</button>'
-      + '<button onclick="regenerarResumoIA(' + i + ',\'' + escHTML(a.id) + '\')" style="background:var(--white);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">✨ IA</button>'
-      + '</div>'
-      + '</div>'
+      + bodyHtml
       + '</div>';
   }).join('');
 
   var _hasResumo = passados.some(function(a) { return a.resumoParaPaciente || a.resumoPendente; });
+  return _trajetoriaWrap(rows, passados.length, _hasResumo);
+}
+
+// Alterna do resumo publicado (só leitura) pro modo edição, ao clicar no lápis.
+function _editarResumoPublicado(apptId) {
+  var viewRow = document.getElementById('resumo-pac-viewrow-' + apptId);
+  var editWrap = document.getElementById('resumo-pac-editwrap-' + apptId);
+  if (viewRow) viewRow.style.display = 'none';
+  if (editWrap) { editWrap.style.display = 'flex'; var ta = document.getElementById('resumo-pac-' + apptId); if (ta) ta.focus(); }
+}
+
+function _trajetoriaWrap(rows, total, _hasResumo) {
   return '<details ' + (_hasResumo ? 'open ' : '') + 'style="margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden">'
     + '<summary style="padding:12px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;list-style:none;display:flex;align-items:center;gap:6px;background:var(--bg)">'
     + '📅 Trajetória — resumos para o paciente</summary>'
     + '<div style="padding:0 14px 4px">'
     + rows
-    + (passados.length > 10 ? '<div style="font-size:11px;color:var(--muted);padding:8px 0;text-align:center">Exibindo últimas 10 sessões</div>' : '')
+    + (total > 10 ? '<div style="font-size:11px;color:var(--muted);padding:8px 0;text-align:center">Exibindo últimas 10 sessões</div>' : '')
     + '</div>'
     + '</details>';
 }
@@ -1824,8 +1851,11 @@ async function salvarResumoParaPaciente(patientIdx, apptId) {
   } else {
     showToast('⚠ Resumo salvo aqui, mas a sincronização falhou — pode não estar visível ainda pro paciente. Tentaremos de novo automaticamente.');
   }
-  // Re-render: badge "rascunho" e botão "Publicar" saem na hora
+  // Re-render: badge "rascunho"/botão "Publicar" saem e a linha vira só-leitura
+  // na hora (a Trajetória vive na aba Notas — antes só a Visão Geral atualizava,
+  // então quem publicava direto na aba Notas via a mesma tela "pendente" congelada).
   if (typeof currentPatientTab !== 'undefined' && currentPatientTab === 'overview') renderPatientOverview(patientIdx);
+  else if (typeof currentPatientTab !== 'undefined' && currentPatientTab === 'notas' && typeof renderPatientNotas === 'function') renderPatientNotas(patientIdx);
 }
 
 async function regenerarResumoIA(patientIdx, apptId) {

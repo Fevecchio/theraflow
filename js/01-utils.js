@@ -32,6 +32,23 @@ function escHTML(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// Rede de segurança: os prompts pedem texto corrido puro pra IA, mas o modelo
+// às vezes vaza sintaxe markdown mesmo assim (##, **, ---, `código`). Estes
+// textos vão direto pra tela sem renderizador de markdown — sem isto o
+// terapeuta vê os símbolos crus (Briefing IA, nota clínica pós-sessão).
+function _stripMarkdown(text) {
+  if (!text) return text;
+  return String(text)
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '$1')
+    .replace(/^\s*-{3,}\s*$/gm, '')
+    .replace(/^>\s?/gm, '')
+    .replace(/`{1,3}([^`]*)`{1,3}/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // URL segura para usar em href: só aceita http(s) (bloqueia javascript:, data:, etc.)
 // e escapa aspas para não quebrar o atributo. Retorna '' se inválida.
 function safeURL(u) {
