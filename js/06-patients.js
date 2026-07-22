@@ -1010,6 +1010,9 @@ function renderPatientDetailShell(i) {
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <div class="status-dropdown-wrap" id="status-wrap-${i}">
           <span class="tag ${p.status==='Ativa'?'tag-green':p.status==='Nova'?'tag-blue':p.status==='Atenção'?'tag-red':'tag-amber'} status-tag-btn" onclick="toggleStatusDropdown(${i})" title="Clique para alterar status">${p.status}</span>
+          ${(typeof plans !== 'undefined' && Array.isArray(plans) && plans.some(function(pl){ return pl && pl.status === 'ativo' && pl.patient === p.name; }))
+            ? '<span class="tag" style="background:var(--blue-light,#e8f0f8);color:var(--blue,#2c5f8a)" title="Tem plano mensal ativo — ver em Financeiro › Planos e pacientes">▦ Mensal</span>'
+            : ''}
           <div class="status-dropdown-menu" id="status-menu-${i}">
             <div class="status-dropdown-item" onclick="alterarStatus(${i},'Ativa')"><span class="dot" style="background:#4a7c59"></span><div><strong>Ativa</strong><span class="desc">Em acompanhamento regular</span></div></div>
             <div class="status-dropdown-item" onclick="alterarStatus(${i},'Nova')"><span class="dot" style="background:#2c5f8a"></span><div><strong>Nova</strong><span class="desc">Avaliação inicial pendente</span></div></div>
