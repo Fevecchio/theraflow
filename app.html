@@ -1911,7 +1911,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <div class="abordagem-card" id="perfil-abordagem-outra-card" onclick="selectPerfilAbordagem(this,'outra')">
             <div class="abordagem-name">✏️ Outra abordagem</div>
             <div class="abordagem-desc">Psicodrama, Análise do Comportamento, Terapia do Esquema… escreva a sua — a IA calibra notas e briefing a partir do nome que você escrever.</div>
-            <input type="text" id="perfil-abordagem-outra-input" class="perfil-input" style="margin-top:8px" placeholder="Escreva sua abordagem…" onclick="event.stopPropagation()" oninput="onPerfilOutraInput(this)"/>
+            <input type="text" id="perfil-abordagem-outra-input" class="perfil-input" style="margin-top:8px" placeholder="Escreva sua abordagem…" autocomplete="off" onclick="event.stopPropagation()" oninput="onPerfilOutraInput(this)"/>
           </div>
         </div>
 
@@ -1919,7 +1919,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <label class="perfil-label">Abordagens secundárias (opcional — terapeuta integrativo)</label>
           <div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5">Entram como contexto extra na nota clínica e no briefing. Pode marcar mais de uma.</div>
           <div class="secundarias-grid" id="perfil-sec-grid"></div>
-          <input type="text" id="perfil-sec-outra-input" class="perfil-input" placeholder="+ Outra secundária — escreva e tecle Enter…" oninput="onPerfilSecOutraInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();_perfilAddSecLivre(this);}"/>
+          <input type="text" id="perfil-sec-outra-input" class="perfil-input" placeholder="+ Outra secundária — escreva e tecle Enter…" autocomplete="off" oninput="onPerfilSecOutraInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();_perfilAddSecLivre(this);}"/>
         </div>
       </div>
 
