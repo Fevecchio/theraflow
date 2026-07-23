@@ -525,9 +525,11 @@ body { background: var(--bg); color: var(--ink); min-height: 100vh; display: fle
 .main { margin-left: 248px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
 .page { display: none; padding: 28px 36px 56px; }
 /* Fase C (14/07): em monitores largos o conteúdo esticava de borda a borda
-   ("deserto de tela") — teto de leitura confortável, alinhado à esquerda como
-   o topbar (a faixa do topbar continua varrendo a largura toda). */
-.page { max-width: 1480px; }
+   ("deserto de tela") — teto de leitura confortável.
+   Redesign 23/07 (parecer aprovado): acima do teto o conteúdo CENTRALIZA —
+   antes ficava grudado à esquerda com ~830px de vazio à direita num 2560px.
+   O topbar vive dentro de .page, então título e conteúdo movem juntos. */
+.page { max-width: 1480px; margin-left: auto; margin-right: auto; }
 .page.active { display: block; animation: pageEnter .3s cubic-bezier(.16,1,.3,1); }
 
 /* ── TOPBAR ── */
