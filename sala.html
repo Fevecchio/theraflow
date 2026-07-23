@@ -9,8 +9,13 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root { --sage:#4a7c59; --sage-700:#3a6248; --sage-light:#e8f0eb; --ink:#1a1f1c; --muted:#8a9490; --bg:#f5f3ee; }
-  body { font-family: 'DM Sans', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
-  .screen { min-height: 100vh; display: flex; flex-direction: column; }
+  /* 100dvh (feedback 22/07): no iPhone o 100vh conta a barra de endereço, então a
+     tela de vídeo ficava alta demais — cortava e forçava rolagem. dvh usa a altura
+     REAL visível. Mantém 100vh como fallback pra navegadores antigos. */
+  body { font-family: 'DM Sans', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; min-height: 100dvh; -webkit-font-smoothing: antialiased; }
+  .screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+  /* A tela de chamada trava a altura na viewport real e não rola (o vídeo é fixo). */
+  #call-screen { height: 100dvh; overflow: hidden; }
   /* ── Consentimento ── */
   #consent-screen { align-items: center; justify-content: center; padding: 24px; }
   .card { background: #fff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 26px; box-shadow: 0 12px 40px rgba(0,0,0,.08); }
@@ -101,6 +106,7 @@
     <button class="ctrl" id="btn-blur" onclick="toggleBlur()" title="Desfocar meu fundo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12c2-3.5 5-6 9-6s7 2.5 9 6c-2 3.5-5 6-9 6s-7-2.5-9-6z" stroke-dasharray="3 3"/></svg></button>
     <button class="ctrl" id="btn-pip" onclick="togglePip()" title="Vídeo flutuante — continue vendo sua terapeuta em outros apps"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1" fill="currentColor" stroke="none"/></svg></button>
     <button class="ctrl" id="btn-dev" onclick="abrirDispositivos()" title="Trocar microfone, câmera ou som"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+    <button class="ctrl" id="btn-reconnect" onclick="reconectarSala()" title="Reconectar — se o vídeo travar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg></button>
     <button class="ctrl ctrl-leave" onclick="sairDaSala()" title="Sair"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
   </div>
 </div>
@@ -334,6 +340,7 @@
         _remoteWaitMsg('Aguardando sua terapeuta entrar…');
       });
       _room.on(LK.RoomEvent.Disconnected, function () {
+        if (_reconectando) return; // reconexão manual: não mostra "sessão encerrada"
         _telaEncerramento('Sessão encerrada', 'Obrigado por estar presente hoje. Cuide de você.');
       });
 
@@ -406,11 +413,30 @@
         return;
       }
       if (_blurOn) { await pub.track.stopProcessor(); _blurOn = false; _salaToast('Fundo desfocado desligado.'); }
-      else { await pub.track.setProcessor(mod.BackgroundBlur(10)); _blurOn = true; _salaToast('Fundo desfocado ativo ✓'); }
+      else {
+        // Timeout de segurança (feedback 22/07): o desfoque em tempo real é pesado
+        // no celular e pode TRAVAR a câmera. Se não aplicar em 12s, desiste — melhor
+        // sem desfoque do que com a sessão travada.
+        await Promise.race([
+          pub.track.setProcessor(mod.BackgroundBlur(10)),
+          new Promise(function (_, rej) { setTimeout(function () { rej(new Error('blur-timeout')); }, 12000); })
+        ]);
+        _blurOn = true; _salaToast('Fundo desfocado ativo ✓');
+      }
       var b = document.getElementById('btn-blur'); if (b) b.classList.toggle('on', _blurOn);
     } catch (e) {
       console.warn('[sala] blur', e);
-      _salaToast('Não consegui aplicar o desfoque neste aparelho.');
+      _blurOn = false;
+      var bErr = document.getElementById('btn-blur'); if (bErr) bErr.classList.remove('on');
+      // Recupera a câmera se o processador a travou: republica a track limpa,
+      // senão a paciente "some" do vídeo da terapeuta (foi o que aconteceu).
+      try {
+        await _room.localParticipant.setCameraEnabled(false);
+        await _room.localParticipant.setCameraEnabled(true);
+        var cp = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
+        if (cp && cp.track) { var lv = document.getElementById('local-video'); lv.innerHTML = ''; lv.appendChild(cp.track.attach()); }
+      } catch (_) {}
+      _salaToast('O desfoque não funcionou bem neste aparelho — mantive sua câmera normal.');
     }
   }
   async function _reapplyBlur() {
@@ -454,12 +480,37 @@
         }
       }
       if (abriu) _salaToast('Vídeo flutuante aberto ✓ — ele te acompanha em outros apps.');
-      else _salaToast('Seu aparelho não permitiu a janela flutuante para vídeo de chamada — em iPhones, isso pede iOS mais recente.');
+      // Texto honesto (feedback 22/07): o iPhone/Safari NÃO permite janela flutuante
+      // de vídeo de CHAMADA ao vivo — é limitação da Apple para streams ao vivo, não
+      // da versão do iOS nem do aparelho. Não prometer "iOS mais recente".
+      else _salaToast('A janela flutuante não está disponível para chamadas de vídeo no iPhone (limitação do Safari para vídeo ao vivo). Você pode seguir na sessão normalmente.');
     } catch (e) {
       console.warn('[sala] pip', e);
       _salaToast('Não consegui abrir o vídeo flutuante.');
     }
   }
+  // Reconexão MANUAL da paciente (feedback 22/07): antes só a terapeuta tinha o
+  // botão. Se o vídeo travar (ex.: desfoque pesado, rede) a paciente refaz a
+  // conexão na MESMA sala (url/token seguem na URL). _reconectando suprime a tela
+  // de "sessão encerrada" que o disconnect dispararia.
+  var _reconectando = false;
+  async function reconectarSala() {
+    if (_reconectando) return;
+    _reconectando = true;
+    _salaToast('↻ Reconectando…');
+    var wait = document.getElementById('remote-wait');
+    if (wait) { _remoteWaitMsg('Reconectando…'); wait.style.display = 'flex'; }
+    try { if (_room) await _room.disconnect(); } catch (_) {}
+    _room = null; _remoteCam = null; _remoteScreen = null; _blurOn = false;
+    var bb = document.getElementById('btn-blur'); if (bb) bb.classList.remove('on');
+    try {
+      await entrarNaSala();
+    } catch (e) {
+      _salaToast('Não consegui reconectar — verifique sua internet e tente de novo.');
+    }
+    _reconectando = false;
+  }
+
   async function sairDaSala() {
     try { if (_room) await _room.disconnect(); } catch (e) {}
     _room = null;
