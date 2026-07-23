@@ -299,7 +299,7 @@ async function gerarBackupCodes(btn) {
         '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px">🔑 Seus códigos de backup</div>' +
         '<div style="font-size:12.5px;color:#c0392b;margin-bottom:12px">Guarde-os em um lugar seguro (gerenciador de senhas, papel). Eles aparecem <strong>só esta vez</strong> — cada um funciona uma única vez e substitui o código do app se você perder o celular.</div>' +
         '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">' + grid + '</div>' +
-        '<button class="btn btn-secondary btn-sm" onclick="_tfaCopyBackupCodes(this)">📋 Copiar códigos</button>';
+        '<button class="btn btn-secondary btn-sm" onclick="_tfaCopyBackupCodes(this)">' + _tfIcon('clip',12) + ' Copiar códigos</button>';
       area.dataset.codes = d.codes.join('\n');
       area.style.display = 'block';
     }
@@ -316,7 +316,7 @@ function _tfaCopyBackupCodes(btn) {
   const txt = (area && area.dataset.codes) || '';
   if (!txt) return;
   navigator.clipboard.writeText('Códigos de backup Teravia (uso único):\n' + txt).then(function () {
-    if (btn) { btn.textContent = '✓ Copiado'; setTimeout(function () { btn.textContent = '📋 Copiar códigos'; }, 2000); }
+    if (btn) { btn.textContent = '✓ Copiado'; setTimeout(function () { btn.innerHTML = _tfIcon('clip',12) + ' Copiar códigos'; }, 2000); }
   }).catch(function () { showToast('⚠ Não foi possível copiar. Anote manualmente.'); });
 }
 

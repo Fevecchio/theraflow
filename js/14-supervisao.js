@@ -47,7 +47,7 @@ function gerarAlertasReais() {
       if (emQueda || baixo) {
         alertas.push({
           tipo: 'risk',
-          icon: '📉',
+          icon: _tfIcon('trendDown',15),
           label: emQueda && baixo ? 'Risco clínico · Atenção imediata' : 'Humor · Queda detectada',
           titulo: escHTML(p.name) + ': humor em declínio',
           texto: 'Últimos registros de humor: ' + ult.join(' → ') + '/10. '
@@ -87,7 +87,7 @@ function gerarAlertasReais() {
       // Paciente com sessões mas sem próxima agendada
       alertas.push({
         tipo: 'reflection',
-        icon: '🗓',
+        icon: _tfIcon('cal',15),
         label: 'Agenda · Sem próxima sessão',
         titulo: escHTML(p.name) + ': próxima sessão não agendada',
         texto: 'Paciente com ' + p.sessions + ' sessão(ões) não possui próxima sessão marcada. Risco de evasão.',
@@ -104,7 +104,7 @@ function gerarAlertasReais() {
       if (pct < 0.35) {
         alertas.push({
           tipo: 'reflection',
-          icon: '📋',
+          icon: _tfIcon('clip',15),
           label: 'Engajamento · Exercícios',
           titulo: escHTML(p.name) + ': baixa adesão às tarefas (' + Math.round(pct*100) + '%)',
           texto: done + ' de ' + p.exercises.length + ' exercícios concluídos. Considere revisar a dificuldade, relevância ou motivação do paciente para tarefas entre sessões.',
@@ -125,7 +125,7 @@ function gerarAlertasReais() {
     if (found.length > 0) {
       alertas.push({
         tipo: 'risk',
-        icon: '🚨',
+        icon: _tfIcon('alert',15),
         label: 'Risco clínico · Alta prioridade',
         titulo: escHTML(p.name) + ': linguagem de risco nas notas',
         texto: 'Expressões detectadas nas notas clínicas que requerem atenção imediata: "' + found.slice(0,2).join('", "') + '". Avalie protocolo de risco na próxima sessão.',
@@ -190,7 +190,7 @@ function gerarAlertasReais() {
     if (temasTodos[tema].length >= 2) {
       alertas.push({
         tipo: 'pattern',
-        icon: '🔁',
+        icon: _tfIcon('refresh',15),
         label: 'Padrão da carteira · ' + temasTodos[tema].length + ' pacientes',
         titulo: 'Tema "' + tema + '" emergindo na carteira',
         texto: temasTodos[tema].map(escHTML).join(', ') + ' trouxeram variações deste tema nas notas recentes. Vale refletir se ressoa com algo em sua prática clínica no momento.',
@@ -230,7 +230,7 @@ function renderAlertasSupervisao() {
       ? '<div class="sup-alert-actions">'
           + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')">✦ Briefing IA</button>'
           // abre o prontuário DO paciente do alerta (antes ia sempre no 1º). B15/Lote 4.
-          + '<button class="btn btn-sm btn-secondary" onclick="selectPatient('+a.idx+');navigate(\'prontuarios\')">📋 Prontuário</button>'
+          + '<button class="btn btn-sm btn-secondary" onclick="selectPatient('+a.idx+');navigate(\'prontuarios\')">'+_tfIcon('clip',12)+' Prontuário</button>'
         + '</div>'
       : '';
     var pacBadge = a.paciente
@@ -259,13 +259,13 @@ function showCalendarSync() {
   overlay.innerHTML = `
     <div style="background:var(--white);border-radius:16px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25)">
       <div style="padding:28px 28px 0">
-        <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:6px">🔗 Sincronizar agenda</div>
+        <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:6px">${_tfIcon('link',15)} Sincronizar agenda</div>
         <div style="font-size:13px;color:#888;margin-bottom:24px">Conecte sua agenda profissional. Sessões criadas no Teravia aparecerão automaticamente — e bloqueios da sua agenda pessoal serão respeitados.</div>
 
         <!-- Google Calendar -->
         <div id="gcal-card" style="border:1px solid #e0e0e0;border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all .2s" onclick="connectCalendar('google')">
           <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:10px;background:var(--white);border:1px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:22px">📅</div>
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--white);border:1px solid #e0e0e0;display:flex;align-items:center;justify-content:center;color:var(--sage)">${_tfIcon('cal',20)}</div>
             <div style="flex:1">
               <div style="font-weight:600;font-size:14px;color:#1a1a1a">Google Calendar</div>
               <div style="font-size:12px;color:#888">Sincronização bidirecional via OAuth</div>
@@ -818,7 +818,7 @@ function exportarProntuario() {
           (p.cidade && p.cidade !== '—' ? '<span>📍 ' + escHTML(p.cidade) + '</span>' : '') +
           (p.abordagem ? '<span>⚕ ' + escHTML(p.abordagem) + '</span>' : '') +
           (p.cid && p.cid !== '—' ? '<span>🏷 CID: ' + escHTML(p.cid) + '</span>' : '') +
-          '<span>📊 Status: ' + escHTML(p.status||'—') + '</span>' +
+          '<span>'+_tfIcon('chart',11)+' Status: ' + escHTML(p.status||'—') + '</span>' +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -943,7 +943,7 @@ function editarNota(textoId, btn) {
 // ── MATERIAIS ────────────────────────────────────────────────────────────────
 var _materialPatientIdx = null;
 
-var MATERIAL_ICONS = { link:'🔗', artigo:'📄', video:'▶', exercicio:'📋', texto:'📝' };
+var MATERIAL_ICONS = { link:_tfIcon('link',15), artigo:_tfIcon('doc',15), video:_tfIcon('video',15), exercicio:_tfIcon('clip',15), texto:_tfIcon('doc',15) };
 var MATERIAL_LABELS = { link:'Link', artigo:'Artigo', video:'Vídeo', exercicio:'Exercício', texto:'Anotação' };
 
 function abrirModalMaterial() {
@@ -1329,7 +1329,7 @@ function runSupAnalysis() {
       var acoes = a.idx !== null
         ? '<div class="sup-alert-actions">'
             + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')">✦ Briefing IA</button>'
-            + '<button class="btn btn-sm btn-secondary" onclick="navigate(\'prontuarios\')">📋 Prontuário</button>'
+            + '<button class="btn btn-sm btn-secondary" onclick="navigate(\'prontuarios\')">'+_tfIcon('clip',12)+' Prontuário</button>'
           + '</div>'
         : '';
       var pacBadge = a.paciente
@@ -1397,7 +1397,7 @@ function showReflectionModal(context) {
   overlay.innerHTML = `
     <div class="sup-reflection-modal fade-in">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-        <div style="width:36px;height:36px;border-radius:10px;background:var(--purple-light);display:flex;align-items:center;justify-content:center;font-size:16px">🪞</div>
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--purple-light);display:flex;align-items:center;justify-content:center;color:var(--purple)">${_tfIcon('eye',17)}</div>
         <div>
           <div style="font-family:'Instrument Serif',serif;font-size:18px">Reflexão pós-sessão</div>
           <div style="font-size:12px;color:var(--muted)">Registrada apenas para você · não compartilhada</div>
@@ -1585,7 +1585,7 @@ function _mostrarPromptReflexao(p) {
     + 'background:var(--sage-light);border:1px solid var(--sage-mid);border-radius:14px;padding:14px 20px;'
     + 'display:flex;align-items:center;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);'
     + 'max-width:520px;width:calc(100% - 48px);transition:transform .35s cubic-bezier(.34,1.56,.64,1)';
-  banner.innerHTML = '<span style="font-size:20px">🪞</span>'
+  banner.innerHTML = '<span style="display:inline-flex;color:var(--sage-dark)">' + _tfIcon('eye',18) + '</span>'
     + '<div style="flex:1">'
       + '<div style="font-size:13.5px;font-weight:600;color:var(--sage-dark)">Sessão com ' + escHTML(nome) + ' encerrada</div>'
       + '<div style="font-size:12px;color:var(--sage);margin-top:2px">Quer registrar uma reflexão enquanto está fresco?</div>'
@@ -1779,7 +1779,7 @@ function _renderContratransferencia() {
     return;
   }
   container.innerHTML = insights.map(function(a) {
-    var icon = a.tipo === 'contratransferencia' ? '🪞' : '🔍';
+    var icon = a.tipo === 'contratransferencia' ? _tfIcon('eye',15) : _tfIcon('search',15);
     var tipoCls = a.tipo === 'contratransferencia' ? 'reflection' : 'note';
     var tipoLabel = a.tipo === 'contratransferencia' ? 'Contratransferência · Atenção' : 'Ponto cego · Observação';
     return '<div class="sup-alert-card ' + tipoCls + '" style="margin-bottom:12px">'

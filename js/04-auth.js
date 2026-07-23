@@ -713,7 +713,7 @@ function _getMoodInsights(p) {
     var arrow = diff > 0.3 ? '↑' : diff < -0.3 ? '↓' : '→';
     var cor   = diff > 0.3 ? '#4a7c59' : diff < -0.3 ? '#c0392b' : '#c97d2e';
     out += '<div style="font-size:12px;background:var(--bg);border-radius:8px;padding:6px 11px;display:flex;align-items:center;gap:6px;margin-bottom:6px">'
-      + '📊 Média 7 dias: <strong style="color:'+cor+'">'+avgR.toFixed(1)+' '+arrow+' '+(diff>0?'+':'')+diff.toFixed(1)+' vs semana anterior</strong></div>';
+      + _tfIcon('chart', 13) + ' Média 7 dias: <strong style="color:'+cor+'">'+avgR.toFixed(1)+' '+arrow+' '+(diff>0?'+':'')+diff.toFixed(1)+' vs semana anterior</strong></div>';
   }
   var diasN = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   var byDay = [[],[],[],[],[],[],[]];
@@ -731,7 +731,7 @@ function _getMoodInsights(p) {
   });
   if (bestDay >= 0) {
     out += '<div style="font-size:12px;background:var(--bg);border-radius:8px;padding:6px 11px;display:flex;align-items:center;gap:6px;margin-bottom:6px">'
-      + '📅 Você tende a se sentir melhor às <strong>'+diasN[bestDay]+'s</strong></div>';
+      + _tfIcon('cal', 13) + ' Você tende a se sentir melhor às <strong>'+diasN[bestDay]+'s</strong></div>';
   }
   return out ? '<div style="margin-bottom:10px">'+out+'</div>' : '';
 }
@@ -776,7 +776,7 @@ function pacEmergencia() {
         }).join('')
     + '</div>'
     + (wppTerapeuta
-        ? '<a href="https://wa.me/'+wppTerapeuta+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box">💬 Chamar minha terapeuta no WhatsApp</a>'
+        ? '<a href="https://wa.me/'+wppTerapeuta+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box">'+_tfIcon('wpp', 15)+' Chamar minha terapeuta no WhatsApp</a>'
         : '<div style="text-align:center;font-size:13px;color:var(--muted);padding:8px 0">Entre em contato com sua terapeuta se precisar de apoio imediato.</div>')
     // Chat in-app do paciente REMOVIDO (decisão do usuário 09/07): o contato com a
     // terapeuta é via WhatsApp; a "mensagem da semana" segue como canal 1-via. Lote 2 (P3).
@@ -982,9 +982,9 @@ function _popularAnamnese(idx) {
         : 'Anamnese ainda não preenchida — preencha aqui ou envie para o paciente responder no portal.';
     }
     bar.style.display = '';
-    if (btnEnv) btnEnv.textContent = aguardando
-      ? '📤 Reenviar ao paciente'
-      : (ana.dataCriacao ? '📤 Enviar ao paciente completar' : '📤 Enviar para o paciente preencher');
+    if (btnEnv) btnEnv.innerHTML = _tfIcon('send', 12) + ' ' + (aguardando
+      ? 'Reenviar ao paciente'
+      : (ana.dataCriacao ? 'Enviar ao paciente completar' : 'Enviar para o paciente preencher'));
   }
 }
 
@@ -1121,7 +1121,7 @@ function pacSalvarAnamnese(idx) {
         + '<div style="font-size:13px;color:var(--muted)">Sua terapeuta receberá as informações antes da próxima sessão.</div>'
         + '</div>'
       : '<div style="text-align:center;padding:24px 0">'
-        + '<div style="font-size:36px;margin-bottom:10px">💾</div>'
+        + '<div style="color:var(--muted);margin-bottom:10px">' + (typeof _tfIcon === 'function' ? _tfIcon('save', 32) : '') + '</div>'
         + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Respostas salvas neste aparelho</div>'
         + '<div style="font-size:13px;color:var(--muted);line-height:1.6">Sem conexão agora — elas serão enviadas junto com o próximo registro que você fizer, ou toque no aviso amarelo para tentar de novo.</div>'
         + '</div>';

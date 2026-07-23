@@ -279,7 +279,7 @@ function _fillPreviewMoodRow() {
   if (note) { note.disabled = true; note.style.opacity = '.65'; }
   var btn = document.getElementById('mood-save-btn');
   if (btn && btn.tagName === 'BUTTON') {
-    btn.textContent = '👁 Prévia — o paciente registra no portal dele';
+    btn.innerHTML = _tfIcon('eye', 13) + ' Prévia — o paciente registra no portal dele';
     btn.disabled = true;
     btn.removeAttribute('onclick');
     btn.style.opacity = '.7';
@@ -913,13 +913,13 @@ function renderPatientApp(idx, pacs) {
   var mats = p.materials || [];
   var readMats = p.readMaterials || [];
   var matsHtml = mats.length === 0 ? '' : '<div class="patient-section-card">'
-    + '<div class="patient-section-header"><div class="patient-section-title">📚 Materiais da sua terapeuta <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">'+readMats.length+'/'+mats.length+' lidos</span></div></div>'
+    + '<div class="patient-section-header"><div class="patient-section-title">' + _tfIcon('book', 13) + ' Materiais da sua terapeuta <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">'+readMats.length+'/'+mats.length+' lidos</span></div></div>'
     + '<div class="patient-section-body" style="display:flex;flex-direction:column;gap:10px">'
       + mats.map(function(m){
           var lido = readMats.map(String).indexOf(String(m.id)) >= 0;
-          var tIcon = m.tipo==='livro'?'📖':m.tipo==='artigo'?'📄':m.tipo==='video'?'🎬':m.tipo==='podcast'?'🎙':'🔗';
+          var tIcon = _tfIcon(m.tipo==='livro'?'book':m.tipo==='artigo'?'doc':m.tipo==='video'?'video':m.tipo==='podcast'?'mic':'link', 18);
           return '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">'
-            + '<div style="font-size:22px;line-height:1;flex-shrink:0;margin-top:1px">'+tIcon+'</div>'
+            + '<div style="line-height:1;flex-shrink:0;margin-top:1px;color:var(--sage);display:flex">'+tIcon+'</div>'
             + '<div style="flex:1;min-width:0">'
               + (m.url ? '<a href="'+escHTML(m.url)+'" target="_blank" rel="noopener" style="font-size:13.5px;font-weight:500;color:var(--sage);text-decoration:none;'+(lido?'opacity:.55;text-decoration:line-through':'')+'">'+escHTML(m.titulo)+'</a>'
                        : '<div style="font-size:13.5px;font-weight:500;color:var(--ink);'+(lido?'opacity:.55;text-decoration:line-through':'')+'">'+escHTML(m.titulo)+'</div>')
@@ -940,7 +940,7 @@ function renderPatientApp(idx, pacs) {
 
   // ── Nota pré-sessão ──
   var notaPreHtml = '<div class="patient-section-card">'
-    + '<div class="patient-section-header"><div class="patient-section-title">💬 Nota para a próxima sessão</div></div>'
+    + '<div class="patient-section-header"><div class="patient-section-title">' + _tfIcon('message', 13) + ' Nota para a próxima sessão</div></div>'
     + '<div class="patient-section-body">'
       + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">O que você quer lembrar de trazer para a próxima sessão? Sua terapeuta verá antes de vocês se encontrarem.</div>'
       + '<textarea id="pac-nota-pre-text" placeholder="Escreva aqui…" style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'">'+escHTML(p.portalNota||'')+'</textarea>'
@@ -1350,7 +1350,7 @@ async function pacEnviarMensagem(idx) {
 // (js/13, portal) e renderDiarioPortal (js/12, previa do terapeuta).
 var DIARY_CONFIG = {
   'TCC': {
-    tab: '🧠 Diário TCC',
+    tab: _tfIcon('clip',12)+' Diário TCC',
     cor: 'var(--sage)',
     corLight: 'var(--sage-light)',
     instrucao: '💡 Quando perceber uma emoção forte, pare e registre. O objetivo é reconhecer o padrão pensamento → emoção → comportamento.',
@@ -1393,13 +1393,13 @@ var DIARY_CONFIG = {
           <textarea id="esp-campo-3" placeholder="Existe uma forma diferente de ver essa situação?" rows="3" class="diary-ta"></textarea>
         </div>
         <div style="display:flex;justify-content:flex-end;padding-top:4px">
-          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('TCC')">💾 Salvar no diário</button>
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('TCC')">${_tfIcon('save',12)} Salvar no diário</button>
         </div>
       </div>`;
     }
   },
   'Psicanálise': {
-    tab: '🔍 Associações livres',
+    tab: _tfIcon('search',12)+' Associações livres',
     cor: 'var(--purple)',
     corLight: 'var(--purple-light)',
     instrucao: '<strong>Como usar:</strong> Escreva livremente o que vier à mente — sem censura, sem ordem. Sonhos, memórias, sensações, imagens. Tudo tem valor.',
@@ -1412,13 +1412,13 @@ var DIARY_CONFIG = {
         <div><label class="diary-label">Sensação corporal associada <span style="font-weight:400;text-transform:none">(opcional)</span></label>
           <textarea id="esp-campo-3" placeholder="Como seu corpo está carregando isso?" rows="2" class="diary-ta"></textarea></div>
         <div style="display:flex;justify-content:flex-end">
-          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('Psicanálise')">💾 Salvar no diário</button>
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('Psicanálise')">${_tfIcon('save',12)} Salvar no diário</button>
         </div>
       </div>`;
     }
   },
   'Sistêmica': {
-    tab: '🔗 Diário de relações',
+    tab: _tfIcon('link',12)+' Diário de relações',
     cor: 'var(--blue)',
     corLight: 'var(--blue-light)',
     instrucao: '<strong>Como usar:</strong> Foque nos padrões relacionais que observou esta semana. O que se repetiu? O que surpreendeu?',
@@ -1431,13 +1431,13 @@ var DIARY_CONFIG = {
         <div><label class="diary-label">3. O que você sentiu e não disse</label>
           <textarea id="esp-campo-3" placeholder="O que quis dizer mas guardou? O que sente que falta nessa relação?" rows="2" class="diary-ta"></textarea></div>
         <div style="display:flex;justify-content:flex-end">
-          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('Sistêmica')">💾 Salvar no diário</button>
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('Sistêmica')">${_tfIcon('save',12)} Salvar no diário</button>
         </div>
       </div>`;
     }
   },
   'ACT': {
-    tab: '🌱 Diário de valores',
+    tab: _tfIcon('target',12)+' Diário de valores',
     cor: '#2e7d52',
     corLight: '#e6f4ec',
     instrucao: '<strong>Como usar:</strong> Observe suas ações e como se conectam ao que realmente importa para você. Não existe certo ou errado aqui.',
@@ -1452,13 +1452,13 @@ var DIARY_CONFIG = {
         <div><label class="diary-label">4. Comprometimento</label>
           <textarea id="esp-campo-4" placeholder="O que você quer fazer diferente esta semana?" rows="2" class="diary-ta"></textarea></div>
         <div style="display:flex;justify-content:flex-end">
-          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('ACT')">💾 Salvar no diário</button>
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('ACT')">${_tfIcon('save',12)} Salvar no diário</button>
         </div>
       </div>`;
     }
   },
   'EMDR': {
-    tab: '🧘 Diário de processamento',
+    tab: _tfIcon('eye',12)+' Diário de processamento',
     cor: 'var(--amber)',
     corLight: 'var(--amber-light)',
     instrucao: '<strong>Como usar:</strong> Registre o que surgiu após as sessões — sensações, memórias, sonhos. Não force nada. Anote o que aparecer naturalmente.',
@@ -1473,7 +1473,7 @@ var DIARY_CONFIG = {
         <div><label class="diary-label">O que ajudou a se acalmar <span style="font-weight:400;text-transform:none">(opcional)</span></label>
           <textarea id="esp-campo-2" placeholder="Respiração, movimento, contato com a natureza, conversa…" rows="2" class="diary-ta"></textarea></div>
         <div style="display:flex;justify-content:flex-end">
-          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('EMDR')">💾 Salvar no diário</button>
+          <button class="btn btn-primary btn-sm" onclick="saveDiaryEsp('EMDR')">${_tfIcon('save',12)} Salvar no diário</button>
         </div>
       </div>`;
     }
@@ -1560,7 +1560,7 @@ function renderPatientDiario(p, idx) {
 
   var panelLivre = '<div id="pac-diary-livre" style="padding:16px 18px">'
     + '<textarea id="pac-diary-livre-text" placeholder="O que está passando pela sua cabeça? Pode ser qualquer coisa…" style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13.5px;font-family:inherit;resize:none;outline:none;line-height:1.6;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--sage)\'" onblur="this.style.borderColor=\'var(--border)\'"></textarea>'
-    + '<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" onclick="pacSalvarDiario(\'livre\','+idx+')">💾 Salvar registro</button></div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" onclick="pacSalvarDiario(\'livre\','+idx+')">'+_tfIcon('save',12)+' Salvar registro</button></div>'
     + '<div id="pac-diary-livre-list" style="display:flex;flex-direction:column;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"></div>'
     + '</div>';
 

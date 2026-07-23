@@ -148,7 +148,7 @@ function _showConvitePortalModal(idx) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML = `
     <div style="background:var(--white);border-radius:16px;padding:28px;max-width:380px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.2);text-align:center">
-      <div style="font-size:36px;margin-bottom:12px">📲</div>
+      <div style="color:var(--sage);margin-bottom:12px">${_tfIcon('wpp', 32)}</div>
       <div style="font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:8px">Enviar acesso ao portal?</div>
       <div style="font-size:13.5px;color:#6b7280;line-height:1.6;margin-bottom:20px">
         ${escHTML(_firstName(p.name))} receberá email e senha pelo WhatsApp para acessar o portal entre as sessões.
@@ -864,7 +864,7 @@ function renderPatients(filter) {
            <button class="btn-primary" onclick="abrirModalNovoPaciente()">+ Novo paciente</button>
          </div>`
       : `<div style="padding:32px;text-align:center;color:var(--muted)">
-           <div style="font-size:28px;margin-bottom:8px">🔍</div>
+           <div style="margin-bottom:8px">${_tfIcon('search', 26)}</div>
            <div style="font-weight:600;margin-bottom:4px">Nenhum paciente encontrado</div>
            <div style="font-size:12px">Tente outro termo ou limpe o filtro</div>
          </div>`;
@@ -997,12 +997,12 @@ function renderPatientDetailShell(i) {
       <div>
         <div class="detail-name">${escHTML(p.name)}</div>
         <div class="detail-meta">
-          <span>🎂 ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span>
-          <span>📍 ${escHTML(p.cidade || '—')}</span>
-          <span>📋 ${escHTML(p.abordagem)}</span>
-          <span>🗓 Próxima: ${p.next || '—'}${(p.next && p.next !== '—' && p.nextTime) ? ' às ' + escHTML(p.nextTime) : ''}</span>
+          <span>${_tfIcon('gift', 12)} ${p.age !== '—' && p.age ? p.age + ' anos' : '—'}</span>
+          <span>${_tfIcon('pin', 12)} ${escHTML(p.cidade || '—')}</span>
+          <span>${_tfIcon('clip', 12)} ${escHTML(p.abordagem)}</span>
+          <span>${_tfIcon('cal', 12)} Próxima: ${p.next || '—'}${(p.next && p.next !== '—' && p.nextTime) ? ' às ' + escHTML(p.nextTime) : ''}</span>
           <span style="display:flex;align-items:center;gap:4px">
-            ✉️ <a href="mailto:${p.email}" style="color:var(--sage);text-decoration:none;font-size:12px">${p.email}</a>
+            ${_tfIcon('mail', 12)} <a href="mailto:${p.email}" style="color:var(--sage);text-decoration:none;font-size:12px">${p.email}</a>
             <button onclick="event.stopPropagation();navigator.clipboard?.writeText('${p.email}');showToast('Email copiado!')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);padding:0 2px" title="Copiar email">⎘</button>
           </span>
         </div>
@@ -1845,7 +1845,7 @@ function _editarResumoPublicado(apptId) {
 function _trajetoriaWrap(rows, total, _hasResumo) {
   return '<details ' + (_hasResumo ? 'open ' : '') + 'style="margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden">'
     + '<summary style="padding:12px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;list-style:none;display:flex;align-items:center;gap:6px;background:var(--bg)">'
-    + '📅 Trajetória — resumos para o paciente</summary>'
+    + _tfIcon('cal', 13) + ' Trajetória — resumos para o paciente</summary>'
     + '<div style="padding:0 14px 4px">'
     + rows
     + (total > 10 ? '<div style="font-size:11px;color:var(--muted);padding:8px 0;text-align:center">Exibindo últimas 10 sessões</div>' : '')

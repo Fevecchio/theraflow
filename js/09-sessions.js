@@ -258,9 +258,9 @@ function _renderSessFromBriefing(p, content) {
   var padrao = _parseBriefingSection(content, 'PADRÃO IDENTIFICADO');
   var alerta = _parseBriefingSection(content, 'PONTO DE ATENÇÃO');
   var html2  = '';
-  if (foco)   html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(foco) + '</span></div>';
-  if (padrao) html2 += '<div class="insight-item"><span class="insight-icon">🔁</span><span>' + escHTML(padrao) + '</span></div>';
-  if (alerta) html2 += '<div class="insight-item"><span class="insight-icon">⚠</span><span>' + escHTML(alerta) + '</span></div>';
+  if (foco)   html2 += '<div class="insight-item"><span class="insight-icon">'+_tfIcon('target',15)+'</span><span>' + escHTML(foco) + '</span></div>';
+  if (padrao) html2 += '<div class="insight-item"><span class="insight-icon">'+_tfIcon('refresh',15)+'</span><span>' + escHTML(padrao) + '</span></div>';
+  if (alerta) html2 += '<div class="insight-item"><span class="insight-icon">'+_tfIcon('alert',15)+'</span><span>' + escHTML(alerta) + '</span></div>';
   var _c9 = (typeof _getBriefingCache === 'function') ? _getBriefingCache(p.id || p.name) : null;
   var _q9 = (_c9 && typeof _briefingQuando === 'function') ? _briefingQuando(_c9) : 'hoje';
   html2 += '<div class="sess-briefing-badge">✦ Baseado no briefing gerado ' + escHTML(_q9) + _briefingStaleSuffix(p) + '</div>';
@@ -277,16 +277,16 @@ function _renderSessFromBriefing(p, content) {
 function _renderSessLocalFallback(p) {
   var temas = typeof buildThemes === 'function' ? buildThemes(p) : [];
   var temasStr = temas.slice(0,3).map(function(t){ return t.label + ' (' + t.freq + '×)'; }).join(', ') || '—';
-  var html2 = '<div class="insight-item"><span class="insight-icon">🔁</span><span>Temas: ' + escHTML(temasStr) + '</span></div>';
+  var html2 = '<div class="insight-item"><span class="insight-icon">'+_tfIcon('refresh',15)+'</span><span>Temas: ' + escHTML(temasStr) + '</span></div>';
   // Metas reais vivem em p.portalMetas[].text (p.metas[].texto nunca é escrito —
   // por isso os objetivos terapêuticos nunca apareciam aqui). Lote 1.
   var _metasSrc = (Array.isArray(p.portalMetas) && p.portalMetas.length) ? p.portalMetas
     : (Array.isArray(p.metas) ? p.metas : []);
   var metasArr = _metasSrc.filter(function(m){ return m && (m.text || m.texto); }).slice(0,2);
   if (metasArr.length) {
-    html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(metasArr.map(function(m){ return m.text || m.texto; }).join(' · ').substring(0,100)) + '</span></div>';
+    html2 += '<div class="insight-item"><span class="insight-icon">'+_tfIcon('target',15)+'</span><span>' + escHTML(metasArr.map(function(m){ return m.text || m.texto; }).join(' · ').substring(0,100)) + '</span></div>';
   } else if (typeof p.metas === 'string' && p.metas.trim()) {
-    html2 += '<div class="insight-item"><span class="insight-icon">🎯</span><span>' + escHTML(p.metas.substring(0,100)) + '</span></div>';
+    html2 += '<div class="insight-item"><span class="insight-icon">'+_tfIcon('target',15)+'</span><span>' + escHTML(p.metas.substring(0,100)) + '</span></div>';
   }
   // Revisão 10/07: "% de evolução" saiu do contexto EM SESSÃO — é métrica de
   // gestão, não orienta decisão clínica ao vivo (e duplicava o card ao lado).
@@ -519,12 +519,12 @@ function showPostSessionFlow() {
 
         <!-- Header -->
         <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
-          <div style="width:36px;height:36px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✅</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;color:#4a7c59;flex-shrink:0">${_tfIcon('checkCircle', 18)}</div>
           <div style="flex:1">
             <div style="font-weight:600;font-size:15px;color:#1a1a1a">Transcrição pronta · ${_durStr} <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#faf0ff;border:1px solid #d8b4fe;border-radius:5px;padding:2px 7px;vertical-align:middle;margin-left:6px;white-space:nowrap">✦ Exemplo ilustrativo</span></div>
             <div style="font-size:12px;color:#888;margin-top:2px">Transcrição da sessão · ambos os lados · revisão recomendada</div>
           </div>
-          <button onclick="baixarTranscricao()" title="Baixar transcrição" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--muted);white-space:nowrap">📥 .txt</button>
+          <button onclick="baixarTranscricao()" title="Baixar transcrição" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--muted);white-space:nowrap">${_tfIcon('csv', 11)} .txt</button>
         </div>
 
         <!-- Transcrição dos dois lados -->
@@ -699,7 +699,7 @@ function showPostSessionFlow() {
             var el = document.getElementById('post-note-text');
             if (notaIA && el && el.tagName !== 'TEXTAREA') {
               el.innerHTML =
-                '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:8px 12px;margin-bottom:14px;border-radius:0 8px 8px 0;font-size:12px;color:var(--amber);white-space:pre-wrap"><strong>📝 Suas notas da sessão:</strong>\n' + escHTML(_sessionNote.substring(0, 600)) + '</span>' +
+                '<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:8px 12px;margin-bottom:14px;border-radius:0 8px 8px 0;font-size:12px;color:var(--amber);white-space:pre-wrap"><strong>' + _tfIcon('doc', 11) + ' Suas notas da sessão:</strong>\n' + escHTML(_sessionNote.substring(0, 600)) + '</span>' +
                 '<div style="white-space:pre-wrap;font-size:13px;color:#333;line-height:1.6">' + escHTML(notaIA) + '</div>';
             } else {
               var loader = document.getElementById('_note-ia-loader');
@@ -1123,7 +1123,7 @@ function showExercisePosSession() {
   modal.innerHTML = `
     <div style="background:var(--white);border-radius:16px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.3)">
       <div style="padding:22px 28px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
-        <div style="width:36px;height:36px;border-radius:50%;background:#f0ecfa;display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:#f0ecfa;display:flex;align-items:center;justify-content:center;color:var(--purple)">${_tfIcon('clip', 18)}</div>
         <div>
           <div style="font-weight:600;font-size:15px;color:#1a1a1a">Exercícios para ${escHTML(sp ? _firstName(sp.name) : 'o paciente')}</div>
           <div style="font-size:12px;color:#888;margin-top:2px">O que ele/ela levará para casa até a próxima sessão?</div>

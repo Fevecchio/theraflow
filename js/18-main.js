@@ -111,9 +111,9 @@ function abrirReferral() {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
   overlay.innerHTML = `
     <div style="background:var(--white);border-radius:16px;width:100%;max-width:480px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25)">
-      <div style="font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px">🎁 Indicar um colega</div>
+      <div style="font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px">${_tfIcon('gift',16)} Indicar um colega</div>
       <div style="background:#f0f7f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
-        <span style="font-size:22px">🎉</span>
+        <span style="display:inline-flex;color:var(--sage)">${_tfIcon('gift',20)}</span>
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--ink)">Ganhe 1 mês grátis</div>
           <div style="font-size:12px;color:var(--muted);line-height:1.5">Quando seu indicado assinar o Pro, você recebe 1 mês grátis automaticamente${refRewarded ? ' <span style="color:#5a8a6a;font-weight:600">(já resgatado ✓)</span>' : ''}</div>
@@ -227,7 +227,7 @@ function aplicarDadosNoApp() {
   var heroCrp    = document.getElementById('perfil-hero-crp');
   if (heroNome)   heroNome.textContent   = nome;
   if (heroAvatar) heroAvatar.textContent = initials;
-  if (heroCrp)    heroCrp.textContent    = '🪪 CRP ' + crp; // sem "— ativo": status nunca é verificado (B4)
+  if (heroCrp)    heroCrp.textContent    = 'CRP ' + crp; // sem "— ativo": status nunca é verificado (B4)
 
   // ── 4. PERFIL — campos do formulário ──
   var fNome = document.getElementById('perfil-nome');

@@ -118,7 +118,7 @@ function renderCharges(mesFilter) {
   });
   if (!visible.length) {
     list.innerHTML = `<div style="padding:56px 32px;text-align:center;color:var(--muted)">
-      <div style="font-size:40px;margin-bottom:12px">💳</div>
+      <div style="margin-bottom:12px">${_tfIcon('card', 32)}</div>
       <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Nenhuma cobrança ainda</div>
       <div style="font-size:13px;margin-bottom:20px">Registre cobranças avulsas ou crie planos mensais para seus pacientes.</div>
       <button class="btn-primary" onclick="abrirModalNovaCobranca()">+ Nova cobrança</button>
@@ -193,7 +193,7 @@ function _finModeApplyUI(mode) {
   } else {
     desc.textContent = 'Cobrança enviada depois da sessão. O paciente paga após ser atendido — padrão para novos pacientes.';
     badge.className = 'fin-mode-badge fin-mode-badge-post';
-    badge.innerHTML = '🕐 Pós-sessão ativo';
+    badge.innerHTML = _tfIcon('clock', 12) + ' Pós-sessão ativo';
   }
 }
 
@@ -499,7 +499,7 @@ function renderFinInadimplencia() {
   });
   if (countEl) countEl.textContent = vencidas.length + ' paciente' + (vencidas.length !== 1 ? 's':'');
   if (!vencidas.length) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Nenhum paciente em atraso. 🎉</div>';
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">' + _tfIcon('checkCircle', 15) + ' Nenhum paciente em atraso.</div>';
     return;
   }
   var html = '';
@@ -991,7 +991,7 @@ function _renderReguaGuia() {
       }).join('');
   }
   var sub = document.getElementById('fin-regua-sub');
-  if (sub) sub.textContent = 'Cobrança vencida gera a tarefa da etapa atual (D+' + regua[0].dias + ' → D+' + regua[1].dias + ' → D+' + regua[2].dias + ') em Tarefas. Cada envio você dispara pelo 📲 da tarefa ou da cobrança — nada é enviado sem você.';
+  if (sub) sub.textContent = 'Cobrança vencida gera a tarefa da etapa atual (D+' + regua[0].dias + ' → D+' + regua[1].dias + ' → D+' + regua[2].dias + ') em Tarefas. Cada envio você dispara pelo botão de WhatsApp da tarefa ou da cobrança — nada é enviado sem você.';
 }
 
 function abrirConfigRegua() {
@@ -1935,7 +1935,7 @@ function renderDiarioPortal(p) {
   }
 
   // Mostra e configura a segunda aba
-  if (tab) { tab.style.display = ''; tab.textContent = config.tab; }
+  if (tab) { tab.style.display = ''; tab.innerHTML = config.tab; } // config.tab traz ícone SVG
 
   // Renderiza conteúdo no painel
   if (panel) {
@@ -1958,7 +1958,7 @@ function renderDiarioPortal(p) {
       if (oc.indexOf('saveDiaryEsp') !== -1) {
         var note = document.createElement('span');
         note.style.cssText = 'font-size:12px;color:var(--muted);font-style:italic';
-        note.textContent = '👁 Prévia — o paciente preenche e salva no portal dele';
+        note.innerHTML = _tfIcon('eye', 12) + ' Prévia — o paciente preenche e salva no portal dele';
         btn.parentNode.replaceChild(note, btn);
       } else {
         btn.disabled = true; btn.removeAttribute('onclick');
@@ -1994,7 +1994,7 @@ function renderDiarioLivre(p) {
   const entries = [];
   allEntries.forEach(function(e, i) { if (!e.tipo || e.tipo === 'livre') entries.push({ entry: e, ei: i }); });
   if (entries.length === 0) {
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px 0;font-style:italic">Nenhum registro ainda. Escreva algo acima! 🌿</div>';
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px 0;font-style:italic">Nenhum registro ainda. Escreva algo acima.</div>';
     return;
   }
   var therapistFirst = (typeof tfUserData !== 'undefined' && tfUserData.nome ? tfUserData.nome : 'sua terapeuta').split(' ')[0];

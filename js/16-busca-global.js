@@ -132,7 +132,7 @@ function executarBuscaGlobal(q) {
       (p.prontuarioNotes||[]).forEach(function(n) {
         if ((n.text||'').toLowerCase().includes(q)) {
           var trecho = n.text.substring(Math.max(0, n.text.toLowerCase().indexOf(q)-20), Math.min(n.text.length, n.text.toLowerCase().indexOf(q)+60));
-          resultados.push({ tipo: 'nota', icon: '📋', bg: '#f0f4ff', titulo: 'Nota: ' + p.name, sub: '…' + trecho + '…', action: function(){ navigate('prontuarios'); setTimeout(function(){ selectPatient(i); }, 80); } });
+          resultados.push({ tipo: 'nota', icon: _tfIcon('clip',14), bg: '#f0f4ff', titulo: 'Nota: ' + p.name, sub: '…' + trecho + '…', action: function(){ navigate('prontuarios'); setTimeout(function(){ selectPatient(i); }, 80); } });
         }
       });
     });
@@ -145,7 +145,7 @@ function executarBuscaGlobal(q) {
       if (a.patientName.toLowerCase().includes(q) || (a.abordagem||'').toLowerCase().includes(q)) {
         var d = new Date(a.date+'T12:00');
         var dateLbl = d.toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short'});
-        resultados.push({ tipo: 'agenda', icon: '🗓', bg: '#f0fdf4', titulo: a.patientName, sub: dateLbl + ' · ' + a.time + ' · ' + escHTML(a.abordagem||'—'), action: function(){ navigate('agenda'); } });
+        resultados.push({ tipo: 'agenda', icon: _tfIcon('cal',14), bg: '#f0fdf4', titulo: a.patientName, sub: dateLbl + ' · ' + a.time + ' · ' + escHTML(a.abordagem||'—'), action: function(){ navigate('agenda'); } });
       }
     });
   }
@@ -165,7 +165,7 @@ function executarBuscaGlobal(q) {
       { icon: '✦',   label: 'Abrir briefing IA',          cat: 'Briefing',    action: function(){ navigate('briefing'); } },
       { icon: '◈',   label: 'Ir para supervisão IA',      cat: 'Supervisão',  action: function(){ navigate('supervisao'); } },
       { icon: '$',   label: 'Ver cobranças',              cat: 'Financeiro',  action: function(){ navigate('financeiro'); } },
-      { icon: '📊',  label: 'Gerar relatório financeiro', cat: 'Financeiro',  action: function(){ fecharBuscaGlobal(); navigate('financeiro'); setTimeout(exportarRelatorioMensal, 300); } },
+      { icon: _tfIcon('chart',14),  label: 'Gerar relatório financeiro', cat: 'Financeiro',  action: function(){ fecharBuscaGlobal(); navigate('financeiro'); setTimeout(exportarRelatorioMensal, 300); } },
     ].forEach(function(a){ resultados.push({ tipo: 'acao', icon: a.icon, bg: '#f8faf8', titulo: a.label, sub: a.cat, action: a.action }); });
   }
 
@@ -190,7 +190,9 @@ function executarBuscaGlobal(q) {
       flat.push(r);
       var _iconStyle = 'background:'+r.bg+(r.titleColor?';color:'+r.titleColor+';font-size:11px;font-weight:700':'')+';';
       html += '<div class="gs-item" data-gs-idx="'+idx+'" onmouseenter="gsItemHover(this)" onclick="gsItemClick('+idx+')">'
-        + '<div class="gs-item-icon" style="'+_iconStyle+'">'+escHTML(r.icon)+'</div>'
+        // Ícones SVG do sistema (_tfIcon) entram crus; qualquer outro valor
+        // (ex.: iniciais do paciente = dado do usuário) continua escapado.
+        + '<div class="gs-item-icon" style="'+_iconStyle+'">'+(String(r.icon).indexOf('<svg') === 0 ? r.icon : escHTML(r.icon))+'</div>'
         + '<div style="flex:1;min-width:0"><div class="gs-item-title">'+escHTML(r.titulo)+'</div><div class="gs-item-sub">'+escHTML(r.sub)+'</div></div>'
         + '</div>';
     });

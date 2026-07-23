@@ -11,11 +11,12 @@ var _MARCOS = [
 /* ── TOUR DE ONBOARDING ── */
 var _tourStep = 0;
 var _TOUR_STEPS = [
-  { icon: '🌿', titulo: 'Bem-vindo ao Teravia!', desc: 'A plataforma de gestão clínica calibrada pela sua abordagem terapêutica. Vamos mostrar os principais recursos em 5 passos.' },
-  { icon: '🧑‍⚕️', titulo: 'Cadastre seus pacientes', desc: 'Em <strong>Pacientes</strong> você cadastra fichas completas — queixa principal, histórico, CID, abordagem individual e muito mais.' },
-  { icon: '🗓', titulo: 'Organize sua agenda', desc: 'Em <strong>Agenda</strong> você agenda sessões, visualiza a semana e o mês, e bloqueia períodos de folga ou férias.' },
+  // Logo real da marca (mesma da sidebar) — folha-emoji era clichê de UI amadora
+  { icon: '<svg width="48" height="48" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="#4A7A63"/><path d="M32 34 H88" fill="none" stroke="#F3EFE6" stroke-width="13" stroke-linecap="round"/><path d="M60 47 C46 61, 74 71, 60 92" fill="none" stroke="#F3EFE6" stroke-width="13" stroke-linecap="round"/><circle cx="60" cy="92" r="9" fill="#E8B79E"/></svg>', titulo: 'Bem-vindo ao Teravia!', desc: 'A plataforma de gestão clínica calibrada pela sua abordagem terapêutica. Vamos mostrar os principais recursos em 5 passos.' },
+  { icon: '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', titulo: 'Cadastre seus pacientes', desc: 'Em <strong>Pacientes</strong> você cadastra fichas completas — queixa principal, histórico, CID, abordagem individual e muito mais.' },
+  { icon: _tfIcon('cal',44), titulo: 'Organize sua agenda', desc: 'Em <strong>Agenda</strong> você agenda sessões, visualiza a semana e o mês, e bloqueia períodos de folga ou férias.' },
   { icon: '✦', titulo: 'Briefing IA antes de cada sessão', desc: 'O <strong>Briefing IA</strong> analisa o histórico do paciente e gera perguntas e hipóteses calibradas pela sua abordagem — em segundos.' },
-  { icon: '📋', titulo: 'Portal do paciente entre as sessões', desc: 'O <strong>Portal do Paciente</strong> permite exercícios, diário de humor e acompanhamento — tudo sincronizado com seu painel.' }
+  { icon: _tfIcon('clip',44), titulo: 'Portal do paciente entre as sessões', desc: 'O <strong>Portal do Paciente</strong> permite exercícios, diário de humor e acompanhamento — tudo sincronizado com seu painel.' }
 ];
 
 function iniciarTour() {
@@ -31,7 +32,7 @@ function _renderTourStep() {
   var btnNext = document.getElementById('tour-btn-next');
   var btnSkip = document.getElementById('tour-btn-skip');
   if (!cont) return;
-  cont.innerHTML = '<div style="font-size:52px;margin-bottom:12px">' + s.icon + '</div>' +
+  cont.innerHTML = '<div style="font-size:52px;margin-bottom:12px;color:var(--sage)">' + s.icon + '</div>' +
     '<div style="font-family:\'Instrument Serif\',serif;font-size:22px;margin-bottom:8px;color:var(--ink)">' + s.titulo + '</div>' +
     '<div style="font-size:14px;color:var(--ink-soft);line-height:1.7">' + s.desc + '</div>';
   if (dots) dots.innerHTML = _TOUR_STEPS.map(function(_,i){
@@ -270,7 +271,7 @@ function _renderSessionLinkModal(link, nome, real) {
         <button class="btn btn-secondary btn-sm" data-act="copy" style="white-space:nowrap">${_tfIcon('clip')} Copiar</button>
       </div>
       <div style="display:flex;align-items:center;gap:6px;background:#f0f7f3;border:1px solid rgba(74,143,110,.2);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:12px;color:var(--sage)">
-        <span>${real ? '🔒' : '🔗'}</span>
+        <span style="display:inline-flex">${real ? _tfIcon('lock',13) : _tfIcon('link',13)}</span>
         <span>${real ? 'Link válido só durante esta sessão. A paciente entra direto, sem senha.' : 'Ao enviar ou copiar, o link é salvo automaticamente no portal do paciente'}</span>
       </div>
       <div style="display:flex;gap:8px">
@@ -301,7 +302,7 @@ function copySessionLink(link, btn) {
   btn.textContent = '✓ Copiado';
   btn.style.background = 'var(--sage-light)';
   btn.style.color = 'var(--sage)';
-  setTimeout(() => { btn.textContent = '📋 Copiar'; btn.style.background = ''; btn.style.color = ''; }, 2000);
+  setTimeout(() => { btn.innerHTML = _tfIcon('clip') + ' Copiar'; btn.style.background = ''; btn.style.color = ''; }, 2000);
   showToast('🔗 Link salvo no portal do paciente');
 }
 
@@ -757,7 +758,7 @@ function saveProfile() {
   if (heroNome) heroNome.textContent = nome;
   if (heroAvatar) heroAvatar.textContent = initials;
   // Sem "— ativo": o status do CRP nunca é verificado — afirmar era mentira (B4)
-  if (heroCrp) heroCrp.textContent = '🪪 CRP ' + crp;
+  if (heroCrp) heroCrp.textContent = 'CRP ' + crp;
   if (heroEsp) heroEsp.textContent = especialidade;
   if (heroCidade) heroCidade.textContent = cidade;
 

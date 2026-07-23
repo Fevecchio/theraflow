@@ -84,7 +84,7 @@ function initBriefing() {
   if (av) { av.style.background = p.colorGrad || p.color || '#4a7c59'; av.textContent = p.initials || (p.name ? p.name.trim().split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase() : '?'); }
   if (nm) nm.textContent = p.name;
   const sub = document.querySelector('.briefing-hero .hero-sub');
-  if (sub) sub.innerHTML = `<span>📋 ${escHTML(p.abordagem)} — ${p.cid !== '—' ? escHTML(p.cid) : 'em avaliação'}</span><span>🕐 Hoje</span><span>⏱ 50 min</span>`;
+  if (sub) sub.innerHTML = `<span>${_tfIcon('clip',12)} ${escHTML(p.abordagem)} — ${p.cid !== '—' ? escHTML(p.cid) : 'em avaliação'}</span><span>${_tfIcon('clock',12)} Hoje</span><span>⏱ 50 min</span>`;
   const sessNum = document.querySelector('.briefing-hero .session-num');
   if (sessNum) sessNum.textContent = `${(p.sessions || 0) + 1}ª`;
   // V1 (revisão 10/07): chips de "memória clínica" derivados dos dados REAIS
@@ -405,7 +405,7 @@ async function callBriefingAI() {
     const httpCode = parseInt((status.match(/^HTTP_(\d+)/) || [])[1] || '0');
     if (httpCode === 401 || httpCode === 402 || httpCode === 403) {
       const billingLink = httpCode === 402 ? ' · <a href="https://console.anthropic.com/settings/billing" target="_blank" style="color:inherit;text-decoration:underline">Adicionar créditos →</a>' : '';
-      _showBriefingError('💳', (httpCode === 402 ? 'Saldo insuficiente na conta Anthropic.' : 'Chave de API inválida ou não configurada no servidor.') + billingLink);
+      _showBriefingError(_tfIcon('card', 16), (httpCode === 402 ? 'Saldo insuficiente na conta Anthropic.' : 'Chave de API inválida ou não configurada no servidor.') + billingLink);
     } else if (httpCode === 500) {
       _showBriefingError('🔑', 'Erro interno no servidor. Verifique se ANTHROPIC_API_KEY está configurada no Vercel.');
     } else {
@@ -437,11 +437,11 @@ function _showBriefingNote(html) {
 // parseava o texto por conta própria (V4). A ordem de _BRIEFING_DEFS é a ordem
 // de EXIBIÇÃO: perguntas primeiro — é o que a terapeuta usa na sessão.
 var _BRIEFING_DEFS = [
-  { key:'PERGUNTAS SUGERIDAS', type:'question', icon:'💬', label:'Perguntas sugeridas para hoje' },
-  { key:'FOCO RECOMENDADO', type:'priority', icon:'🎯', label:'Foco recomendado para hoje' },
-  { key:'PADRÃO IDENTIFICADO', type:'pattern', icon:'🔁', label:'Padrão identificado' },
-  { key:'EVOLUÇÃO', type:'progress', icon:'📈', label:'Evolução clínica' },
-  { key:'PONTO DE ATENÇÃO', type:'alert', icon:'⚠', label:'Ponto de atenção' },
+  { key:'PERGUNTAS SUGERIDAS', type:'question', icon:_tfIcon('message',14), label:'Perguntas sugeridas para hoje' },
+  { key:'FOCO RECOMENDADO', type:'priority', icon:_tfIcon('target',14), label:'Foco recomendado para hoje' },
+  { key:'PADRÃO IDENTIFICADO', type:'pattern', icon:_tfIcon('refresh',14), label:'Padrão identificado' },
+  { key:'EVOLUÇÃO', type:'progress', icon:_tfIcon('trend',14), label:'Evolução clínica' },
+  { key:'PONTO DE ATENÇÃO', type:'alert', icon:_tfIcon('alert',14), label:'Ponto de atenção' },
 ];
 function _parseBriefingBlocks(text) {
   var found = _BRIEFING_DEFS
@@ -513,18 +513,18 @@ function renderBriefingFallback() {
   document.getElementById('b-content').innerHTML =
     // Perguntas primeiro — mesma ordem de exibição de _BRIEFING_DEFS (V4)
     '<div class="insight-block question fade-in">' +
-      '<div class="insight-type">💬 Perguntas sugeridas para hoje</div>' +
+      '<div class="insight-type">' + _tfIcon('message',13) + ' Perguntas sugeridas para hoje</div>' +
       questoes.map(function(q, i){ return '<button class="question-item" onclick="markQuestion(this)"><span class="q-num">' + (i+1) + '.</span><span>' + q + '</span></button>'; }).join('') +
     '</div>' +
     '<div class="insight-block priority fade-in">' +
-      '<div class="insight-type">🎯 Foco recomendado para hoje</div>' +
+      '<div class="insight-type">' + _tfIcon('target',13) + ' Foco recomendado para hoje</div>' +
       '<div class="insight-text">' +
         (exercStr ? 'Verificar aderência ao(s) exercício(s) ' + exercStr + ' desde a sessão anterior. ' : 'Retomar os objetivos terapêuticos e verificar o progresso desde a última sessão. ') +
         faseStr +
       '</div>' +
     '</div>' +
     '<div class="insight-block pattern fade-in">' +
-      '<div class="insight-type">🔁 Padrão identificado</div>' +
+      '<div class="insight-type">' + _tfIcon('refresh',13) + ' Padrão identificado</div>' +
       '<div class="insight-text">' +
         (temaRecente
           ? 'Temas recentes: "' + temaRecente + (temaRecente.length >= 120 ? '…' : '') + '". Queixa principal: <strong>' + queixa + '</strong>.'

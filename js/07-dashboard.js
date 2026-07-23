@@ -74,11 +74,11 @@ function enviarLembretesSessoesDia() {
   overlay.id = 'modal-wpp-links';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9990;display:flex;align-items:center;justify-content:center';
   overlay.innerHTML = '<div style="background:var(--white);border-radius:16px;padding:24px;max-width:360px;width:90%;max-height:80vh;overflow-y:auto">'
-    + '<h3 style="margin:0 0 4px;font-size:16px;color:#1a2a1a">💬 Lembretes WhatsApp</h3>'
+    + '<h3 style="margin:0 0 4px;font-size:16px;color:#1a2a1a">' + _tfIcon('message', 15) + ' Lembretes WhatsApp</h3>'
     + '<p style="margin:0 0 16px;font-size:13px;color:#666">Clique em cada paciente para abrir o WhatsApp.</p>'
     + links.map(function(l) {
         return '<a href="' + l.url + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--sage-light);border-radius:10px;margin-bottom:8px;text-decoration:none;color:#1a2a1a;font-size:14px;font-weight:600">'
-          + '<span style="font-size:20px">💚</span>' + escHTML(l.nome) + '</a>';
+          + '<span style="color:#1a8a46;display:inline-flex">' + _tfIcon('wpp', 16) + '</span>' + escHTML(l.nome) + '</a>';
       }).join('')
     + (semWpp > 0 ? '<p style="font-size:12px;color:#999;margin:8px 0 0">⚠ ' + semWpp + ' paciente(s) sem WhatsApp omitidos.</p>' : '')
     + '<button onclick="document.getElementById(\'modal-wpp-links\').remove()" style="margin-top:16px;width:100%;padding:11px;background:#f5f5f5;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;color:#555">Fechar</button>'
@@ -125,7 +125,7 @@ function enviarLembretesAmanha() {
     modal = document.createElement('div');
     modal.id = 'modal-lembrete-amanha';
     modal.className = 'modal-overlay';
-    modal.innerHTML = '<div class="modal" style="max-width:420px"><div class="modal-header"><div class="modal-title">💬 Lembretes de amanhã</div><button class="modal-close" onclick="closeModal(\'modal-lembrete-amanha\')">✕</button></div><div class="modal-body" id="lembrete-amanha-body"></div></div>';
+    modal.innerHTML = '<div class="modal" style="max-width:420px"><div class="modal-header"><div class="modal-title">' + _tfIcon('message', 15) + ' Lembretes de amanhã</div><button class="modal-close" onclick="closeModal(\'modal-lembrete-amanha\')">✕</button></div><div class="modal-body" id="lembrete-amanha-body"></div></div>';
     document.body.appendChild(modal);
     modal.addEventListener('click', function(e){ if(e.target===modal) modal.classList.remove('open'); });
   }
@@ -351,14 +351,14 @@ function _renderDashInsights() {
   });
   var temaTop = Object.entries(temas).sort((a,b)=>b[1]-a[1]).slice(0,1);
   if (temaTop.length && temaTop[0][1] >= 2) {
-    insights.push({ icon:'🔁', text: temaTop[0][1]+' pacientes relataram <strong>'+temaTop[0][0]+'</strong> nas notas recentes — tema emergente na carteira.',
+    insights.push({ icon:_tfIcon('refresh',15), text: temaTop[0][1]+' pacientes relataram <strong>'+temaTop[0][0]+'</strong> nas notas recentes — tema emergente na carteira.',
       cta:'Ver na Supervisão', onclick:"navigate('supervisao')" });
   }
 
   // Paciente com boa evolução
   var evolucao = patients.filter(function(p){ return (p.progress||0) >= 70 && p.sessions >= 5; }).slice(0,1);
   if (evolucao.length) {
-    insights.push({ icon:'📈', text: escHTML(evolucao[0].name.split(' ')[0])+' demonstrou <strong>evolução consistente</strong> ('+evolucao[0].progress+'% de progresso em '+evolucao[0].sessions+' sessões).',
+    insights.push({ icon:_tfIcon('trend',15), text: escHTML(evolucao[0].name.split(' ')[0])+' demonstrou <strong>evolução consistente</strong> ('+evolucao[0].progress+'% de progresso em '+evolucao[0].sessions+' sessões).',
       cta:'Abrir paciente', onclick:'_dashInsightAbrirPaciente('+patients.indexOf(evolucao[0])+')' });
   }
 
@@ -369,7 +369,7 @@ function _renderDashInsights() {
     return ult[ult.length-1] <= 4;
   }).slice(0,1);
   if (risco.length) {
-    insights.push({ icon:'⚠', text: escHTML(risco[0].name.split(' ')[0])+' registrou humor <strong>abaixo de 5/10</strong> nas últimas avaliações. Considerar atenção especial na próxima sessão.',
+    insights.push({ icon:_tfIcon('alert',15), text: escHTML(risco[0].name.split(' ')[0])+' registrou humor <strong>abaixo de 5/10</strong> nas últimas avaliações. Considerar atenção especial na próxima sessão.',
       cta:'Abrir paciente', onclick:'_dashInsightAbrirPaciente('+patients.indexOf(risco[0])+')' });
   }
 
@@ -382,7 +382,7 @@ function _renderDashInsights() {
     return !temFuturo;
   }).slice(0,1);
   if (semProxima.length) {
-    insights.push({ icon:'🗓', text: escHTML(semProxima[0].name.split(' ')[0])+' tem '+semProxima[0].sessions+' sessões realizadas mas <strong>sem próxima sessão marcada</strong>. Risco de evasão.',
+    insights.push({ icon:_tfIcon('cal',15), text: escHTML(semProxima[0].name.split(' ')[0])+' tem '+semProxima[0].sessions+' sessões realizadas mas <strong>sem próxima sessão marcada</strong>. Risco de evasão.',
       cta:'Agendar agora', onclick:'_dashInsightAgendar()' });
   }
 
@@ -390,7 +390,7 @@ function _renderDashInsights() {
   var inadimplentes = charges.filter(_chargeVencida);
   if (inadimplentes.length) {
     var totalInad = inadimplentes.reduce(function(s,c){ return s+(parseFloat(c.value)||0); },0);
-    insights.push({ icon:'💸', text: '<strong>'+fmtMoedaInt(totalInad)+' em atraso</strong> — '+inadimplentes.length+' cobrança'+( inadimplentes.length>1?'s':'')+' vencida'+( inadimplentes.length>1?'s':'')+' aguardando ação.',
+    insights.push({ icon:_tfIcon('card',15), text: '<strong>'+fmtMoedaInt(totalInad)+' em atraso</strong> — '+inadimplentes.length+' cobrança'+( inadimplentes.length>1?'s':'')+' vencida'+( inadimplentes.length>1?'s':'')+' aguardando ação.',
       cta:'Ver Financeiro', onclick:"navigate('financeiro')" });
   }
 
@@ -402,7 +402,7 @@ function _renderDashInsights() {
     return media < 0.3 && p.status !== 'Inativa';
   }).slice(0,1);
   if (baixaAdesao.length) {
-    insights.push({ icon:'📋', text: escHTML(baixaAdesao[0].name.split(' ')[0])+' tem <strong>baixa adesão aos exercícios</strong> (menos de 30% concluídos). Vale revisar na próxima sessão.',
+    insights.push({ icon:_tfIcon('clip',15), text: escHTML(baixaAdesao[0].name.split(' ')[0])+' tem <strong>baixa adesão aos exercícios</strong> (menos de 30% concluídos). Vale revisar na próxima sessão.',
       cta:'Abrir paciente', onclick:'_dashInsightAbrirPaciente('+patients.indexOf(baixaAdesao[0])+')' });
   }
 
@@ -416,12 +416,12 @@ function _renderDashInsights() {
     return ultima && ultima.date < iso30;
   }).slice(0,1);
   if (longOut.length) {
-    insights.push({ icon:'⏳', text: escHTML(longOut[0].name.split(' ')[0]+' está há mais de 30 dias sem sessão. Considere um contato de acompanhamento.'),
+    insights.push({ icon:_tfIcon('clock',15), text: escHTML(longOut[0].name.split(' ')[0]+' está há mais de 30 dias sem sessão. Considere um contato de acompanhamento.'),
       cta:'Agendar agora', onclick:'_dashInsightAgendar()' });
   }
 
   if (!insights.length) {
-    insights.push({ icon:'✅', text: '<strong>Carteira saudável!</strong> Nenhum alerta clínico identificado esta semana.' });
+    insights.push({ icon:_tfIcon('checkCircle',15), text: '<strong>Carteira saudável!</strong> Nenhum alerta clínico identificado esta semana.' });
   }
 
   cont.innerHTML = insights.map(function(ins){

@@ -8,10 +8,10 @@ var _captacaoEditId = null;
 // inicial acontece e o próximo passo já é proposta ou perda; a coluna extra só
 // dava trabalho de arrastar.
 var CAPTACAO_COLS = [
-  { label: 'Novo contato',      icon: '📥', color: '#8a9490' },
-  { label: 'Conversa inicial',  icon: '💬', color: '#4a7c59' },
-  { label: 'Proposta enviada',  icon: '📋', color: '#c97d2e' },
-  { label: 'Em espera de vaga', icon: '⏳', color: '#6b7c8a' },
+  { label: 'Novo contato',      icon: _tfIcon('csv',13),     color: '#8a9490' },
+  { label: 'Conversa inicial',  icon: _tfIcon('message',13), color: '#4a7c59' },
+  { label: 'Proposta enviada',  icon: _tfIcon('send',13),    color: '#c97d2e' },
+  { label: 'Em espera de vaga', icon: _tfIcon('clock',13),   color: '#6b7c8a' },
   { label: 'Perdido',           icon: '✗',  color: '#c0392b' },
 ];
 var CAPTACAO_PERDIDO = CAPTACAO_COLS.length - 1;
@@ -96,7 +96,7 @@ function renderKanban() {
   // deserto sem próxima ação (V4).
   if (visiveis.length === 0) {
     board.innerHTML = '<div style="flex:1;padding:56px 24px;text-align:center;color:var(--muted)">'
-      + '<div style="font-size:40px;margin-bottom:12px">📥</div>'
+      + '<div style="margin-bottom:12px;color:var(--muted)">' + _tfIcon('csv', 32) + '</div>'
       + '<div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Seu pipeline está vazio</div>'
       + '<div style="font-size:13px;margin-bottom:20px;max-width:380px;margin-left:auto;margin-right:auto">Registre aqui cada pessoa que entra em contato — da primeira mensagem até virar paciente. Nada de perder lead no WhatsApp.</div>'
       + '<button class="btn btn-primary" onclick="abrirModalLead()">+ Registrar primeiro contato</button>'
@@ -226,7 +226,7 @@ function _renderCard(lead, colIdx) {
   if (colIdx < CAPTACAO_COLS.length - 1)
     html += '<button class="kanban-btn" title="Avançar etapa" onclick="event.stopPropagation();moverLead(\'' + lead.id + '\',1)">→</button>';
   if (wppHref)
-    html += '<a href="' + wppHref + '" target="_blank" class="kanban-btn" title="WhatsApp — abre com mensagem pronta para esta etapa (você revisa antes de enviar)" onclick="event.stopPropagation()" style="text-decoration:none">💬</a>';
+    html += '<a href="' + wppHref + '" target="_blank" class="kanban-btn" title="WhatsApp — abre com mensagem pronta para esta etapa (você revisa antes de enviar)" onclick="event.stopPropagation()" style="text-decoration:none">' + _tfIcon('wpp',13) + '</a>';
   html += '<button class="kanban-btn" title="Editar" onclick="event.stopPropagation();editarLead(\'' + lead.id + '\')">✎</button>';
   if (!isPerdido)
     html += '<button class="kanban-btn kanban-btn-convert" title="Converter para paciente" onclick="event.stopPropagation();converterParaPaciente(\'' + lead.id + '\')">✓ Paciente</button>';
@@ -354,7 +354,7 @@ function abrirLinkCaptacao() {
       + '<div style="font-size:11.5px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2);line-height:1.5">Quando alguém chamar, registre aqui com <strong>+ Novo lead</strong> (origem: Instagram/anúncio) — assim nenhum contato se perde no WhatsApp.</div>';
   }
   modal.innerHTML = '<div class="modal" style="max-width:480px">'
-    + '<div class="modal-header"><div class="modal-title">🔗 Link para bio e campanhas</div>'
+    + '<div class="modal-header"><div class="modal-title">' + _tfIcon('link',15) + ' Link para bio e campanhas</div>'
     + '<button class="modal-close" onclick="closeModal(\'modal-link-captacao\')">✕</button></div>'
     + '<div class="modal-body">' + corpo + '</div></div>';
   document.body.appendChild(modal);

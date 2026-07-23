@@ -175,7 +175,7 @@ function _lkCheckDraftOnBoot() {
   var bar = document.createElement('div');
   bar.id = 'lk-draft-recover';
   bar.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9997;background:#1a2a1e;color:#fff;border-radius:12px;padding:14px 18px;box-shadow:0 8px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:14px;max-width:92vw;font-size:13px';
-  bar.innerHTML = '<span>📝 Há ' + (_soNotas ? 'anotações de sessão não salvas' : 'uma nota de sessão não salva')
+  bar.innerHTML = '<span>' + _tfIcon('doc', 12) + ' Há ' + (_soNotas ? 'anotações de sessão não salvas' : 'uma nota de sessão não salva')
     + (draft.patientName ? ' de <strong>' + (typeof escHTML==='function'?escHTML(draft.patientName):draft.patientName) + '</strong>' : '')
     + (quando ? ' (' + quando + ')' : '') + '.</span>'
     + '<button id="lk-draft-open" style="background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Recuperar</button>'
@@ -241,7 +241,7 @@ function _lkStartMeter(sourceNode) {
       bar = document.createElement('div');
       bar.id = 'lk-mic-meter';
       bar.style.cssText = 'position:absolute;bottom:14px;left:14px;z-index:4;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.55);border-radius:20px;padding:6px 12px;font-size:12px;color:#fff';
-      bar.innerHTML = '🎤 <div style="width:90px;height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden"><div id="lk-mic-fill" style="width:0%;height:100%;background:#4ade80;transition:width .06s"></div></div><span id="lk-mic-label" style="opacity:.85">captando…</span>';
+      bar.innerHTML = _tfIcon('mic', 12) + ' <div style="width:90px;height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden"><div id="lk-mic-fill" style="width:0%;height:100%;background:#4ade80;transition:width .06s"></div></div><span id="lk-mic-label" style="opacity:.85">captando…</span>';
       wrap.appendChild(bar);
     }
     const buf = new Float32Array(_lkAnalyser.fftSize);
@@ -623,7 +623,7 @@ function _lkShowWaitingRemote() {
   const d = document.createElement('div');
   d.id = 'lk-wait-remote';
   d.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#7a8a7d;z-index:1;text-align:center;padding:24px';
-  d.innerHTML = '<div style="font-size:34px">⏳</div><div style="font-size:14px">Aguardando a paciente entrar…</div><div style="font-size:12px;opacity:.75">O convite já está no portal dela — ou envie o link pelo 🔗 abaixo.</div><div style="font-size:12px;opacity:.75;display:flex;align-items:center;gap:5px">🔒 A gravação e a transcrição só começam quando ela entrar.</div>';
+  d.innerHTML = '<div style="display:flex;opacity:.9">' + _tfIcon('clock', 30) + '</div><div style="font-size:14px">Aguardando a paciente entrar…</div><div style="font-size:12px;opacity:.75">O convite já está no portal dela — ou envie pelo botão de link abaixo.</div><div style="font-size:12px;opacity:.75;display:flex;align-items:center;gap:5px">' + _tfIcon('lock', 11) + ' A gravação e a transcrição só começam quando ela entrar.</div>';
   main.appendChild(d);
 }
 
@@ -736,7 +736,7 @@ function _lkShowProcessing() {
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px">
         <span id="lk-proc-elapsed" style="font-size:12px;color:#888">⏱ 0s</span>
-        <span style="font-size:11px;color:#999">🔒 áudio processado e descartado</span>
+        <span style="font-size:11px;color:#999">${_tfIcon('lock', 10)} áudio processado e descartado</span>
       </div>
       <!-- Escape (bug 22/07): se travar (rede ruim), depois de 45s aparece um botão
            de saída — nunca mais alguém fica preso sem poder tentar de novo. -->
@@ -996,7 +996,7 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;color:#9a3412;font-size:13px;line-height:1.55">
       <strong>⚠ Nenhuma fala foi captada nesta gravação.</strong><br/>
       O áudio saiu em silêncio, então <strong>não geramos nota</strong> (para não inventar conteúdo).
-      Verifique se o microfone certo está ativo e sem mudo — durante a sessão, a barrinha 🎤 deve se mexer quando você fala.
+      Verifique se o microfone certo está ativo e sem mudo — durante a sessão, a barrinha do microfone deve se mexer quando você fala.
     </div>`;
 
   const tooLongBlock = `
@@ -1034,7 +1034,7 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
   // notasTerapeuta e funde as duas fontes — não é mais "a IA sobrescreve").
   const manualBlock = notasManuais ? `
     <div style="margin-bottom:14px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:10px 14px">
-      <div style="font-size:11px;font-weight:700;color:#b45309;margin-bottom:4px">📝 Suas anotações durante a sessão</div>
+      <div style="font-size:11px;font-weight:700;color:#b45309;margin-bottom:4px">${_tfIcon('doc', 11)} Suas anotações durante a sessão</div>
       <div style="font-size:12.5px;color:#6b4a12;white-space:pre-wrap;line-height:1.5">${esc(notasManuais)}</div>
     </div>` : '';
 
@@ -1051,7 +1051,8 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
     </div>`;
 
   const bodyHTML = isContent ? contentBlock : tooLong ? tooLongBlock : retry ? retryBlock : emptyBlock;
-  const icon = isContent ? '✅' : retry ? '⚠️' : tooLong ? '⏱️' : (noPatient ? '🔒' : '⚠️');
+  const icon = '<span style="display:inline-flex;color:' + (isContent ? '#4a7c59' : '#b8762a') + '">'
+    + _tfIcon(isContent ? 'checkCircle' : retry ? 'alert' : tooLong ? 'clock' : (noPatient ? 'lock' : 'alert'), 20) + '</span>';
   const subtitle = isContent ? 'Transcrição e nota geradas a partir da conversa'
     : retry ? 'A gravação está guardada — dá para tentar de novo'
     : tooLong ? 'Sessão longa demais para a transcrição automática'
@@ -1153,7 +1154,7 @@ function _lkAbrirRevisaoJornada(apptId) {
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
     m.innerHTML = '<div style="background:var(--white);border-radius:16px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">'
       + '<div style="padding:18px 22px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">'
-      + '<div style="width:38px;height:38px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;font-size:18px">📅</div>'
+      + '<div style="width:38px;height:38px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;color:var(--purple)">' + _tfIcon('cal', 18) + '</div>'
       + '<div><div style="font-weight:600;font-size:15px;color:#1a1a1a">Resumo da jornada · para ' + escHTML(primeiro) + '</div>'
       + '<div style="font-size:12px;color:#888;margin-top:2px">Última etapa da sessão — só chega ao portal depois que você publicar</div></div></div>'
       + '<div style="padding:18px 22px">'
@@ -1222,9 +1223,9 @@ async function _lkAbrirDispositivos() {
   try { devs = await navigator.mediaDevices.enumerateDevices(); } catch (_) {}
   const esc = (s) => (typeof escHTML === 'function' ? escHTML(String(s || '')) : String(s || '').replace(/[<>&"]/g, ''));
   const kinds = [
-    { kind: 'audioinput', label: '🎤 Microfone' },
-    { kind: 'videoinput', label: '📷 Câmera' },
-    { kind: 'audiooutput', label: '🔊 Saída de som' },
+    { kind: 'audioinput', label: 'Microfone', icon: _tfIcon('mic', 11) },
+    { kind: 'videoinput', label: 'Câmera', icon: _tfIcon('cam', 11) },
+    { kind: 'audiooutput', label: 'Saída de som', icon: _tfIcon('vol', 11) },
   ];
   const wrap = document.createElement('div');
   wrap.id = 'lk-dev-modal';
@@ -1235,17 +1236,17 @@ async function _lkAbrirDispositivos() {
     if (!list.length) return '';
     let active = null;
     try { active = _lkRoom ? _lkRoom.getActiveDevice(k.kind) : null; } catch (_) {}
-    return '<label style="display:block;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px;margin:12px 0 5px">' + k.label + '</label>'
+    return '<label style="display:block;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px;margin:12px 0 5px">' + k.icon + ' ' + k.label + '</label>'
       + '<select onchange="_lkTrocarDispositivo(\'' + k.kind + '\', this.value)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #d1e7d9;border-radius:10px;font-size:13px;font-family:inherit;background:var(--white);outline:none">'
       + list.map(function (d, i) {
           return '<option value="' + esc(d.deviceId) + '"' + (active && active === d.deviceId ? ' selected' : '') + '>'
-            + esc(d.label || (k.label.replace(/^\S+\s/, '') + ' ' + (i + 1))) + '</option>';
+            + esc(d.label || (k.label + ' ' + (i + 1))) + '</option>';
         }).join('')
       + '</select>';
   }).join('');
   wrap.innerHTML = '<div style="background:var(--white);border-radius:16px;width:100%;max-width:400px;box-shadow:0 24px 80px rgba(0,0,0,.3);padding:22px 24px">'
     + '<div style="font-weight:600;font-size:15px;color:#1a1a1a">Dispositivos de áudio e vídeo</div>'
-    + '<div style="font-size:12px;color:#888;margin-top:2px">A troca vale na hora — a sessão não cai. Fale e confira a barrinha 🎤.</div>'
+    + '<div style="font-size:12px;color:#888;margin-top:2px">A troca vale na hora — a sessão não cai. Fale e confira a barrinha do microfone.</div>'
     + rows
     + (!_lkRoom ? '<div style="margin-top:12px;background:#fff8e6;border:1px solid #f0d060;border-radius:10px;padding:9px 12px;color:#8a5a1a;font-size:12px;line-height:1.5">A sessão ainda não começou — a troca é aplicada quando a sala estiver aberta.</div>' : '')
     + '<button onclick="document.getElementById(\'lk-dev-modal\').remove()" style="margin-top:16px;width:100%;padding:11px;background:#4a7c59;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Fechar</button>'

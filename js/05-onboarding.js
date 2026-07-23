@@ -207,15 +207,17 @@ function validateScreen2() {
 }
 
 /* ── SELEÇÃO DE ABORDAGEM ── */
+/* Ícones SVG de traço (redesign 23/07): herdam a cor do texto do chip. */
+const _abSvg = (paths) => '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px">' + paths + '</svg>';
 const ABORDAGENS_LIST = [
-  { val: 'TCC',        icon: '🧩' },
-  { val: 'Psicanálise',icon: '🛋️' },
-  { val: 'Junguiana',  icon: '🌙' },
-  { val: 'Gestalt',    icon: '🌀' },
-  { val: 'Humanista',  icon: '🌱' },
-  { val: 'Sistêmica',  icon: '🔗' },
-  { val: 'ACT',        icon: '🎯' },
-  { val: 'EMDR',       icon: '👁️' },
+  { val: 'TCC',        icon: _abSvg('<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><path d="M9 12l2 2 4-4"/>') },
+  { val: 'Psicanálise',icon: _abSvg('<path d="M5 11V9a2 2 0 012-2h10a2 2 0 012 2v2"/><rect x="2" y="11" width="20" height="6" rx="2"/><path d="M5 17v2M19 17v2"/>') },
+  { val: 'Junguiana',  icon: _abSvg('<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>') },
+  { val: 'Gestalt',    icon: _abSvg('<circle cx="12" cy="12" r="10"/><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"/>') },
+  { val: 'Humanista',  icon: _abSvg('<path d="M7 20h10"/><path d="M12 20c0-4 0-7 3-10"/><path d="M12 13c0-3-2-5-6-5 0 4 2 5 6 5zM15 10c0-3 1.5-4.5 5-4.5 0 3.5-1.5 4.5-5 4.5z"/>') },
+  { val: 'Sistêmica',  icon: _abSvg('<path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>') },
+  { val: 'ACT',        icon: _abSvg('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>') },
+  { val: 'EMDR',       icon: _abSvg('<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>') },
 ];
 
 let secundarias = []; // array de strings

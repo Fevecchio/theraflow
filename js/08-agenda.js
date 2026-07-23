@@ -131,7 +131,7 @@ function _promptNotaRapida(appt) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding-bottom:0';
   overlay.innerHTML = '<div style="background:var(--white);border-radius:16px 16px 0 0;width:100%;max-width:560px;padding:20px 24px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.18)">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
-      + '<div style="font-size:14px;font-weight:700;color:var(--ink)">📋 Nota rápida — ' + escHTML(_firstName(p.name)) + '</div>'
+      + '<div style="font-size:14px;font-weight:700;color:var(--ink)">' + _tfIcon('clip', 13) + ' Nota rápida — ' + escHTML(_firstName(p.name)) + '</div>'
       + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>'
     + '</div>'
     + '<textarea id="nota-rapida-text" placeholder="Registre brevemente o que ocorreu na sessão de hoje…" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--sage);border-radius:10px;font-size:13.5px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;line-height:1.6;color:var(--ink)"></textarea>'
@@ -1124,7 +1124,7 @@ function renderBloqueiosList() {
   el.innerHTML = bloqueios.map(function(b) {
     var passado = b.fim < hoje;
     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:' + (passado ? 'var(--bg)' : 'var(--amber-light)') + ';opacity:' + (passado ? '.6' : '1') + '">' +
-      '<div style="font-size:20px">' + (b.motivo==='ferias'?'🏖':b.motivo==='feriado'?'🎉':b.motivo==='congresso'?'📚':'🚫') + '</div>' +
+      '<div style="display:flex;color:var(--muted)">' + _tfIcon(b.motivo==='ferias'?'sun':b.motivo==='feriado'?'cal':b.motivo==='congresso'?'book':'ban', 18) + '</div>' +
       '<div style="flex:1">' +
         '<div style="font-weight:500;font-size:13.5px">' + (motivoLabel[b.motivo]||'Bloqueio') + (b.obs ? ' — ' + escHTML(b.obs) : '') + '</div>' +
         '<div style="font-size:12px;color:var(--muted)">' + formatarDataBR(b.inicio) + (b.fim !== b.inicio ? ' → ' + formatarDataBR(b.fim) : '') + '</div>' +
