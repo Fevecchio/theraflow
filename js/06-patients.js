@@ -1749,6 +1749,17 @@ function selectPatient(i, el) {
   renderPatientDetailShell(i);
   selectPatientTab(currentPatientTab);
 
+  // No MOBILE a lista e o detalhe ficam EMPILHADOS (detalhe abaixo de toda a
+  // lista): clicar num paciente do meio abria o painel "lá embaixo" e parecia que
+  // abriu no card errado (feedback 22/07). Rola até o topo do detalhe pra ele
+  // aparecer na hora. No desktop (lado a lado) não faz nada.
+  try {
+    if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+      var _det = document.getElementById('patient-detail');
+      if (_det) setTimeout(function () { _det.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+    }
+  } catch (_) {}
+
   // Chat removido (Lote 2 P3): carrega o histórico UMA vez (read-only) — sem poll,
   // já que a paciente não envia mais pelo app.
   (function() {
