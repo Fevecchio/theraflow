@@ -1211,6 +1211,18 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   /* Barra de abas do Financeiro: rola horizontalmente em vez de estourar. */
   .fin-tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .fin-tab { flex-shrink: 0; white-space: nowrap; }
+  /* Linha de cobrança (feedback 22/07): a tabela de 6 colunas não cabe no celular
+     e a coluna de AÇÕES (botão "Pago") ficava cortada, sem scroll pra alcançar.
+     Empilha em card: nome na 1ª linha, dados fluindo no meio, botões (WhatsApp/
+     Pago) na última linha em largura total, sempre acessíveis. */
+  .charge-row-header { display: none; } /* header de tabela não faz sentido empilhado */
+  /* !important: a regra base .charge-row (display:grid) vem DEPOIS no arquivo e,
+     com a mesma especificidade, venceria — força o empilhamento no mobile. */
+  .charge-row {
+    display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 14px 16px;
+  }
+  .charge-row > .patient-info { flex-basis: 100%; }
+  .charge-row > .charge-actions { flex-basis: 100%; justify-content: flex-end; margin-top: 4px; flex-wrap: wrap; }
   /* Supervisão: hero, dashboard e cards encolhem com a tela.
      min-width:auto (padrão de itens flex/grid) impede encolher abaixo do
      min-content e estoura a viewport — forçar 0 nos cards e itens do grid. */
