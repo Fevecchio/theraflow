@@ -134,7 +134,12 @@ export default async function handler(req, res) {
   // de produção NÃO muda sem o A/B aprovar (whitelist fechada, nada de modelo livre).
   const useTurbo = /[?&]model=turbo\b/.test(req.url || '');
   const whisperModel = useTurbo ? 'whisper-large-v3-turbo' : 'whisper-large-v3';
-  const PROMPT_PT = 'Transcrição de uma sessão de psicoterapia em português do Brasil, conversa entre psicóloga e paciente.';
+  // Prompt de vocabulário (não uma FRASE): com áudio curto/silencioso o Whisper
+  // ECOAVA a frase inteira do prompt na transcrição (bug 22/07 — "conversa entre
+  // psicóloga e paciente" saía como fala). Termos soltos dão o mesmo contexto de
+  // vocabulário sem uma frase para o modelo "continuar". O cliente ainda filtra
+  // qualquer eco residual (_ehEcoPrompt em js/21).
+  const PROMPT_PT = 'Contexto: psicoterapia, português do Brasil. Termos: sessão, terapeuta, paciente, ansiedade, humor, feriado.';
   const responseFormat = wantSegments ? 'verbose_json' : 'text';
 
   function buildForm(model) {

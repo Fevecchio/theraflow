@@ -660,6 +660,17 @@ function _pareceAlucinado(text) {
   return (naoLatinas / letras.length) > 0.15;
 }
 
+// Eco do prompt (bug 22/07): com áudio ruim o Whisper repete o prompt de contexto
+// como se fosse fala. Remove trechos que contêm as frases características dele
+// (antigas e novas) — nenhuma sessão real diz "conversa entre psicóloga e paciente".
+function _ehEcoPrompt(text) {
+  var l = (text || '').toLowerCase();
+  return /psicoterapia,?\s*portugu[êe]s do brasil/.test(l)
+      || /psicoterapia em portugu[êe]s do brasil/.test(l)
+      || /conversa entre psic[óo]loga e paciente/.test(l)
+      || /^\s*(contexto|termos)\s*:/.test(l);
+}
+
 function _lkMergeSegments(therResults, therSegs, pacResults, pacSegs) {
   const rows = [];
   const push = (results, segs, who) => {
@@ -674,6 +685,7 @@ function _lkMergeSegments(therResults, therSegs, pacResults, pacSegs) {
         if (typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85) return; // anti-alucinação em silêncio
         if (typeof s.avg_logprob === 'number' && s.avg_logprob < -1.0) return; // anti-alucinação: baixa confiança do modelo
         if (_pareceAlucinado(t)) return; // anti-alucinação: script fora do português forçado
+        if (_ehEcoPrompt(t)) return; // anti-alucinação: eco do prompt de contexto
         rows.push({ at: off + (s.start || 0), who, t });
       });
     });
@@ -1166,8 +1178,10 @@ function _lkPublicarJornada(apptId) {
 
 // Montagem de vídeo — dentro do card da sessão (.video-main), SEM quebrar o layout:
 // elementos ABSOLUTOS (fora do fluxo — antes o vídeo em retrato do celular da paciente
-// estourava o card e desalinhava a página inteira) + object-fit:contain (mostra o rosto
-// inteiro com barras laterais, sem cortar).
+// estourava o card e desalinhava a página inteira). object-fit:cover (feedback 22/07:
+// com 'contain' o vídeo vertical do celular dela ficava numa faixa estreita com barras
+// pretas — parecia "tela pequena"; cover preenche a área, como Zoom/WhatsApp, mostrando
+// a pessoa grande — o padrão de videochamada).
 function _lkMountRemoteVideo(el) {
   const main = document.querySelector('#page-sessao .video-main') || document.querySelector('.video-main');
   if (!main) return;
@@ -1175,7 +1189,7 @@ function _lkMountRemoteVideo(el) {
   const wait = document.getElementById('lk-wait-remote'); if (wait) wait.remove();
   document.querySelectorAll('[data-lk-remote-video]').forEach((v) => v.remove()); // troca de track → sem duplicar
   el.setAttribute('data-lk-remote-video', '1');
-  el.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#0a0f0b;z-index:1';
+  el.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0a0f0b;z-index:1';
   main.appendChild(el);
 }
 function _lkMountLocalVideo(el) {

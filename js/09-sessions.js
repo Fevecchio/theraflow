@@ -158,10 +158,12 @@ function trocarPacienteSessao(newIdx) {
   var sfA = document.getElementById('sf-abordagem'); if (sfA) sfA.textContent = sp.abordagem || '—';
   var sfS = document.getElementById('sf-sessao');    if (sfS) sfS.textContent = 'Sessão ' + ((sp.sessions||0)+1);
   var sfC = document.getElementById('sf-cid');       if (sfC) sfC.textContent = sp.cid || '—';
-  // Gera novo template de nota para o paciente trocado (TEXTO puro — despejar
-  // o HTML de _gerarNotaEstrutural aqui mostrava código cru no textarea, 14/07)
+  // Campo de notas VAZIO ao trocar de paciente (feedback 22/07: o template
+  // pré-preenchido aparecia "em alguns pacientes" — era este caminho, o da troca
+  // de paciente no seletor; o da inicialização já foi zerado). A IA estrutura em
+  // SOAP ao encerrar; o placeholder do HTML orienta.
   var noteEl = document.getElementById('session-ai-note');
-  if (noteEl) noteEl.value = _notaTemplateTexto(sp);
+  if (noteEl) noteEl.value = '';
   // Repopula painel direito (histórico, contexto, perguntas)
   _renderSessionContext(sp);
   // Sincroniza índice do briefing

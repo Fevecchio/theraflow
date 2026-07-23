@@ -136,9 +136,30 @@ function incrementarSessaoTrial() {
     atualizarTrialUI(acc.sessoes_usadas);
     if (acc.sessoes_usadas >= 20 && !_tfTrialDismissed) {
       tfTrack('trial_esgotado_visto', { contexto: 'incremento_sessao' });
-      setTimeout(() => showModal('modal-trial-esgotado'), 600);
+      _agendarPaywallPosFluxo();
     }
   } catch(e) { console.warn('[TF] Erro ao incrementar sessão trial:', e.message); }
+}
+
+// Paywall de trial esgotado ao ENCERRAR a 20ª sessão: só aparece DEPOIS de todo o
+// fluxo pós-sessão (nota → exercícios → jornada), nunca no meio (feedback 22/07: a
+// aba de assinatura cortava o fluxo antes de publicar a jornada). Espera ~2s pro
+// fluxo começar, depois só dispara quando TODOS os modais dele fecharem.
+function _agendarPaywallPosFluxo() {
+  setTimeout(function () {
+    var tent = 0;
+    var iv = setInterval(function () {
+      var ocupado = document.querySelector('.modal-overlay.open')
+        || document.getElementById('lk-post-modal')
+        || document.getElementById('modal-exercise-pos')
+        || document.getElementById('lk-jornada-modal')
+        || (typeof _pendingResumoApptId !== 'undefined' && _pendingResumoApptId); // jornada ainda vai abrir
+      if (ocupado && ++tent < 300) return; // espera até ~5min; depois desiste (não interrompe fluxo travado)
+      clearInterval(iv);
+      if (ocupado) return;
+      if (!_tfTrialDismissed) showModal('modal-trial-esgotado');
+    }, 1000);
+  }, 2000);
 }
 
 function atualizarTrialUI(count) {
