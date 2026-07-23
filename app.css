@@ -602,7 +602,9 @@ tr:last-child td { border-bottom: none; }
 /* ── PATIENT DETAIL TABS ── */
 .patient-tab-bar { display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); flex-shrink: 0; margin: 4px -20px 0; padding: 0 20px; }
 .patient-tab-bar::-webkit-scrollbar { display: none; }
-.ptab { padding: 8px 14px; font-size: 12.5px; font-weight: 500; color: var(--muted); cursor: pointer; border: none; background: transparent; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
+/* Respiro (Eixo 3, 23/07): abas do painel de 7 abas eram apertadas (8px) —
+   um pouco mais de altura melhora leitura E alvo de clique/toque. */
+.ptab { padding: 11px 15px; font-size: 12.5px; font-weight: 500; color: var(--muted); cursor: pointer; border: none; background: transparent; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
 .ptab:hover { color: var(--ink); }
 .ptab.active { color: var(--sage); border-bottom-color: var(--sage); font-weight: 600; }
 .ptab-content { flex: 1; overflow-y: auto; }
@@ -1670,7 +1672,7 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 
 .charge-row {
   display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr 1.4fr;
-  align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line-2);
+  align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line-2);
   font-size: 13.5px; transition: background .1s;
 }
 .charge-row:hover { background: var(--bg); }
@@ -1738,9 +1740,9 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 .fin-escalation-dot.sent { background: var(--amber); }
 .fin-escalation-dot.alert { background: var(--red); }
 
-.fin-tab-bar { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.fin-tab-bar { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
 .fin-tab {
-  padding: 10px 18px; font-size: 13.5px; font-weight: 500;
+  padding: 12px 18px; font-size: 13.5px; font-weight: 500;
   color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
   margin-bottom: -1px; transition: all .15s; border: none; background: none;
   font-family: inherit;

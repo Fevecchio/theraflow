@@ -671,8 +671,15 @@ function _ehEcoPrompt(text) {
       || /^\s*(contexto|termos)\s*:/.test(l);
 }
 
+// Descartes do filtro anti-alucinação da ÚLTIMA fusão: o modal pós-sessão mostra
+// o que caiu fora (e por quê), para o profissional conferir se era ruído mesmo —
+// sem isso o filtro descartava em silêncio e nunca saberíamos se comeu fala real.
+var _lkUltimosDescartes = [];
+
 function _lkMergeSegments(therResults, therSegs, pacResults, pacSegs) {
   const rows = [];
+  _lkUltimosDescartes = [];
+  const drop = (who, motivo, t) => { if (_lkUltimosDescartes.length < 20) _lkUltimosDescartes.push({ who, motivo, t }); };
   const push = (results, segs, who) => {
     (results || []).forEach((r, i) => {
       if (!r) return; // segmento tolerado que falhou (faixa da paciente)
@@ -682,10 +689,10 @@ function _lkMergeSegments(therResults, therSegs, pacResults, pacSegs) {
       segList.forEach((s) => {
         const t = (s.text || '').trim();
         if (!t) return;
-        if (typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85) return; // anti-alucinação em silêncio
-        if (typeof s.avg_logprob === 'number' && s.avg_logprob < -1.0) return; // anti-alucinação: baixa confiança do modelo
-        if (_pareceAlucinado(t)) return; // anti-alucinação: script fora do português forçado
-        if (_ehEcoPrompt(t)) return; // anti-alucinação: eco do prompt de contexto
+        if (typeof s.no_speech_prob === 'number' && s.no_speech_prob > 0.85) return drop(who, 'silêncio provável', t); // anti-alucinação em silêncio
+        if (typeof s.avg_logprob === 'number' && s.avg_logprob < -1.0) return drop(who, 'baixa confiança do modelo', t); // anti-alucinação
+        if (_pareceAlucinado(t)) return drop(who, 'texto fora do português', t); // anti-alucinação: script estranho
+        if (_ehEcoPrompt(t)) return; // eco do prompt de contexto — nunca é fala real, não listar
         rows.push({ at: off + (s.start || 0), who, t });
       });
     });
@@ -1038,11 +1045,25 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
       <div style="font-size:12.5px;color:#6b4a12;white-space:pre-wrap;line-height:1.5">${esc(notasManuais)}</div>
     </div>` : '';
 
+  // Transparência do filtro anti-alucinação: se trechos foram descartados, o
+  // profissional vê O QUE caiu e o motivo — se reconhecer fala legítima ali,
+  // pode copiá-la para a nota (e é o sinal de que o filtro precisa de ajuste).
+  const _descartes = (typeof _lkUltimosDescartes !== 'undefined' && _lkUltimosDescartes.length) ? _lkUltimosDescartes : [];
+  const descartesBlock = _descartes.length ? `
+    <details style="margin-bottom:14px;background:#fffbeb;border:1px solid #f0d060;border-radius:10px;padding:8px 12px">
+      <summary style="cursor:pointer;font-size:12px;color:#8a5a1a;font-weight:600">${_descartes.length === 1 ? '1 trecho de áudio foi descartado' : _descartes.length + ' trechos de áudio foram descartados'} por suspeita de ruído — confira se era ruído mesmo</summary>
+      <div style="margin-top:8px;font-size:12px;color:#6b4a12;line-height:1.6;max-height:120px;overflow-y:auto">
+        ${_descartes.map(d => `<div style="padding:3px 0;border-bottom:1px dashed rgba(138,90,26,.2)"><span style="opacity:.7">[${esc(d.who)} · ${esc(d.motivo)}]</span> ${esc(d.t)}</div>`).join('')}
+      </div>
+      <div style="margin-top:6px;font-size:11px;color:#8a5a1a;opacity:.8">Se algum trecho for fala de verdade, copie para a nota abaixo — e avise o suporte para calibrarmos o filtro.</div>
+    </details>` : '';
+
   const contentBlock = `
     <div style="margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Transcrição da sessão (real)</div>
       <div style="background:#f8faf8;border:1px solid #e6efe9;border-radius:10px;padding:12px 14px;font-size:13px;color:#333;line-height:1.6;max-height:180px;overflow-y:auto;white-space:pre-wrap">${esc(transcript)}</div>
     </div>
+    ${descartesBlock}
     ${manualBlock}
     <div>
       <div style="font-size:11px;font-weight:700;color:#4a7c59;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Nota clínica — rascunho gerado pela IA</div>
