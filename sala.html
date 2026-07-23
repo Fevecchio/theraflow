@@ -283,6 +283,7 @@
 
     _logConsentSala(token);
     _showScreen('call-screen');
+    _ajustarBotaoDesfoque(); // esconde o desfoque em aparelhos que não aguentam
     try {
       // Qualidade: 540p (mesma config da terapeuta) — 720p forçado travava em rede residencial/celular.
       var roomOpts = { adaptiveStream: true, dynacast: true };
@@ -401,8 +402,38 @@
     }
     return _procsPromise;
   }
+  // Decide se o aparelho aguenta o desfoque em tempo real (feedback 22/07: travava
+  // no celular dos dois lados). iPhone/iPad: NÃO — é limitação do Safari p/ vídeo ao
+  // vivo, independe da potência (o iPhone 14 travava). Android: só se for capaz
+  // (>=6 núcleos e >=4GB RAM). Desktop: sempre.
+  function _podeDesfoque() {
+    var ua = navigator.userAgent || '';
+    var isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (isIOS) return { ok: false, motivo: 'ios' };
+    var isMobile = /Android|Mobile/i.test(ua) || (navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 820);
+    if (isMobile) {
+      var cores = navigator.hardwareConcurrency || 0;
+      var ram = navigator.deviceMemory; // undefined em alguns navegadores
+      if (cores >= 6 && (ram === undefined || ram >= 4)) return { ok: true };
+      return { ok: false, motivo: 'fraco' };
+    }
+    return { ok: true };
+  }
+  // Esconde o botão de desfoque quando o aparelho não aguenta (chamado ao entrar).
+  function _ajustarBotaoDesfoque() {
+    var b = document.getElementById('btn-blur');
+    if (b && !_podeDesfoque().ok) b.style.display = 'none';
+  }
+
   async function toggleBlur() {
     if (!_room) return;
+    var _cap = _podeDesfoque();
+    if (!_cap.ok) {
+      _salaToast(_cap.motivo === 'ios'
+        ? 'O desfoque de fundo não está disponível no iPhone (limitação do navegador para vídeo ao vivo). Funciona no computador.'
+        : 'Seu celular pode não aguentar o desfoque em tempo real sem travar. Ele funciona melhor no computador.');
+      return;
+    }
     var pub = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
     if (!pub || !pub.track) { _salaToast('Ligue a câmera para desfocar o fundo.'); return; }
     try {
@@ -574,16 +605,28 @@
 
   // ── DISPOSITIVOS (feedback 13/07: fone custou a ser detectado e não havia onde
   // trocar). Lista mic/câmera/som e troca ao vivo, sem derrubar a chamada. ──
+  function _fecharDispositivos() {
+    var s = document.getElementById('dev-sheet'); if (s) s.remove();
+    var o = document.getElementById('dev-overlay'); if (o) o.remove();
+  }
   async function abrirDispositivos() {
-    var old = document.getElementById('dev-sheet'); if (old) { old.remove(); return; }
+    var old = document.getElementById('dev-sheet'); if (old) { _fecharDispositivos(); return; }
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    // Overlay que fecha ao tocar fora — e sobe o z-index (o painel tinha z-index:9,
+    // baixo demais no celular: o botão Fechar ficava atrás dos controles e o toque
+    // não pegava, bug 22/07). O overlay garante o fechar mesmo se o botão falhar.
+    var overlay = document.createElement('div');
+    overlay.id = 'dev-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:49;background:transparent';
+    overlay.onclick = _fecharDispositivos;
+    document.body.appendChild(overlay);
     var devs = [];
     try { devs = await navigator.mediaDevices.enumerateDevices(); } catch (e) {}
     var esc = function (s) { return String(s || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); };
     var kinds = [['audioinput', '🎤 Microfone'], ['videoinput', '📷 Câmera'], ['audiooutput', '🔊 Som']];
     var sheet = document.createElement('div');
     sheet.id = 'dev-sheet';
-    sheet.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:9;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.35);width:min(92vw,360px)';
+    sheet.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:50;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.35);width:min(92vw,360px)';
     sheet.innerHTML = '<div style="font-size:13.5px;font-weight:600;margin-bottom:4px">Microfone, câmera e som</div>'
       + '<div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">Se o fone não foi detectado, escolha ele aqui — a chamada não cai.</div>'
       + kinds.map(function (k) {
@@ -598,7 +641,7 @@
               }).join('')
             + '</select>';
         }).join('')
-      + '<button onclick="document.getElementById(\'dev-sheet\').remove()" style="margin-top:14px;width:100%;padding:10px;border:none;border-radius:9px;background:var(--sage);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Fechar</button>';
+      + '<button onclick="_fecharDispositivos()" style="margin-top:14px;width:100%;padding:10px;border:none;border-radius:9px;background:var(--sage);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Fechar</button>';
     document.body.appendChild(sheet);
     sheet.querySelectorAll('select').forEach(function (sel) {
       sel.onchange = async function () {

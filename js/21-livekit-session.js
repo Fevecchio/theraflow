@@ -367,6 +367,7 @@ async function startLiveKitSession() {
   const sp = _tfSessionPatient();
 
   try {
+    _lkAjustarBotaoDesfoque(); // esconde o desfoque em aparelhos que não aguentam (feedback 22/07)
     // Consentimento já foi registrado pelo gate (_startSessionWithConsent → modal-consent →
     // confirmarConsentimentoSessao → _logConsent). Aqui apenas conectamos.
 
@@ -1386,8 +1387,37 @@ function _lkLoadProcs() {
   return _lkProcsPromise;
 }
 
+// Decide se o aparelho aguenta o desfoque em tempo real (feedback 22/07). iPhone/
+// iPad: NÃO (limitação do Safari p/ vídeo ao vivo, independe da potência — o iPhone
+// 14 travava). Android: só se capaz (>=6 núcleos e >=4GB). Desktop: sempre.
+function _lkPodeDesfoque() {
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (isIOS) return { ok: false, motivo: 'ios' };
+  var isMobile = /Android|Mobile/i.test(ua) || (navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 820);
+  if (isMobile) {
+    var cores = navigator.hardwareConcurrency || 0;
+    var ram = navigator.deviceMemory;
+    if (cores >= 6 && (ram === undefined || ram >= 4)) return { ok: true };
+    return { ok: false, motivo: 'fraco' };
+  }
+  return { ok: true };
+}
+// Esconde o botão de desfoque do terapeuta quando o aparelho não aguenta.
+function _lkAjustarBotaoDesfoque() {
+  var b = document.getElementById('lk-btn-blur');
+  if (b) b.style.display = _lkPodeDesfoque().ok ? '' : 'none';
+}
+
 async function _lkToggleBlur() {
   if (!_lkExigeSala()) return;
+  var _cap = _lkPodeDesfoque();
+  if (!_cap.ok) {
+    if (typeof showToast === 'function') showToast(_cap.motivo === 'ios'
+      ? '⚠ O desfoque de fundo não está disponível no iPhone/iPad (limitação do navegador para vídeo ao vivo). Funciona no computador.'
+      : '⚠ Este celular pode não aguentar o desfoque sem travar. Ele funciona melhor no computador.');
+    return;
+  }
   var LK = window.LivekitClient;
   var pub = _lkRoom.localParticipant.getTrackPublication(LK.Track.Source.Camera);
   if (!pub || !pub.track) {
