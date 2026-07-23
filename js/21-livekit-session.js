@@ -165,13 +165,17 @@ function _lkCheckDraftOnBoot() {
   _lkDraftChecked = true;
   var draft;
   try { draft = JSON.parse(localStorage.getItem('tf_lk_draft') || 'null'); } catch (_) { draft = null; }
-  if (!draft || (!draft.note && !draft.transcript)) return;
+  // Recupera se houver nota/transcrição OU só as anotações manuais (bug 22/07: a
+  // transcrição pode ter travado antes de gerar a nota — as anotações digitadas
+  // ao vivo ainda valem e não podem se perder num refresh).
+  if (!draft || (!draft.note && !draft.transcript && !draft.notasManuais)) return;
+  var _soNotas = !draft.note && !draft.transcript && !!draft.notasManuais;
   var quando = '';
   try { quando = new Date(draft.at).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); } catch(_) {}
   var bar = document.createElement('div');
   bar.id = 'lk-draft-recover';
   bar.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9997;background:#1a2a1e;color:#fff;border-radius:12px;padding:14px 18px;box-shadow:0 8px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:14px;max-width:92vw;font-size:13px';
-  bar.innerHTML = '<span>📝 Há uma nota de sessão não salva'
+  bar.innerHTML = '<span>📝 Há ' + (_soNotas ? 'anotações de sessão não salvas' : 'uma nota de sessão não salva')
     + (draft.patientName ? ' de <strong>' + (typeof escHTML==='function'?escHTML(draft.patientName):draft.patientName) + '</strong>' : '')
     + (quando ? ' (' + quando + ')' : '') + '.</span>'
     + '<button id="lk-draft-open" style="background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Recuperar</button>'
@@ -180,7 +184,14 @@ function _lkCheckDraftOnBoot() {
   document.getElementById('lk-draft-open').onclick = function() {
     bar.remove();
     if (typeof _lkShowPostSession === 'function') {
-      _lkShowPostSession({ transcript: draft.transcript || '', note: draft.note || '', notasManuais: draft.notasManuais || '' });
+      // Só anotações (transcrição travou): pré-preenche o campo da nota com elas,
+      // para o terapeuta editar e salvar no prontuário — a transcrição se perdeu,
+      // mas o que ele digitou não.
+      _lkShowPostSession({
+        transcript: draft.transcript || '',
+        note: draft.note || (_soNotas ? draft.notasManuais : '') || '',
+        notasManuais: draft.notasManuais || '',
+      });
     }
   };
   document.getElementById('lk-draft-dismiss').onclick = function() {
@@ -616,12 +627,18 @@ function _lkShowWaitingRemote() {
 }
 
 // Transcreve um blob de áudio com timestamps por trecho ({ text, segments }).
+// TIMEOUT de 120s por segmento (bug real 22/07): sem isto, uma rede móvel ruim
+// deixava o fetch PENDURADO pra sempre — o encerramento travava no modal de
+// processamento e o terapeuta perdia a sessão inteira. Com timeout, um segmento
+// que não responde vira ERRO → cai no catch → modal de "tentar de novo" (com os
+// segmentos preservados), em vez de prender a tela sem saída.
 async function _lkTranscribe(blob) {
-  const tr = await fetch('/api/transcribe?segments=1', {
+  const _fetch = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
+  const tr = await _fetch('/api/transcribe?segments=1', {
     method: 'POST',
     headers: await _lkAuthHeaders({ 'Content-Type': blob.type || 'audio/webm' }),
     body: blob,
-  });
+  }, 120000);
   if (!tr.ok) throw new Error('transcribe ' + tr.status);
   return tr.json();
 }
@@ -708,12 +725,23 @@ function _lkShowProcessing() {
         <span id="lk-proc-elapsed" style="font-size:12px;color:#888">⏱ 0s</span>
         <span style="font-size:11px;color:#999">🔒 áudio processado e descartado</span>
       </div>
+      <!-- Escape (bug 22/07): se travar (rede ruim), depois de 45s aparece um botão
+           de saída — nunca mais alguém fica preso sem poder tentar de novo. -->
+      <div id="lk-proc-escape" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid #eee;text-align:center">
+        <div style="font-size:12px;color:#888;margin-bottom:8px">Está demorando mais que o normal — a conexão pode estar instável.</div>
+        <button onclick="_lkRetryProcess()" style="padding:9px 16px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">↻ Tentar de novo</button>
+      </div>
     </div>`;
   document.body.appendChild(modal);
   const t0 = Date.now();
   _lkProcTimer = setInterval(() => {
     const el = document.getElementById('lk-proc-elapsed');
     if (el) el.textContent = '⏱ ' + Math.round((Date.now() - t0) / 1000) + 's';
+    // Depois de 45s sem terminar, revela a saída de emergência.
+    if ((Date.now() - t0) > 45000) {
+      const esc = document.getElementById('lk-proc-escape');
+      if (esc && esc.style.display === 'none') esc.style.display = 'block';
+    }
   }, 1000);
 }
 function _lkProcStep(id, state) { // 'doing' | 'done'
@@ -813,6 +841,12 @@ async function _lkProcessSession() {
     try { if (sp && typeof _notaTemplateTexto === 'function') _tpl = _notaTemplateTexto(sp).trim(); } catch (_) {}
     if (_notasRaw !== _tpl) _notasManuais = _notasRaw.slice(0, 4000);
   }
+
+  // Rede de segurança (bug 22/07): salva as ANOTAÇÕES MANUAIS ANTES de transcrever.
+  // O áudio vive em memória e some num refresh (blob grande demais p/ localStorage),
+  // mas o texto que o terapeuta digitou ao vivo é pequeno — se a transcrição travar
+  // e ele recarregar a página, pelo menos as anotações dele são recuperáveis no boot.
+  if (_notasManuais) _lkSaveDraft(sp, '', '', _notasManuais);
 
   // Guard defensivo por SEGMENTO (não deveria disparar: 4min a 32kbps ≈ 1MB).
   const LIMITE = 4.4 * 1024 * 1024;
