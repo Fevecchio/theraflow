@@ -15,7 +15,7 @@ var _TOUR_STEPS = [
   { icon: '<svg width="48" height="48" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="#4A7A63"/><path d="M32 34 H88" fill="none" stroke="#F3EFE6" stroke-width="13" stroke-linecap="round"/><path d="M60 47 C46 61, 74 71, 60 92" fill="none" stroke="#F3EFE6" stroke-width="13" stroke-linecap="round"/><circle cx="60" cy="92" r="9" fill="#E8B79E"/></svg>', titulo: 'Bem-vindo ao Teravia!', desc: 'A plataforma de gestão clínica calibrada pela sua abordagem terapêutica. Vamos mostrar os principais recursos em 5 passos.' },
   { icon: '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', titulo: 'Cadastre seus pacientes', desc: 'Em <strong>Pacientes</strong> você cadastra fichas completas — queixa principal, histórico, CID, abordagem individual e muito mais.' },
   { icon: _tfIcon('cal',44), titulo: 'Organize sua agenda', desc: 'Em <strong>Agenda</strong> você agenda sessões, visualiza a semana e o mês, e bloqueia períodos de folga ou férias.' },
-  { icon: '✦', titulo: 'Briefing IA antes de cada sessão', desc: 'O <strong>Briefing IA</strong> analisa o histórico do paciente e gera perguntas e hipóteses calibradas pela sua abordagem — em segundos.' },
+  { icon: _tfIcon('sparkle',44), titulo: 'Briefing IA antes de cada sessão', desc: 'O <strong>Briefing IA</strong> analisa o histórico do paciente e gera perguntas e hipóteses calibradas pela sua abordagem — em segundos.' },
   { icon: _tfIcon('clip',44), titulo: 'Portal do paciente entre as sessões', desc: 'O <strong>Portal do Paciente</strong> permite exercícios, diário de humor e acompanhamento — tudo sincronizado com seu painel.' }
 ];
 
@@ -173,7 +173,7 @@ function atualizarTrialUI(count) {
       var _fAcc = {}; try { _fAcc = JSON.parse(localStorage.getItem('tf_account') || '{}'); } catch(_) {}
       var _fN = _fAcc.founder_number;
       // Sidebar CLARA: tinta escura legível (verde-claro #7fcf97 sumia — revisão 14/07)
-      bar.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;color:var(--sage-dark)">✦</span><div><div style="font-size:12px;font-weight:700;color:var(--sage-dark)">' + (_fN ? 'Fundador(a) #' + _fN : 'Plano Pro') + '</div><div style="font-size:10.5px;color:var(--ink-soft);margin-top:1px">' + (_fN ? 'Preço travado para sempre' : 'Sessões ilimitadas') + '</div></div></div>'
+      bar.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;color:var(--sage-dark)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg></span><div><div style="font-size:12px;font-weight:700;color:var(--sage-dark)">' + (_fN ? 'Fundador(a) #' + _fN : 'Plano Pro') + '</div><div style="font-size:10.5px;color:var(--ink-soft);margin-top:1px">' + (_fN ? 'Preço travado para sempre' : 'Sessões ilimitadas') + '</div></div></div>'
         // B-A4 (decisão #5): gerenciar/cancelar assinatura pelo app (Stripe Billing Portal)
         + '<button onclick="gerenciarAssinatura(this)" style="margin-top:8px;width:100%;padding:6px;background:var(--white);color:var(--sage-dark);border:1px solid rgba(74,122,99,.35);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Gerenciar assinatura</button>';
       bar.style.background = 'rgba(74,122,99,.10)';
@@ -197,7 +197,7 @@ function atualizarTrialUI(count) {
       _fTag = document.createElement('div');
       _fTag.id = 'trial-founder-tag';
       _fTag.style.cssText = 'margin-bottom:6px;font-size:11px;font-weight:700;color:var(--sage-dark);display:flex;align-items:center;gap:5px';
-      _fTag.innerHTML = '✦ Fundador(a) #' + _fT + ' <span style="font-weight:500;color:var(--ink-soft)">· preço travado quando assinar</span>';
+      _fTag.innerHTML = _tfIcon('sparkle',11) + ' Fundador(a) #' + _fT + ' <span style="font-weight:500;color:var(--ink-soft)">· preço travado quando assinar</span>';
       bar.insertBefore(_fTag, bar.firstChild);
     } else if (!_fT && _fTag) { _fTag.remove(); }
   }
@@ -541,7 +541,7 @@ function agendaMesDetalhe(day, month, year) {
         '</div>' +
         '<div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">' +
           (a.presenca ? '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:' + (a.presenca==='compareceu'?'var(--sage-light)':a.presenca==='faltou'?'var(--red-light)':'var(--amber-light)') + ';color:' + (a.presenca==='compareceu'?'var(--sage)':a.presenca==='faltou'?'var(--red)':'var(--amber)') + ';font-weight:600">' + (a.presenca==='compareceu'?'✓ Compareceu':a.presenca==='faltou'?'✗ Faltou':'~ Atrasou') + '</span>' : '<button onclick="marcarPresenca(\''+a.id+'\',\'compareceu\')" style="padding:3px 7px;background:var(--sage-light);color:var(--sage);border:1px solid var(--sage);border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Compareceu">✓</button><button onclick="marcarPresenca(\''+a.id+'\',\'faltou\')" style="padding:3px 7px;background:var(--red-light);color:var(--red);border:1px solid var(--red);border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Faltou">✗</button><button onclick="marcarPresenca(\''+a.id+'\',\'atrasou\')" style="padding:3px 7px;background:var(--amber-light);color:var(--amber);border:1px solid var(--amber);border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Atrasou">~</button>') +
-          '<button onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\');document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:5px 8px;background:#f3f0ff;color:#6d28d9;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">✦</button>' +
+          '<button onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\');document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:5px 8px;background:#f3f0ff;color:#6d28d9;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg></button>' +
           '<button onclick="_tfSetSessionPatientAppt(\''+a.id+'\');navigate(\'sessao\');document.getElementById(\'modal-mes-detalhe\').remove()" style="padding:5px 10px;background:var(--sage);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">▶</button>' +
         '</div>' +
       '</div>';

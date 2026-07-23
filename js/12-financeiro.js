@@ -2010,7 +2010,7 @@ function renderDiarioLivre(p) {
     var replyHtml = '';
     if (entry.reply) {
       replyHtml = '<div style="margin-top:10px;padding:10px 12px;background:var(--white);border-radius:8px;border-left:3px solid var(--purple)">'
-        + '<div style="font-size:10px;color:var(--purple);font-weight:600;margin-bottom:4px">✦ Resposta de ' + escHTML(therapistFirst) + '</div>'
+        + '<div style="font-size:10px;color:var(--purple);font-weight:600;margin-bottom:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Resposta de ' + escHTML(therapistFirst) + '</div>'
         + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(entry.reply) + '</div>'
         + '</div>';
     }
@@ -2019,7 +2019,7 @@ function renderDiarioLivre(p) {
       + '<textarea id="'+inputId+'" placeholder="Escreva sua resposta para '+escHTML((p.name||'').split(' ')[0])+'…" rows="2" style="width:100%;padding:8px 10px;border:1.5px solid var(--purple);border-radius:8px;font-size:12.5px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;line-height:1.5"></textarea>'
       + '<div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">'
         + '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'reply-area-'+ei+'\').style.display=\'none\'">Cancelar</button>'
-        + '<button class="btn btn-primary btn-sm" style="background:var(--purple);border-color:var(--purple)" onclick="salvarRespostaDiario('+pidx+','+ei+')">✦ Enviar resposta</button>'
+        + '<button class="btn btn-primary btn-sm" style="background:var(--purple);border-color:var(--purple)" onclick="salvarRespostaDiario('+pidx+','+ei+')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Enviar resposta</button>'
       + '</div></div>';
 
     div.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between;align-items:center">'
@@ -2027,7 +2027,7 @@ function renderDiarioLivre(p) {
       + '<div style="display:flex;align-items:center;gap:8px">'
         + '<span style="color:var(--sage);font-weight:600;font-size:10px">✓ ' + escHTML(therapistFirst) + ' viu</span>'
         + '<button onclick="document.getElementById(\'reply-area-'+ei+'\').style.display=\'block\';document.getElementById(\'diary-reply-'+ei+'\').focus()" style="font-size:10px;padding:2px 7px;background:var(--purple-light);color:var(--purple);border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:600">'
-          + (entry.reply ? '✦ Editar resposta' : '✦ Responder') + '</button>'
+          + _tfIcon('sparkle',11) + (entry.reply ? ' Editar resposta' : ' Responder') + '</button>'
       + '</div>'
       + '</div>'
       + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">' + escHTML(entry.texto || entry.text || '') + '</div>'

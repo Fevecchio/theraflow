@@ -1022,7 +1022,7 @@ function renderPatientDetailShell(i) {
           </div>
         </div>
         <button class="btn btn-secondary btn-sm" onclick="showEditarPaciente(${i})" title="Editar dados do paciente">✎ Editar</button>
-        <button class="btn btn-purple btn-sm" onclick="selectPatientTab('briefing')">✦ Briefing IA${_bdot}</button>
+        <button class="btn btn-purple btn-sm" onclick="selectPatientTab('briefing')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing IA${_bdot}</button>
         <button class="btn btn-primary btn-sm" onclick="_tfSetSessionPatient(${i});navigate('sessao')">▶ Sessão</button>
       </div>
     </div>
@@ -1609,7 +1609,7 @@ function renderPatientBriefing(i) {
   if (cache) {
     var unchanged = typeof _briefingCacheUnchanged === 'function' ? _briefingCacheUnchanged(cache, p) : true;
     bodyHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:var(--sage-light);border-radius:8px;border:1px solid rgba(74,124,89,.15)">'
-      + '<span style="font-size:18px">✦</span>'
+      + '<span style="font-size:18px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg></span>'
       + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--sage)">Gerado ' + (typeof _briefingQuando === 'function' ? _briefingQuando(cache) : '') + '</div>'
       + '<div style="font-size:11px;color:var(--muted)">' + (p.sessions||0) + ' sessões · ' + (unchanged ? 'sem alterações desde então' : 'há novas informações — vale atualizar') + '</div></div>'
       + '<div style="display:flex;gap:6px">'
@@ -1625,7 +1625,7 @@ function renderPatientBriefing(i) {
       + '<div style="font-size:15px;font-weight:600;margin-bottom:4px">' + escHTML(p.name) + '</div>'
       + '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">' + escHTML(p.abordagem) + ' · ' + (p.sessions||0) + ' sessões</div>'
       + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto">Analisa notas, temas recorrentes e evolução clínica para sugerir o foco da próxima sessão.</div>'
-      + '<button class="btn btn-purple" onclick="_openBriefingPage(' + i + ')" style="font-size:13.5px;padding:10px 24px">✦ Gerar Briefing IA</button>'
+      + '<button class="btn btn-purple" onclick="_openBriefingPage(' + i + ')" style="font-size:13.5px;padding:10px 24px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Gerar Briefing IA</button>'
       + '</div>';
   }
 

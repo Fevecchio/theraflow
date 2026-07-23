@@ -1908,7 +1908,7 @@ function _renderDiarioCard(entrada, listId, prepend) {
   // renderizada p/ a paciente. Lote 2 (P5).
   var _replyHtml = entrada.reply
     ? '<div style="margin-top:10px;padding:10px 12px;background:var(--white);border-radius:8px;border-left:3px solid var(--purple)">'
-      + '<div style="font-size:10px;color:var(--purple);font-weight:700;margin-bottom:4px">✦ Resposta da sua terapeuta</div>'
+      + '<div style="font-size:10px;color:var(--purple);font-weight:700;margin-bottom:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Resposta da sua terapeuta</div>'
       + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6">'+escHTML(entrada.reply)+'</div></div>'
     : '';
   if (entrada.tipo !== 'esp') {

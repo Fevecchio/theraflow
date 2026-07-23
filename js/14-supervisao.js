@@ -228,7 +228,7 @@ function renderAlertasSupervisao() {
   container.innerHTML = bannerHtml + alertas.map(function(a){
     var acoes = a.idx !== null
       ? '<div class="sup-alert-actions">'
-          + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')">✦ Briefing IA</button>'
+          + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing IA</button>'
           // abre o prontuário DO paciente do alerta (antes ia sempre no 1º). B15/Lote 4.
           + '<button class="btn btn-sm btn-secondary" onclick="selectPatient('+a.idx+');navigate(\'prontuarios\')">'+_tfIcon('clip',12)+' Prontuário</button>'
         + '</div>'
@@ -1155,7 +1155,7 @@ function atualizarMetricasSupervisao() {
           <td>Sessão ${p.sessions}</td>
           <td><span class="tag ${moodColor}">${moodVal}</span></td>
           <td style="font-size:13px;color:var(--ink-soft)">${escHTML(obs.length > 60 ? obs.slice(0,60)+'…' : obs)}</td>
-          <td><button class="btn btn-secondary btn-sm" onclick="currentBriefingPatientIdx=${p._i};navigate('briefing')">✦ Briefing</button></td>
+          <td><button class="btn btn-secondary btn-sm" onclick="currentBriefingPatientIdx=${p._i};navigate('briefing')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing</button></td>
         </tr>`;
       }).join('');
     } else {
@@ -1186,12 +1186,12 @@ function injectNewEvidenceIntoSupervisao() {
   banner.className = 'fade-in';
   banner.style.cssText = 'background:var(--purple-light);border:1px solid rgba(90,62,138,.2);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;';
   banner.innerHTML = `
-    <span style="font-size:18px">✦</span>
+    <span style="font-size:18px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg></span>
     <div style="flex:1">
       <div style="font-size:13.5px;font-weight:600;color:var(--purple)">${(() => { const sp = _tfSessionPatient(); return `Sessão ${sp.sessions} de ${escHTML(sp.name)} indexada agora`; })()}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px">2 trechos sinalizados · nota clínica aprovada · análise atualizada</div>
     </div>
-    <span class="sup-new-badge">✦ Novo</span>`;
+    <span class="sup-new-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Novo</span>`;
   content.insertBefore(banner, content.firstChild);
 
   // Inject enriched evidence into the "Camila" positive alert
@@ -1201,7 +1201,7 @@ function injectNewEvidenceIntoSupervisao() {
     if (!existingEvidence) {
       const evidenceHtml = `
         <div style="margin-top:10px">
-          <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">✦ Trechos da sessão 12</div>
+          <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Trechos da sessão 12</div>
           <div class="evidence-quote" onclick="navigate('sessao')" title="Clique para ver sessão">
             <div class="evidence-quote-text">"Fica mais leve. Mas na hora é difícil lembrar… acho que preciso de prática."</div>
             <div class="evidence-quote-meta">Camila · Sessão 12 · 24/03 · <a onclick="event.stopPropagation();navigate('sessao')">Ver contexto completo →</a></div>
@@ -1222,7 +1222,7 @@ function injectNewEvidenceIntoSupervisao() {
     if (!existingEvidence) {
       const evidenceHtml = `
         <div style="margin-top:10px">
-          <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">✦ Evidência mais recente</div>
+          <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Evidência mais recente</div>
           <div class="evidence-quote" onclick="navigate('sessao')">
             <div class="evidence-quote-text">"Usei quase todo dia. Percebi que fico ansiosa antes de apresentações no trabalho."</div>
             <div class="evidence-quote-meta">Camila · Sessão 12 · 24/03 · <a onclick="event.stopPropagation();navigate('sessao')">Ver contexto →</a></div>
@@ -1328,7 +1328,7 @@ function runSupAnalysis() {
     content.innerHTML = bannerHtml + alertas.map(function(a){
       var acoes = a.idx !== null
         ? '<div class="sup-alert-actions">'
-            + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')">✦ Briefing IA</button>'
+            + '<button class="btn btn-sm btn-secondary" onclick="currentBriefingPatientIdx='+a.idx+';navigate(\'briefing\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing IA</button>'
             + '<button class="btn btn-sm btn-secondary" onclick="navigate(\'prontuarios\')">'+_tfIcon('clip',12)+' Prontuário</button>'
           + '</div>'
         : '';

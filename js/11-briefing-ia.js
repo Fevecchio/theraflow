@@ -55,11 +55,11 @@ function initBriefing() {
     if (!tag) return;
     fetch('/api/briefing', { method: 'GET' }).then(function(r) {
       var ok = r.status < 500;
-      tag.textContent = ok ? '✦ IA ativa' : '✦ IA indisponível';
+      tag.innerHTML = _tfIcon('sparkle',11) + (ok ? ' IA ativa' : ' IA indisponível');
       tag.className = ok ? 'tag tag-purple' : 'tag tag-gray';
       tag.title = ok ? 'Serviço de IA respondendo' : 'Serviço de IA fora do ar — o briefing usará o modo básico';
     }).catch(function() {
-      tag.textContent = '✦ IA indisponível';
+      tag.innerHTML = _tfIcon('sparkle',11) + ' IA indisponível';
       tag.className = 'tag tag-gray';
       tag.title = 'Sem conexão com o serviço de IA — o briefing usará o modo básico';
     });

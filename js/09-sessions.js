@@ -94,7 +94,7 @@ async function startSession() {
   _renderSessionContext(sp);
   // Pontinho sutil no ✦ Briefing quando há dados novos desde a última geração
   var _bbtn = document.getElementById('sess-briefing-btn');
-  if (_bbtn && sp && typeof _briefingDotHtml === 'function') _bbtn.innerHTML = '✦ Briefing' + _briefingDotHtml(sp);
+  if (_bbtn && sp && typeof _briefingDotHtml === 'function') _bbtn.innerHTML = _tfIcon('sparkle',12) + ' Briefing' + _briefingDotHtml(sp);
 }
 
 /* Template de nota em TEXTO PURO para o textarea #session-ai-note.
@@ -263,7 +263,7 @@ function _renderSessFromBriefing(p, content) {
   if (alerta) html2 += '<div class="insight-item"><span class="insight-icon">'+_tfIcon('alert',15)+'</span><span>' + escHTML(alerta) + '</span></div>';
   var _c9 = (typeof _getBriefingCache === 'function') ? _getBriefingCache(p.id || p.name) : null;
   var _q9 = (_c9 && typeof _briefingQuando === 'function') ? _briefingQuando(_c9) : 'hoje';
-  html2 += '<div class="sess-briefing-badge">✦ Baseado no briefing gerado ' + escHTML(_q9) + _briefingStaleSuffix(p) + '</div>';
+  html2 += '<div class="sess-briefing-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Baseado no briefing gerado ' + escHTML(_q9) + _briefingStaleSuffix(p) + '</div>';
   var el2 = document.getElementById('sess-contexto-body');
   if (el2) el2.innerHTML = html2;
 
@@ -348,10 +348,10 @@ function abrirBriefingOverlay() {
           + '<button class="btn btn-purple btn-sm" style="margin-left:auto" onclick="_gerarBriefingNoOverlay()">↻ Atualizar</button></div>'
         : '')
       + _briefingParaHtml(cache.content)
-      + '<div class="sess-briefing-badge" style="margin-top:16px">✦ Briefing gerado ' + escHTML(_quando) + ' · ' + escHTML(p.name) + '</div>';
+      + '<div class="sess-briefing-badge" style="margin-top:16px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing gerado ' + escHTML(_quando) + ' · ' + escHTML(p.name) + '</div>';
   } else {
     body.innerHTML = '<div style="color:var(--muted);margin-bottom:12px">Ainda não há briefing gerado para ' + escHTML(_firstName(p.name)) + '. Depois de gerado, ele fica sempre disponível aqui.</div>'
-      + '<button class="btn btn-purple btn-sm" onclick="_gerarBriefingNoOverlay()">✦ Gerar agora</button>';
+      + '<button class="btn btn-purple btn-sm" onclick="_gerarBriefingNoOverlay()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Gerar agora</button>';
   }
 }
 
@@ -368,7 +368,7 @@ async function _gerarBriefingNoOverlay() {
   try {
     var texto = await _gerarBriefingTexto(p);
     body.innerHTML = _briefingParaHtml(texto)
-      + '<div class="sess-briefing-badge" style="margin-top:16px">✦ Briefing de hoje · ' + escHTML(p.name) + '</div>';
+      + '<div class="sess-briefing-badge" style="margin-top:16px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing de hoje · ' + escHTML(p.name) + '</div>';
     // O painel lateral também aproveita o briefing recém-gerado
     _renderSessionContext(p);
   } catch (e) {
@@ -521,7 +521,7 @@ function showPostSessionFlow() {
         <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
           <div style="width:36px;height:36px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;color:#4a7c59;flex-shrink:0">${_tfIcon('checkCircle', 18)}</div>
           <div style="flex:1">
-            <div style="font-weight:600;font-size:15px;color:#1a1a1a">Transcrição pronta · ${_durStr} <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#faf0ff;border:1px solid #d8b4fe;border-radius:5px;padding:2px 7px;vertical-align:middle;margin-left:6px;white-space:nowrap">✦ Exemplo ilustrativo</span></div>
+            <div style="font-weight:600;font-size:15px;color:#1a1a1a">Transcrição pronta · ${_durStr} <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#faf0ff;border:1px solid #d8b4fe;border-radius:5px;padding:2px 7px;vertical-align:middle;margin-left:6px;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Exemplo ilustrativo</span></div>
             <div style="font-size:12px;color:#888;margin-top:2px">Transcrição da sessão · ambos os lados · revisão recomendada</div>
           </div>
           <button onclick="baixarTranscricao()" title="Baixar transcrição" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--muted);white-space:nowrap">${_tfIcon('csv', 11)} .txt</button>
@@ -564,7 +564,7 @@ function showPostSessionFlow() {
 
           <!-- Marco clínico detectado -->
           <div style="background:#faf0ff;border:1px solid #d8b4fe;border-radius:8px;padding:10px 14px;display:flex;gap:8px;align-items:flex-start">
-            <span style="font-size:14px;flex-shrink:0">✦</span>
+            <span style="font-size:14px;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg></span>
             <div>
               <div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:2px">CRENÇA NUCLEAR DETECTADA</div>
               <div style="font-size:12px;color:#555">"se eu não fizer tudo perfeito vou decepcionar todo mundo" — 4ª ocorrência nos últimos 6 atendimentos.</div>
@@ -589,7 +589,7 @@ function showPostSessionFlow() {
         <div style="padding:0 24px 16px">
           <div style="background:#f8faf8;border-radius:10px;padding:14px 16px">
             <div style="font-size:11px;font-weight:700;color:#4a7c59;margin-bottom:8px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.4px">
-              ✦ Nota clínica — gerada pelo Claude a partir da transcrição
+              ${_tfIcon('sparkle',11)} Nota clínica — gerada pelo Claude a partir da transcrição
             </div>
             <div style="font-size:13px;color:#333;line-height:1.6" id="post-note-text">${_quickNotes ? `<span style="display:block;background:#fffbeb;border-left:3px solid #f59e0b;padding:6px 10px;margin-bottom:10px;border-radius:0 6px 6px 0;font-size:12px;color:var(--amber)"><strong>Suas anotações:</strong> ${_quickNotes}</span>` : ''}Paciente chegou relatando cansaço intenso e sobrecarga no trabalho. Identificada crença nuclear recorrente: "preciso ser perfeita para não decepcionar" — 4ª ocorrência nos últimos 6 atendimentos. Foram trabalhadas técnicas de reestruturação cognitiva, com foco no pensamento dicotômico. Paciente demonstrou insight ao reconhecer o padrão de paralisia frente à exigência autoimposta. Exercício de casa: registro de pensamentos automáticos por 3 dias, com atenção especial ao momento de "travar".</div>
           </div>

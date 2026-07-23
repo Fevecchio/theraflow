@@ -162,7 +162,7 @@ function executarBuscaGlobal(q) {
     [
       { icon: '+',   label: 'Agendar nova sessão',        cat: 'Sessão',      action: function(){ fecharBuscaGlobal(); showAgendarModal(); } },
       { icon: '+',   label: 'Cadastrar novo paciente',    cat: 'Paciente',    action: function(){ navigate('pacientes'); setTimeout(function(){ abrirModalNovoPaciente(); }, 200); } },
-      { icon: '✦',   label: 'Abrir briefing IA',          cat: 'Briefing',    action: function(){ navigate('briefing'); } },
+      { icon: _tfIcon('sparkle',14),   label: 'Abrir briefing IA',          cat: 'Briefing',    action: function(){ navigate('briefing'); } },
       { icon: '◈',   label: 'Ir para supervisão IA',      cat: 'Supervisão',  action: function(){ navigate('supervisao'); } },
       { icon: '$',   label: 'Ver cobranças',              cat: 'Financeiro',  action: function(){ navigate('financeiro'); } },
       { icon: _tfIcon('chart',14),  label: 'Gerar relatório financeiro', cat: 'Financeiro',  action: function(){ fecharBuscaGlobal(); navigate('financeiro'); setTimeout(exportarRelatorioMensal, 300); } },

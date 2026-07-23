@@ -282,7 +282,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <!-- Botões de ação -->
         <div style="display:flex;gap:10px;flex-direction:column">
           <button class="btn btn-primary btn-full btn-lg" onclick="goToPlatform(true)">
-            ✦ Cadastrar meu primeiro paciente
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Cadastrar meu primeiro paciente
           </button>
           <button class="btn btn-ghost btn-full" onclick="goToPlatform(false)" style="font-size:13px">
             Explorar a plataforma primeiro →
@@ -766,7 +766,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     </div>
     <div class="topbar-actions">
       <span class="tag" id="sess-consent-status" style="display:none"></span>
-      <button class="btn btn-purple btn-sm" id="sess-briefing-btn" onclick="abrirBriefingOverlay()">✦ Briefing</button>
+      <button class="btn btn-purple btn-sm" id="sess-briefing-btn" onclick="abrirBriefingOverlay()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing</button>
       <button class="btn btn-secondary btn-sm" onclick="showModal('modal-consent')">Consentimento</button>
     </div>
   </div>
@@ -859,7 +859,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div class="sbo-back" onclick="fecharBriefingOverlay()"></div>
     <div class="sbo-panel">
       <div class="sbo-head">
-        <div class="ai-section-title" style="margin:0;color:var(--purple)">✦ Briefing pré-sessão</div>
+        <div class="ai-section-title" style="margin:0;color:var(--purple)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing pré-sessão</div>
         <button onclick="fecharBriefingOverlay()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:4px">✕</button>
       </div>
       <div class="sbo-body" id="sess-briefing-body"></div>
@@ -1061,7 +1061,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div><div class="page-title">Briefing pré-sessão</div><div class="page-subtitle">Análise inteligente do histórico clínico · funcionalidade opcional</div></div>
     <div class="topbar-actions">
       <!-- item 10 dos desligados: verificação REAL em initBriefing (era decorativa) -->
-      <span class="tag tag-purple" id="b-ia-status" title="Verificando o serviço de IA…">✦ IA ativa</span>
+      <span class="tag tag-purple" id="b-ia-status" title="Verificando o serviço de IA…"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> IA ativa</span>
       <button class="btn btn-secondary btn-sm" onclick="navigate('sessao')">▶ Ir para sessão</button>
     </div>
   </div>
@@ -1100,7 +1100,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
         <div class="gen-icon">🧠</div>
         <div class="gen-title">Gerar briefing inteligente</div>
         <div class="gen-sub">A IA vai analisar todas as sessões anteriores, identificar padrões e sugerir perguntas para hoje.</div>
-        <button class="btn btn-purple" onclick="startBriefing()">✦ Analisar histórico e gerar briefing</button>
+        <button class="btn btn-purple" onclick="startBriefing()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Analisar histórico e gerar briefing</button>
       </div>
     </div>
     <!-- Estado: resultado (o loading real acontece dentro de b-content, via callBriefingAI) -->
@@ -1410,7 +1410,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="page-subtitle">Análise automática do seu histórico clínico — apoio ao seu julgamento profissional</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-sage btn-sm" onclick="showReflectionModal()">✦ Reflexão pós-sessão</button>
+      <button class="btn btn-sage btn-sm" onclick="showReflectionModal()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Reflexão pós-sessão</button>
       <button class="btn btn-purple btn-sm" onclick="runSupAnalysis()">⟳ Atualizar análise</button>
     </div>
   </div>
@@ -1515,7 +1515,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             <div class="sup-alert-title">Linguagem de desesperança nas últimas 2 sessões</div>
             <div class="sup-alert-text">Nas transcrições das sessões 6 e 7, o paciente usou expressões como "não vejo saída" e "estou cansado de tudo". O padrão de intensidade aumentou entre as sessões. Recomenda-se avaliação de risco no início da próxima sessão.</div>
             <div style="margin-top:10px">
-              <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">✦ Trechos das transcrições</div>
+              <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Trechos das transcrições</div>
               <div class="evidence-quote" onclick="navigate('prontuarios')">
                 <div class="evidence-quote-text">"Não vejo saída, sabe? Parece que não importa o que eu faça, continua igual."</div>
                 <div class="evidence-quote-meta">Rafael · Sessão 6 · 14/03 · <span class="tag tag-red" style="font-size:10px;padding:1px 6px">Alta atenção</span> · <a onclick="event.stopPropagation();navigate('prontuarios')">Ver prontuário →</a></div>
@@ -1527,7 +1527,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
             </div>
             <div class="sup-alert-patient"><span>Rafael Andrade</span><span>Sessão 8 · amanhã 11h</span></div>
             <div class="sup-alert-actions">
-              <button class="btn btn-secondary btn-sm" onclick="navigate('briefing')">✦ Ver briefing completo</button>
+              <button class="btn btn-secondary btn-sm" onclick="navigate('briefing')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Ver briefing completo</button>
               <button class="btn btn-secondary btn-sm" onclick="navigate('prontuarios')">≡ Abrir prontuário</button>
             </div>
           </div>
@@ -1634,7 +1634,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
               <td>Sessão 8</td>
               <td><span class="tag tag-red">3/10</span></td>
               <td style="font-size:13px;color:var(--ink-soft)">Linguagem de desesperança. Avaliar risco.</td>
-              <td><button class="btn btn-secondary btn-sm" onclick="navigate('briefing')">✦ Briefing</button></td>
+              <td><button class="btn btn-secondary btn-sm" onclick="navigate('briefing')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing</button></td>
             </tr>
             <tr>
               <td><div class="patient-info"><div class="patient-avatar" style="background:#8b4513;color:#fff">PA</div><div><div class="patient-name">Pedro Alves</div><div class="patient-meta">TCC · Fobia social</div></div></div></td>
@@ -1648,7 +1648,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
               <td>Sessão 9</td>
               <td><span class="tag tag-green">7/10</span></td>
               <td style="font-size:13px;color:var(--ink-soft)">Boa evolução. Considerar reduzir frequência.</td>
-              <td><button class="btn btn-secondary btn-sm" onclick="navigate('briefing')">✦ Briefing</button></td>
+              <td><button class="btn btn-secondary btn-sm" onclick="navigate('briefing')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing</button></td>
             </tr>
           </tbody>
         </table>
@@ -1939,7 +1939,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           </div>
           <div style="width:1px;background:rgba(90,62,138,.15)"></div>
           <div class="ia-calibration-item">
-            <div class="ia-calibration-label">✦ Briefing pré-sessão</div>
+            <div class="ia-calibration-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing pré-sessão</div>
             <div class="ia-calibration-value" id="calib-briefing">Perguntas sobre tarefas de casa, evolução de sintomas mensuráveis e distorções identificadas.</div>
           </div>
         </div>
@@ -2137,7 +2137,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 
   <!-- Barra de contexto -->
   <div style="background:var(--purple-light);border-bottom:1px solid rgba(90,62,138,.12);padding:8px 24px;display:flex;align-items:center;gap:10px">
-    <span style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px">✦ Modo terapeuta</span>
+    <span style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Modo terapeuta</span>
     <span style="font-size:12px;color:var(--purple);opacity:.7">·</span>
     <span style="font-size:12.5px;color:var(--purple)" id="portal-mode-label">Gerenciando portal de —</span>
     <span style="font-size:12px;color:var(--muted);margin-left:auto">As alterações aparecem imediatamente para o paciente</span>

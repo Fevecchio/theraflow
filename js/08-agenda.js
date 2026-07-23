@@ -138,7 +138,7 @@ function _promptNotaRapida(appt) {
     + '<div style="display:flex;gap:10px;margin-top:12px">'
       + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)">Pular</button>'
       + '<button onclick="_salvarNotaRapida(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✓ Salvar nota</button>'
-      + '<button id="btn-preench-ia-nota" onclick="_preencherNotaComIA(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✦ Rascunho IA</button>'
+      + '<button id="btn-preench-ia-nota" onclick="_preencherNotaComIA(' + appt.patientIdx + ')" style="flex:2;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Rascunho IA</button>'
     + '</div>'
   + '</div>';
   overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
@@ -175,7 +175,7 @@ async function _preencherNotaComIA(pidx) {
       + 'Manutenção do plano terapêutico vigente. Próxima sessão agendada conforme combinado.';
     var ta = document.getElementById('nota-rapida-text');
     if (ta) { ta.value = notaDemo; ta.focus(); }
-    if (btn) { btn.textContent = '✦ Rascunho IA'; btn.disabled = false; }
+    if (btn) { btn.innerHTML = _tfIcon('sparkle',12) + ' Rascunho IA'; btn.disabled = false; }
     showToast('✦ Rascunho gerado — revise antes de salvar.');
     return;
   }
@@ -209,7 +209,7 @@ async function _preencherNotaComIA(pidx) {
     console.warn('[TF] Erro ao gerar nota com IA:', e.message);
     showToast('⚠ Erro ao conectar com a IA. Verifique a API Key em Perfil.');
   } finally {
-    if (btn) { btn.textContent = '✦ Rascunho IA'; btn.disabled = false; }
+    if (btn) { btn.innerHTML = _tfIcon('sparkle',12) + ' Rascunho IA'; btn.disabled = false; }
   }
 }
 
@@ -286,7 +286,7 @@ function _mostrarOpcoesAppt(pi, apptId) {
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:8px">'
       + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();_tfSetSessionPatientAppt(\''+apptId+'\');currentSessionApptId=\''+apptId+'\';navigate(\'sessao\')" style="width:100%;padding:10px;background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">▶ Iniciar sessão agora</button>'
-      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="width:100%;padding:10px;background:var(--purple-light,#f0ecfa);color:var(--purple,#5a3e8a);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">✦ Briefing IA' + (typeof _briefingDotHtml === 'function' ? _briefingDotHtml(p) : '') + '</button>'
+      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="width:100%;padding:10px;background:var(--purple-light,#f0ecfa);color:var(--purple,#5a3e8a);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing IA' + (typeof _briefingDotHtml === 'function' ? _briefingDotHtml(p) : '') + '</button>'
       // "Ver paciente": conferir a ficha sem sair caçando em Pacientes (pedido do
       // usuário 14/07 — o fluxo agenda→ficha exigia navegar e buscar de novo).
       + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();navigate(\'pacientes\');setTimeout(function(){if(typeof selectPatient===\'function\')selectPatient('+pi+')},150)" style="width:100%;padding:10px;background:var(--sage-light,#eaf1ec);color:var(--sage-dark,#3d6653);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">⊙ Ver paciente</button>'
@@ -779,7 +779,7 @@ function renderDayView() {
             + '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
               + '<div onclick="event.stopPropagation();_mostrarOpcoesAppt('+pi+',\''+a.id+'\')" style="cursor:pointer;flex:1"><strong>'+nome+'</strong>'+confTag+'<br/><span style="font-size:11px;opacity:.8">'+escHTML(a.abordagem)+' · '+a.time+'</span></div>'
               + '<div style="display:flex;gap:4px;flex-shrink:0">'
-                + '<button class="btn btn-purple btn-sm" onclick="event.stopPropagation();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="font-size:10px;padding:3px 7px" title="Briefing IA">✦</button>'
+                + '<button class="btn btn-purple btn-sm" onclick="event.stopPropagation();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="font-size:10px;padding:3px 7px" title="Briefing IA"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg></button>'
                 + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();reagendarAppointment(\''+a.id+'\')" style="font-size:10px;padding:3px 7px" title="Reagendar">↻</button>'
                 + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();cancelarAppointment(\''+a.id+'\')" style="font-size:10px;padding:3px 7px;color:var(--red)" title="Cancelar">✕</button>'
               + '</div>'

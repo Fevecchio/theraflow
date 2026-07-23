@@ -279,7 +279,7 @@ function _renderDashSessoesHoje(sessoes) {
         return '<div class="list-item" style="display:flex;align-items:center;gap:14px">'
           + '<div style="text-align:center;min-width:56px"><div style="font-size:12px;font-weight:600;color:var(--sage)">'+dateLbl+'</div><div style="font-size:11px;color:var(--muted)">'+escHTML(a.time)+'</div></div>'
           + '<div style="flex:1"><div class="patient-name">'+escHTML(a.patientName)+'</div><div class="patient-meta">'+escHTML(a.abordagem||'—')+'</div></div>'
-          + '<button class="btn btn-purple btn-sm" onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\')" title="Briefing IA pré-sessão">✦ Briefing</button>'
+          + '<button class="btn btn-purple btn-sm" onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\')" title="Briefing IA pré-sessão"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing</button>'
           + '</div>';
       }).join('');
     } else {
@@ -319,7 +319,7 @@ function _renderDashSessoesHoje(sessoes) {
       + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
         + presencaHtml
         + contagem
-        + '<button class="btn btn-purple btn-sm" onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\')" title="Briefing IA pré-sessão">✦</button>'
+        + '<button class="btn btn-purple btn-sm" onclick="currentBriefingPatientIdx='+a.patientIdx+';navigate(\'briefing\')" title="Briefing IA pré-sessão"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg></button>'
         + (!passada ? '<button class="btn btn-primary btn-sm" onclick="_tfSetSessionPatientAppt(\''+a.id+'\');navigate(\'sessao\')">▶ Entrar</button>' : '')
       + '</div>'
       + '</div>';

@@ -528,8 +528,11 @@ body { background: var(--bg); color: var(--ink); min-height: 100vh; display: fle
    ("deserto de tela") — teto de leitura confortável.
    Redesign 23/07 (parecer aprovado): acima do teto o conteúdo CENTRALIZA —
    antes ficava grudado à esquerda com ~830px de vazio à direita num 2560px.
-   O topbar vive dentro de .page, então título e conteúdo movem juntos. */
-.page { max-width: 1480px; margin-left: auto; margin-right: auto; }
+   O topbar vive dentro de .page, então título e conteúdo movem juntos.
+   ⚠ width:100% é OBRIGATÓRIO: .main é flex-column e margin:auto num flex item
+   DESLIGA o stretch — sem o width, a página dimensionava pelo conteúdo e
+   estourava a viewport no celular (regressão pega em teste 390px). */
+.page { max-width: 1480px; width: 100%; margin-left: auto; margin-right: auto; }
 .page.active { display: block; animation: pageEnter .3s cubic-bezier(.16,1,.3,1); }
 
 /* ── TOPBAR ── */
