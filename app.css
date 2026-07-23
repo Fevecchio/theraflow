@@ -1187,8 +1187,24 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   /* Insights do dashboard usam grid auto-fit que vira 3 colunas fixas e estoura;
      força coluna única em telas estreitas. */
   #dash-insights-list { grid-template-columns: 1fr !important; }
-  /* Containers de conteúdo respeitam a largura da tela e quebram texto longo. */
-  .perfil-section, .sup-alert-card, .insight-item, .card { max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
+  /* Containers de conteúdo respeitam a largura da tela e quebram texto longo.
+     overflow-wrap: break-word (NÃO 'anywhere' — bug 22/07): 'anywhere' reduzia o
+     min-content a 1 caractere e, num header flex apertado, o título quebrava
+     letra-a-letra ("S/e/s/s/õ/e/s"). break-word só quebra palavra longa quando
+     de fato não cabe, sem espremer texto normal. */
+  .perfil-section, .sup-alert-card, .insight-item, .card { max-width: 100%; min-width: 0; overflow-wrap: break-word; }
+  /* Header de seção (título + botões de ação): no mobile os botões descem em vez
+     de espremer o título — e o container de botões dentro dele também quebra, senão
+     ele sozinho (flex nowrap) estoura a viewport (scroll lateral, bug 22/07). */
+  .section-header { flex-wrap: wrap; gap: 8px 10px; }
+  .section-header > div { flex-wrap: wrap; }
+  /* Linhas de lista (sessões, tarefas): o bloco de texto do meio (flex:1) precisa
+     poder encolher (min-width:0), senão empurra os botões de ação além da tela. E
+     o bloco de AÇÕES (último filho) desce pra própria linha, alinhado à direita —
+     senão espremia o nome a ~1 caractere (quebra vertical, bug 22/07). */
+  .list-item { flex-wrap: wrap; row-gap: 10px; }
+  .list-item > div { min-width: 0; }
+  .list-item > div:last-child { flex-basis: 100%; justify-content: flex-end; }
   .perfil-section { padding: 16px 16px; }
   /* Barras de ação com botões quebram em vez de empurrar para fora. */
   .fin-tools, .fin-toolbar, .card-actions, .panel-actions { flex-wrap: wrap; }
@@ -1218,8 +1234,23 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
     height: auto;
     gap: 12px;
   }
-  .video-main { min-height: 240px; }
+  .video-main { min-height: 160px; }
   .ai-panel { overflow-y: visible; }
+  /* Vídeo FIXO ao rolar (feedback 22/07): no celular, empilhado, o vídeo saía da
+     tela ao rolar até as notas — o terapeuta perdia a paciente de vista. O sticky
+     vai no WRAPPER (1º filho do grid, irmão do painel), não no .video-area — este
+     está aninhado e não teria espaço pra "grudar". O wrapper gruda no topo e o
+     painel rola por baixo, com a paciente sempre visível. max-height deixa espaço
+     pro painel. */
+  .session-layout > div:first-child {
+    position: sticky;
+    top: 8px;
+    z-index: 10;
+    max-height: 46vh;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+    border-radius: var(--radius);
+  }
+  .session-layout > div:first-child .video-area { max-height: 46vh; }
 }
 
 /* ── MOBILE SIDEBAR ── */

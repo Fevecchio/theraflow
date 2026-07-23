@@ -96,12 +96,12 @@
     <div id="local-video"></div>
   </div>
   <div class="controls">
-    <button class="ctrl" id="btn-mic" onclick="toggleMic()" title="Microfone">🎤</button>
-    <button class="ctrl" id="btn-cam" onclick="toggleCam()" title="Câmera">📷</button>
-    <button class="ctrl" id="btn-blur" onclick="toggleBlur()" title="Desfocar meu fundo">🌫️</button>
-    <button class="ctrl" id="btn-pip" onclick="togglePip()" title="Vídeo flutuante — continue vendo sua terapeuta em outros apps">⧉</button>
-    <button class="ctrl" id="btn-dev" onclick="abrirDispositivos()" title="Trocar microfone, câmera ou som">⚙️</button>
-    <button class="ctrl ctrl-leave" onclick="sairDaSala()" title="Sair">📞</button>
+    <button class="ctrl" id="btn-mic" onclick="toggleMic()" title="Microfone"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></button>
+    <button class="ctrl" id="btn-cam" onclick="toggleCam()" title="Câmera"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M22 8.5l-6 3.5 6 3.5v-7z"/></svg></button>
+    <button class="ctrl" id="btn-blur" onclick="toggleBlur()" title="Desfocar meu fundo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12c2-3.5 5-6 9-6s7 2.5 9 6c-2 3.5-5 6-9 6s-7-2.5-9-6z" stroke-dasharray="3 3"/></svg></button>
+    <button class="ctrl" id="btn-pip" onclick="togglePip()" title="Vídeo flutuante — continue vendo sua terapeuta em outros apps"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1" fill="currentColor" stroke="none"/></svg></button>
+    <button class="ctrl" id="btn-dev" onclick="abrirDispositivos()" title="Trocar microfone, câmera ou som"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+    <button class="ctrl ctrl-leave" onclick="sairDaSala()" title="Sair"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
   </div>
 </div>
 
@@ -370,13 +370,13 @@
     if (!_room) return;
     _micOn = !_micOn;
     await _room.localParticipant.setMicrophoneEnabled(_micOn);
-    var b = document.getElementById('btn-mic'); b.classList.toggle('off', !_micOn); b.textContent = _micOn ? '🎤' : '🔇';
+    var b = document.getElementById('btn-mic'); b.classList.toggle('off', !_micOn); // estado pelo fundo (.off), não troca o ícone SVG
   }
   async function toggleCam() {
     if (!_room) return;
     _camOn = !_camOn;
     await _room.localParticipant.setCameraEnabled(_camOn);
-    var b = document.getElementById('btn-cam'); b.classList.toggle('off', !_camOn); b.textContent = _camOn ? '📷' : '🚫';
+    var b = document.getElementById('btn-cam'); b.classList.toggle('off', !_camOn); // estado pelo fundo (.off), não troca o ícone SVG
     if (_camOn) {
       var camPub = _room.localParticipant.getTrackPublication(window.LivekitClient.Track.Source.Camera);
       if (camPub && camPub.track) { var lv = document.getElementById('local-video'); lv.innerHTML = ''; lv.appendChild(camPub.track.attach()); }

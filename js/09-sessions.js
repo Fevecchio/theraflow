@@ -85,12 +85,11 @@ async function startSession() {
   // Limpa anotações rápidas
   const qn = document.getElementById('session-quick-notes');
   if (qn) qn.value = '';
-  // Auto-popula nota clínica com template por abordagem (TEXTO puro — é textarea)
+  // Campo de notas começa VAZIO (feedback 22/07: o template "S — Subjetivo: [...]"
+  // pré-preenchido poluía o campo; a IA já estrutura a nota em SOAP ao encerrar).
+  // O placeholder no HTML orienta sem inserir texto real.
   const _noteEl = document.getElementById('session-ai-note');
-  if (_noteEl) {
-    const _sp2 = _tfSessionPatient();
-    if (_sp2) _noteEl.value = _notaTemplateTexto(_sp2);
-  }
+  if (_noteEl) _noteEl.value = '';
   // Preenche painel de contexto clínico
   _renderSessionContext(sp);
   // Pontinho sutil no ✦ Briefing quando há dados novos desde a última geração
