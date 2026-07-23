@@ -901,10 +901,10 @@ function renderPatientApp(idx, pacs) {
   var streakHtml = '<div class="streak-week-card">'
     + '<div class="streak-week-left">'
       + (_streak > 0
-          ? '<span style="font-size:22px;line-height:1">🔥</span>'
+          ? '<span style="display:inline-flex;color:#c97d2e">' + _tfIcon('sparkle', 18) + '</span>'
             + '<span class="streak-num">' + _streak + '</span>'
             + '<span class="streak-label">' + (_streak === 1 ? 'dia seguido' : 'dias seguidos') + '</span>'
-          : '<span style="font-size:18px">✨</span><span class="streak-label" style="margin-left:6px">Comece hoje!</span>')
+          : '<span style="display:inline-flex;color:var(--muted)">' + _tfIcon('sparkle', 16) + '</span><span class="streak-label" style="margin-left:6px">Comece hoje!</span>')
     + '</div>'
     + '<div class="streak-week-dots">' + _weekDots + '</div>'
   + '</div>';

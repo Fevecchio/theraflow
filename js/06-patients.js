@@ -858,7 +858,7 @@ function renderPatients(filter) {
     const noPatients = patients.length === 0;
     list.innerHTML = noPatients
       ? `<div style="padding:48px 24px;text-align:center;color:var(--muted)">
-           <div style="font-size:40px;margin-bottom:12px">🌱</div>
+           <div style="margin-bottom:12px;color:var(--sage)">${_tfIcon('leaf', 34)}</div>
            <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Nenhum paciente cadastrado</div>
            <div style="font-size:13px;margin-bottom:20px">Adicione seu primeiro paciente para começar a usar o Teravia.</div>
            <button class="btn-primary" onclick="abrirModalNovoPaciente()">+ Novo paciente</button>

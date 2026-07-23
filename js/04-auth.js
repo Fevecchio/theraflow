@@ -756,7 +756,7 @@ function pacEmergencia() {
   overlay.onclick = function(e){ if (e.target===overlay) pacFecharEmergencia(); };
   overlay.innerHTML = '<div class="pac-emergency-panel">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'
-      + '<div style="font-size:18px;font-weight:700;color:var(--ink)">🌿 Estou aqui com você</div>'
+      + '<div style="font-size:18px;font-weight:700;color:var(--ink)">' + _tfIcon('leaf', 16) + ' Estou aqui com você</div>'
       + '<button onclick="pacFecharEmergencia()" style="background:none;border:none;font-size:26px;cursor:pointer;color:var(--muted);padding:4px;line-height:1">×</button>'
     + '</div>'
     + '<div style="background:var(--bg);border-radius:14px;padding:20px 18px;margin-bottom:16px;text-align:center">'
@@ -904,7 +904,7 @@ function _agendarNotificacaoPac(hora) {
   _notifTimeoutId = setTimeout(function(){
     _notifTimeoutId = null;
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      new Notification('Teravia 🌿', { body:'Como você está se sentindo hoje? Registre seu humor!', tag:'tf-mood-reminder' });
+      new Notification('Teravia', { body:'Como você está se sentindo hoje? Registre seu humor!', tag:'tf-mood-reminder' });
     }
     _agendarNotificacaoPac(hora);
   }, alvo - agora);

@@ -1384,6 +1384,27 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   .grid-2 > *, .grid-4 > *, .portal-grid > * { min-width: 0; }
 }
 
+/* ── ACESSIBILIDADE (redesign 23/07, Eixo 3) ──
+   Foco visível: navegação por teclado tinha outline nativo suprimido em vários
+   controles. :focus-visible só acende no teclado — clique de mouse não ganha
+   anel (comportamento nativo preservado). */
+:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+[data-theme="dark"] :focus-visible { outline-color: #8FBCA4; }
+
+/* Alvo de toque: em tela de toque, botões-ícone pequenos (excluir tarefa,
+   ações do kanban, fechar modal) ganham área mínima de 40px sem mudar o
+   visual no desktop (pointer:coarse não afeta mouse). */
+@media (pointer: coarse) {
+  .task-delete, .kanban-btn, .charge-btn-delete, .modal-close {
+    min-width: 40px; min-height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+}
+
 /* ── Busca global (Ctrl+K) ── */
 #global-search-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.55);

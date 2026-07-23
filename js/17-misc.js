@@ -38,7 +38,7 @@ function _renderTourStep() {
   if (dots) dots.innerHTML = _TOUR_STEPS.map(function(_,i){
     return '<div style="width:7px;height:7px;border-radius:50%;background:' + (i===_tourStep?'var(--sage)':'var(--border)') + ';transition:background .2s"></div>';
   }).join('');
-  if (btnNext) btnNext.textContent = _tourStep === _TOUR_STEPS.length - 1 ? 'Começar! 🌱' : 'Próximo →';
+  if (btnNext) btnNext.textContent = _tourStep === _TOUR_STEPS.length - 1 ? 'Começar!' : 'Próximo →';
   if (btnSkip) btnSkip.style.display = _tourStep === _TOUR_STEPS.length - 1 ? 'none' : '';
 }
 function avancarTour() {

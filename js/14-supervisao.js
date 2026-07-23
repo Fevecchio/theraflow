@@ -73,7 +73,7 @@ function gerarAlertasReais() {
         if (diffDias > 21) {
           alertas.push({
             tipo: 'pattern',
-            icon: '📆',
+            icon: _tfIcon('cal',15),
             label: 'Frequência · Intervalo longo',
             titulo: escHTML(p.name) + ': próxima sessão em ' + diffDias + ' dias',
             texto: 'Intervalo superior a 3 semanas pode comprometer a continuidade terapêutica. Considere verificar disponibilidade ou enviar mensagem de contato.',
@@ -139,7 +139,7 @@ function gerarAlertasReais() {
     if (p.progress >= 70 && p.sessions >= 8) {
       alertas.push({
         tipo: 'positive',
-        icon: '🌱',
+        icon: _tfIcon('leaf',15),
         label: 'Evolução positiva · Destaque',
         titulo: escHTML(p.name) + ': evolução consistente (' + p.progress + '%)',
         texto: 'Progresso terapêutico acima de 70% após ' + p.sessions + ' sessões. Pode ser momento de discutir objetivos de alta ou plano de manutenção.',
@@ -164,7 +164,7 @@ function gerarAlertasReais() {
     if (faltasRecentes30.length >= 2) {
       alertas.push({
         tipo: 'risk',
-        icon: '🚫',
+        icon: _tfIcon('ban',15),
         label: 'Frequência · Faltas reiteradas',
         titulo: escHTML(p.name) + ': ' + faltasRecentes30.length + ' faltas nos últimos 30 dias',
         texto: 'Padrão de ausências pode indicar resistência, sobrecarga ou desvinculação. Considere abordar o tema na próxima sessão ou entrar em contato via WhatsApp.',
@@ -1159,7 +1159,7 @@ function atualizarMetricasSupervisao() {
         </tr>`;
       }).join('');
     } else {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;font-size:13px">🌱 Nenhum paciente precisa de atenção especial esta semana.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Nenhum paciente precisa de atenção especial esta semana.</td></tr>';
     }
   }
 }
@@ -1320,7 +1320,7 @@ function runSupAnalysis() {
   var bannerHtml = bannerExist ? bannerExist.outerHTML : '';
   if (alertas.length === 0) {
     content.innerHTML = bannerHtml + '<div style="text-align:center;padding:40px 20px;color:var(--muted)">'
-      + '<div style="font-size:32px;margin-bottom:12px">🌿</div>'
+      + '<div style="margin-bottom:12px;color:var(--sage)">' + _tfIcon('leaf', 28) + '</div>'
       + '<div style="font-weight:600;margin-bottom:6px">Tudo certo por aqui!</div>'
       + '<div style="font-size:13px">Nenhum alerta clínico identificado esta semana.</div>'
       + '</div>';
@@ -1772,7 +1772,7 @@ function _renderContratransferencia() {
   var insights = _analisarContratransferencia();
   if (!insights.length) {
     container.innerHTML = '<div style="text-align:center;padding:28px 16px;color:var(--muted);font-size:13px;line-height:1.6">'
-      + '<div style="font-size:28px;margin-bottom:8px">🌱</div>'
+      + '<div style="margin-bottom:8px;color:var(--sage)">' + _tfIcon('leaf', 26) + '</div>'
       + '<strong style="color:var(--ink)">Nenhum padrão preocupante identificado</strong><br>'
       + 'Continue registrando notas clínicas para que a análise fique mais precisa ao longo do tempo.'
       + '</div>';
