@@ -1325,6 +1325,60 @@ label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
   box-shadow: 0 2px 8px rgba(0,0,0,.1);
 }
 
+/* ── TABLET / NOTEBOOK 769–1199px: trilho de ícones (redesign 23/07) ──
+   Zona morta medida via Playwright: iPad deitado (1024) e notebooks pequenos
+   caíam entre o sanduíche mobile (≤768) e o desktop largo — sidebar fixa de
+   248px + painéis de largura fixa geravam scroll horizontal (Dashboard 1176px,
+   Agenda 1073px, Sessão 1240px numa viewport de 1024px). Nesta faixa a sidebar
+   colapsa num trilho só de ícones (72px) e os painéis ficam fluidos. */
+@media (min-width: 769px) and (max-width: 1199px) {
+  .sidebar { width: 72px; }
+  .main { margin-left: 72px; }
+
+  /* Logo: só a marca (folha), sem texto */
+  .sidebar-logo { justify-content: center; padding: 18px 8px 16px; }
+  .logo-mark, .logo-sub { display: none; }
+
+  /* Busca, trial e rótulos textuais não cabem no trilho (Ctrl+K segue ativo) */
+  .sidebar-search, #trial-counter-bar, .nav-label { display: none; }
+
+  /* Títulos de seção viram separadores hairline */
+  .nav-section {
+    font-size: 0; height: 0; padding: 0; overflow: hidden;
+    border-top: 1px solid var(--border); margin: 10px 10px 6px;
+  }
+
+  /* Itens de navegação: só o ícone, centralizado (title = tooltip nativo) */
+  .nav-item { font-size: 0; gap: 0; justify-content: center; padding: 10px 0; position: relative; }
+  /* Badges numéricos viram um ponto no canto do item (o número não cabe) */
+  .nav-badge, .nav-badge-purple, .nav-badge-soft, #nav-supervisao-badge {
+    position: absolute !important; top: 5px; right: 16px; margin: 0 !important;
+    width: 7px; height: 7px; min-width: 0 !important; padding: 0 !important;
+    font-size: 0 !important; border-radius: 50% !important; overflow: hidden;
+  }
+
+  /* Sync: só o ícone de estado */
+  #sync-status-bar { justify-content: center; }
+  #sync-status-text { display: none; }
+
+  /* Rodapé: avatar e presente, sem texto */
+  .therapist-card { justify-content: center; padding: 8px 6px; }
+  .therapist-card > div:not(.avatar) { display: none; }
+  .sidebar-footer > button { justify-content: center; }
+
+  /* Topbar quebra linha em vez de estourar (Agenda tem 649px de controles) */
+  .topbar { flex-wrap: wrap; gap: 10px; }
+  .topbar-actions { flex-wrap: wrap; }
+
+  /* Painéis fluidos: coluna de conteúdo encolhe, painel lateral estreita */
+  .session-layout { grid-template-columns: minmax(0, 1fr) 320px; }
+  .split { grid-template-columns: 260px minmax(0, 1fr); }
+
+  /* Grids do dashboard: filhos podem encolher abaixo do min-content
+     (mesma correção raiz já aplicada no mobile e no .main) */
+  .grid-2 > *, .grid-4 > *, .portal-grid > * { min-width: 0; }
+}
+
 /* ── Busca global (Ctrl+K) ── */
 #global-search-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.55);
