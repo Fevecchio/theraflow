@@ -1023,7 +1023,7 @@ function _lkShowPostSession({ transcript, note, empty, noPatient, tooLong, retry
       chargeWarn = `
     <div style="margin-top:12px;background:#fff8e6;border:1px solid #f0d060;border-radius:10px;padding:10px 14px;color:#8a5a1a;font-size:12.5px;line-height:1.5">
       ◈ <strong>Sem cobrança automática:</strong> a ficha de ${esc(nome)} não tem valor de sessão (nem o Perfil).
-      Ao salvar, <strong>nenhuma cobrança será criada</strong> — defina o valor em Pacientes → ✎ Editar para as próximas.
+      Ao salvar, <strong>nenhuma cobrança será criada</strong> — defina o valor em Pacientes → Editar para as próximas.
     </div>`;
     }
   } catch (_) {}

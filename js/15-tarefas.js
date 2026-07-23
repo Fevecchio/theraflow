@@ -128,7 +128,7 @@ function renderTarefas() {
     const noTasks = tasks.length === 0;
     const msg = noTasks
       ? `<div style="padding:48px 24px;text-align:center;color:var(--muted)">
-           <div style="font-size:40px;margin-bottom:12px">✅</div>
+           <div style="margin-bottom:12px;color:var(--sage)">${_tfIcon('checkCircle', 34)}</div>
            <div style="font-weight:600;font-size:15px;color:var(--ink-soft);margin-bottom:6px">Sem tarefas pendentes</div>
            <div style="font-size:13px;margin-bottom:20px">Crie lembretes, follow-ups e pendências dos seus pacientes aqui.</div>
            <button class="btn-primary" onclick="showModal('modal-nova-tarefa')">+ Nova tarefa</button>
@@ -182,10 +182,10 @@ function renderTarefas() {
     }
     var assuntoCell = concluida
       ? '<span class="task-assunto done">'+escHTML(t.title)+'</span>'
-      : '<span class="task-assunto task-inline-trigger" onclick="tarefaEditInline(this,\''+t.id+'\',\'title\')" title="Clique para editar">'+escHTML(t.title)+'<span class="task-inline-icon">✏</span></span>';
+      : '<span class="task-assunto task-inline-trigger" onclick="tarefaEditInline(this,\''+t.id+'\',\'title\')" title="Clique para editar">'+escHTML(t.title)+'<span class="task-inline-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></span></span>';
     var dataCell = concluida
       ? '<span class="task-date '+dtCls+'">'+escHTML(dtText)+'</span>'
-      : '<span class="task-date '+dtCls+' task-inline-trigger" onclick="tarefaEditInline(this,\''+t.id+'\',\'date\')" title="Clique para editar">'+escHTML(dtText)+'<span class="task-inline-icon">✏</span></span>';
+      : '<span class="task-date '+dtCls+' task-inline-trigger" onclick="tarefaEditInline(this,\''+t.id+'\',\'date\')" title="Clique para editar">'+escHTML(dtText)+'<span class="task-inline-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></span></span>';
     return headerRow + '<tr class="task-row'+(concluida?' concluida':'')+'" data-id="'+t.id+'">'
       +'<td data-label="">'+acaoBtn+'</td>'
       +'<td class="task-num" data-label="#">'+(i+1)+'</td>'
@@ -194,8 +194,8 @@ function renderTarefas() {
       +'<td data-label="Vencimento">'+dataCell+'</td>'
       +'<td data-label="Status">'+statusTag+'</td>'
       +'<td data-label="" style="display:flex;gap:2px;align-items:center">'
-        +(concluida ? '' : '<button class="task-delete" onclick="editarTarefa(\''+t.id+'\')" title="Editar tudo (inclusive paciente)" style="color:var(--muted)">✏</button>')
-        +'<button class="task-delete" onclick="excluirTarefa(\''+t.id+'\')" title="Excluir">✕</button>'
+        +(concluida ? '' : '<button class="task-delete" onclick="editarTarefa(\''+t.id+'\')" title="Editar tudo (inclusive paciente)" style="color:var(--muted)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>')
+        +'<button class="task-delete" onclick="excluirTarefa(\''+t.id+'\')" title="Excluir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
       +'</td>'
       +'</tr>';
   }).join('');

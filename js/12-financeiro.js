@@ -141,7 +141,7 @@ function renderCharges(mesFilter) {
       : `<button class="charge-btn charge-btn-wpp" onclick="event.stopPropagation();sendWppCharge('${c.id}')">${_tfIcon('wpp')} WhatsApp</button>
          <button class="charge-btn charge-btn-check" onclick="event.stopPropagation();confirmPayment(this,'${c.id}')">✓ Pago</button>`;
 
-    const deleteBtn = `<button class="charge-btn-delete" onclick="event.stopPropagation();deleteCharge('${c.id}',this)" title="Excluir cobrança">✕</button>`;
+    const deleteBtn = `<button class="charge-btn-delete" onclick="event.stopPropagation();deleteCharge('${c.id}',this)" title="Excluir cobrança"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>`;
 
     const billingBadge = c.billing === 'mensal'
       ? `<span class="plan-badge plan-badge-mensal" style="margin-left:6px">Mensal</span>`
@@ -316,10 +316,10 @@ function renderFinPlanos() {
       var acoes = '';
       if (pl.status === 'ativo') {
         acoes = '<button class="btn btn-secondary btn-sm" onclick="pausarPlano(\'' + pl.id + '\')">⏸ Pausar</button>'
-          + '<button class="btn btn-secondary btn-sm" onclick="cancelarPlano(\'' + pl.id + '\')">✕ Cancelar</button>';
+          + '<button class="btn btn-secondary btn-sm" onclick="cancelarPlano(\'' + pl.id + '\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg> Cancelar</button>';
       } else if (pl.status === 'pausado') {
         acoes = '<button class="btn btn-secondary btn-sm" onclick="retomarPlano(\'' + pl.id + '\')">▶ Retomar</button>'
-          + '<button class="btn btn-secondary btn-sm" onclick="cancelarPlano(\'' + pl.id + '\')">✕ Cancelar</button>';
+          + '<button class="btn btn-secondary btn-sm" onclick="cancelarPlano(\'' + pl.id + '\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg> Cancelar</button>';
       } else {
         acoes = '<button class="btn btn-secondary btn-sm" onclick="removerPlano(\'' + pl.id + '\')">🗑 Remover</button>';
       }
@@ -757,7 +757,7 @@ function abrirWppLote() {
           var p = patients.find(function(pt){ return pt.name===c.patient; });
           var temWpp = p && p.whatsapp;
           return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)">'
-            + '<span>'+(temWpp?'📱':'⚠ ')+escHTML(c.patient)+'</span>'
+            + '<span>'+(temWpp?'':_tfIcon('alert',11)+' ')+escHTML(c.patient)+'</span>'
             + '<span style="font-weight:600">'+(c.status==='overdue'?'<span style="color:var(--red)">Em atraso</span>':'Pendente')+' · '+fmt(c.value)+'</span>'
             + '</div>';
         }).join('')
@@ -829,8 +829,8 @@ function lembreteInadimplentes() {
   modal.id = 'modal-inadimplentes';
   modal.className = 'modal-overlay';
   modal.innerHTML = '<div class="modal" style="max-width:460px">'
-    + '<div class="modal-header"><div class="modal-title">⚠ Cobranças em atraso (' + vencidas.length + ')</div>'
-    + '<button class="modal-close" onclick="closeModal(\'modal-inadimplentes\')">✕</button></div>'
+    + '<div class="modal-header"><div class="modal-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> Cobranças em atraso (' + vencidas.length + ')</div>'
+    + '<button class="modal-close" onclick="closeModal(\'modal-inadimplentes\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>'
     + '<div class="modal-body">' + itens + '</div></div>';
   document.body.appendChild(modal);
   modal.addEventListener('click', function(e){ if(e.target===modal) modal.classList.remove('open'); });
@@ -1015,7 +1015,7 @@ function abrirConfigRegua() {
   modal.className = 'modal-overlay';
   modal.innerHTML = '<div class="modal" style="max-width:560px">'
     + '<div class="modal-header"><div class="modal-title">Régua de cobrança — prazos e mensagens</div>'
-    + '<button class="modal-close" onclick="closeModal(\'modal-cobr-regua\')">✕</button></div>'
+    + '<button class="modal-close" onclick="closeModal(\'modal-cobr-regua\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>'
     + '<div class="modal-body">'
       + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6">Use <strong>{nome}</strong> (paciente), <strong>{valor}</strong>, <strong>{vencimento}</strong>, <strong>{pix}</strong> (sua chave, se cadastrada no Perfil) e <strong>{terapeuta}</strong> — eles são trocados pelos dados reais na hora do envio.</div>'
       + blocos

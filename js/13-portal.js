@@ -95,7 +95,7 @@ function renderMetasPortal() {
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:'+(m.done?'var(--sage-light)':'var(--bg)')+';border:1px solid '+(m.done?'rgba(74,124,89,.2)':'var(--border)')+';">'
       +'<input type="checkbox"'+(m.done?' checked':'')+' onchange="toggleMetaPortal('+m.id+',this)" style="width:16px;height:16px;accent-color:var(--sage);cursor:pointer;flex-shrink:0"/>'
       +'<span style="flex:1;font-size:13.5px;'+(m.done?'text-decoration:line-through;color:var(--muted)':'color:var(--ink)')+'">'+escHTML(m.text)+'</span>'
-      +'<button onclick="excluirMetaPortal(\''+m.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:5px" title="Remover">✕</button>'
+      +'<button onclick="excluirMetaPortal(\''+m.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:5px" title="Remover"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
       +'</div>';
   }).join('');
 }
@@ -186,8 +186,8 @@ function renderExercises() {
           progressBar +
         '</div>' +
         '<div style="display:flex;flex-direction:column;gap:4px;margin-left:8px;flex-shrink:0">' +
-          '<button onclick="abrirModalExercicio(' + ex.id + ')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)">✎</button>' +
-          '<button onclick="excluirExercicio(' + ex.id + ')" title="Remover" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)">✕</button>' +
+          '<button onclick="abrirModalExercicio(' + ex.id + ')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>' +
+          '<button onclick="excluirExercicio(' + ex.id + ')" title="Remover" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:2px 7px;color:var(--muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
         '</div>' +
       '</div>';
     }).join('');

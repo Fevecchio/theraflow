@@ -283,7 +283,7 @@ function onSecOutraInput(input) {
       const grid = document.getElementById('secundarias-grid');
       const chip = document.createElement('div');
       chip.className = 'sec-chip selected';
-      chip.innerHTML = `<span>✏️ ${val}</span><span class="chip-check">✓</span>`;
+      chip.innerHTML = `<span>${_abSvg('<path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/>')} ${val}</span><span class="chip-check">✓</span>`;
       chip.onclick = () => {
         secundarias = secundarias.filter(s => s !== val);
         chip.remove();

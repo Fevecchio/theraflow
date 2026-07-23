@@ -12,7 +12,7 @@ var CAPTACAO_COLS = [
   { label: 'Conversa inicial',  icon: _tfIcon('message',13), color: '#4a7c59' },
   { label: 'Proposta enviada',  icon: _tfIcon('send',13),    color: '#c97d2e' },
   { label: 'Em espera de vaga', icon: _tfIcon('clock',13),   color: '#6b7c8a' },
-  { label: 'Perdido',           icon: '✗',  color: '#c0392b' },
+  { label: 'Perdido',           icon: _tfIcon('x',13),  color: '#c0392b' },
 ];
 var CAPTACAO_PERDIDO = CAPTACAO_COLS.length - 1;
 
@@ -215,7 +215,7 @@ function _renderCard(lead, colIdx) {
 
   // Motivo da perda (só na coluna Perdido)
   if (isPerdido && lead.motivoPerda) {
-    html += '<div style="font-size:10.5px;color:var(--red);margin-top:4px">✗ ' + escHTML(lead.motivoPerda) + '</div>';
+    html += '<div style="font-size:10.5px;color:var(--red);margin-top:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg> ' + escHTML(lead.motivoPerda) + '</div>';
   }
 
   // Ações
@@ -227,7 +227,7 @@ function _renderCard(lead, colIdx) {
     html += '<button class="kanban-btn" title="Avançar etapa" onclick="event.stopPropagation();moverLead(\'' + lead.id + '\',1)">→</button>';
   if (wppHref)
     html += '<a href="' + wppHref + '" target="_blank" class="kanban-btn" title="WhatsApp — abre com mensagem pronta para esta etapa (você revisa antes de enviar)" onclick="event.stopPropagation()" style="text-decoration:none">' + _tfIcon('wpp',13) + '</a>';
-  html += '<button class="kanban-btn" title="Editar" onclick="event.stopPropagation();editarLead(\'' + lead.id + '\')">✎</button>';
+  html += '<button class="kanban-btn" title="Editar" onclick="event.stopPropagation();editarLead(\'' + lead.id + '\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>';
   if (!isPerdido)
     html += '<button class="kanban-btn kanban-btn-convert" title="Converter para paciente" onclick="event.stopPropagation();converterParaPaciente(\'' + lead.id + '\')">✓ Paciente</button>';
   html += '<button class="kanban-btn kanban-btn-danger" title="Excluir" onclick="event.stopPropagation();excluirLead(\'' + lead.id + '\')">🗑</button>';
@@ -266,7 +266,7 @@ function _capPedirMotivo(id) {
   }).join('');
   modal.innerHTML = '<div class="modal" style="max-width:380px">'
     + '<div class="modal-header"><div class="modal-title">Por que perdeu esse lead?</div>'
-    + '<button class="modal-close" onclick="closeModal(\'modal-cap-motivo\')">✕</button></div>'
+    + '<button class="modal-close" onclick="closeModal(\'modal-cap-motivo\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>'
     + '<div class="modal-body">'
     + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Opcional — mas é o que mostra, lá na frente, o que mais faz você perder contatos.</div>'
     + '<div style="display:flex;flex-direction:column;gap:6px">' + botoes + '</div>'
@@ -355,7 +355,7 @@ function abrirLinkCaptacao() {
   }
   modal.innerHTML = '<div class="modal" style="max-width:480px">'
     + '<div class="modal-header"><div class="modal-title">' + _tfIcon('link',15) + ' Link para bio e campanhas</div>'
-    + '<button class="modal-close" onclick="closeModal(\'modal-link-captacao\')">✕</button></div>'
+    + '<button class="modal-close" onclick="closeModal(\'modal-link-captacao\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>'
     + '<div class="modal-body">' + corpo + '</div></div>';
   document.body.appendChild(modal);
   modal.addEventListener('click', function(e){ if (e.target === modal) modal.classList.remove('open'); });

@@ -613,7 +613,7 @@ function showPostSessionFlow() {
         <!-- Ações -->
         <div style="padding:12px 24px 20px;display:flex;gap:8px;border-top:1px solid #f0f0f0">
           <button onclick="editPostNote()" id="btn-edit-note" style="padding:10px 16px;border:1px solid #e0e0e0;background:var(--white);border-radius:8px;font-size:13px;cursor:pointer;color:#555;white-space:nowrap;font-family:inherit">
-            ✏️ Editar nota
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar nota
           </button>
           <button onclick="indexPostSession()" style="flex:1;padding:10px;background:#4a7c59;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
             ✓ Salvar e indexar na IA
@@ -902,7 +902,7 @@ function editPostNote() {
     div.style.cssText = 'font-size:13px;color:#333;line-height:1.6';
     div.textContent = newText;
     noteEl.replaceWith(div);
-    btn.innerHTML = '✏️ Editar nota';
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar nota';
     return;
   }
 
@@ -1071,7 +1071,7 @@ function indexPostSession() {
       } else if (_valorSessao <= 0) {
         // Sem valor definido a cobrança NÃO nasce — avisar em vez de silenciar
         // (pedido do usuário 12/07; o modal pós-sessão também mostra o aviso).
-        if (typeof showToast === 'function') showToast('◈ Sessão registrada SEM cobrança — defina o valor da sessão na ficha do paciente (✎ Editar) ou no Perfil.', 'warning');
+        if (typeof showToast === 'function') showToast('◈ Sessão registrada SEM cobrança — defina o valor da sessão na ficha do paciente (botão Editar) ou no Perfil.', 'warning');
       }
     } catch(_e) {}
   }

@@ -68,7 +68,7 @@ function _ofereceCobrancaPresenca(appt) {
     // abaixo: showToast é single-instance — sem o delay, este aviso apagaria
     // o toast "✓ Presença registrada." antes do terapeuta ver.
     setTimeout(function() {
-      if (typeof showToast === 'function') showToast('◈ Presença registrada SEM cobrança — defina o valor da sessão na ficha do paciente (✎ Editar) ou no Perfil.');
+      if (typeof showToast === 'function') showToast('◈ Presença registrada SEM cobrança — defina o valor da sessão na ficha do paciente (botão Editar) ou no Perfil.');
     }, 1500);
     return;
   }
@@ -87,7 +87,7 @@ function _ofereceCobrancaPresenca(appt) {
     // que quebrava com apóstrofo (D'Ávila) e era vetor de injeção. F4.4.
     toast.innerHTML = '<span>💳 Criar cobrança para ' + escHTML(_firstName(p.name)) + '? <strong>' + fmtMoedaInt(valor) + '</strong></span>'
       + '<button data-act="criar" style="background:var(--sage);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">Criar</button>'
-      + '<button data-act="fechar" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0 4px">✕</button>';
+      + '<button data-act="fechar" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0 4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
     document.body.appendChild(toast);
     var _pnome = p.name;
     toast.querySelector('[data-act="criar"]').addEventListener('click', function(){ _criarCobrancaPresenca(_pnome, valor, hoje); });
@@ -132,7 +132,7 @@ function _promptNotaRapida(appt) {
   overlay.innerHTML = '<div style="background:var(--white);border-radius:16px 16px 0 0;width:100%;max-width:560px;padding:20px 24px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.18)">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
       + '<div style="font-size:14px;font-weight:700;color:var(--ink)">' + _tfIcon('clip', 13) + ' Nota rápida — ' + escHTML(_firstName(p.name)) + '</div>'
-      + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>'
+      + '<button onclick="document.getElementById(\'modal-nota-presenca\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
     + '</div>'
     + '<textarea id="nota-rapida-text" placeholder="Registre brevemente o que ocorreu na sessão de hoje…" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--sage);border-radius:10px;font-size:13.5px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;line-height:1.6;color:var(--ink)"></textarea>'
     + '<div style="display:flex;gap:10px;margin-top:12px">'
@@ -282,7 +282,7 @@ function _mostrarOpcoesAppt(pi, apptId) {
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
       + '<div><div style="font-weight:600;font-size:15px;color:var(--ink)">'+escHTML(p.name)+'</div>'
       + '<div style="font-size:12px;color:var(--muted)">'+(a ? escHTML(a.abordagem || '—')+' · '+a.time : '—')+'</div></div>'
-      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--muted);padding:0;line-height:1">✕</button>'
+      + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--muted);padding:0;line-height:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:8px">'
       + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();_tfSetSessionPatientAppt(\''+apptId+'\');currentSessionApptId=\''+apptId+'\';navigate(\'sessao\')" style="width:100%;padding:10px;background:var(--sage,#4a7c59);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">▶ Iniciar sessão agora</button>'
@@ -292,7 +292,7 @@ function _mostrarOpcoesAppt(pi, apptId) {
       + '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();navigate(\'pacientes\');setTimeout(function(){if(typeof selectPatient===\'function\')selectPatient('+pi+')},150)" style="width:100%;padding:10px;background:var(--sage-light,#eaf1ec);color:var(--sage-dark,#3d6653);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">⊙ Ver paciente</button>'
       + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();reagendarAppointment(\''+apptId+'\')" style="width:100%;padding:10px;background:var(--line-2,#f5f5f5);color:var(--ink-soft,#555);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left">↻ Reagendar</button>' : '')
       // Cancelar direto do popup (pedido 15/07 — antes só existia na visão Dia)
-      + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();cancelarAppointment(\''+apptId+'\')" style="width:100%;padding:10px;background:var(--red-light,#f9eeec);color:var(--red,#b3564a);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left">✕ Cancelar sessão</button>' : '')
+      + (a ? '<button onclick="document.getElementById(\'_appt-opts-popup\').remove();cancelarAppointment(\''+apptId+'\')" style="width:100%;padding:10px;background:var(--red-light,#f9eeec);color:var(--red,#b3564a);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;text-align:left"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg> Cancelar sessão</button>' : '')
     + '</div>'
   + '</div>';
   document.body.appendChild(popup);
@@ -446,7 +446,7 @@ function confirmarAgendamento() {
         salvarCharges();
         p.finStatus = 'pending'; p.fin = 'Pendente';
       } else {
-        showToast('◈ Sessão agendada como pré-paga, mas SEM cobrança — defina o valor da sessão na ficha do paciente (✎ Editar) ou no Perfil.');
+        showToast('◈ Sessão agendada como pré-paga, mas SEM cobrança — defina o valor da sessão na ficha do paciente (botão Editar) ou no Perfil.');
       }
     }
 
@@ -763,13 +763,13 @@ function renderDayView() {
           if (a.presenca === 'compareceu') {
             presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--sage-light);color:var(--sage-dark);font-weight:600">✓ compareceu</span>';
           } else if (a.presenca === 'faltou') {
-            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--red-light);color:var(--red);font-weight:600">✗ faltou</span>';
+            presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--red-light);color:var(--red);font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg> faltou</span>';
           } else if (a.presenca === 'atrasou') {
             presencaBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--amber-light);color:var(--amber);font-weight:600">~ atrasou</span>';
           } else if (isPast) {
             presencaBadge = '<span style="display:flex;gap:3px">'
               + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'compareceu\')" style="font-size:10px;padding:2px 6px;background:var(--sage-light);color:var(--sage-dark);border:none;border-radius:8px;cursor:pointer" title="Compareceu">✓</button>'
-              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'faltou\')" style="font-size:10px;padding:2px 6px;background:var(--red-light);color:var(--red);border:none;border-radius:8px;cursor:pointer" title="Faltou">✗</button>'
+              + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'faltou\')" style="font-size:10px;padding:2px 6px;background:var(--red-light);color:var(--red);border:none;border-radius:8px;cursor:pointer" title="Faltou"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
               + '<button class="btn btn-sm" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'atrasou\')" style="font-size:10px;padding:2px 6px;background:var(--amber-light);color:var(--amber);border:none;border-radius:8px;cursor:pointer" title="Atrasou">~</button>'
               + '</span>';
           }
@@ -781,7 +781,7 @@ function renderDayView() {
               + '<div style="display:flex;gap:4px;flex-shrink:0">'
                 + '<button class="btn btn-purple btn-sm" onclick="event.stopPropagation();currentBriefingPatientIdx='+pi+';navigate(\'briefing\')" style="font-size:10px;padding:3px 7px" title="Briefing IA"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg></button>'
                 + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();reagendarAppointment(\''+a.id+'\')" style="font-size:10px;padding:3px 7px" title="Reagendar">↻</button>'
-                + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();cancelarAppointment(\''+a.id+'\')" style="font-size:10px;padding:3px 7px;color:var(--red)" title="Cancelar">✕</button>'
+                + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();cancelarAppointment(\''+a.id+'\')" style="font-size:10px;padding:3px 7px;color:var(--red)" title="Cancelar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
               + '</div>'
             + '</div>'
             + (presencaBadge ? '<div>'+presencaBadge+'</div>' : '')
@@ -916,11 +916,11 @@ function renderWeekView() {
         var isPastW = di.iso < hoje || (di.iso === hoje && parseInt((a.time||'23:59').split(':')[0]) < new Date().getHours());
         var pBadge = '';
         if (a.presenca === 'compareceu') pBadge = '<div style="font-size:9px;color:var(--sage-dark);background:var(--sage-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✓</div>';
-        else if (a.presenca === 'faltou') pBadge = '<div style="font-size:9px;color:var(--red);background:var(--red-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">✗</div>';
+        else if (a.presenca === 'faltou') pBadge = '<div style="font-size:9px;color:var(--red);background:var(--red-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg></div>';
         else if (a.presenca === 'atrasou') pBadge = '<div style="font-size:9px;color:var(--amber);background:var(--amber-light);border-radius:6px;padding:1px 4px;margin-top:2px;display:inline-block">~</div>';
         else if (isPastW) pBadge = '<div style="display:flex;gap:2px;margin-top:2px">'
           + '<span onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'compareceu\')" style="font-size:9px;cursor:pointer;color:var(--sage-dark);background:var(--sage-light);border-radius:4px;padding:1px 3px" title="Compareceu">✓</span>'
-          + '<span onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'faltou\')" style="font-size:9px;cursor:pointer;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 3px" title="Faltou">✗</span>'
+          + '<span onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'faltou\')" style="font-size:9px;cursor:pointer;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 3px" title="Faltou"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg></span>'
           + '</div>';
         // "confirmada" é otimista: marca que o lembrete de WhatsApp foi enviado,
         // não que o paciente respondeu (ver comentário em _lembrarConfirmacao).
@@ -1129,7 +1129,7 @@ function renderBloqueiosList() {
         '<div style="font-weight:500;font-size:13.5px">' + (motivoLabel[b.motivo]||'Bloqueio') + (b.obs ? ' — ' + escHTML(b.obs) : '') + '</div>' +
         '<div style="font-size:12px;color:var(--muted)">' + formatarDataBR(b.inicio) + (b.fim !== b.inicio ? ' → ' + formatarDataBR(b.fim) : '') + '</div>' +
       '</div>' +
-      '<button onclick="removerBloqueio(' + b.id + ')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:4px" title="Remover">✕</button>' +
+      '<button onclick="removerBloqueio(' + b.id + ')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:4px" title="Remover"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
     '</div>';
   }).join('');
 }

@@ -14,7 +14,7 @@ function openSidebar() {
   const hb = document.getElementById('sidebar-hamburger');
   if (sb) sb.classList.add('sidebar-open');
   if (ov) ov.classList.add('visible');
-  if (hb) hb.textContent = '✕';
+  if (hb) hb.innerHTML = _tfIcon('x', 18);
   document.body.style.overflow = 'hidden';
 }
 function closeSidebar() {
@@ -23,7 +23,7 @@ function closeSidebar() {
   const hb = document.getElementById('sidebar-hamburger');
   if (sb) sb.classList.remove('sidebar-open');
   if (ov) ov.classList.remove('visible');
-  if (hb) hb.textContent = '☰';
+  if (hb) hb.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';
   document.body.style.overflow = '';
 }
 

@@ -125,7 +125,7 @@ function enviarLembretesAmanha() {
     modal = document.createElement('div');
     modal.id = 'modal-lembrete-amanha';
     modal.className = 'modal-overlay';
-    modal.innerHTML = '<div class="modal" style="max-width:420px"><div class="modal-header"><div class="modal-title">' + _tfIcon('message', 15) + ' Lembretes de amanhã</div><button class="modal-close" onclick="closeModal(\'modal-lembrete-amanha\')">✕</button></div><div class="modal-body" id="lembrete-amanha-body"></div></div>';
+    modal.innerHTML = '<div class="modal" style="max-width:420px"><div class="modal-header"><div class="modal-title">' + _tfIcon('message', 15) + ' Lembretes de amanhã</div><button class="modal-close" onclick="closeModal(\'modal-lembrete-amanha\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="modal-body" id="lembrete-amanha-body"></div></div>';
     document.body.appendChild(modal);
     modal.addEventListener('click', function(e){ if(e.target===modal) modal.classList.remove('open'); });
   }
@@ -225,7 +225,7 @@ function atualizarDashboard() {
     elReceita.textContent = fmtMoedaCompact(receitaMes);
   }
   const inadimplentes = charges_.filter(_chargeVencida).length;
-  if (elReceitaDelta) elReceitaDelta.textContent = inadimplentes > 0 ? `⚠ ${inadimplentes} em atraso` : '✓ Em dia';
+  if (elReceitaDelta) elReceitaDelta.innerHTML = inadimplentes > 0 ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> ${inadimplentes} em atraso` : _tfIcon('check', 12) + ' Em dia';
   if (elReceitaDelta) elReceitaDelta.style.color = inadimplentes > 0 ? 'var(--amber)' : 'var(--sage)';
 
   // ── Stat: notas — sessões desta semana sem nota
@@ -310,7 +310,7 @@ function _renderDashSessoesHoje(sessoes) {
       // id SEMPRE entre aspas no onclick: registros de sessão real têm id string
       // ('sess-...') — sem aspas o clique era um erro de sintaxe silencioso.
       if (a.presenca === 'compareceu') presencaHtml = '<span style="font-size:10px;color:var(--sage-dark);background:var(--sage-light);padding:1px 6px;border-radius:8px">✓</span>';
-      else if (a.presenca === 'faltou') presencaHtml = '<span style="font-size:10px;color:var(--red);background:var(--red-light);padding:1px 6px;border-radius:8px">✗</span>';
+      else if (a.presenca === 'faltou') presencaHtml = '<span style="font-size:10px;color:var(--red);background:var(--red-light);padding:1px 6px;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg></span>';
       else presencaHtml = '<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;background:var(--line-2);border:none;border-radius:6px;cursor:pointer;color:var(--muted)" onclick="event.stopPropagation();marcarPresenca(\''+a.id+'\',\'compareceu\')" title="Confirmar comparecimento">✓ confirmar</button>';
     }
     return '<div class="list-item" style="display:flex;align-items:center;gap:14px;opacity:'+(passada?.65:1)+'">'

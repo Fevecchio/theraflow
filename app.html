@@ -487,7 +487,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
 </div>
 
 <!-- Botão hambúrguer (visível só em mobile) -->
-<button class="hamburger-btn" id="sidebar-hamburger" onclick="toggleSidebar()" title="Abrir menu" aria-label="Abrir menu">☰</button>
+<button class="hamburger-btn" id="sidebar-hamburger" onclick="toggleSidebar()" title="Abrir menu" aria-label="Abrir menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
 
 <!-- Overlay escuro (fecha a sidebar no mobile ao clicar fora) -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -559,7 +559,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
        podia ficar congelado em "não sincronizado" após um relogin ok) -->
   <div id="sync-status-bar" title="Clique para verificar a sincronização agora" onclick="_syncRecheck()"
     style="margin:0 12px 4px;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:11px;background:rgba(74,122,99,.08);color:var(--sage-dark);transition:color .3s,background .3s;cursor:pointer">
-    <span id="sync-status-icon" style="font-size:12px">✓</span>
+    <span id="sync-status-icon" style="display:inline-flex"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
     <span id="sync-status-text">Sincronizado</span>
   </div>
 
@@ -687,7 +687,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <button class="btn btn-primary btn-sm" onclick="abrirModalNovoPaciente()">+ Novo paciente</button>
     </div>
   </div>
-  <div class="search-bar"><span style="display:inline-flex;color:var(--muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input id="patient-search" placeholder="Buscar por nome, cidade, diagnóstico, abordagem…" oninput="searchPatients(this.value)"/><span id="patient-search-clear" style="cursor:pointer;color:var(--muted);display:none" onclick="document.getElementById('patient-search').value='';searchPatients('')">✕</span></div>
+  <div class="search-bar"><span style="display:inline-flex;color:var(--muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input id="patient-search" placeholder="Buscar por nome, cidade, diagnóstico, abordagem…" oninput="searchPatients(this.value)"/><span id="patient-search-clear" style="cursor:pointer;color:var(--muted);display:none" onclick="document.getElementById('patient-search').value='';searchPatients('')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></span></div>
   <div class="split">
     <div class="panel-list" id="patient-list"></div>
     <div class="panel-detail card fade-in" id="patient-detail"></div>
@@ -814,7 +814,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
           <button class="ctrl-btn ctrl-btn-light" title="Dispositivos: microfone, câmera e som" onclick="_lkAbrirDispositivos()" style="font-size:13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
           <button class="ctrl-btn ctrl-btn-light" onclick="_lkReconnect()" title="Reconectar à mesma sala (a gravação é preservada — use se travar ou cair)" style="font-size:13px;position:relative">↻<span style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.7);white-space:nowrap">Reconectar</span></button>
           <div style="height:28px;width:1px;background:rgba(255,255,255,.1);margin:0 4px"></div>
-          <button class="ctrl-btn ctrl-btn-red" onclick="endWherebySession()" title="Encerrar sessão" style="font-size:13px;position:relative">✕<span style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.7);white-space:nowrap">Encerrar</span></button>
+          <button class="ctrl-btn ctrl-btn-red" onclick="endWherebySession()" title="Encerrar sessão" style="font-size:13px;position:relative"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg><span style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.7);white-space:nowrap">Encerrar</span></button>
         </div>
       </div>
     </div>
@@ -860,7 +860,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div class="sbo-panel">
       <div class="sbo-head">
         <div class="ai-section-title" style="margin:0;color:var(--purple)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing pré-sessão</div>
-        <button onclick="fecharBriefingOverlay()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:4px">✕</button>
+        <button onclick="fecharBriefingOverlay()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       </div>
       <div class="sbo-body" id="sess-briefing-body"></div>
     </div>
@@ -1470,7 +1470,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
       <div class="sup-metric-card">
         <div class="sup-metric-label">Casos em atenção</div>
         <div class="sup-metric-value" style="color:var(--amber)">3</div>
-        <div class="sup-metric-delta warn">⚠ Atenção recomendada</div>
+        <div class="sup-metric-delta warn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> Atenção recomendada</div>
       </div>
       <div class="sup-metric-card">
         <div class="sup-metric-label">Alertas de risco</div>
@@ -1616,7 +1616,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
               <div class="progress-bar"><div class="progress-fill" style="width:17%;background:var(--purple)"></div></div>
             </div>
             <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;color:var(--amber)">⚠ Casos em atenção</span><span style="font-size:13px;font-weight:600;color:var(--amber)">3 pacientes</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;color:var(--amber)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> Casos em atenção</span><span style="font-size:13px;font-weight:600;color:var(--amber)">3 pacientes</span></div>
               <div class="progress-bar"><div class="progress-fill" style="width:12%;background:var(--amber)"></div></div>
               <div style="font-size:12px;color:var(--muted);margin-top:6px">Humor baixo, em queda, ou status "Atenção" marcado na ficha</div>
             </div>
@@ -2814,7 +2814,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
   <div class="modal-box" style="max-width:640px;width:94%;max-height:88vh;display:flex;flex-direction:column">
     <div class="modal-header" style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between">
       <div class="modal-title" id="legal-doc-title">Termos de Uso</div>
-      <button onclick="fecharDocumentoLegal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;padding:4px">✕</button>
+      <button onclick="fecharDocumentoLegal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;padding:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <!-- Abas -->
     <div style="flex-shrink:0;display:flex;border-bottom:1px solid var(--border);padding:0 24px">
@@ -2831,7 +2831,7 @@ posthog.init('phc_vLt8m6EcSigxEcx6u3TWPERZRVxe5DSyV7H5GMQyPFiE',{api_host:'https
     <div id="legal-doc-content" style="overflow-y:auto;padding:24px;flex:1;font-size:13.5px;color:var(--ink-soft);line-height:1.8"></div>
     <!-- Rodapé -->
     <div style="flex-shrink:0;padding:14px 24px;border-top:1px solid var(--border);text-align:right">
-      <button onclick="fecharDocumentoLegal()" class="btn btn-primary btn-sm">Fechar ✕</button>
+      <button onclick="fecharDocumentoLegal()" class="btn btn-primary btn-sm">Fechar</button>
     </div>
   </div>
 </div>

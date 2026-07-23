@@ -11,17 +11,17 @@ function _setSyncStatus(state) {
   var bar  = document.getElementById('sync-status-bar');
   if (!icon || !text || !bar) return;
   if (state === 'syncing') {
-    icon.textContent = '↺'; text.textContent = 'Salvando…';
+    icon.innerHTML = _tfIcon('refresh', 12); text.textContent = 'Salvando…';
     bar.style.color = '#d4a017'; bar.style.background = 'rgba(212,160,23,.08)';
   } else if (state === 'error') {
-    icon.textContent = '⚠'; text.textContent = 'Offline';
+    icon.innerHTML = _tfIcon('alert', 12); text.textContent = 'Offline';
     bar.style.color = '#c0392b'; bar.style.background = 'rgba(192,57,43,.08)';
   } else if (state === 'noauth') {
     // Sessão Supabase expirada: os dados ficam SÓ locais — não fingir "Sincronizado".
-    icon.textContent = '⚠'; text.textContent = 'Não sincronizado — refaça login';
+    icon.innerHTML = _tfIcon('alert', 12); text.textContent = 'Não sincronizado — refaça login';
     bar.style.color = '#c97d2e'; bar.style.background = 'rgba(201,125,46,.08)';
   } else {
-    icon.textContent = '✓'; text.textContent = 'Sincronizado';
+    icon.innerHTML = _tfIcon('check', 12); text.textContent = 'Sincronizado';
     // Sidebar é CLARA — verde-claro #8fb89c era ilegível (revisão 14/07)
     bar.style.color = 'var(--sage-dark)'; bar.style.background = 'rgba(74,122,99,.08)';
   }

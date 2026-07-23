@@ -469,7 +469,7 @@ function renderPlanoProntuario(idx) {
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;background:' + (m.done ? 'var(--sage-light)' : 'var(--bg)') + ';border:1px solid ' + (m.done ? 'rgba(74,122,99,.25)' : 'var(--border)') + '">'
       + '<input type="checkbox" ' + (m.done ? 'checked' : '') + ' onchange="_toggleMetaPlano(' + m.id + ',this)" style="width:16px;height:16px;accent-color:var(--sage);flex-shrink:0">'
       + '<span style="flex:1;font-size:13.5px;' + (m.done ? 'text-decoration:line-through;color:var(--muted)' : 'color:var(--ink-soft)') + '">' + escHTML(m.text) + '</span>'
-      + '<button onclick="_excluirMetaPlano(' + m.id + ')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px">✕</button>'
+      + '<button onclick="_excluirMetaPlano(' + m.id + ')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
       + '</div>';
   }).join('') : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">Nenhum objetivo definido ainda.</div>';
 
@@ -926,7 +926,7 @@ function editarNota(textoId, btn) {
     div.style.cssText = 'font-size:13.5px;color:var(--ink-soft);line-height:1.7';
     div.textContent = el.value;
     el.replaceWith(div);
-    btn.innerHTML = '✎ Editar';
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar';
     showToast('Nota atualizada.');
     return;
   }
@@ -1099,7 +1099,7 @@ function atualizarMetricasSupervisao() {
     metDeltas[0].className = 'sup-metric-delta' + (taxaEvolucao >= 60 ? ' up' : '');
   }
   if (metDeltas[1]) {
-    metDeltas[1].textContent = comAtencao > 0 ? '⚠ Atenção recomendada' : '✓ Sem alertas';
+    metDeltas[1].innerHTML = comAtencao > 0 ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> Atenção recomendada' : _tfIcon('check', 12) + ' Sem alertas';
     metDeltas[1].className = 'sup-metric-delta' + (comAtencao > 0 ? ' warn' : '');
   }
   if (metDeltas[2]) {
@@ -1591,7 +1591,7 @@ function _mostrarPromptReflexao(p) {
       + '<div style="font-size:12px;color:var(--sage);margin-top:2px">Quer registrar uma reflexão enquanto está fresco?</div>'
     + '</div>'
     + '<button class="btn btn-sage btn-sm" onclick="document.getElementById(\'prompt-reflexao-posssessao\').remove();showReflectionModal()">✍ Refletir</button>'
-    + '<button onclick="document.getElementById(\'prompt-reflexao-posssessao\').remove()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px 4px">✕</button>';
+    + '<button onclick="document.getElementById(\'prompt-reflexao-posssessao\').remove()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px 4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
   document.body.appendChild(banner);
   requestAnimationFrame(function() {
     banner.style.transform = 'translateX(-50%) translateY(0)';

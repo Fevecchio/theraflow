@@ -460,7 +460,7 @@ function _enviarWhatsAppAcesso(p, nome, senha) {
     _ov.className = 'modal-overlay open';
     _ov.innerHTML = '<div class="modal" style="max-width:420px">'
       + '<div class="modal-header"><div class="modal-title">Acesso pronto — falta enviar</div>'
-      + '<button class="modal-close" onclick="document.getElementById(\'modal-acesso-wpp\').remove()">✕</button></div>'
+      + '<button class="modal-close" onclick="document.getElementById(\'modal-acesso-wpp\').remove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>'
       + '<div class="modal-body">'
       + '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:14px">O acesso de <strong>' + escHTML(nome) + '</strong> foi criado. O navegador bloqueou a abertura automática do WhatsApp — clique abaixo para abrir com a mensagem e a senha prontas:</div>'
       + '<a href="' + _url + '" target="_blank" rel="noopener" class="btn btn-primary" style="width:100%;justify-content:center;text-decoration:none" onclick="setTimeout(function(){var m=document.getElementById(\'modal-acesso-wpp\');if(m)m.remove()},400)">Abrir WhatsApp com as credenciais</a>'
@@ -1021,7 +1021,7 @@ function renderPatientDetailShell(i) {
             <div class="status-dropdown-item" onclick="alterarStatus(${i},'Inativa')"><span class="dot" style="background:#8a9490"></span><div><strong>Inativa</strong><span class="desc">Alta ou abandono</span></div></div>
           </div>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="showEditarPaciente(${i})" title="Editar dados do paciente">✎ Editar</button>
+        <button class="btn btn-secondary btn-sm" onclick="showEditarPaciente(${i})" title="Editar dados do paciente"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>
         <button class="btn btn-purple btn-sm" onclick="selectPatientTab('briefing')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z"/></svg> Briefing IA${_bdot}</button>
         <button class="btn btn-primary btn-sm" onclick="_tfSetSessionPatient(${i});navigate('sessao')">▶ Sessão</button>
       </div>
@@ -1137,7 +1137,7 @@ function renderPatientOverview(i) {
   const moodTrendIcon = p.moodTrend === 'up' ? '↑' : p.moodTrend === 'down' ? '↓' : '→';
   const alertBlock = p.alert ? `
     <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;background:var(--amber-light);border-radius:10px;border-left:3px solid var(--amber);margin-bottom:16px">
-      <span style="font-size:16px">⚠</span>
+      <span style="display:inline-flex;color:var(--amber)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Supervisão</div>
         <div style="font-size:13px;color:var(--ink-soft)">${p.alert}</div>
@@ -1246,7 +1246,7 @@ function renderPatientOverview(i) {
         return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
           +'<button onclick="toggleTarefa(\''+t.id+'\');selectPatient('+i+')" aria-label="Concluir tarefa" title="Concluir tarefa" style="flex-shrink:0;padding:3px 9px;border-radius:20px;border:1.5px solid var(--sage);background:var(--sage-light);color:var(--sage);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background=\'var(--sage)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--sage-light)\';this.style.color=\'var(--sage)\'">✓</button>'
           +'<span style="flex:1;font-size:13px;color:var(--ink-soft)">'+escHTML(t.title)+dateLabel+'</span>'
-          +'<button onclick="editarTarefa(\''+t.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:5px" title="Editar">✏</button>'
+          +'<button onclick="editarTarefa(\''+t.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:5px" title="Editar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>'
           +'</div>';
       }).join('')}
     </div>`;
@@ -1339,7 +1339,7 @@ function renderPatientConfig(i) {
             onkeydown="if(event.key==='Enter')salvarSessionLink(${i})"
           />
           <button class="btn btn-secondary btn-sm" onclick="salvarSessionLink(${i})" style="white-space:nowrap">Salvar</button>
-          ${p.sessionLink ? `<button onclick="limparSessionLink(${i})" title="Remover link" style="background:none;border:1px solid var(--border);color:var(--red);border-radius:8px;font-size:11px;padding:6px 9px;cursor:pointer;font-family:inherit">✕</button>` : ''}
+          ${p.sessionLink ? `<button onclick="limparSessionLink(${i})" title="Remover link" style="background:none;border:1px solid var(--border);color:var(--red);border-radius:8px;font-size:11px;padding:6px 9px;cursor:pointer;font-family:inherit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>` : ''}
         </div>
         ${p.sessionLink ? `<div style="font-size:11px;color:var(--sage);margin-top:5px">✓ Link externo ativo — o paciente vê o botão de entrar no portal</div>` : ''}
       </details>
@@ -1351,7 +1351,7 @@ function renderPatientConfig(i) {
       <button class="btn btn-secondary btn-sm" style="justify-content:center" onclick="abrirModalDeclaracao(${i},'ir')" title="Declaração anual de pagamentos para o Imposto de Renda do paciente">🧾 Relatório p/ IR</button>
     </div>
     <button class="btn btn-sm" style="color:var(--red);border-color:rgba(192,57,43,.25);background:var(--red-light);justify-content:center;width:100%" onclick="excluirPaciente(${i})">
-      ✕ Excluir paciente
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 6L6 18M6 6l12 12"/></svg> Excluir paciente
     </button>
   `;
 }
@@ -1378,7 +1378,7 @@ function renderPatientNotas(i) {
       notasHtml += '<div class="card card-sm" data-nota-date="' + escHTML(n.date) + '" style="border-left:3px solid ' + (n.manual ? 'var(--muted-2)' : 'var(--sage)') + '">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         + '<span style="font-weight:500">' + titulo + '</span>'
-        + '<button onclick="editarNotaTab(\'' + textoId + '\',this,' + i + ',\'' + n.date + '\')" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;padding:2px 8px;color:var(--muted)">✎ Editar</button>'
+        + '<button onclick="editarNotaTab(\'' + textoId + '\',this,' + i + ',\'' + n.date + '\')" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;padding:2px 8px;color:var(--muted)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>'
         + '</div>'
         + '<p id="' + textoId + '" style="font-size:13.5px;color:var(--ink-soft);line-height:1.7">' + escHTML(n.text) + '</p>'
         + '</div>';
@@ -1534,7 +1534,7 @@ function renderPatientFicha(i) {
         + '</div>'
         + '<div class="material-actions">'
         + (safeMatUrl ? '<a href="' + safeMatUrl + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none">↗ Abrir</a>' : '')
-        + '<button class="task-delete" onclick="_excluirMaterialFicha(' + i + ',' + m.id + ')" title="Excluir">✕</button>'
+        + '<button class="task-delete" onclick="_excluirMaterialFicha(' + i + ',' + m.id + ')" title="Excluir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
         + '</div>'
         + '</div>';
     }).join('');
@@ -1545,7 +1545,7 @@ function renderPatientFicha(i) {
     // dos números que moram na Visão Geral. A Ficha é DADOS clínicos + materiais.
     + '<div style="display:flex;align-items:center;margin-bottom:8px">'
     + '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Dados clínicos</div>'
-    + '<button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="showEditarPaciente(' + i + ')">✎ Editar dados</button>'
+    + '<button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="showEditarPaciente(' + i + ')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar dados</button>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'
     + '<div>'
@@ -1802,7 +1802,7 @@ function renderTrajetoriaTerapeuta(i) {
       ? '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">Resumo publicado para o paciente:</div>'
         + '<div id="resumo-pac-viewrow-' + idSafe + '" style="display:flex;gap:6px;align-items:flex-start">'
         + '<div style="flex:1;font-size:12px;color:var(--ink-soft);line-height:1.5;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;white-space:pre-wrap">' + escHTML(resumo) + '</div>'
-        + '<button onclick="_editarResumoPublicado(\'' + idSafe + '\')" title="Editar resumo" style="background:var(--white);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 9px;cursor:pointer;font-family:inherit;flex-shrink:0">✎</button>'
+        + '<button onclick="_editarResumoPublicado(\'' + idSafe + '\')" title="Editar resumo" style="background:var(--white);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 9px;cursor:pointer;font-family:inherit;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>'
         + '</div>'
         + '<div id="resumo-pac-editwrap-' + idSafe + '" style="display:none;gap:6px;align-items:flex-start;margin-top:6px">'
         + '<textarea id="resumo-pac-' + idSafe + '" style="flex:1;border:1.5px solid var(--sage);border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;outline:none;resize:none;min-height:52px;background:var(--white);color:var(--ink);line-height:1.5">' + escHTML(resumo) + '</textarea>'

@@ -541,7 +541,7 @@ function renderBriefingFallback() {
       '</div>' +
     '</div>' +
     '<div class="insight-block alert fade-in">' +
-      '<div class="insight-type">⚠ Ponto de atenção</div>' +
+      '<div class="insight-type">'+_tfIcon('alert',13)+' Ponto de atenção</div>' +
       '<div class="insight-text">' +
         (notas.length < 2
           ? 'Poucas notas indexadas (' + notas.length + '). Indexe as sessões anteriores para análises mais precisas pela IA.'
